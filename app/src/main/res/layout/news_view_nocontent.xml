@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:background="@drawable/bg_news"
+    android:elevation="8dp"
+    android:padding="8dp"
+    android:clipToPadding="false"
+    android:clipChildren="false"
+    android:focusable="true"
+    android:focusableInTouchMode="false"
+    >
+
+    <!-- in der Original-App ist die Reihenfolge: topline, title, firstSentence -->
+
+    <TextView
+        android:id="@+id/textViewTopline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elegantTextHeight="true"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:shadowColor="#33064a91"
+        android:shadowDx="@dimen/topline_shadow_size" android:shadowDy="@dimen/topline_shadow_size" android:shadowRadius="@dimen/topline_shadow_size"
+        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+        android:textColor="@android:color/black"
+        tools:text="@tools:sample/lorem/random"/>
+
+    <TextView
+        android:id="@+id/textViewDate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textViewTopline"
+        android:layout_toStartOf="@id/textViewFirstSentence"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-condensed"
+        android:maxLines="1"
+        android:paddingEnd="@dimen/space_between_image_and_text"
+        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+        android:textColor="@android:color/black"
+        tools:ignore="RtlSymmetry"
+        tools:text="12.34.5678 12:34"/>
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="@dimen/image_width_normal"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textViewDate"
+        android:layout_alignParentStart="true"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/hint_pic"
+        android:cropToPadding="true"
+        android:elevation="4dp"
+        android:maxWidth="@dimen/image_width_normal"
+        android:paddingTop="8dp"
+        android:paddingEnd="@dimen/space_between_image_and_text"
+        android:paddingBottom="8dp"
+        android:scaleType="fitCenter"
+        tools:ignore="RtlSymmetry"
+        tools:srcCompat="@drawable/placeholder"/>
+
+    <TextView
+        android:id="@+id/textViewTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textViewTopline"
+        android:layout_alignParentEnd="true"
+        android:layout_toEndOf="@id/imageView"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-condensed"
+        android:maxLines="6"
+        android:textAppearance="@style/TextAppearance.AppCompat.Title"
+        android:textColor="@color/colorContent"
+        android:hyphenationFrequency="full"
+        android:breakStrategy="high_quality"
+        android:autoSizeTextType="uniform"
+        tools:ignore="RtlSymmetry,UnusedAttribute"
+        tools:text="@tools:sample/lorem/random"/>
+
+</RelativeLayout>
+

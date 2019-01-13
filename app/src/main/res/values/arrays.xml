@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="entries_list_proxytypes">
+        <item>none</item>
+        <item>HTTP</item>
+        <item>SOCKS</item>
+    </string-array>
+    
+    <string-array name="entryvalues_list_proxytypes">
+        <item>DIRECT</item>
+        <item>HTTP</item>
+        <item>SOCKS</item>
+    </string-array>
+
+    <string-array name="entries_list_back_button">
+        <item>closes the app</item>
+        <item>navigates to home category</item>
+        <item>navigates to recent section</item>
+    </string-array>
+
+    <array name="colors_list_back_button">
+        <item>#ffcc0000</item>
+        <item>#ff1288cc</item>
+        <item>#ffededed</item>
+    </array>
+
+    <string-array name="entries_list_background">
+        <item>automatic selection</item>
+        <item>dark background</item>
+        <item>light background</item>
+    </string-array>
+
+    <array name="colors_list_background">
+        <item>#ff999999</item>
+        <item>#ff444444</item>
+        <item>#ffededed</item>
+    </array>
+
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- see https://developer.android.com/studio/build/shrink-code.html#keep-resources -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:discard="@raw/*.json"
+    tools:keep="@raw/*.txt,@raw*.htm"
+    tools:shrinkMode="strict"/>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="entries_list_proxytypes">
+        <item>keiner</item>
+        <item>HTTP</item>
+        <item>SOCKS</item>
+    </string-array>
+    
+    <string-array name="entryvalues_list_proxytypes">
+        <item>DIRECT</item>
+        <item>HTTP</item>
+        <item>SOCKS</item>
+    </string-array>
+
+    <string-array name="entries_list_back_button">
+        <item>beendet die App</item>
+        <item>führt zur Übersicht</item>
+        <item>führt zur letzten Kategorie</item>
+    </string-array>
+
+    <string-array name="entries_list_background">
+        <item>automatische Auswahl</item>
+        <item>dunkler Hintergrund</item>
+        <item>heller Hintergrund</item>
+    </string-array>
+
+</resources>

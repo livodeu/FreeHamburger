@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fastScrollEnabled="true"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".NewsActivity"
+    tools:showIn="@layout/activity_news"
+    >
+
+    <RelativeLayout
+        android:id="@+id/topBlock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:animateLayoutChanges="false"
+        android:clipChildren="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        >
+
+        <ImageView
+            android:id="@+id/muteWarning"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/ic_volume_off_black_24dp"
+            android:background="@drawable/bg_button"
+            android:layout_marginTop="200dp"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:elevation="20dp"
+            android:contentDescription="@string/msg_volume_mute"
+            android:scaleType="fitXY"
+            android:alpha="0"
+            android:visibility="gone"
+            />
+
+        <com.google.android.exoplayer2.ui.PlayerView
+            android:id="@+id/topVideoView"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginBottom="8dp"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:minHeight="200dp"
+            app:use_controller="false"
+            />
+
+        <TextView
+            android:id="@+id/textViewTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/topVideoView"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:elegantTextHeight="true"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="-1"
+            android:shadowColor="#33064a91"
+            android:shadowDx="2" android:shadowDy="2" android:shadowRadius="2"
+            android:singleLine="true"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/text_size_news_title"
+            tools:text="@tools:sample/lorem"
+            />
+
+        <RelativeLayout
+            android:id="@+id/audioBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/textViewTitle"
+            android:layout_marginBottom="8dp"
+            android:background="@color/colorPrimarySemiTrans"
+            >
+
+            <ImageButton
+                android:id="@+id/buttonAudio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="8dp"
+                android:onClick="playAudio"
+                android:src="@drawable/ic_play_arrow_black_24dp"
+                tools:ignore="ContentDescription"/>
+
+            <TextView
+                android:id="@+id/textViewAudioTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toEndOf="@id/buttonAudio"
+                android:ellipsize="marquee"
+                android:singleLine="true"
+                android:textSize="@dimen/text_size_news_audio_title"
+                tools:text="Audio element title"
+                />
+
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/textViewContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/audioBlock"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/text_size_news_content"
+            android:autoLink="none"
+            android:linksClickable="false"
+            android:hyphenationFrequency="full"
+            android:breakStrategy="high_quality"
+            android:justificationMode="none"
+            tools:text="@tools:sample/lorem/random"
+            tools:ignore="UnusedAttribute"/>
+
+        <View
+            android:id="@+id/dividerRelated"
+            android:layout_width="match_parent"
+            android:layout_height="1px"
+            android:background="@color/colorPrimaryDark"
+            android:layout_below="@+id/textViewContent"
+            android:layout_marginTop="16dp"
+            />
+
+        <TextView
+            android:id="@+id/textViewRelated"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/dividerRelated"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:text="@string/label_related"
+            android:maxLines="1"
+            android:labelFor="@+id/recyclerViewRelated"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title"/>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recyclerViewRelated"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/textViewRelated"
+            android:layout_marginTop="16dp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="4dp"
+            android:clipChildren="false"
+            tools:listitem="@layout/related_view"/>
+
+    </RelativeLayout>
+
+</ScrollView>

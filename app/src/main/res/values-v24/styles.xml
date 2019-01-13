@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorButtonNormal">@color/colorPrimary</item> <!-- the background color of a button -->
+        <item name="android:navigationBarColor">@color/colorPrimary</item>
+        <item name="android:fastScrollThumbDrawable">@android:drawable/btn_default</item>
+        <item name="android:fastScrollOverlayPosition">atThumb</item>
+        <item name="android:alertDialogTheme">@style/AppAlertDialogTheme</item>
+        <item name="alertDialogTheme">@style/AppAlertDialogTheme</item>
+        <item name="android:windowBackground">@color/colorPrimaryLight</item>
+        <item name="android:windowBackgroundFallback">@color/colorPrimaryLight</item>
+        <item name="listMenuViewStyle">@style/AppTheme.ListMenuViewStyle</item>
+        <item name="android:contextPopupMenuStyle">@style/ContextMenu</item>
+    </style>
+
+    <style name="ContextMenu" parent="AppTheme">
+        <!-- some of the items are used in android.widget.PopupWindow -->
+        <item name="android:overlapAnchor">true</item>
+        <item name="android:dropDownSelector">?attr/listChoiceBackgroundIndicator</item>
+        <item name="android:popupBackground">@color/colorPrimaryLight</item>
+        <item name="android:popupElevation">16dp</item>
+        <item name="android:popupAnimationStyle">@anim/grow_from_bottom</item>
+        <item name="android:dropDownVerticalOffset">0dip</item>
+        <item name="android:dropDownHorizontalOffset">0dip</item>
+        <item name="android:dropDownWidth">wrap_content</item>
+    </style>
+
+</resources>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="image_width_normal">240dp</dimen>
+    <dimen name="images_view_min_height">480dp</dimen>
+
+    <dimen name="width_navigation_drawer">220dp</dimen>
+
+    <dimen name="text_size_clockview_title">22sp</dimen>
+
+    <dimen name="text_size_list_news_topline">16sp</dimen>
+    <dimen name="text_size_list_news_date">16sp</dimen>
+    <dimen name="text_size_list_news_title">22sp</dimen>
+    <dimen name="text_size_list_news_firstsentence">16sp</dimen>
+
+    <dimen name="text_size_news_title">22sp</dimen>
+    <dimen name="text_size_news_audio_title">20sp</dimen>
+    <dimen name="text_size_news_content">20sp</dimen>
+    <dimen name="text_size_news_bottom_video">20sp</dimen>
+
+    <dimen name="text_size_navigation">16sp</dimen>
+
+</resources>

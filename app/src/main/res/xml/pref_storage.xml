@@ -1,0 +1,27 @@
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:defaultValue="15"
+        android:dialogIcon="@drawable/ic_storage_ededed_24dp"
+        android:hint="@string/pref_hint_pref_cache_max_size"
+        android:icon="@drawable/ic_storage_ededed_24dp"
+        android:inputType="number"
+        android:key="pref_cache_max_size"
+        android:maxLength="2"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_pref_cache_max_size"/>
+
+    <Preference
+        android:key="pref_clear_cache"
+        android:title="@string/action_clear_cache"
+        android:icon="@drawable/ic_delete_forever_ededed_24dp"
+        />
+
+    <Preference
+        android:key="action_search_clear"
+        android:title="@string/action_search_clear"
+        android:icon="@drawable/ic_search_ededed_24dp">
+        <intent android:action="de.freehamburger.action_search_clear" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
+    </Preference>
+</PreferenceScreen>

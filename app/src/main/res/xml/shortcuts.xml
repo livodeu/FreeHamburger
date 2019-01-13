@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:tools="http://schemas.android.com/tools"
+           xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="de.freehamburger.action_section_wirtschaft"
+        android:enabled="true"
+        android:icon="@drawable/ic_build_black_24dp"
+        android:shortcutShortLabel="@string/action_section_wirtschaft_short"
+        android:shortcutLongLabel="@string/action_section_wirtschaft"
+        android:shortcutDisabledMessage="@string/action_section_wirtschaft"
+        tools:ignore="UnusedAttribute">
+        <intent
+            android:action="action_section_wirtschaft"
+            android:targetPackage="de.freehamburger"
+            android:targetClass="de.freehamburger.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="de.freehamburger.action_section_sport"
+        android:enabled="true"
+        android:icon="@drawable/ic_directions_run_black_24dp"
+        android:shortcutShortLabel="@string/action_section_sport"
+        android:shortcutLongLabel="@string/action_section_sport"
+        android:shortcutDisabledMessage="@string/action_section_sport"
+        tools:ignore="UnusedAttribute">
+        <intent
+            android:action="action_section_sport"
+            android:targetPackage="de.freehamburger"
+            android:targetClass="de.freehamburger.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="de.freehamburger.action_section_news"
+        android:enabled="true"
+        android:icon="@drawable/ic_local_library_black_24dp"
+        android:shortcutShortLabel="@string/action_section_news_short"
+        android:shortcutLongLabel="@string/action_section_news"
+        android:shortcutDisabledMessage="@string/action_section_news"
+        tools:ignore="UnusedAttribute">
+        <intent
+            android:action="action_section_news"
+            android:targetPackage="de.freehamburger"
+            android:targetClass="de.freehamburger.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="de.freehamburger.action_section_ausland"
+        android:enabled="true"
+        android:icon="@drawable/ic_language_black_24dp"
+        android:shortcutShortLabel="@string/action_section_ausland"
+        android:shortcutLongLabel="@string/action_section_ausland"
+        android:shortcutDisabledMessage="@string/action_section_ausland"
+        tools:ignore="UnusedAttribute">
+        <intent
+            android:action="action_section_ausland"
+            android:targetPackage="de.freehamburger"
+            android:targetClass="de.freehamburger.MainActivity" />
+    </shortcut>
+</shortcuts>
+
+

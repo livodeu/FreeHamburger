@@ -1,0 +1,33 @@
+<resources>
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
+    <dimen name="image_width_normal">120dp</dimen>
+    <dimen name="elev_button">2dp</dimen>
+    <dimen name="size_button">60dp</dimen>
+    <dimen name="images_view_min_height">240dp</dimen>
+    <dimen name="space_between_image_and_text">8dp</dimen>
+    <dimen name="bottomsheet_height">200dp</dimen>
+    <dimen name="space_between_menu_items">8dp</dimen>
+
+    <dimen name="pref_icon_size">24dp</dimen>
+
+    <dimen name="topline_shadow_size">4</dimen>
+
+    <dimen name="width_navigation_drawer">180dp</dimen>
+
+    <dimen name="text_size_clockview_title">18sp</dimen>
+
+    <dimen name="text_size_list_news_topline">14sp</dimen>
+    <dimen name="text_size_list_news_date">14sp</dimen>
+    <dimen name="text_size_list_news_title">20sp</dimen>
+    <dimen name="text_size_list_news_firstsentence">14sp</dimen>
+
+    <dimen name="text_size_news_title">18sp</dimen>
+    <dimen name="text_size_news_audio_title">16sp</dimen>
+    <dimen name="text_size_news_content">16sp</dimen>
+    <dimen name="text_size_news_bottom_video">16sp</dimen>
+
+    <dimen name="text_size_navigation">14sp</dimen>
+
+</resources>

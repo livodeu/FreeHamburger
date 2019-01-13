@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBottomSheetBackground"
+    android:orientation="vertical"
+    app:behavior_hideable="true"
+    app:behavior_peekHeight="25dp"
+    app:layout_anchorGravity="bottom|center_horizontal"
+    app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
+    <!--tools:showIn="@layout/activity_news"-->
+
+    <TextView
+        android:id="@+id/textViewBottomVideoPeek"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        android:drawableStart="@drawable/ic_videocam_ededed_24dp"
+        android:drawablePadding="8dp"
+        android:ellipsize="end"
+        android:gravity="center_vertical"
+        android:onClick="expandBottomSheet"
+        android:singleLine="true"
+        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+        android:textColor="@color/colorDirtyWhite"
+        android:textSize="@dimen/text_size_news_bottom_video"
+        tools:text="Video title"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="?attr/actionBarSize"
+        android:animateLayoutChanges="true"
+        >
+
+        <com.google.android.exoplayer2.ui.PlayerView
+            android:id="@+id/bottomVideoView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginBottom="8dp"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:minHeight="@dimen/bottomsheet_height"
+            android:layerType="hardware"
+            app:surface_type="texture_view"
+            app:resize_mode="fit"
+            app:use_controller="false"
+            />
+
+        <TextView
+            android:id="@+id/textViewBottomVideoViewOverlay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@id/bottomVideoView"
+            android:layout_alignBottom="@id/bottomVideoView"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:ellipsize="marquee"
+            android:fontFamily="sans-serif-condensed"
+            android:singleLine="true"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textSize="@dimen/text_size_news_bottom_video"
+            android:textColor="@color/colorDirtyWhite"
+            tools:text="Video title again"/>
+    </RelativeLayout>
+
+
+</LinearLayout>

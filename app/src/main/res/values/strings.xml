@@ -1,0 +1,234 @@
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="PluralsCandidate">
+    <string name="app_name" translatable="false">Hamburger</string>
+    <string name="app_name_debug" translatable="false">Hamburger - Debug</string>
+    <string name="app_task_description" translatable="false">Hamburger - %1$s</string>
+
+    <string name="action_add_filter">Add</string>
+    <string name="action_back">Back</string>
+    <string name="action_clear_cache">Clear cache</string>
+    <string name="action_delete_log" translatable="false">Delete log</string>
+    <string name="action_details">More…</string>
+    <string name="action_filter">Filter</string>
+    <string name="action_finish">Leave app</string>
+    <string name="action_font_delete">Delete imported font</string>
+    <string name="action_font_use">Use font</string>
+    <string name="action_get_log" translatable="false">Log</string>
+    <string name="action_help">Help</string>
+    <string name="action_import_font">Import font</string>
+    <string name="action_info">Info</string>
+    <string name="action_read">Read</string>
+    <string name="action_read_stop">Stop reading</string>
+    <string name="action_save">Save</string>
+    <string name="action_scroll_to_top">Scroll to top</string>
+    <string name="action_search">Search</string>
+    <string name="action_search_clear">Clear search history</string>
+    <string name="action_section_ausland">World</string>
+    <string name="action_section_channels">Programmes</string>
+    <string name="action_section_homepage">Home</string>
+    <string name="action_section_inland">Domestic</string>
+    <string name="action_section_news">News</string>
+    <string name="action_section_news_short">News</string>
+    <string name="action_section_regional">Regional</string>
+    <string name="action_section_sport">Sports</string>
+    <string name="action_section_video">Video</string>
+    <string name="action_section_wirtschaft">Economy</string>
+    <string name="action_section_wirtschaft_short">Economy</string>
+    <string name="action_select_regions">Select regions</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_share">Share</string>
+    <string name="action_share_image">Share picture</string>
+    <string name="action_share_news">Share article</string>
+    <string name="action_share_video">Share video</string>
+    <string name="action_show_cache">Show cache</string>
+    <string name="action_show_updates" translatable="false">Show bg updates</string>
+    <string name="action_teletext">Teletext</string>
+    <string name="action_quit">Quit the app?</string>
+    <string name="action_view_picture">View picture</string>
+    <string name="action_weather">Weather</string>
+
+    <string name="hint_download">Download medium</string>
+    <string name="hint_filter">The phrase to filter</string>
+    <string name="hint_filter_button_clear">Click to clear the phrase</string>
+    <string name="hint_filter_button_delete">Click to delete the filter</string>
+    <string name="hint_filter_new">Add a filter</string>
+    <string name="hint_filters">Each filter defined here will be used to remove unwanted news items. You can ignore upper/lower case.</string>
+    <string name="hint_intro_will_be_played">The introduction will be shown during the next start.</string>
+    <string name="hint_permission_location">Permit access to device location.</string>
+    <string name="hint_pic">The illustration for this story</string>
+    <string name="hint_search">Search</string>
+    <string name="hint_view">View video</string>
+    <string name="hint_weatherimage">A weather forecast image</string>
+
+    <string name="intro_1">Select categories in the right-hand drawer.</string>
+    <string name="intro_2">Search, apply filters, change settings here.</string>
+    <string name="intro_3">Scroll through the list to see the articles.</string>
+    <string name="intro_4">Tap an article to see details.</string>
+    <string name="intro_5">Enjoy the app!</string>
+
+    <string name="error_connection_interrupted">The network connection has been interrupted!</string>
+    <string name="error_download_failed">Download failed:\n%1$s</string>
+    <string name="error_filter_not_added">Filter has not been added.</string>
+    <string name="error_invalid_not_a_number">Invalid. Must be a number.</string>
+    <string name="error_link_not_supported">This app does not support %1$s.</string>
+    <string name="error_no_app">No installed app can handle this!</string>
+    <string name="error_no_further_details">There are no further details for this.</string>
+    <string name="error_no_network">No network!</string>
+    <string name="error_parsing">Error while parsing the data!</string>
+    <string name="error_permission_denied">Permission denied!</string>
+    <string name="error_pin_verification">An invalid security certificate has been received!</string>
+    <string name="error_poll_failed">This failed at %1$s with no reason given.</string>
+    <string name="error_poll_maximum_interval">The maximum interval is %1$d minutes.</string>
+    <string name="error_poll_minimum_interval">The minimum interval is %1$d minutes.</string>
+    <string name="error_tts_fail">Speaking failed!</string>
+    <string name="error_tts_fail_network">Speaking failed due to network problems!</string>
+    <string name="error_tts_fail_not_downloaded">Speaking failed! Voice not downloaded yet.</string>
+    <string name="error_unknown_host">has not been found</string>
+
+    <string name="label_back_finish">closes the app</string>
+    <string name="label_back_home">navigates to home category</string>
+    <string name="label_back_back">navigates to recent section</string>
+    <string name="label_current_cache_size">currently %1$d MB out of %2$d MB</string>
+    <string name="label_current_cache_size_kb">currently %1$d kB out of %2$d MB</string>
+    <string name="label_every_minutes">every %1$s minutes</string>
+    <string name="label_filter">Filter</string>
+    <string name="label_filter_anywhere">anywhere</string>
+    <string name="label_filter_at_start">at start</string>
+    <string name="label_filter_at_end">at end</string>
+    <string name="label_sections">Categories</string>
+    <string name="label_select_app">Please select app for %1$s</string>
+    <string name="label_service">This is the background service for Hamburger that is required to load data from the network</string>
+    <string name="label_mime_audio">Audio</string>
+    <string name="label_mime_default">media</string>
+    <string name="label_mime_image">Image</string>
+    <string name="label_mime_video">Video</string>
+    <string name="label_mm_livestreams">Live streams</string>
+    <string name="label_mm_picturesoftheday">Pictures of the day</string>
+    <string name="label_mm_ts_in_hundred_seconds">Tagesschau in 100s</string>
+    <string name="label_notification_channel">News</string>
+    <string name="label_notification_channel_hipri">Breaking news</string>
+    <string name="label_notification_channel_desc">Hamburger news of standard priority</string>
+    <string name="label_notification_channel_desc_hipri">Hamburger news of superior priority</string>
+    <plurals name="label_poll_stats">
+        <item quantity="one">%1$d background update has received %2$s since %3$s.</item>
+        <item quantity="other">%1$d background updates have received %2$s since %3$s.</item>
+    </plurals>
+    <string name="label_poll_stats_none">No background updates yet.</string>
+    <string name="label_quoted">\"%1$s\"</string>
+    <string name="label_recent_sources">Recent sections</string>
+    <string name="label_regions">Regions</string>
+    <string name="label_related">More</string>
+    <string name="label_reset_q">Reset?</string>
+    <plurals name="label_time_rel_seconds">
+        <item quantity="one">%1$d second ago</item>
+        <item quantity="other">%1$d seconds ago</item>
+    </plurals>
+    <plurals name="label_time_rel_minutes">
+        <item quantity="one">%1$d minute ago</item>
+        <item quantity="other">%1$d minutes ago</item>
+    </plurals>
+    <plurals name="label_time_rel_hours">
+        <item quantity="one">%1$d hour ago</item>
+        <item quantity="other">%1$d hours ago</item>
+    </plurals>
+    <plurals name="label_time_rel_hours1">
+        <item quantity="one">%1$d¼ hours ago</item>
+        <item quantity="other">%1$d¼ hours ago</item>
+    </plurals>
+    <plurals name="label_time_rel_hours2">
+        <item quantity="one">%1$d½ hours ago</item>
+        <item quantity="other">%1$d½ hours ago</item>
+    </plurals>
+    <plurals name="label_time_rel_hours3">
+        <item quantity="one">%1$d¾ hours ago</item>
+        <item quantity="other">%1$d¾ hours ago</item>
+    </plurals>
+    <plurals name="label_time_rel_days">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <string name="label_video_size" translatable="false">%1$d &#215; %2$d</string>
+    <string name="label_video_title" translatable="false">%1$s (%2$d &#215; %3$d)</string>
+    <string name="label_weather_forecast">Forecast</string>
+    <string name="label_weather_radar">Radar</string>
+    <string name="label_weather_stations">Stations</string>
+    <string name="label_weblink">Link</string>
+    <string name="label_yes">Yes</string>
+
+    <string name="msg_download_complete">Download complete.</string>
+    <string name="msg_filters_none">Currently there are no filters.</string>
+    <string name="msg_filters_removed">All filters have been removed.</string>
+    <plurals name="msg_filters_stored">
+        <item quantity="one">Stored %1$d filter.</item>
+        <item quantity="other">Stored %1$d filters.</item>
+    </plurals>
+    <string name="msg_font_deleted">Font deleted.</string>
+    <string name="msg_font_import_done">Font import complete.</string>
+    <string name="msg_font_import_done_ext">Font \"%1$s\" imported.</string>
+    <string name="msg_font_import_failed">Font import failed!</string>
+    <string name="msg_font_none">There is no imported font.</string>
+    <string name="msg_found">\"%1$s\" has been found %2$d times.</string>
+    <string name="msg_no_app_kml">No app can display the weather stations!</string>
+    <string name="msg_not_found">Not found: \"%1$s\"</string>
+    <string name="msg_not_modified">Not modified.</string>
+    <string name="msg_search_cleared">Search history cleared.</string>
+    <string name="msg_sorry">Sorry for the interruption!</string>
+    <string name="msg_view_it_now">View it now?</string>
+    <string name="msg_volume_mute">Audio is muted.</string>
+
+    <string name="pref_default_proxy_type" translatable="false">DIRECT</string>
+
+    <string name="pref_header_appearance">Appearance</string>
+    <string name="pref_header_general">General</string>
+    <string name="pref_header_storage">Storage</string>
+    <string name="pref_header_data">Data</string>
+    <string name="pref_header_polling">Polling</string>
+    <string name="pref_header_other">Other</string>
+
+    <string name="pref_hint_pref_cache_max_size">Max. cache size in MB</string>
+    <string name="pref_hint_poll_interval">Interval</string>
+    <string name="pref_hint_poll_interval_night">Interval during nighttime</string>
+    <string name="pref_hint_proxy_server">Server:Port</string>
+    <string name="pref_summary_font_import_replace">Replace \"%1$s\"</string>
+    <string name="pref_summary_proxy_server">None</string>
+    <string name="pref_summary_proxy_type">Proxy type</string>
+    <string name="pref_title_ask_before_finish">Before leaving the app</string>
+    <string name="pref_title_ask_before_finish_off">do nothing.</string>
+    <string name="pref_title_ask_before_finish_on">ask user for confirmation.</string>
+    <string name="pref_title_background">Background</string>
+    <string name="pref_title_poll">Poll</string>
+    <string name="pref_title_poll_on">Active.</string>
+    <string name="pref_title_poll_off">Inactive.</string>
+    <string name="pref_title_poll_breaking_only">Show \"breaking\" news only</string>
+    <string name="pref_title_poll_over_mobile">Over mobile networks</string>
+    <string name="pref_title_poll_stats">Data usage</string>
+    <string name="pref_title_quotationmarks_fix">Wrong quotation marks</string>
+    <string name="pref_title_quotationmarks_fix_on">will be fixed („”)</string>
+    <string name="pref_title_quotationmarks_fix_off">will be left as they are (\" \")</string>
+    <string name="pref_title_open_links_internally">ARD links</string>
+    <string name="pref_title_open_links_internally_off">will be opened in the browser</string>
+    <string name="pref_title_open_links_internally_on">will be opened internally</string>
+    <string name="pref_title_play_intro">Show introduction</string>
+    <string name="pref_title_pref_cache_max_size">Max. cache size</string>
+    <string name="pref_title_pref_mem_cache_max_size">Max. memory cache size</string>
+    <string name="pref_title_pref_load_over_mobile">Loading via mobile network</string>
+    <string name="pref_title_pref_load_over_mobile_on">Loading via mobile network is on</string>
+    <string name="pref_title_pref_load_over_mobile_off">Loading via mobile network is off</string>
+    <string name="pref_title_pref_load_videos_over_mobile">Videos via mobile network</string>
+    <string name="pref_title_pref_load_videos_over_mobile_on">Play videos via mobile network on</string>
+    <string name="pref_title_pref_load_videos_over_mobile_off">Play videos via mobile network off</string>
+    <string name="pref_title_proxy_server">Proxy Server</string>
+    <string name="pref_title_proxy_type">Proxy Type</string>
+    <string name="pref_title_time_mode">Time mode</string>
+    <string name="pref_title_time_mode_on">Relative</string>
+    <string name="pref_title_time_mode_off">Absolute</string>
+    <string name="pref_title_use_back">The back button</string>
+    <string name="pref_title_use_back_on">navigates to recent sections</string>
+    <string name="pref_title_use_back_off">closes the app</string>
+    <string name="pref_title_warn_mute">If audio is muted,</string>
+    <string name="pref_title_warn_mute_on">show a warning</string>
+    <string name="pref_title_warn_mute_off">ignore it</string>
+
+    <string name="dummy_button" translatable="false">Dummy Button</string>
+    <string name="dummy_content" translatable="false">DUMMY\nCONTENT</string>
+
+</resources>

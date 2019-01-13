@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<android.support.v4.widget.SwipeRefreshLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/swiperefresh"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentStart="true"
+    android:layout_alignParentTop="true"
+    android:clipChildren="true"
+    android:clipToPadding="false"
+    app:layout_behavior="android.support.design.widget.AppBarLayout$ScrollingViewBehavior"
+    tools:context="de.freehamburger.MainActivity"
+    tools:showIn="@layout/activity_main"
+    >
+
+    <RelativeLayout
+        android:id="@+id/recyclerViewWrapper"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:animateLayoutChanges="false"
+        >
+
+        <View
+            android:id="@+id/plane"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:foreground="@color/colorPrimarySemiTrans"
+            android:elevation="30dp"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:onClick="onPlaneClicked"
+            android:importantForAccessibility="no"
+            />
+
+        <View
+            android:id="@+id/blurTop"
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            android:layout_alignTop="@+id/recyclerView"
+            android:background="@drawable/blur_top"
+            android:elevation="8dp"
+            android:visibility="gone"
+            android:importantForAccessibility="no"/>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:scrollbars="none"
+            tools:listitem="@layout/news_view">
+            <requestFocus/>
+        </android.support.v7.widget.RecyclerView>
+
+        <View
+            android:id="@+id/blurBottom"
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            android:layout_alignBottom="@+id/recyclerView"
+            android:background="@drawable/blur_bottom"
+            android:elevation="8dp"
+            android:visibility="gone"
+            android:importantForAccessibility="no"
+            />
+
+        <ImageView
+            android:id="@+id/quickView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:adjustViewBounds="true"
+            android:elevation="40dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:scaleType="fitCenter"
+            android:visibility="gone"
+            android:onClick="onQuickViewClicked"
+            tools:ignore="ContentDescription"
+            tools:src="@tools:sample/backgrounds/scenic"
+            tools:visibility="visible"/>
+
+    </RelativeLayout>
+
+</android.support.v4.widget.SwipeRefreshLayout>
+
+
