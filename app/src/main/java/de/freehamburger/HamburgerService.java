@@ -193,12 +193,13 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         if (url.length() < 8) return;
         if (url.charAt(0) == '/' && url.charAt(1) == '/') {
             url = "https:" + url;
-        } else if (url.startsWith("http:", 0)) {
+        } else if (url.startsWith("http:")) {
             url = "https" + url.substring(4);
         }
         if (imageWidth > 0 && imageHeight > 0) {
-            PaintDrawable pd = new PaintDrawable(0xffffff00);
-            pd.setBounds(0, 0, imageWidth, imageHeight);
+            PaintDrawable pd = new PaintDrawable(getResources().getColor(R.color.colorPrimaryTrans));
+            pd.setIntrinsicWidth(imageWidth);
+            pd.setIntrinsicHeight(imageHeight);
             this.handler.post(new PictureLoader(this, url, dest, null, pd, (float)imageWidth / (float)imageHeight));
         } else {
             this.handler.post(new PictureLoader(this, url, dest, null, null));
@@ -213,6 +214,10 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
 
     /**
      * {@inheritDoc}
+     * <hr>
+     * Attempts to {@link #startService(Intent) start} the service, too.<br>
+     * As of Oreo, the OS will prevent that if the App is in the background.
+     * See <a href="https://developer.android.com/about/versions/oreo/background">here</a>.
      */
     @Override
     public void onCreate() {
@@ -228,7 +233,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         } catch (IllegalStateException e) {
             // java.lang.IllegalStateException: Not allowed to start service Intent { cmp=de.freehamburger.debug/de.freehamburger.HamburgerService }: app is in background uid UidRecord{...}
             // https://developer.android.com/about/versions/oreo/background
-            if (BuildConfig.DEBUG) Log.w(TAG, "startService(): " + e.toString(), e);
+            if (BuildConfig.DEBUG) Log.w(TAG, "onCreate() - startService(): " + e.toString(), e, 4);
         }
     }
 
@@ -316,7 +321,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         @Nullable
         private ImageView dest;
         @Nullable
-        private Drawable placeholder;
+        private final Drawable placeholder;
         /** initially false to indicate that loading from network has not been attempted yet */
         private boolean loadingFromWebAttempted;
         private int width, height;
@@ -363,12 +368,12 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
                 HamburgerService service = this.refService.get();
                 if (service == null || service.cannotDownload()) return;
                 RequestCreator rc = service.picasso.load(this.url);
-                if (this.placeholder != null) rc.placeholder(this.placeholder); else rc.noPlaceholder();
+                if (this.placeholder != null) rc.placeholder(this.placeholder); //else rc.noPlaceholder();
                 rc
                         .networkPolicy(NetworkPolicy.NO_CACHE)
                         .resize(this.width, this.height)
                         .noFade()
-                        .centerInside()
+                        .centerCrop()
                         .error(R.drawable.ic_warning_red_24dp)
                         .into(this.dest, this);
             } else {
@@ -404,7 +409,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
                 // get width and height of the ImageView
                 this.width = normalImageWidth;
                 if (this.ratio > 0f) {
-                    this.height = Math.round(this.width / this.ratio);
+                     this.height = Math.round(this.width / this.ratio);
                 } else {
                     //noinspection SuspiciousNameCombination
                     this.height = normalImageWidth;
@@ -419,12 +424,12 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
 
                 // first try the cache (NetworkPolicy.OFFLINE)
                 RequestCreator rc = service.picasso.load(this.url);
-                if (this.placeholder != null) rc.placeholder(this.placeholder); else rc.noPlaceholder();
+                if (this.placeholder != null) rc.placeholder(this.placeholder); //else rc.noPlaceholder();
                 rc
                         .networkPolicy(NetworkPolicy.OFFLINE)
                         .resize(this.width, this.height)
                         .noFade()   // without noFade(), the picture would be dimmed before display
-                        .centerInside()
+                        .centerCrop()
                         .into(this.dest, this);
             } else {
                 if (BuildConfig.DEBUG) Log.e(TAG, "PictureLoader for " + url + " with both dest and target null!");

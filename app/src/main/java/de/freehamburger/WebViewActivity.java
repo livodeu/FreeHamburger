@@ -168,7 +168,7 @@ public class WebViewActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (!Util.isNetworkAvailable(this)) {
-            Toast.makeText(getApplicationContext(), R.string.error_no_network, Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), R.string.error_no_network, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }

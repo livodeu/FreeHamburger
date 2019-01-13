@@ -13,12 +13,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.annotation.CallSuper;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StyleRes;
 import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -38,7 +40,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     static final long HIDE_FAB_AFTER = 2_000L;
     private static final String TAG = "HamburgerActivity";
 
-    final Handler handler = new Handler();
+    @NonNull final Handler handler = new Handler();
     HamburgerService service;
     CoordinatorLayout coordinatorLayout;
 
@@ -116,6 +118,25 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         return background;
     }
 
+    /**
+     * Displays a Snackbar that says "No network.".
+     */
+    void showNoNetworkSnackbar() {
+        Snackbar sb;
+        Intent settingsIntent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+        if (getPackageManager().resolveActivity(settingsIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+            sb = Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_LONG);
+            // the unicode wrench symbol 🔧 (0x1f527)
+            sb.setAction("\uD83D\uDD27", v -> {
+                sb.dismiss();
+                startActivity(settingsIntent);
+            });
+        } else {
+            sb = Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT);
+        }
+        sb.show();
+    }
+
     @Nullable
     public final HamburgerService getHamburgerService() {
         return this.service;
@@ -173,7 +194,6 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     protected void onResume() {
         try {
             super.onResume();
-            if (BuildConfig.DEBUG) Log.i(TAG, "Binding to HamburgerService");
             bindService(new Intent(this, HamburgerService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
         } catch (Throwable e) {
             if (BuildConfig.DEBUG) {
@@ -187,7 +207,6 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @CallSuper
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "Bound to HamburgerService");
         this.service = ((HamburgerService.HamburgerServiceBinder) service).getHamburgerService();
     }
 
@@ -196,7 +215,6 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @Override
     public void onServiceDisconnected(ComponentName name) {
         this.service = null;
-        if (BuildConfig.DEBUG) Log.i(TAG, "Disconnected from HamburgerService");
     }
 
     /** {@inheritDoc} */

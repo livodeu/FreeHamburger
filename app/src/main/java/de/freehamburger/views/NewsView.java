@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.CallSuper;
 import android.support.annotation.LayoutRes;
@@ -116,19 +117,15 @@ public class NewsView extends RelativeLayout {
         if (inflater == null) return;
         inflater.inflate(getLid(), this);
         this.textViewTopline = findViewById(R.id.textViewTopline);
-        if (this.textViewTopline != null) {
-            this.textViewTopline.getPaint().setAntiAlias(true);
-        }
         this.textViewTitle = findViewById(R.id.textViewTitle);
-        if (this.textViewTitle != null) {
-            this.textViewTitle.getPaint().setAntiAlias(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && this.textViewTitle != null) {
+            // to suppress the logged warning in StaticLayout.getHeight(boolean)
+            int mh = (int)Math.ceil(this.textViewTitle.getMaxLines() * this.textViewTitle.getPaint().getFontSpacing());
+            this.textViewTitle.setMaxHeight(mh);
         }
         this.textViewDate = findViewById(R.id.textViewDate);
         this.imageView = findViewById(R.id.imageView);
         this.textViewFirstSentence = findViewById(R.id.textViewFirstSentence);
-        if (this.textViewFirstSentence != null) {
-            this.textViewFirstSentence.getPaint().setAntiAlias(true);
-        }
     }
 
     /**
@@ -233,7 +230,6 @@ public class NewsView extends RelativeLayout {
                     lp.removeRule(RelativeLayout.END_OF);
                     lp.addRule(RelativeLayout.ALIGN_PARENT_START);
                 }
-                //TODO more views to be adjusted if there is no image?
                 return;
             }
             // restore imageView, in case it had been removed previously
@@ -256,6 +252,8 @@ public class NewsView extends RelativeLayout {
             this.imageView.setTag(measuredImage != null ? measuredImage.url : null);
             if (!TextUtils.isEmpty(image.getTitle())) {
                 this.imageView.setContentDescription(image.getTitle());
+            } else if (!TextUtils.isEmpty(image.getAlttext())) {
+                this.imageView.setContentDescription(image.getAlttext());
             } else {
                 this.imageView.setContentDescription(null);
             }
@@ -276,6 +274,7 @@ public class NewsView extends RelativeLayout {
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public String toString() {
         return "NewsView \"" + (this.textViewTitle != null ? this.textViewTitle.getText().toString() : "<null>") + "\"";
     }

@@ -14,7 +14,8 @@
     <string name="label_notification_channel_hipri">Eilmeldungen</string>
     <string name="label_notification_channel_desc">Diese Kategorie betrifft Hamburger Nachrichten mit Standardpriorität</string>
     <string name="label_notification_channel_desc_hipri">Diese Kategorie betrifft Hamburger Nachrichten hoher Priorität (Eilmeldungen)</string>
-    <string name="error_no_network">Kein Datennetz!</string>
+    <string name="error_no_network">Kein Datennetz.</string>
+    <string name="error_no_network_ext">Für eine sinnvolle Verwendung sollten Sie das Gerät mit dem Internet verbinden.</string>
     <string name="msg_view_it_now">Jetzt anschauen?</string>
     <string name="msg_download_complete">Ladevorgang abgeschlossen.</string>
     <string name="hint_view">Video ansehen</string>
@@ -25,6 +26,7 @@
     <string name="hint_pic">Die Illustration für diesen Artikel</string>
     <string name="action_settings">Einstellungen</string>
     <string name="error_download_failed">Ladevorgang fehlgeschlagen:\n%1$s</string>
+    <string name="error_download_failed2">Ladevorgang fehlgeschlagen.</string>
     <string name="pref_header_appearance">Darstellung</string>
     <string name="error_filter_not_added">Filter wurde nicht hinzugefügt.</string>
     <string name="error_poll_failed">Dies ist am %1$s ohne Angabe einer Ursache fehlgeschlagen.</string>
@@ -57,7 +59,6 @@
     <string name="action_show_cache">Cache zeigen</string>
     <string name="msg_not_found">Nicht gefunden: „%1$s”</string>
     <string name="msg_sorry">Entschuldigen Sie bitte die Unterbrechung!</string>
-    <string name="hint_weatherimage">Ein Bild der Wettervorhersage</string>
     <string name="pref_title_pref_load_over_mobile">Laden im Mobilnetz</string>
     <string name="pref_title_pref_load_over_mobile_on">Laden im Mobilnetz erlaubt</string>
     <string name="pref_title_pref_load_over_mobile_off">Laden im Mobilnetz verboten</string>
@@ -66,8 +67,14 @@
     <string name="pref_title_pref_load_videos_over_mobile_off">Laden von Videos im Mobilnetz verboten</string>
     <string name="error_no_app">Keine installierte App kann dies verarbeiten!</string>
     <string name="error_parsing">Fehler beim Verarbeiten der empfangenen Daten!</string>
+    <string name="error_audio_focus_denied">Die Wiedergabe ist im Moment nicht möglich!</string>
     <string name="action_select_regions">Regionen wählen</string>
     <string name="label_regions">Regionen</string>
+    <string name="label_streamquality_adaptive">„Adaptive Streaming”</string>
+    <string name="label_streamquality_s">Klein (Breite %1$d Pixel)</string>
+    <string name="label_streamquality_m">Mittel (Breite %1$d Pixel)</string>
+    <string name="label_streamquality_l">Groß (Breite %1$d Pixel)</string>
+    <string name="label_streamquality_xl">Extragroß (Breite %1$d Pixel)</string>
     <string name="error_link_not_supported">Diese App unterstützt %1$s nicht.</string>
     <string name="action_section_channels">Sendungen</string>
     <string name="action_section_homepage">Übersicht</string>
@@ -78,6 +85,7 @@
     <string name="action_section_wirtschaft">Wirtschaft</string>
     <string name="action_section_wirtschaft_short">Wirtsch.</string>
     <string name="action_section_regional">Regionen</string>
+    <string name="action_quality_select">Bitte Videoqualität wählen</string>
     <string name="label_sections">Kategorien</string>
     <plurals name="label_time_rel_seconds">
         <item quantity="one">vor %1$d Sekunde</item>
@@ -211,5 +219,6 @@
     <string name="pref_title_time_mode">Zeitdarstellung</string>
     <string name="pref_title_time_mode_on">Relativ</string>
     <string name="pref_title_time_mode_off">Absolut</string>
+    <string name="hint_menu_search">Dieser Menüeintrag startet die Suchfunktion</string>
 
 </resources>

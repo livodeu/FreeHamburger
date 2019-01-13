@@ -130,7 +130,9 @@ public class Related implements Serializable, Comparable<Related> {
         return type;
     }
 
+    /** {@inheritDoc} */
     @Override
+    @NonNull
     public String toString() {
         return "Related{" + "teaserImage=" + (teaserImage != null ? "yes" : "no") + ", dateString='" + dateString + '\'' + ", details='" + details + '\'' + ", title='" + title + '\'' + ", type='" + type + '\'' + '}';
     }

@@ -155,6 +155,7 @@ public enum Region {
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public String toString() {
         return label;
     }

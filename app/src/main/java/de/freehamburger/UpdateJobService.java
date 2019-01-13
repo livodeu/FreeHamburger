@@ -28,7 +28,6 @@ import android.support.annotation.RequiresApi;
 import android.support.annotation.RequiresPermission;
 import android.text.TextUtils;
 import android.widget.RemoteViews;
-import android.widget.Toast;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -331,8 +330,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 Date newsDate = n.getDate();
                 if (newsDate != null && newsDate.getTime() < latestStateSeenByUser) {
                     // the News is too old - it was already present when the user most recently updated the data
-                    if (BuildConfig.DEBUG)
-                        Log.i(TAG + id, "News \"" + n.getTitle() + "\" is too old (" + n.getDate() + ") from before " + new Date(latestStateSeenByUser));
                     continue;
                 }
             }
@@ -344,8 +341,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             boolean filtered = false;
             for (Filter filter : this.filters) {
                 if (!filter.accept(n)) {
-                    if (BuildConfig.DEBUG)
-                        Log.i(TAG + id, "News \"" + n.getTitle() + "\" has been filtered by " + filter);
                     filtered = true;
                     break;
                 }
@@ -357,8 +352,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         }
 
         if (newsToDisplay == null) {
-            if (BuildConfig.DEBUG)
-                Log.i(TAG + id, "Got list of news in the background but it did not contain anything newsworthy");
+            // Got list of news in the background but it did not contain anything newsworthy
             done();
             return;
         }
@@ -370,8 +364,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                         .putString(PREF_LATEST_NEWS_ID, newsId)
                         .apply();
             }
-            if (BuildConfig.DEBUG)
-                Log.i(TAG + id, "Got news list in the background and got: \"" + newsToDisplay.getTitle() + "\" from " + newsToDisplay.getDate());
 
             TeaserImage teaserImage = newsToDisplay.getTeaserImage();
             if (teaserImage != null) {
@@ -404,8 +396,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 notify(newsToDisplay, null);
             }
         } else {
-            if (BuildConfig.DEBUG)
-                Log.i(TAG + id, "Got news list in the background and got: \"" + newsToDisplay.getTitle() + "\" from " + newsToDisplay.getDate() + " that equals latest news");
+            if (BuildConfig.DEBUG) Log.i(TAG + id, "Got news list in the background and got: \"" + newsToDisplay.getTitle() + "\" from " + newsToDisplay.getDate() + " that equals latest news");
         }
 
         done();
@@ -416,9 +407,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      */
     private void done() {
         if (this.params == null) return;
-        if (BuildConfig.DEBUG) {
-            Log.i(TAG + id, "Job finished.");
-        }
         jobFinished(this.params, false);
         this.params = null;
     }
@@ -720,7 +708,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             String when = DateFormat.getDateTimeInstance()
                     .format(new Date(this.scheduledAt));
             Log.i(TAG + id, "Hamburger update, job scheduled at " + when);
-            Toast.makeText(app, "Hamburger update, scheduled at " + when, Toast.LENGTH_LONG).show();
             Set<String> allRequests = prefs.getStringSet(PREF_STAT_ALL, new HashSet<>());
             allRequests.add(String.valueOf(System.currentTimeMillis() - 1_500_000_000_000L));
             SharedPreferences.Editor ed = prefs.edit();

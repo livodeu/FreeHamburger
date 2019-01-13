@@ -69,18 +69,8 @@ public class TtfInfo {
     }
 
     @Nullable
-    public String getDesignerName() {
-        return designerName;
-    }
-
-    @Nullable
     public String getFontFullName() {
         return fontFullName;
-    }
-
-    @Nullable
-    public String getManufacturerName() {
-        return manufacturerName;
     }
 
     /**
@@ -111,6 +101,7 @@ public class TtfInfo {
         }
 
         @Override
+        @NonNull
         public String toString() {
             return "Table \"" + tag + "\" of " + length + " bytes at " + offset;
         }
@@ -171,6 +162,7 @@ public class TtfInfo {
         }
 
         @Override
+        @NonNull
         public String toString() {
             return "TtfNameTable{" + "nameRecords=" + Arrays.toString(nameRecords) + '}';
         }
@@ -210,6 +202,7 @@ public class TtfInfo {
         }
 
         @Override
+        @NonNull
         public String toString() {
             return "\nTtfNameRecord{" + "platformID=" + platformID + ", platformSpecificID=" + platformSpecificID + ", languageID=" + languageID + ", nameID=" + nameID + ", length=" + length + ", offset=" + offset + "; content=" + content + '}';
         }

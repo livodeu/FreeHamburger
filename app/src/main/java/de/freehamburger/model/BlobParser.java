@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
 
 import de.freehamburger.BuildConfig;
 import de.freehamburger.util.Log;
@@ -47,7 +48,7 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
         Blob blob = null;
         JsonReader reader = null;
         try {
-            reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(files[0])), "UTF-8"));
+            reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(files[0])), StandardCharsets.UTF_8));
             reader.setLenient(true);
             blob = Blob.parseApi(ctx, reader);
         } catch (Exception e) {

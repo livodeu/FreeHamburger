@@ -132,6 +132,7 @@ public class Box implements Serializable {
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public String toString() {
         return "Box \"" + title + "\" \"" + text + "\"";
     }
@@ -199,6 +200,7 @@ public class Box implements Serializable {
 
         /** {@inheritDoc} */
         @Override
+        @NonNull
         public String toString() {
             return "Box.Image \"" + title + "\" @ " + url;
         }

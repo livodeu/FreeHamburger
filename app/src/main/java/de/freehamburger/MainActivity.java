@@ -10,6 +10,7 @@ import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -19,6 +20,7 @@ import android.os.IBinder;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.provider.SearchRecentSuggestions;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresPermission;
@@ -62,10 +64,14 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Stack;
 
 import de.freehamburger.adapters.NewsRecyclerAdapter;
@@ -96,6 +102,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     private static final String TAG = "MainActivity";
 
     private static final String STATE_SOURCE = "de.freehamburger.state.source";
+    private static final String STATE_RECENT_SOURCES = "de.freehamburger.state.recentsources";
     private static final String STATE_LIST_POS = "de.freehamburger.state.list.pos";
     private static final String ACTION_CLEAR_SEARCH_HISTORY = "de.freehamburger.action_search_clear";
     private static final String ACTION_IMPORT_FONT = "de.freehamburger.action_font_import";
@@ -127,7 +134,8 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     private boolean quickViewRequestCancelled;
 
     /**
-     * Switches to another {@link Source}.
+     * Switches to another {@link Source}.<br>
+     * Does not do anything if the given Source is the current one.
      * @param newSource Source
      * @param addToRecent {@code true} to add the Source to the Stack of recent Sources
      */
@@ -150,11 +158,17 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         onRefreshUseCache();
     }
 
+    private void clearSearch() {
+        this.searchFilter = null;
+        if (this.newsAdapter != null) this.newsAdapter.clearTemporaryFilters();
+        this.clockView.setTint(0);
+    }
+
     /** {@inheritDoc} */
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
-            //Log.i(TAG, "" + KeyEvent.keyCodeToString(event.getKeyCode()));
+            //if (BuildConfig.DEBUG) Log.i(TAG, "dispatchKeyEvent(" + KeyEvent.keyCodeToString(event.getKeyCode()) + ")");
             switch (event.getKeyCode()) {
                 case KeyEvent.KEYCODE_MOVE_HOME:
                     this.recyclerView.scrollToPosition(0);
@@ -183,87 +197,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     int getMainLayout() {
         return R.layout.activity_main;
     }
-
-    /**
-     * Imports a ttf font file.<br>
-     * Upon success, a {@link Snackbar} will be displayed.
-     * @param uri Uri to read from
-     * @param showMsgUponFail {@code true} to display a Snackbar upon failure
-     * @return true / false
-     */
-    private boolean importTtf(@RequiresPermission @NonNull Uri uri, final boolean showMsgUponFail) {
-        InputStream in = null;
-        boolean ok = true;
-        //
-        try {
-            in = getContentResolver().openInputStream(uri);
-            if (in == null) {
-                if (showMsgUponFail) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
-                }
-                return false;
-            }
-            // copy data to a temporary file
-            File tempFile = File.createTempFile("tempfont", ".ttf");
-            // set a safety barrier of 4 MB; assumed that a truetype font file will not be bigger
-            Util.copyFile(in, tempFile, -1, 1_048_576L << 2);
-            Util.close(in);
-            in = null;
-            // check whether the temporary file contains indeed a ttf file
-            TtfInfo ttfInfo = TtfInfo.getTtfInfo(tempFile);
-            String fontName = ttfInfo.getFontFullName();
-            if (TextUtils.isEmpty(fontName)) {
-                if (BuildConfig.DEBUG) Log.w(TAG, "The data apparently does not belong to a ttf file!");
-                if (showMsgUponFail) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
-                }
-                Util.deleteFile(tempFile);
-                return false;
-            }
-            // rename temp file to the font file
-            File fontFile = new File(getFilesDir(), App.FONT_FILE);
-            if (!tempFile.renameTo(fontFile)) {
-                if (BuildConfig.DEBUG) Log.e(TAG, "Could not rename temp file to \"" + fontFile.getName() + "\"!");
-                if (showMsgUponFail) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
-                }
-                Util.deleteFile(tempFile);
-                return false;
-            }
-            Typeface tf = Util.loadFont(this);
-            if (tf != null) {
-                this.newsAdapter.setTypeface(tf);
-                Snackbar sb;
-                if (!TextUtils.isEmpty(fontName)) {
-                    sb = Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_font_import_done_ext, fontName), Snackbar.LENGTH_LONG);
-                } else {
-                    sb = Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_done, Snackbar.LENGTH_LONG);
-                }
-                sb.show();
-            } else {
-                if (showMsgUponFail) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
-                }
-                Util.deleteFile(fontFile);
-            }
-        } catch (Exception e) {
-            String msg = e.getMessage();
-            if (TextUtils.isEmpty(msg)) msg = e.toString();
-            if (BuildConfig.DEBUG) Log.e(TAG, msg);
-            if (showMsgUponFail) {
-                if (msg.contains("EACCES")) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_permission_denied, Snackbar.LENGTH_LONG).show();
-                } else {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
-                }
-            }
-            ok = false;
-        } finally {
-            Util.close(in);
-        }
-        return ok;
-    }
-
 
     /**
      * Deals with the Intent that the Acticity has received.
@@ -405,6 +338,86 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     }
 
     /**
+     * Imports a ttf font file.<br>
+     * Upon success, a {@link Snackbar} will be displayed.
+     * @param uri Uri to read from
+     * @param showMsgUponFail {@code true} to display a Snackbar upon failure
+     * @return true / false
+     */
+    private boolean importTtf(@RequiresPermission @NonNull Uri uri, final boolean showMsgUponFail) {
+        InputStream in = null;
+        boolean ok = true;
+        //
+        try {
+            in = getContentResolver().openInputStream(uri);
+            if (in == null) {
+                if (showMsgUponFail) {
+                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
+                }
+                return false;
+            }
+            // copy data to a temporary file
+            File tempFile = File.createTempFile("tempfont", ".ttf");
+            // set a safety barrier of 4 MB; assumed that a truetype font file will not be bigger
+            Util.copyFile(in, tempFile, -1, 1_048_576L << 2);
+            Util.close(in);
+            in = null;
+            // check whether the temporary file contains indeed a ttf file
+            TtfInfo ttfInfo = TtfInfo.getTtfInfo(tempFile);
+            String fontName = ttfInfo.getFontFullName();
+            if (TextUtils.isEmpty(fontName)) {
+                if (BuildConfig.DEBUG) Log.w(TAG, "The data apparently does not belong to a ttf file!");
+                if (showMsgUponFail) {
+                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
+                }
+                Util.deleteFile(tempFile);
+                return false;
+            }
+            // rename temp file to the font file
+            File fontFile = new File(getFilesDir(), App.FONT_FILE);
+            if (!tempFile.renameTo(fontFile)) {
+                if (BuildConfig.DEBUG) Log.e(TAG, "Could not rename temp file to \"" + fontFile.getName() + "\"!");
+                if (showMsgUponFail) {
+                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
+                }
+                Util.deleteFile(tempFile);
+                return false;
+            }
+            Typeface tf = Util.loadFont(this);
+            if (tf != null) {
+                this.newsAdapter.setTypeface(tf);
+                Snackbar sb;
+                if (!TextUtils.isEmpty(fontName)) {
+                    sb = Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_font_import_done_ext, fontName), Snackbar.LENGTH_LONG);
+                } else {
+                    sb = Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_done, Snackbar.LENGTH_LONG);
+                }
+                sb.show();
+            } else {
+                if (showMsgUponFail) {
+                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
+                }
+                Util.deleteFile(fontFile);
+            }
+        } catch (Exception e) {
+            String msg = e.getMessage();
+            if (TextUtils.isEmpty(msg)) msg = e.toString();
+            if (BuildConfig.DEBUG) Log.e(TAG, msg);
+            if (showMsgUponFail) {
+                if (msg.contains("EACCES")) {
+                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_permission_denied, Snackbar.LENGTH_LONG).show();
+                } else {
+                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
+                }
+            }
+            ok = false;
+        } finally {
+            Util.close(in);
+        }
+        return ok;
+    }
+
+    /**
      * Displays the News' details in a {@link NewsActivity}.
      * @param news News
      */
@@ -423,7 +436,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                 }
                 JsonReader reader = null;
                 try {
-                    reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), "UTF-8"));
+                    reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
                     reader.setLenient(true);
                     News parsed = News.parseNews(reader, news.isRegional());
                     Util.close(reader);
@@ -444,82 +457,23 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         }
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (!this.recentSources.isEmpty()) {
-                ListAdapter adapter = new BaseAdapter() {
-
-                    final int n = MainActivity.this.recentSources.size();
-
-                    @Override
-                    public int getCount() {
-                        return n;
-                    }
-
-                    @Override
-                    public Object getItem(int position) {
-                        return MainActivity.this.recentSources.get(n - position - 1);
-                    }
-
-                    @Override
-                    public long getItemId(int position) {
-                        return position;
-                    }
-
-                    @Override
-                    public View getView(int position, View convertView, ViewGroup parent) {
-                        TextView tv;
-                        if (convertView instanceof TextView) {
-                            tv =(TextView)convertView;
-                        } else {
-                            tv = new TextView(MainActivity.this);
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                tv.setTextAppearance(R.style.TextAppearance_AppCompat_Body2_White);
-                            } else {
-                                tv.setTextAppearance(MainActivity.this, R.style.TextAppearance_AppCompat_Body2_White);
-                            }
-                            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16); // standard seems to be 14 which is a wee bit small
-                            tv.setMaxLines(1);
-                            tv.setPadding(80,8,8,8);
-                        }
-                        Source source = (Source)getItem(position);
-                        tv.setText(getString(source.getLabel()));
-                        return tv;
-                    }
-                };
-                AlertDialog ad = new AlertDialog.Builder(this)
-                        .setTitle(R.string.label_recent_sources)
-                        .setAdapter(adapter, (dialog, which) -> {
-                            Source selected = (Source)adapter.getItem(which);
-                            // remove the sources from recentSources that follow the selected one
-                            int n = adapter.getCount();
-                            for (int i = which + 1; i < n; i++) {
-                                MainActivity.this.recentSources.pop();
-                            }
-                            //
-                            changeSource(selected, false);
-                            dialog.dismiss();
-                        })
-                        .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel())
-                        .setPositiveButton(R.string.action_finish, (dialog, which) -> {
-                            dialog.dismiss();
-                            finish();
-                        })
-                        .create();
-                Window w = ad.getWindow();
-                if (w != null) {
-                    w.setBackgroundDrawableResource(R.drawable.bg_dialog);
-                }
-                ad.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
-                ad.show();
-                return true;
-            }
+    /**
+     * Quits the app, if the user agrees.
+     */
+    private void maybeQuit() {
+        if (this.snackbarMaybeQuit != null && this.snackbarMaybeQuit.isShown()) {
+            this.snackbarMaybeQuit.dismiss();
             finish();
-            return true;
+            return;
         }
-        return super.onKeyLongPress(keyCode, event);
+        boolean ask = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_ASK_BEFORE_FINISH, true);
+        if (ask) {
+            this.snackbarMaybeQuit = Snackbar.make(this.coordinatorLayout, R.string.action_quit, 5_000);
+            this.snackbarMaybeQuit.setAction(R.string.label_yes, v -> finish());
+            Util.fadeSnackbar(this.snackbarMaybeQuit, 4900L);
+        } else {
+            finish();
+        }
     }
 
     /** {@inheritDoc} */
@@ -538,10 +492,78 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    private void clearSearch() {
-        this.searchFilter = null;
-        if (this.newsAdapter != null) this.newsAdapter.clearTemporaryFilters();
-        this.clockView.setTint(0);
+    /**
+     * The user has pressed the back button for a veery loong time.
+     * @return {@code true} if the action has been dealt with
+     */
+    private boolean onBackLongPressed() {
+        if (this.recentSources.isEmpty()) return false;
+        ListAdapter adapter = new BaseAdapter() {
+
+            final int n = MainActivity.this.recentSources.size();
+
+            @Override
+            public int getCount() {
+                return n;
+            }
+
+            @Override
+            public Object getItem(int position) {
+                return MainActivity.this.recentSources.get(n - position - 1);
+            }
+
+            @Override
+            public long getItemId(int position) {
+                return position;
+            }
+
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                TextView tv;
+                if (convertView instanceof TextView) {
+                    tv =(TextView)convertView;
+                } else {
+                    tv = new TextView(MainActivity.this);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        tv.setTextAppearance(R.style.TextAppearance_AppCompat_Body2_White);
+                    } else {
+                        tv.setTextAppearance(MainActivity.this, R.style.TextAppearance_AppCompat_Body2_White);
+                    }
+                    tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16); // standard seems to be 14 which is a wee bit small
+                    tv.setMaxLines(1);
+                    tv.setPadding(80,8,8,8);
+                }
+                Source source = (Source)getItem(position);
+                tv.setText(getString(source.getLabel()));
+                return tv;
+            }
+        };
+        AlertDialog ad = new AlertDialog.Builder(this)
+                .setTitle(R.string.label_recent_sources)
+                .setAdapter(adapter, (dialog, which) -> {
+                    Source selected = (Source)adapter.getItem(which);
+                    // remove the sources from recentSources that follow the selected one
+                    int n = adapter.getCount();
+                    for (int i = which + 1; i < n; i++) {
+                        MainActivity.this.recentSources.pop();
+                    }
+                    //
+                    changeSource(selected, false);
+                    dialog.dismiss();
+                })
+                .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel())
+                .setPositiveButton(R.string.action_finish, (dialog, which) -> {
+                    dialog.dismiss();
+                    finish();
+                })
+                .create();
+        Window w = ad.getWindow();
+        if (w != null) {
+            w.setBackgroundDrawableResource(R.drawable.bg_dialog);
+        }
+        ad.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+        ad.show();
+        return true;
     }
 
     /** {@inheritDoc} */
@@ -586,30 +608,167 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         super.onBackPressed();
     }
 
-    /**
-     * Quits the app, if the user agrees.
+    /** {@inheritDoc} <br><br>
+     * For preparation of the context menu, see {@link NewsRecyclerAdapter.ViewHolder#onCreateContextMenu(ContextMenu, View, ContextMenu.ContextMenuInfo)}
      */
-    private void maybeQuit() {
-        if (this.snackbarMaybeQuit != null && this.snackbarMaybeQuit.isShown()) {
-            this.snackbarMaybeQuit.dismiss();
-            finish();
-            return;
+    @Override
+    public boolean onContextItemSelected(MenuItem menuItem) {
+        int id = menuItem.getItemId();
+        if (id == R.id.action_share_news) {
+            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
+            // prefer title over topline because it's usually more informative
+            String title = news.getTitle();
+            if (TextUtils.isEmpty(title)) title = news.getTopline();
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            // shares the news' detailsWeb URL
+            intent.putExtra(Intent.EXTRA_TEXT, news.getDetailsWeb());
+            if (!TextUtils.isEmpty(title)) {
+                intent.putExtra(Intent.EXTRA_SUBJECT, title);
+            }
+            intent.setType("text/plain");
+            if (getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                startActivity(intent);
+            } else {
+                Snackbar.make(this.coordinatorLayout, R.string.error_no_app, Snackbar.LENGTH_LONG).show();
+            }
+            return true;
         }
-        boolean ask = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_ASK_BEFORE_FINISH, true);
-        if (ask) {
-            this.snackbarMaybeQuit = Snackbar.make(this.coordinatorLayout, R.string.action_quit, 5_000);
-            this.snackbarMaybeQuit.setAction(R.string.label_yes, v -> finish());
-            Util.fadeSnackbar(this.snackbarMaybeQuit, 4900L);
-        } else {
-            finish();
+        if (id == R.id.action_share_video) {
+            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
+            if (news.getContent() == null || !news.getContent().hasVideo()) return true;
+            List<Video> videoList = news.getContent().getVideoList();
+            Video video = videoList.get(0);
+            //TODO handle more than 1 video per Content
+            if (BuildConfig.DEBUG && videoList.size() > 1) {
+                Log.w(TAG, "Has more than one video: " + news);
+            }
+            //
+            final Map<StreamQuality, String> streams = video.getStreams();
+            if (streams.size() > 1) {
+                CharSequence[] items = new CharSequence[streams.size()];
+                int i = 0;
+                final List<StreamQuality> qualities = new ArrayList<>(streams.keySet());
+                Collections.sort(qualities, (o1, o2) -> {
+                    int w1 = o1.getWidth();
+                    int w2 = o2.getWidth();
+                    if (w1 == w2) return o1.name().compareToIgnoreCase(o2.name());
+                    if (w1 == -1) return 1; else if (w2 == -1) return -1;
+                    return Integer.compare(w1, w2);
+                });
+                for (StreamQuality q : qualities) {
+                    int labelRes = q.getLabel();
+                    int width = q.getWidth();
+                    items[i++] = labelRes > -1 ? (width > 0 ? getString(labelRes, width) : getString(labelRes)) : q.name();
+                }
+                AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                        .setTitle(R.string.action_quality_select)
+                        .setItems(items, (dialog, which) -> {
+                            StreamQuality selectedQuality = qualities.get(which);
+                            String source = streams.get(selectedQuality);
+                            if (source != null) Util.sendUrl(this, source, news.getTitle());
+                            dialog.dismiss();
+                        })
+                        .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());
+                if ("de".equals(Locale.getDefault().getLanguage()) && qualities.contains(StreamQuality.ADAPTIVESTREAMING)) {
+                    builder.setNeutralButton(getString(R.string.label_streamquality_adaptive) + "? (Wikipedia)", (dialog, which) -> {
+                        Intent wotswotwot = new Intent(Intent.ACTION_VIEW);
+                        wotswotwot.setDataAndType(Uri.parse("https://de.wikipedia.org/wiki/HTTP-Streaming"), "text/html");
+                        startActivity(wotswotwot);
+                        dialog.cancel();
+                    });
+                }
+                builder.show();
+            } else {
+                Util.sendUrl(this, streams.values().iterator().next(), news.getTitle());
+            }
+            return true;
         }
+        if (id == R.id.action_share_image) {
+            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
+            TeaserImage image = news.getTeaserImage();
+            if (image == null) return true;
+            String url = image.getBestImage();
+            if (url == null) return true;
+            String title = news.getTitle();
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.putExtra(Intent.EXTRA_TEXT, url);
+            if (!TextUtils.isEmpty(title)) {
+                intent.putExtra(Intent.EXTRA_SUBJECT, title);
+            }
+            intent.setType("text/plain");
+            if (getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                startActivity(intent);
+            } else {
+                Snackbar.make(this.coordinatorLayout, R.string.error_no_app, Snackbar.LENGTH_LONG).show();
+            }
+            return true;
+        }
+        if (id == R.id.action_view_picture) {
+            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
+            TeaserImage image = news.getTeaserImage();
+            if (image == null) return true;
+            String url = image.getBestImage();
+            if (url == null) return true;
+            String newsid = news.getExternalId();
+            if (newsid == null) newsid = "temp";
+            final File temp = new File(getCacheDir(), "quik_" + newsid.replace('/', '_').replace('>', '_') + ".jpg");
+            findViewById(R.id.plane).setVisibility(View.VISIBLE);
+            this.service.loadFile(url, temp, temp.lastModified(), (completed, result) -> {
+                if (MainActivity.this.quickViewRequestCancelled) {
+                    MainActivity.this.quickViewRequestCancelled = false;
+                    FileDeleter.add(temp);
+                    findViewById(R.id.plane).setVisibility(View.GONE);
+                    return;
+                }
+                if (!completed || result == null || result.rc >= 400) {
+                    FileDeleter.add(temp);
+                    findViewById(R.id.plane).setVisibility(View.GONE);
+                    if (result != null && !TextUtils.isEmpty(result.msg)) {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
+                    } else {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
+                    }
+                    return;
+                }
+                Bitmap bm = BitmapFactory.decodeFile(temp.getAbsolutePath());
+                if (bm != null) {
+                    MainActivity.this.quickView.setVisibility(View.VISIBLE);
+                    MainActivity.this.quickView.setImageBitmap(bm);
+                } else {
+                    findViewById(R.id.plane).setVisibility(View.GONE);
+                    if (!TextUtils.isEmpty(result.msg)) {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
+                    } else {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
+                    }
+                }
+                FileDeleter.add(temp);
+            });
+            return true;
+        }
+        return super.onContextItemSelected(menuItem);
     }
 
     /** {@inheritDoc} */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
+            if (BuildConfig.DEBUG) {
+                Log.i(TAG, "onCreate(): savedInstanceState is non-null");
+            }
             this.currentSource = Source.valueOf(savedInstanceState.getString(STATE_SOURCE, Source.HOME.name()));
+            updateTitle();
+            this.recentSources.clear();
+            String[] recentSources = savedInstanceState.getStringArray(STATE_RECENT_SOURCES);
+            if (recentSources != null) {
+                for (String rs : recentSources) {
+                    try {
+                        Source source = Source.valueOf(rs);
+                        this.recentSources.add(source);
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+            }
             this.listPositionToRestore = savedInstanceState.getInt(STATE_LIST_POS, -1);
         }
         super.onCreate(savedInstanceState);
@@ -636,12 +795,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         this.sourceForMenuItem.put(R.id.action_section_video, Source.VIDEO);
         this.sourceForMenuItem.put(R.id.action_section_channels, Source.CHANNELS);
         // check menuItem matching currentSource on initialisation
-        //TODO check whether delay is necessary
-        /*this.handler.postDelayed(() -> {
-            int index = this.sourceForMenuItem.indexOfValue(this.currentSource);
-            int menuid = this.sourceForMenuItem.keyAt(index);
-            navigationView.getMenu().findItem(menuid).setChecked(true);
-        }, 250);*/
         int index = this.sourceForMenuItem.indexOfValue(this.currentSource);
         int menuid = this.sourceForMenuItem.keyAt(index);
         navigationView.getMenu().findItem(menuid).setChecked(true);
@@ -731,7 +884,11 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.clock_menu, menu);
-        menu.setQwertyMode(true);
+        // if there is a qwert? keyboard connected, display menu shortcuts (btw, they are activated via the ctrl modifier)
+        if (getResources().getConfiguration().keyboard == Configuration.KEYBOARD_QWERTY) {
+            Util.decorateMenuWithShortcuts(menu);
+        }
+        //
         if (!BuildConfig.DEBUG) {
             MenuItem getLog = menu.findItem(R.id.action_get_log);
             if (getLog != null) getLog.setVisible(false);
@@ -743,7 +900,24 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         return true;
     }
 
-    private boolean onMenuItemSelected(MenuItem item) {
+    /** {@inheritDoc} */
+    @Override
+    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (onBackLongPressed()) return true;
+            maybeQuit();
+            return true;
+        }
+        return super.onKeyLongPress(keyCode, event);
+    }
+
+    /**
+     * Handles the user's menu item selection.
+     * @param item MenuItem
+     * @return {@code true} if the menu item selection has been handled
+     * @throws NullPointerException if {@code item} is {@code null}
+     */
+    private boolean onMenuItemSelected(@NonNull MenuItem item) {
         final int id = item.getItemId();
         if (id == R.id.action_search) {
             onSearchRequested();
@@ -863,135 +1037,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     /** {@inheritDoc} */
     @Override
     protected void onNewIntent(Intent intent) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "onNewIntent(" + intent + ")");
         handleIntent(intent);
-    }
-
-    /** {@inheritDoc} <br><br>
-     * For preparation of the context menu, see {@link NewsRecyclerAdapter.ViewHolder#onCreateContextMenu(ContextMenu, View, ContextMenu.ContextMenuInfo)}
-     */
-    @Override
-    public boolean onContextItemSelected(MenuItem menuItem) {
-        int id = menuItem.getItemId();
-        if (id == R.id.action_share_news) {
-            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
-            // prefer title over topline because it's usually more informative
-            String title = news.getTitle();
-            if (TextUtils.isEmpty(title)) title = news.getTopline();
-            Intent intent = new Intent(Intent.ACTION_SEND);
-            // shares the news' detailsWeb URL
-            intent.putExtra(Intent.EXTRA_TEXT, news.getDetailsWeb());
-            if (!TextUtils.isEmpty(title)) {
-                intent.putExtra(Intent.EXTRA_SUBJECT, title);
-            }
-            intent.setType("text/plain");
-            if (getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-                startActivity(intent);
-            } else {
-                Snackbar.make(this.coordinatorLayout, R.string.error_no_app, Snackbar.LENGTH_LONG).show();
-            }
-            return true;
-        }
-        if (id == R.id.action_share_video) {
-            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
-            if (news.getContent() != null && news.getContent().hasVideo()) {
-                List<Video> videoList = news.getContent().getVideoList();
-                Video video = videoList.get(0);
-                //TODO handle more than 1 video per Content
-                //TODO maybe allow the user to pick a quality level on his/her own
-                String source = StreamQuality.getStreamsUrl(this, video.getStreams());
-                String title = news.getTitle();
-                Intent intent = new Intent(Intent.ACTION_SEND);
-                intent.putExtra(Intent.EXTRA_TEXT, source);
-                if (!TextUtils.isEmpty(title)) {
-                    intent.putExtra(Intent.EXTRA_SUBJECT, title);
-                }
-                intent.setType("text/plain");
-                if (getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-                    startActivity(intent);
-                } else {
-                    Snackbar.make(this.coordinatorLayout, R.string.error_no_app, Snackbar.LENGTH_LONG).show();
-                }
-            }
-            return true;
-        }
-        if (id == R.id.action_share_image) {
-            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
-            TeaserImage image = news.getTeaserImage();
-            if (image == null) return true;
-            String url = image.getBestImage();
-            if (url == null) return true;
-            String title = news.getTitle();
-            Intent intent = new Intent(Intent.ACTION_SEND);
-            intent.putExtra(Intent.EXTRA_TEXT, url);
-            if (!TextUtils.isEmpty(title)) {
-                intent.putExtra(Intent.EXTRA_SUBJECT, title);
-            }
-            intent.setType("text/plain");
-            if (getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-                startActivity(intent);
-            } else {
-                Snackbar.make(this.coordinatorLayout, R.string.error_no_app, Snackbar.LENGTH_LONG).show();
-            }
-            return true;
-        }
-        if (id == R.id.action_view_picture) {
-            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
-            TeaserImage image = news.getTeaserImage();
-            if (image == null) return true;
-            String url = image.getBestImage();
-            if (url == null) return true;
-            String newsid = news.getExternalId();
-            if (newsid == null) newsid = "temp";
-            final File temp = new File(getCacheDir(), "quik_" + newsid.replace('/', '_').replace('>', '_') + ".jpg");
-            findViewById(R.id.plane).setVisibility(View.VISIBLE);
-            this.service.loadFile(url, temp, temp.lastModified(), (completed, result) -> {
-                if (MainActivity.this.quickViewRequestCancelled) {
-                    MainActivity.this.quickViewRequestCancelled = false;
-                    FileDeleter.add(temp);
-                    return;
-                }
-                if (!completed || result == null || result.rc >= 400) {
-                    FileDeleter.add(temp);
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed, Snackbar.LENGTH_SHORT).show();
-                    return;
-                }
-                if (BuildConfig.DEBUG) Log.i(TAG, result.toString());
-                Bitmap bm = BitmapFactory.decodeFile(temp.getAbsolutePath());
-                if (bm != null) {
-                    MainActivity.this.quickView.setVisibility(View.VISIBLE);
-                    MainActivity.this.quickView.setImageBitmap(bm);
-                } else {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed, Snackbar.LENGTH_SHORT).show();
-                }
-                FileDeleter.add(temp);
-            });
-            return true;
-        }
-        return super.onContextItemSelected(menuItem);
-    }
-
-    /**
-     * The user has tapped the semi-transparent plane which, when visible, covers all other elements in the screen.
-     * @param ignored ignored View
-     */
-    public void onPlaneClicked(@Nullable View ignored) {
-        if (this.quickView.getVisibility() == View.VISIBLE) {
-            onQuickViewClicked(this.quickView);
-        } else {
-            this.quickViewRequestCancelled = true;
-        }
-    }
-
-    /**
-     * The user has tapped the 'quick view' which, when visible, displays the article's {@link News#getTeaserImage() teaser image}.
-     * @param ignored ignored View
-     */
-    public void onQuickViewClicked(@Nullable View ignored) {
-        this.quickView.setVisibility(View.GONE);
-        this.quickView.setImageBitmap(null);
-        View plane = findViewById(R.id.plane);
-        if (plane != null) plane.setVisibility(View.GONE);
     }
 
     /** {@inheritDoc} */
@@ -1002,24 +1048,28 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         @News.NewsType String type = news.getType();
         String urlToDetailsJson = news.getDetails();
         Content content = news.getContent();
-        if (News.NEWS_TYPE_STORY.equals(type) && content != null) {
+        boolean isStory = News.NEWS_TYPE_STORY.equals(type);
+        boolean isWebVw = News.NEWS_TYPE_WEBVIEW.equals(type);
+        boolean isVideo = News.NEWS_TYPE_VIDEO.equals(type);
+        //
+        if (isStory && content != null) {
             intent = new Intent(this, NewsActivity.class);
-        } else if (News.NEWS_TYPE_STORY.equals(type) && !TextUtils.isEmpty(urlToDetailsJson)) {
+        } else if (isStory && !TextUtils.isEmpty(urlToDetailsJson)) {
             loadDetails(news);
             intent = null;
-        } else if (News.NEWS_TYPE_WEBVIEW.equals(type)
-                || (News.NEWS_TYPE_STORY.equals(type) && content == null && TextUtils.isEmpty(urlToDetailsJson) && !TextUtils.isEmpty(news.getDetailsWeb()))    // <- in the "news" section the items do not have a "content"
-                //|| ("story".equals(type)) && !android.text.TextUtils.isEmpty(news.getDetailsWeb()))  // <- for testing WebViewActivity because "webview" news type is rare
-                ) {
+        } else if (isWebVw
+                || (isStory && TextUtils.isEmpty(urlToDetailsJson) && !TextUtils.isEmpty(news.getDetailsWeb()))) {   // <- in the "news" section the items do not have a "content"
             if (!Util.isNetworkAvailable(this)) {
-                Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
+                //Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
+                showNoNetworkSnackbar();
                 intent = null;
             } else {
                 intent = new Intent(this, WebViewActivity.class);
             }
-        } else if (News.NEWS_TYPE_VIDEO.equals(type)) {
+        } else if (isVideo) {
             if (!Util.isNetworkAvailable(this)) {
-                Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
+                //Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
+                showNoNetworkSnackbar();
                 intent = null;
             } else {
                 if (Util.isNetworkMobile(this)) {
@@ -1054,12 +1104,63 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
 
     /** {@inheritDoc} */
     @Override
+    protected void onPause() {
+        if (this.intro != null && this.intro.isPlaying()) {
+            this.intro.cancel();
+            // play the intro again next time
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            SharedPreferences.Editor ed = prefs.edit();
+            ed.putBoolean(App.PREF_PLAY_INTRO, true);
+            ed.apply();
+            // we either need to a) start anew or b) know what state the ui is currently in (is the blurry plane visible or not, etc.) to be able to clean up
+            // a) is easier
+            finish();
+        }
+        super.onPause();
+    }
+
+    /**
+     * The user has tapped the semi-transparent plane which, when visible, covers all other elements in the screen.
+     * @param ignored ignored View
+     */
+    public void onPlaneClicked(@Nullable View ignored) {
+        if (this.quickView.getVisibility() == View.VISIBLE) {
+            onQuickViewClicked(this.quickView);
+        } else {
+            this.quickViewRequestCancelled = true;
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        boolean network = Util.isNetworkAvailable(this);
+        MenuItem itemTeletext = menu.findItem(R.id.action_teletext);
+        itemTeletext.setVisible(network);
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    /**
+     * The user has tapped the 'quick view' which, when visible, displays the article's {@link News#getTeaserImage() teaser image}.
+     * @param ignored ignored View
+     */
+    @SuppressWarnings("unused") // studio considers this unused, but it's referred to in content_main.xml...
+    public void onQuickViewClicked(@Nullable View ignored) {
+        this.quickView.setVisibility(View.GONE);
+        this.quickView.setImageBitmap(null);
+        View plane = findViewById(R.id.plane);
+        if (plane != null) plane.setVisibility(View.GONE);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void onRefresh() {
         App app = (App) getApplicationContext();
         // check whether loading is possible
         if (!Util.isNetworkAvailable(app)) {
             this.swipeRefreshLayout.setRefreshing(false);
-            Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_LONG).show();
+            //Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
+            showNoNetworkSnackbar();
             return;
         }
         if (this.service == null) {
@@ -1122,8 +1223,9 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
      * Similar to {@link #onRefresh()} but tries the cache first.
      */
     private void onRefreshUseCache() {
-        // first try the local file
         App app = (App)getApplicationContext();
+        boolean networkAvailable = Util.isNetworkAvailable(this);
+        // first try the local file
         final File localFile = app.getLocalFile(this.currentSource);
         if (localFile.isFile()) {
             /*
@@ -1132,22 +1234,25 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             It does not denote the most recent attempt (successful or not) to download the data!
              */
             boolean fileIsQuiteNew = System.currentTimeMillis() - app.getMostRecentUpdate(this.currentSource) < App.LOCAL_FILE_MAXAGE;
-            boolean networkAvailable = Util.isNetworkAvailable(this);
             if (fileIsQuiteNew || !networkAvailable) {
+                /*
                 if (BuildConfig.DEBUG) {
                     if (!networkAvailable) Log.i(TAG, "The local file's \"" +  localFile + "\" content shall be sufficient for now because there's no network connection");
                     else Log.i(TAG, "The local file's \"" +  localFile + "\" content shall be sufficient for now because it's younger than " + Math.round(App.LOCAL_FILE_MAXAGE/60000f) + " mins");
                 }
+                */
                 parseLocalFileAsync(localFile);
                 if (!networkAvailable) {
-                    Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
+                    showNoNetworkSnackbar();
+                    //Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
                 }
                 return;
             }
         }
         // if there is neither a local file nor a network connection, there is nothing we can do here
-        if (!Util.isNetworkAvailable(this)) {
-            Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_LONG).show();
+        if (!networkAvailable) {
+            showNoNetworkSnackbar();
+            //Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
             return;
         }
         if (BuildConfig.DEBUG) {
@@ -1160,42 +1265,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         // if there is no local file or if it is too old, download the resource
         this.swipeRefreshLayout.setRefreshing(true);
         onRefresh();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    protected void onPause() {
-        if (this.intro != null && this.intro.isPlaying()) {
-            this.intro.cancel();
-            // play the intro again next time
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            SharedPreferences.Editor ed = prefs.edit();
-            ed.putBoolean(App.PREF_PLAY_INTRO, true);
-            ed.apply();
-            // we either need to a) start anew or b) know what state the ui is currently in (is the blurry plane visible or not, etc.) to be able to clean up
-            // a) is easier
-            finish();
-        }
-        super.onPause();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        this.currentSource = Source.valueOf(savedInstanceState.getString(STATE_SOURCE, Source.HOME.name()));
-        updateTitle();
-        int pos = savedInstanceState.getInt(STATE_LIST_POS, -1);
-        if (pos >= 0) {
-            RecyclerView.LayoutManager rlm = this.recyclerView.getLayoutManager();
-            if (rlm instanceof LinearLayoutManager) {
-                LinearLayoutManager lm = (LinearLayoutManager)rlm;
-                lm.scrollToPosition(pos);
-            } else if (rlm instanceof StaggeredGridLayoutManager) {
-                StaggeredGridLayoutManager slm = (StaggeredGridLayoutManager)rlm;
-                slm.scrollToPosition(pos);
-            }
-        }
     }
 
     /** {@inheritDoc} */
@@ -1216,6 +1285,11 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putString(STATE_SOURCE, this.currentSource.name());
+        String[] recentSourcesArray = new String[this.recentSources.size()];
+        for (int i = 0; i < recentSourcesArray.length; i++) {
+            recentSourcesArray[i] = this.recentSources.get(i).name();
+        }
+        outState.putStringArray(STATE_RECENT_SOURCES, recentSourcesArray);
         //
         RecyclerView.LayoutManager rlm = this.recyclerView.getLayoutManager();
         int top = RecyclerView.NO_POSITION;
@@ -1289,10 +1363,8 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                     if (BuildConfig.DEBUG) Log.w(TAG, "Failed to set last modified date!");
                 }
             }
-            if (BuildConfig.DEBUG) Log.i(TAG, "Adding filter: " + MainActivity.this.searchFilter);
             MainActivity.this.newsAdapter.addFilter(MainActivity.this.searchFilter);
             boolean filtered = MainActivity.this.newsAdapter.hasTemporaryFilter();
-            if (BuildConfig.DEBUG) Log.i(TAG, "Filtered: " + filtered);
             MainActivity.this.clockView.setTime(date != null ? date.getTime() : file.lastModified());
             if (filtered) {
                 MainActivity.this.clockView.setTint(Util.getColor(this, R.color.colorFilter));
@@ -1330,6 +1402,26 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     private void playIntro() {
         final int tint = 0x77ff0000;
         if (this.intro != null && this.intro.isPlaying()) return;
+        if (!Util.isNetworkAvailable(this)) {
+            // display a hint to the user if (s)he starts the app for the first time and there is no network connection
+            Snackbar sb = Snackbar.make(coordinatorLayout, R.string.error_no_network_ext, Snackbar.LENGTH_INDEFINITE);
+            Util.setSnackbarFont(sb, Util.CONDENSED, 12f);
+            Intent settingsIntent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+            if (getPackageManager().resolveActivity(settingsIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                // the unicode wrench symbol 🔧 (0x1f527)
+                sb.setAction("\uD83D\uDD27", v -> {
+                    sb.dismiss();
+                    if (MainActivity.this.intro != null && MainActivity.this.intro.isPlaying()) {
+                        MainActivity.this.intro.cancel();
+                    }
+                    startActivity(settingsIntent);
+                });
+            } else {
+                sb.setAction(android.R.string.ok, v -> sb.dismiss());
+                sb.setActionTextColor(Color.RED);
+            }
+            sb.show();
+        }
         this.intro = new Intro(this);
         // show plane and open drawer
         Intro.Step step1 = new Intro.Step(5_000) {
@@ -1464,12 +1556,16 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     }
 
     /**
+     * To be called whenever the current source has changed:
      * Updates the title shown in {@link #clockView} and the task description based on {@link #currentSource}.
      */
     private void updateTitle() {
+        if (this.clockView == null) {
+            this.handler.postDelayed(this::updateTitle, 500L);
+            return;
+        }
         String s = getString(this.currentSource.getLabel());
-        if (this.clockView != null) this.clockView.setText(s);
-        //noinspection deprecation
+        this.clockView.setText(s);
         setTaskDescription(new ActivityManager.TaskDescription(getString(R.string.app_task_description, s), null, getResources().getColor(R.color.colorPrimary)));
     }
 

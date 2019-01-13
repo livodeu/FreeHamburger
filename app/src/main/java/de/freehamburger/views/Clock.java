@@ -101,7 +101,6 @@ public class Clock extends View {
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         this.attached = true;
-        //this.time.set(this.time.toMillis(false));
         this.calendar.setTimeInMillis(System.currentTimeMillis());
         onTimeChanged();
     }

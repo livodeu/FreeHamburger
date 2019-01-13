@@ -125,7 +125,7 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
             if (!response.isSuccessful() || body == null) {
                 if (body != null) body.close();
                 if (BuildConfig.DEBUG) Log.w(TAG, "Failed to load from " + order.url + ": HTTP " + response.code() + " " + response.message());
-                return new Result(order.url, response.code(), response.message(), null, f, null, 0L, order.listener);
+                return new Result(order.url, response.code(), response.message(), f, null, 0L, order.listener);
             }
             MediaType mediaType = body.contentType();
             long contentLength = body.contentLength();
@@ -147,7 +147,7 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
                 out.write(buffer, 0, read);
             }
             Util.close(out, body);
-            return new Result(order.url, response.code(), null, null, f, mediaType != null ? mediaType.toString() : null, contentLength, order.listener);
+            return new Result(order.url, response.code(), null, f, mediaType != null ? mediaType.toString() : null, contentLength, order.listener);
         } catch (UnknownHostException e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
             Util.close(body, out);
@@ -160,14 +160,14 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
             } else {
                 msg = order.url + " " + this.errorUnknownHost;
             }
-            return new Result(order.url, HttpURLConnection.HTTP_BAD_REQUEST, msg, null, f, null, 0L, order.listener);
+            return new Result(order.url, HttpURLConnection.HTTP_BAD_REQUEST, msg, f, null, 0L, order.listener);
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
             Util.close(body, out);
             Util.deleteFile(f);
             String msg = e.getMessage();
             if (TextUtils.isEmpty(msg)) msg = e.toString();
-            return new Result(order.url, 500, msg, null, f, null, 0L, order.listener);
+            return new Result(order.url, 500, msg, f, null, 0L, order.listener);
         }
     }
 

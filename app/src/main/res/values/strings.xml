@@ -42,6 +42,7 @@
     <string name="action_show_cache">Show cache</string>
     <string name="action_show_updates" translatable="false">Show bg updates</string>
     <string name="action_teletext">Teletext</string>
+    <string name="action_quality_select">Select video quality</string>
     <string name="action_quit">Quit the app?</string>
     <string name="action_view_picture">View picture</string>
     <string name="action_weather">Weather</string>
@@ -53,11 +54,11 @@
     <string name="hint_filter_new">Add a filter</string>
     <string name="hint_filters">Each filter defined here will be used to remove unwanted news items. You can ignore upper/lower case.</string>
     <string name="hint_intro_will_be_played">The introduction will be shown during the next start.</string>
+    <string name="hint_menu_search">This menu item invokes the search function</string>
     <string name="hint_permission_location">Permit access to device location.</string>
     <string name="hint_pic">The illustration for this story</string>
     <string name="hint_search">Search</string>
     <string name="hint_view">View video</string>
-    <string name="hint_weatherimage">A weather forecast image</string>
 
     <string name="intro_1">Select categories in the right-hand drawer.</string>
     <string name="intro_2">Search, apply filters, change settings here.</string>
@@ -65,14 +66,17 @@
     <string name="intro_4">Tap an article to see details.</string>
     <string name="intro_5">Enjoy the app!</string>
 
+    <string name="error_audio_focus_denied">This cannot be played right now!</string>
     <string name="error_connection_interrupted">The network connection has been interrupted!</string>
     <string name="error_download_failed">Download failed:\n%1$s</string>
+    <string name="error_download_failed2">Download failed.</string>
     <string name="error_filter_not_added">Filter has not been added.</string>
     <string name="error_invalid_not_a_number">Invalid. Must be a number.</string>
     <string name="error_link_not_supported">This app does not support %1$s.</string>
     <string name="error_no_app">No installed app can handle this!</string>
     <string name="error_no_further_details">There are no further details for this.</string>
-    <string name="error_no_network">No network!</string>
+    <string name="error_no_network">No network.</string>
+    <string name="error_no_network_ext">This device should be connected to the web to be useful.</string>
     <string name="error_parsing">Error while parsing the data!</string>
     <string name="error_permission_denied">Permission denied!</string>
     <string name="error_pin_verification">An invalid security certificate has been received!</string>
@@ -97,6 +101,11 @@
     <string name="label_sections">Categories</string>
     <string name="label_select_app">Please select app for %1$s</string>
     <string name="label_service">This is the background service for Hamburger that is required to load data from the network</string>
+    <string name="label_streamquality_adaptive">Adaptive Streaming</string>
+    <string name="label_streamquality_s">Small (%1$d px wide)</string>
+    <string name="label_streamquality_m">Medium (%1$d px wide)</string>
+    <string name="label_streamquality_l">Large (%1$d px wide)</string>
+    <string name="label_streamquality_xl">XLarge (%1$d px wide)</string>
     <string name="label_mime_audio">Audio</string>
     <string name="label_mime_default">media</string>
     <string name="label_mime_image">Image</string>

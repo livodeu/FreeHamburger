@@ -340,7 +340,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
 
     //******************************************************************************************************************
 
-    @SuppressWarnings("deprecation")
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class DataPreferenceFragment extends PreferenceFragment {
         private SharedPreferences prefs;
@@ -437,7 +436,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
 
     //******************************************************************************************************************
 
-    @SuppressWarnings("deprecation")
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class AppearancePreferenceFragment extends PreferenceFragment {
 
@@ -528,7 +526,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
 
     //******************************************************************************************************************
 
-    @SuppressWarnings("deprecation")
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class StoragePreferenceFragment extends PreferenceFragment {
 
@@ -578,7 +575,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             });
         }
 
-        @SuppressWarnings("ObjectAllocationInLoop")
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {
             int id = item.getItemId();
@@ -597,7 +593,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
 
     //******************************************************************************************************************
 
-    @SuppressWarnings("deprecation")
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class GeneralPreferenceFragment extends PreferenceFragment {
 
@@ -649,7 +644,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             this.prefMaxMemCacheSize.getOnPreferenceChangeListener().onPreferenceChange(this.prefMaxMemCacheSize, this.originalMaxMemCacheSize);
         }
 
-        @SuppressWarnings("ObjectAllocationInLoop")
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {
             int id = item.getItemId();
@@ -683,7 +677,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
 
     //******************************************************************************************************************
 
-    @SuppressWarnings("deprecation")
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class PollingPreferenceFragment extends PreferenceFragment {
 
@@ -802,7 +795,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             });
         }
 
-        @SuppressWarnings("ObjectAllocationInLoop")
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {
             int id = item.getItemId();
@@ -822,7 +814,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
 
     //******************************************************************************************************************
 
-    @SuppressWarnings("deprecation")
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class OtherPreferenceFragment extends PreferenceFragment {
 

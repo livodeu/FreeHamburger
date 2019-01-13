@@ -183,6 +183,7 @@ public class Sun {
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public String toString() {
         int sunriseHours = (int)Math.floor(sunriseGMT);
         int sunriseMinutes = (int)Math.floor((sunriseGMT - sunriseHours) * 60.);

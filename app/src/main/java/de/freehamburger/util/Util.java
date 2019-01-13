@@ -37,6 +37,8 @@ import android.support.v4.content.FileProvider;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.text.TextUtils;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.webkit.MimeTypeMap;
@@ -79,7 +81,7 @@ public class Util {
 
     private static final String TAG = "Util";
 
-    private static final Typeface CONDENSED = Typeface.create("sans-serif-condensed", Typeface.NORMAL);
+    public static final Typeface CONDENSED = Typeface.create("sans-serif-condensed", Typeface.NORMAL);
     private static final Typeface NORMAL = Typeface.create("sans-serif", Typeface.NORMAL);
 
     /**
@@ -89,7 +91,7 @@ public class Util {
      * @param chars chars to heck
      * @return true / false
      */
-    private static boolean areNextChars(final char[] array, final int pos, final char... chars) {
+    private static boolean areNextChars(@NonNull final char[] array, final int pos, final char... chars) {
         final int n = chars.length;
         try {
             for (int i = 0; i < n; i++) {
@@ -203,6 +205,32 @@ public class Util {
     }
 
     /**
+     * Displays the menu items' alphabetic shortcuts by underlining the matching character in the menu item title.<br>
+     * See also <a href="https://en.wikipedia.org/wiki/Combining_Diacritical_Marks">here</a>.
+     * @param menu Menu to work on
+     * @throws NullPointerException if {@code menu} is {@code null}
+     */
+    public static void decorateMenuWithShortcuts(Menu menu) {
+        final int n = menu.size();
+        for (int i = 0; i < n; i++) {
+            MenuItem item = menu.getItem(i);
+            char sc = item.getAlphabeticShortcut();
+            if (sc == 0) continue;
+            CharSequence t = item.getTitle();
+            if (t == null) continue;
+            final int tn = t.length();
+            for (int j = 0; j < tn; j++) {
+                char c = t.charAt(j);
+                if (c == sc || Character.toLowerCase(c) == sc) {
+                    // insert a U+0332
+                    item.setTitle(t.subSequence(0, j + 1) + "̲" + t.subSequence(j + 1, tn));
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
      * Deletes a file or directory.<br>
      * If the file could not be deleted, it is passed on to the {@link FileDeleter}.
      * @param file File
@@ -211,7 +239,7 @@ public class Util {
         if (file == null || !file.exists()) return;
         if (!file.delete()) {
             FileDeleter.add(file);
-        } else if (BuildConfig.DEBUG) Log.i(TAG, "File \"" + file + "\" deleted");
+        }
     }
 
 
@@ -245,8 +273,10 @@ public class Util {
                 @Override
                 public int compare(File o1, File o2) {
                     if (o1.equals(o2)) return 0;
-                    long lm1 = lm.get(o1);
-                    long lm2 = lm.get(o2);
+                    Long lm1 = lm.get(o1);
+                    if (lm1 == null) return -1;
+                    Long lm2 = lm.get(o2);
+                    if (lm2 == null) return 1;
                     return Long.compare(lm1, lm2);
                 }
             });
@@ -403,19 +433,6 @@ public class Util {
     }
 
     /**
-     * Returns a file's tag. Returns {@code null} if there is none.
-     * @param file File
-     * @return file tag, beginning with a period ('.'), e.g. ".jpg"
-     */
-    @Nullable
-    private static String getFileTag(@Nullable final File file) {
-        if (file == null || !file.isFile()) return null;
-        int dot = file.getName().lastIndexOf('.');
-        if (dot < 0) return null;
-        return file.getName().substring(dot);
-    }
-
-    /**
      * Returns the Space occupied by a file or directory.<br>
      * Will return 0 if the file does not exist or if it could not be accessed.
      * @param file file <em>or</em> directory
@@ -467,7 +484,6 @@ public class Util {
             tv.setTypeface(NORMAL);
             tv.getPaint().getTextBounds(text, 0, text.length(), rect);
             int avail = tv.getWidth() - tv.getTotalPaddingLeft() - tv.getTotalPaddingRight();
-            //Log.i(TAG, "Width of \"" + title + "\" is " + this.rect.width() + " - available: " + avail);
             if (rect.width() >= avail) {
                 return CONDENSED;
             } else {
@@ -500,6 +516,13 @@ public class Util {
         return isNetworkAvailable((App)ctx.getApplicationContext());
     }
 
+    /**
+     * Determines whether a network connection is available.<br>
+     * Takes the user's preference as to whether loading via mobile is allowed into account.
+     * @param app App
+     * @return true/false
+     * @throws NullPointerException if {@code app} is {@code null}
+     */
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     public static boolean isNetworkAvailable(@NonNull final App app) {
         ConnectivityManager connMgr = (ConnectivityManager) app.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -509,6 +532,13 @@ public class Util {
         return allowDownloadOverMobile || (networkInfo.getType() != ConnectivityManager.TYPE_MOBILE && networkInfo.getType() != ConnectivityManager.TYPE_MOBILE_DUN);
     }
 
+    /**
+     * Determines whether a network connection is considered to be of the mobile type.
+     * @param ctx Context
+     * @return true/false
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
+    @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     public static boolean isNetworkMobile(@NonNull Context ctx) {
         ConnectivityManager connMgr = (ConnectivityManager) ctx.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr != null ? connMgr.getActiveNetworkInfo() : null;
@@ -633,7 +663,7 @@ public class Util {
         }
         paint.getTextBounds(s, 0, l, bounds);
         canvas.setBitmap(bitmap);
-        canvas.drawText(s, wx / 2, wy / 2 + bounds.height() / 2, paint);
+        canvas.drawText(s, wx / 2f, wy / 2f + bounds.height() / 2f, paint);
         return bitmap;
     }
 
@@ -647,6 +677,11 @@ public class Util {
         return url.toLowerCase(Locale.US).startsWith("http:") ? "https:" + url.substring(5) : url;
     }
 
+    /**
+     * Removes &lt;a&gt;...&lt;a/&gt;.
+     * @param value StringBuilder to remove the anchors from
+     * @return StringBuilder with anchors removed
+     */
     @NonNull
     public static StringBuilder removeLinks(@Nullable final StringBuilder value) {
         final int n = value != null ? value.length() : 0;
@@ -672,11 +707,9 @@ public class Util {
     }
 
     /**
-    seriously, this really did exist:
-     <pre>
-"\n\t\t\t\t\t\t\t<ul><li><a href=\"https://www.mdr.de/sachsen/schnell-schlank-die-neue-app-mdr-sachsen-102.html\" type=\"extern\">Nachrichten aus Sachsen mobil zu jeder Zeit mit der MDR SACHSEN-App</a></li>\n\n\t\t\t\t\t\t\t</ul>\n\t\t\t\t\t\t"
-     </pre>
+     * Removes &lt;ul&gt; and &lt;ol&gt;.
      */
+    @NonNull
     public static StringBuilder removeUlliAndOlli(@Nullable final String value) {
         final int n = value != null ? value.length() : 0;
         if (n == 0) return new StringBuilder(0);
@@ -730,10 +763,11 @@ public class Util {
     }
 
     /**
-     * Shares data via {@link Intent#ACTION_SEND}.
+     * Shares the given stream of data (represented by the url) via {@link Intent#ACTION_SEND ACTION_SEND}.
+     * Displays an error message if there isn't any suitable app installed.
      * @param ctx Context
      * @param url url
-     * @param title optional title
+     * @param title title (optional)
      */
     public static void sendBinaryData(@NonNull final Context ctx, @NonNull final String url, @Nullable CharSequence title) {
         final Intent intent = new Intent(Intent.ACTION_SEND);
@@ -770,14 +804,22 @@ public class Util {
         if (ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
             ctx.startActivity(intent);
         } else {
-            Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_LONG).show();
+            if (ctx instanceof CoordinatorLayoutHolder) {
+                Snackbar.make(((CoordinatorLayoutHolder)ctx).getCoordinatorLayout(), R.string.error_no_app, Snackbar.LENGTH_LONG)
+                        .show();
+            } else {
+                Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_LONG)
+                        .show();
+            }
         }
     }
 
     /**
+     * Shares the given Bitmap via {@link Intent#ACTION_SEND ACTION_SEND}.
+     * Does not always display an error message in case of failure.
      * @param ctx Context
      * @param bm Bitmap
-     * @param title title
+     * @param title title (optional)
      */
     static void sendBitmap(@NonNull Context ctx, @NonNull Bitmap bm, @Nullable String title) {
         boolean ok = true;
@@ -812,13 +854,40 @@ public class Util {
     }
 
     /**
+     * Shares the given url via {@link Intent#ACTION_SEND ACTION_SEND}. Displays an error message if there isn't any suitable app installed.
+     * @param url URL
+     * @param title title (optional)
+     */
+    public static void sendUrl(@NonNull Context ctx, @NonNull String url, @Nullable CharSequence title) {
+        final Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.putExtra(Intent.EXTRA_TEXT, url);
+        if (!TextUtils.isEmpty(title)) {
+            intent.putExtra(Intent.EXTRA_SUBJECT, title);
+        }
+        intent.setType("text/plain");
+        if (!(ctx instanceof Activity)) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+        if (ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+            ctx.startActivity(intent);
+        } else {
+            if (ctx instanceof CoordinatorLayoutHolder) {
+                Snackbar.make(((CoordinatorLayoutHolder)ctx).getCoordinatorLayout(), R.string.error_no_app, Snackbar.LENGTH_LONG)
+                        .show();
+            } else {
+                Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    /**
      * Sets a {@link Snackbar snackbar's} font (family and size).<br>
      * Tested with compileSdkVersion 28 on device running API 26.
      * @param s Snackbar
-     * @param font name of font to set (optional), see {@link Typeface#create(String, int)}
+     * @param font font to set (optional), see {@link Typeface#create(String, int)}
      * @param textSize text size to set (set this to 0 to skip)
      */
-    public static void setSnackbarFont(Snackbar s, @Nullable String font, float textSize) {
+    public static void setSnackbarFont(@Nullable Snackbar s, @Nullable Typeface font, float textSize) {
         if (s == null) return;
         Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) s.getView();
         TextView textView = snackLayout.findViewById(android.support.design.R.id.snackbar_text);
@@ -826,8 +895,7 @@ public class Util {
             return;
         }
         if (font != null) {
-            Typeface tf = Typeface.create(font, Typeface.NORMAL);
-            if (tf != null) textView.setTypeface(tf);
+            textView.setTypeface(font);
         }
         if (textSize >= 1f) {
             textView.setTextSize(textSize);
@@ -842,6 +910,7 @@ public class Util {
      * @throws IllegalArgumentException if {@code maxLength} is negative
      * @throws ArithmeticException if {@code maxLength} is 0
      */
+    @NonNull
     public static List<String> splitString(@NonNull final String s, @IntRange(from = 1) final int maxLength) {
         final int n = s.length();
         final List<String> list = new ArrayList<>(n / maxLength + 1);

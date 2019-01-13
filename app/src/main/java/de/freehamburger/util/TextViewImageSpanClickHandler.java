@@ -2,8 +2,6 @@ package de.freehamburger.util;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -11,7 +9,6 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.Spannable;
-import android.text.TextUtils;
 import android.text.style.ImageSpan;
 import android.text.style.TypefaceSpan;
 import android.view.HapticFeedbackConstants;
@@ -86,16 +83,8 @@ public class TextViewImageSpanClickHandler implements View.OnTouchListener {
         Context ctx = textView.getContext();
         String source = imageSpan.getSource();
         if (source != null) {
-            Intent intent = new Intent(Intent.ACTION_SEND);
-            intent.setType("text/plain");
-            intent.putExtra(Intent.EXTRA_TEXT, source);
-            if (!TextUtils.isEmpty(title)) {
-                intent.putExtra(Intent.EXTRA_SUBJECT, title);
-            }
-            if (ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-                ctx.startActivity(intent);
-                return;
-            }
+            Util.sendUrl(ctx, source, title);
+            return;
         }
         // if there is no source url, try to send the image as Bitmap
         Drawable drawable = imageSpan.getDrawable();

@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  */
-public class Lyst implements Serializable {
+class Lyst implements Serializable {
 
 
     private final List<String> urls = new ArrayList<>(8);

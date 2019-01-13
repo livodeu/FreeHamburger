@@ -2,6 +2,7 @@ package de.freehamburger.views;
 
 import android.content.Context;
 import android.support.annotation.LayoutRes;
+import android.support.annotation.NonNull;
 
 import de.freehamburger.R;
 
@@ -30,6 +31,7 @@ public class NewsViewNoContent extends NewsView {
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public String toString() {
         return getClass().getSimpleName() + " \"" + (textViewTitle != null ? textViewTitle.getText().toString() : "<null>") + "\"";
     }

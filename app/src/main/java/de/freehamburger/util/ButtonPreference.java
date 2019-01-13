@@ -41,7 +41,6 @@ public class ButtonPreference extends Preference implements View.OnClickListener
     private static final float SHADOW_BLUR = 4f;
     private static final float SHADOW_X = 8f;
     private static final float SHADOW_Y = 8f;
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private final Handler handler = new Handler();
 
@@ -49,7 +48,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
 
     private Button button;
     @IntRange(from = 0) private int selectedIndex = 0;
-    @NonNull private CharSequence[] states = EMPTY_STRING_ARRAY;
+    @NonNull private CharSequence[] states;
     @Nullable private int[] colors;
 
     private SoundPool soundPool;
@@ -89,6 +88,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
      * @param defStyleAttr default style attr
      * @throws IllegalArgumentException if no {@link R.styleable#ButtonPreference_entries entries} have been defined
      */
+    @SuppressWarnings("WeakerAccess")
     public ButtonPreference(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         setLayoutResource(R.layout.preference_widget_button);
@@ -257,11 +257,6 @@ public class ButtonPreference extends Preference implements View.OnClickListener
             }
             set.start();
         }
-    }
-
-    @Override
-    public void setOnPreferenceChangeListener(OnPreferenceChangeListener onPreferenceChangeListener) {
-        super.setOnPreferenceChangeListener(onPreferenceChangeListener);
     }
 
     /**

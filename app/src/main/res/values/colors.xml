@@ -19,7 +19,7 @@
     <color name="colorDirtyWhite">#ededed</color>
 
     <!-- background color for news -->
-    <color name="colorBgNews">#5c26a6f0</color> <!-- #5c26a6f0 -->
+    <color name="colorBgNews">#5c26a6f0</color>
     <color name="colorBgNewsLight">#ffffffff</color>
     <color name="colorBgNewsFocused">#c01e83bd</color>
     <color name="colorBgNewsFocusedLight">#c0208bc9</color>

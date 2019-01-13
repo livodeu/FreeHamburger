@@ -3,11 +3,13 @@ package de.freehamburger.model;
 import android.content.Context;
 import android.support.annotation.IntRange;
 import android.support.annotation.Nullable;
+import android.support.annotation.StringRes;
 
 import java.util.Arrays;
 import java.util.Map;
 
 import de.freehamburger.BuildConfig;
+import de.freehamburger.R;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
 
@@ -16,19 +18,19 @@ import de.freehamburger.util.Util;
  */
 public enum StreamQuality {
     /** 320 x 180 */
-    H264S(320),
+    H264S(R.string.label_streamquality_s, 320),
     /** 480 x 270 */
-    PODCASTVIDEOM(480),
+    PODCASTVIDEOM(-1, 480),
     /** 512 x 288 */
-    H264M(512),
+    H264M(R.string.label_streamquality_m, 512),
     /** 960 x 540 */
-    H264L(960),
+    H264L(R.string.label_streamquality_l, 960),
     /** 1280 x 720 */
-    H264XL(1280),
+    H264XL(R.string.label_streamquality_xl, 1280),
     /** unknown dimensions */
-    PODCASTVIDEOM_IAS(-1),
+    PODCASTVIDEOM_IAS(-1, -1),
     /** unknown dimensions */
-    ADAPTIVESTREAMING(-1);
+    ADAPTIVESTREAMING(R.string.label_streamquality_adaptive, -1);
 
     /** StreamQuality array where XL is preferred; after that ordered by descending quality */
     private static final StreamQuality[] PREF_XL = new StreamQuality[] {StreamQuality.H264XL, StreamQuality.H264L, StreamQuality.H264M, StreamQuality.H264S};
@@ -40,6 +42,7 @@ public enum StreamQuality {
     private static final StreamQuality[] PREF_S = new StreamQuality[] {StreamQuality.H264S, StreamQuality.H264M, StreamQuality.H264L, StreamQuality.H264XL};
     /** video width */
     private final int width;
+    @StringRes private final int label;
 
     /**
      * Attempts to return a video stream url, based on the given Map.<br>
@@ -80,8 +83,14 @@ public enum StreamQuality {
         return null;
     }
 
-    StreamQuality(int width) {
+    StreamQuality(@StringRes int label, int width) {
+        this.label = label;
         this.width = width;
+    }
+
+    @StringRes
+    public int getLabel() {
+        return label;
     }
 
     /**
@@ -89,7 +98,7 @@ public enum StreamQuality {
      * @return width of the video stream or -1, if not known (which is the case for {@link #ADAPTIVESTREAMING})
      */
     @IntRange(from = -1)
-    private int getWidth() {
+    public int getWidth() {
         return width;
     }
 }

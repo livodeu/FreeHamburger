@@ -1,29 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
+    <!-- https://developer.android.com/guide/topics/resources/menu-resource.html -->
     <item
         android:id="@+id/action_search"
         android:alphabeticShortcut="s"
+        android:numericShortcut="0"
         android:icon="@drawable/ic_search_black_24dp"
+        android:contentDescription="@string/hint_menu_search"
         android:title="@string/action_search"/>
     <item
         android:id="@+id/action_select_regions"
         android:alphabeticShortcut="r"
+        android:numericShortcut="1"
         android:visible="true"
         android:title="@string/action_select_regions"/>
     <item
         android:id="@+id/action_filter"
         android:alphabeticShortcut="f"
+        android:numericShortcut="2"
         android:visible="true"
         android:title="@string/action_filter"/>
     <item
         android:id="@+id/action_teletext"
-        android:alphabeticShortcut="t"
+        android:alphabeticShortcut="v"
+        android:numericShortcut="3"
         android:visible="true"
         android:title="@string/action_teletext"/>
     <item
         android:id="@+id/action_settings"
         android:alphabeticShortcut="e"
+        android:numericShortcut="4"
         android:title="@string/action_settings"
         android:icon="@drawable/ic_settings_ededed_24dp"
         />
@@ -43,6 +49,8 @@
         />
     <item
         android:id="@+id/action_info"
+        android:alphabeticShortcut="i"
+        android:numericShortcut="5"
         android:title="@string/action_info"
         />
 </menu>

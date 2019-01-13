@@ -8,6 +8,8 @@ import android.support.annotation.Nullable;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
+import java.util.Objects;
+
 /**
  *
  */
@@ -33,8 +35,7 @@ public class BitmapTarget implements Target {
 
         BitmapTarget that = (BitmapTarget) o;
 
-        return bitmap != null ? bitmap.equals(that.bitmap) : that.bitmap == null;
-
+        return Objects.equals(bitmap, that.bitmap);
     }
 
     /** {@inheritDoc} */
@@ -61,7 +62,9 @@ public class BitmapTarget implements Target {
         this.bitmap = null;
     }
 
+    /** {@inheritDoc} */
     @Override
+    @NonNull
     public String toString() {
         return "BitmapTarget for source \"" + this.source + "\"";
     }

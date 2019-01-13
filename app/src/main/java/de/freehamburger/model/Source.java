@@ -28,9 +28,10 @@ public enum Source {
     REGIONAL(R.string.action_section_regional, App.URL_PREFIX + "news/?regions=", true)
     ;
 
-    @StringRes final int label;
-    final String url;
-    final boolean needsParams;
+    @StringRes
+    private final int label;
+    private final String url;
+    private final boolean needsParams;
 
     /**
      * Returns the parameter char sequence for {@link #REGIONAL}, based on the user's preferences.

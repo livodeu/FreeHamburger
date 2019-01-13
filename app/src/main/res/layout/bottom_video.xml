@@ -10,8 +10,8 @@
     app:behavior_hideable="true"
     app:behavior_peekHeight="25dp"
     app:layout_anchorGravity="bottom|center_horizontal"
-    app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
-    <!--tools:showIn="@layout/activity_news"-->
+    app:layout_behavior="android.support.design.widget.BottomSheetBehavior"
+    tools:ignore="Overdraw">
 
     <TextView
         android:id="@+id/textViewBottomVideoPeek"

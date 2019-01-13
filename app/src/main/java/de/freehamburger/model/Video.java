@@ -107,6 +107,7 @@ public class Video implements Serializable {
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public String toString() {
         return title != null ? title : streams.values().iterator().next();
     }

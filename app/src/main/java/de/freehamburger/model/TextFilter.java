@@ -261,6 +261,7 @@ public class TextFilter implements Filter {
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public String toString() {
         return "TextFilter \"" + phrase + "\"" + (atStart ? " at start" : "") + (atEnd ? " at end" : "") + (temporary ? " (T)" : "")+ (inverse ? " (I)" : "");
     }

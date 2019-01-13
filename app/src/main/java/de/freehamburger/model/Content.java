@@ -230,6 +230,7 @@ public class Content implements Serializable {
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public String toString() {
         return text != null ? text : "<no content>";
     }
@@ -237,7 +238,7 @@ public class Content implements Serializable {
     /**
      * A sub-element of {@link Content}
      */
-    public static class ContentElement implements Comparable<ContentElement>, Serializable {
+    static class ContentElement implements Comparable<ContentElement>, Serializable {
 
         static final int MIN_ORDER = 1;
         static final String TYPE_TEXT = "text";
@@ -326,7 +327,7 @@ public class Content implements Serializable {
         }
 
         @Nullable
-        public Box getBox() {
+        Box getBox() {
             return box;
         }
 
@@ -339,17 +340,17 @@ public class Content implements Serializable {
         }*/
 
         @Nullable
-        public Gallery getGallery() {
+        Gallery getGallery() {
             return gallery;
         }
 
         @Nullable
-        public Lyst getList() {
+        Lyst getList() {
             return list;
         }
 
         @Nullable
-        public Related[] getRelated() {
+        Related[] getRelated() {
             return related;
         }
 
@@ -373,7 +374,9 @@ public class Content implements Serializable {
             this.order = order;
         }
 
+        /** {@inheritDoc} */
         @Override
+        @NonNull
         public String toString() {
             return type + " " + value;
         }

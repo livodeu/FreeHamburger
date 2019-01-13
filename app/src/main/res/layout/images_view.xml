@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-        android:textColor="#ff000000"
+        android:textColor="@android:color/black"
         android:maxLines="1"
         android:ellipsize="end"
         tools:text="Bilder des Tages"/>
@@ -20,12 +20,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/textViewTopline"
-        android:layout_toStartOf="@id/textViewFirstSentence"
         android:ellipsize="end"
         android:fontFamily="sans-serif-condensed"
         android:maxLines="1"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
-        android:textColor="#ff000000"
+        android:textColor="@android:color/black"
         tools:text="12.34.5678 12:34"/>
 
     <android.support.v7.widget.RecyclerView

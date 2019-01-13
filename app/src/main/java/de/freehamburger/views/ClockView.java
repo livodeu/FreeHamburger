@@ -16,7 +16,6 @@ import de.freehamburger.R;
 /**
  *
  */
-
 public class ClockView extends RelativeLayout {
 
     private Clock clock;
@@ -50,13 +49,6 @@ public class ClockView extends RelativeLayout {
     public ClockView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);
-    }
-
-    /**
-     * @return CharSequence
-     */
-    public CharSequence getText() {
-        return this.textView.getText();
     }
 
     /**

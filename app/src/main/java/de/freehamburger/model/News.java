@@ -309,7 +309,7 @@ public class News implements Comparable<News>, Serializable {
      * @return firstSentence in lower case
      */
     @Nullable
-    public String getFirstSentenceLowerCase() {
+    String getFirstSentenceLowerCase() {
         if (this.firstSentenceL == null && this.firstSentence != null) {
             this.firstSentenceL = this.firstSentence.toLowerCase(Locale.GERMAN);
         }
@@ -317,7 +317,7 @@ public class News implements Comparable<News>, Serializable {
     }
 
     @NonNull
-    public Set<String> getGeotags() {
+    Set<String> getGeotags() {
         return this.geotags;
     }
 
@@ -351,7 +351,7 @@ public class News implements Comparable<News>, Serializable {
     }
 
     @NonNull
-    public Set<String> getTags() {
+    Set<String> getTags() {
         return this.tags;
     }
 
@@ -369,7 +369,7 @@ public class News implements Comparable<News>, Serializable {
      * @return title in lower case
      */
     @Nullable
-    public String getTitleLowerCase() {
+    String getTitleLowerCase() {
         if (this.titleL == null && this.title != null) {
             this.titleL = this.title.toLowerCase(Locale.GERMAN);
         }
@@ -385,7 +385,7 @@ public class News implements Comparable<News>, Serializable {
      * @return topline in lower case
      */
     @Nullable
-    public String getToplineLowerCase() {
+    String getToplineLowerCase() {
         if (this.toplineL == null && this.topline != null) {
             this.toplineL = this.topline.toLowerCase(Locale.GERMAN);
         }
@@ -427,6 +427,7 @@ public class News implements Comparable<News>, Serializable {
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public String toString() {
         return "News (" + id
                 + ", Title: \"" + title

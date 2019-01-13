@@ -76,6 +76,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -109,6 +110,12 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private static final String EXTRA_NO_HOME_AS_UP = "extra_no_home_as_up";
     static final String EXTRA_NEWS = "extra_news";
     private static final String TAG = "NewsActivity";
+    /** number of columns for {@link #recyclerViewRelated} on phones */
+    private static final int RELATED_COLUMNS_PHONE = 2;
+    /** number of columns for {@link #recyclerViewRelated} on tablets in portrait mode */
+    private static final int RELATED_COLUMNS_TABLET_PORTRAIT = 3;
+    /** number of columns for {@link #recyclerViewRelated} on tablets in landscape mode */
+    private static final int RELATED_COLUMNS_TABLET_LANDSCAPE = 4;
     @NonNull
     private final AudioAttributes aa = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setLegacyStreamType(App.STREAM_TYPE).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();
     private final MediaSourceHelper mediaSourceHelper = new MediaSourceHelper();
@@ -148,16 +155,18 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private boolean exoPlayerTopPlayWhenReady = false;
     /** Listener for the top video */
     private final Player.EventListener listenerTop = new Player.EventListener() {
+        /** {@inheritDoc} */
         @Override
         public void onPlayerError(ExoPlaybackException error) {
-            String msg = Util.getExoPlaybackExceptionMessage(error);
-            if (BuildConfig.DEBUG) Log.e(TAG, "Top video error: " + msg, error);
+            // just log it - not important enough to show it to the user
+            if (BuildConfig.DEBUG) Log.w(TAG, "Top video onPlayerError(): " + Util.getExoPlaybackExceptionMessage(error), error);
         }
 
+        /** {@inheritDoc} */
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-            exoPlayerTopPlayWhenReady = playWhenReady;
-            exoPlayerTopState = playbackState;
+            NewsActivity.this.exoPlayerTopPlayWhenReady = playWhenReady;
+            NewsActivity.this.exoPlayerTopState = playbackState;
         }
     };
     private int exoPlayerBottomState = 0;
@@ -168,30 +177,29 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         @Override
         public void onPlayerError(ExoPlaybackException error) {
             String msg = Util.getExoPlaybackExceptionMessage(error);
-            if (BuildConfig.DEBUG) Log.e(TAG, "Bottom video error: " + msg, error);
+            if (BuildConfig.DEBUG) Log.e(TAG, "Bottom video onPlayerError(): " + msg, error);
             // show error message, but only if bottom sheet is expanded
-            if (isBottomSheetExpanded()) {
-                if (msg.contains("Unable to connect to")) {
-                    // instead of "Unable to connect to https://lengthy.url" we show a simple message
-                    msg = getString(R.string.error_connection_interrupted);
-                }
-                collapseBottomSheet();
-                View coordinatorLayout = findViewById(R.id.coordinator_layout);
-                if (coordinatorLayout != null) {
-                    Snackbar sb = Snackbar.make(coordinatorLayout, msg, Snackbar.LENGTH_LONG);
-                    Util.setSnackbarFont(sb, "sans-serif-condensed", 14f);
-                    sb.show();
-                } else {
-                    Toast.makeText(NewsActivity.this, msg, Toast.LENGTH_LONG).show();
-                }
+            if (isBottomSheetCollapsedOrHidden()) return;
+            if (msg.contains("Unable to connect to")) {
+                // instead of "Unable to connect to https://lengthy.url" we show a simple message
+                msg = getString(R.string.error_connection_interrupted);
+            }
+            collapseBottomSheet();
+            View coordinatorLayout = findViewById(R.id.coordinator_layout);
+            if (coordinatorLayout != null) {
+                Snackbar sb = Snackbar.make(coordinatorLayout, msg, Snackbar.LENGTH_LONG);
+                Util.setSnackbarFont(sb, Util.CONDENSED, 14f);
+                sb.show();
+            } else {
+                Toast.makeText(NewsActivity.this, msg, Toast.LENGTH_LONG).show();
             }
         }
 
         /** {@inheritDoc} */
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-            exoPlayerBottomPlayWhenReady = playWhenReady;
-            exoPlayerBottomState = playbackState;
+            NewsActivity.this.exoPlayerBottomPlayWhenReady = playWhenReady;
+            NewsActivity.this.exoPlayerBottomState = playbackState;
         }
     };
     @Nullable
@@ -203,16 +211,29 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         /** {@inheritDoc} */
         @Override
         public void onPlayerError(ExoPlaybackException error) {
-            if (BuildConfig.DEBUG) Log.e(TAG, "Audio error: " + Util.getExoPlaybackExceptionMessage(error), error);
-            buttonAudio.setEnabled(false);
+            String msg = Util.getExoPlaybackExceptionMessage(error);
+            if (BuildConfig.DEBUG) Log.e(TAG, "Audio onPlayerError(): " + msg, error);
+            if (msg.contains("Unable to connect to")) {
+                // instead of "Unable to connect to https://lengthy.url" we show a simple message
+                msg = getString(R.string.error_connection_interrupted);
+            }
+            View coordinatorLayout = findViewById(R.id.coordinator_layout);
+            if (coordinatorLayout != null) {
+                Snackbar sb = Snackbar.make(coordinatorLayout, msg, Snackbar.LENGTH_LONG);
+                Util.setSnackbarFont(sb, Util.CONDENSED, 14f);
+                sb.show();
+            } else {
+                Toast.makeText(NewsActivity.this, msg, Toast.LENGTH_LONG).show();
+            }
+            NewsActivity.this.buttonAudio.setEnabled(false);
         }
 
         /** {@inheritDoc} */
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-            exoPlayerAudioPlayWhenReady = playWhenReady;
-            exoPlayerAudioState = playbackState;
-            buttonAudio.setImageResource(isAudioPlaying() ? R.drawable.ic_pause_black_24dp : R.drawable.ic_play_arrow_black_24dp);
+            NewsActivity.this.exoPlayerAudioPlayWhenReady = playWhenReady;
+            NewsActivity.this.exoPlayerAudioState = playbackState;
+            NewsActivity.this.buttonAudio.setImageResource(isAudioPlaying() ? R.drawable.ic_pause_black_24dp : R.drawable.ic_play_arrow_black_24dp);
         }
     };
     @Nullable
@@ -411,7 +432,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             URLSpan[] urlSpans = spannable.getSpans(0, spannable.length(), URLSpan.class);
             if (urlSpans != null) {
                 for (URLSpan urlSpan : urlSpans) {
-                    String url = urlSpan.getURL();
+                    final String url = urlSpan.getURL();
                     int start = spannable.getSpanStart(urlSpan);
                     int end = spannable.getSpanEnd(urlSpan);
                     spannable.removeSpan(urlSpan);
@@ -452,6 +473,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
@@ -512,7 +534,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
      */
     public void expandBottomSheet(@Nullable View ignored) {
         if (!this.loadVideo) {
-            Snackbar.make(findViewById(R.id.coordinator_layout), R.string.pref_title_pref_load_videos_over_mobile_off, Snackbar.LENGTH_SHORT).show();
+            Snackbar.make(this.coordinatorLayout, R.string.pref_title_pref_load_videos_over_mobile_off, Snackbar.LENGTH_SHORT).show();
             return;
         }
         this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
@@ -578,33 +600,33 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             NewsActivity.this.tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override
                 public void onDone(String utteranceId) {
-                    ttsSpeaking = false;
+                    NewsActivity.this.ttsSpeaking = false;
                     invalidateOptionsMenu();
                 }
 
                 @Override
                 public void onError(String utteranceId) {
                     if (BuildConfig.DEBUG) Log.i(TAG, "Error: " + utteranceId);
-                    ttsSpeaking = false;
+                    NewsActivity.this.ttsSpeaking = false;
                     invalidateOptionsMenu();
                 }
 
                 @Override
                 public void onError(String utteranceId, int errorCode) {
                     if (BuildConfig.DEBUG) Log.i(TAG, "Error: " + utteranceId + ", error code: " + errorCode);
-                    ttsSpeaking = false;
+                    NewsActivity.this.ttsSpeaking = false;
                     invalidateOptionsMenu();
                 }
 
                 @Override
                 public void onStart(String utteranceId) {
-                    ttsSpeaking = true;
+                    NewsActivity.this.ttsSpeaking = true;
                     invalidateOptionsMenu();
                 }
 
                 @Override
                 public void onStop(String utteranceId, boolean interrupted) {
-                    ttsSpeaking = false;
+                    NewsActivity.this.ttsSpeaking = false;
                     invalidateOptionsMenu();
                 }
             });
@@ -619,8 +641,9 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         return this.exoPlayerAudioPlayWhenReady && this.exoPlayerAudioState == Player.STATE_READY;
     }
 
-    private boolean isBottomSheetExpanded() {
-        return this.bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED;
+    private boolean isBottomSheetCollapsedOrHidden() {
+        int state = this.bottomSheetBehavior.getState();
+        return state == BottomSheetBehavior.STATE_COLLAPSED || state == BottomSheetBehavior.STATE_HIDDEN;
     }
 
     private boolean isBottomVideoPlaying() {
@@ -631,7 +654,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         return this.exoPlayerTopPlayWhenReady && this.exoPlayerTopState == Player.STATE_READY;
     }
 
-    private boolean isUrlCached(String url) {
+    private boolean isUrlCached(@Nullable String url) {
         return this.service != null && this.service.getCachedBitmap(url) != null;
     }
 
@@ -662,7 +685,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 }
                 JsonReader reader = null;
                 try {
-                    reader = new JsonReader(new InputStreamReader(new FileInputStream(result.file), "UTF-8"));
+                    reader = new JsonReader(new InputStreamReader(new FileInputStream(result.file), StandardCharsets.UTF_8));
                     News news = News.parseNews(reader, false);
                     Util.close(reader);
                     reader = null;
@@ -689,36 +712,15 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     @Override
     public void onAudioFocusChange(int focusChange) {
         switch (focusChange) {
-            case AudioManager.AUDIOFOCUS_GAIN:
-                if (BuildConfig.DEBUG) Log.i(TAG, "Audio focus gained.");
-                break;
-            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
-                if (BuildConfig.DEBUG) Log.i(TAG, "Audio focus gained temporarily.");
-                break;
-            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE:
-                if (BuildConfig.DEBUG) Log.i(TAG, "Audio focus gained temporarily and exclusively.");
-                break;
-            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
-                if (BuildConfig.DEBUG) Log.i(TAG, "Audio focus gained temporarily; other apps may duck.");
-                break;
             case AudioManager.AUDIOFOCUS_LOSS:
-                stopAudio();
-                stopBottomVideo();
-                if (BuildConfig.DEBUG) Log.i(TAG, "Audio focus lost.");
-                break;
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                 stopAudio();
                 stopBottomVideo();
-                if (BuildConfig.DEBUG) Log.i(TAG, "Audio focus lost temporarily.");
                 break;
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                if (BuildConfig.DEBUG) Log.i(TAG, "Audio focus lost temporarily but can duck.");
                 setVolume(0f);
                 break;
-            default:
-                if (BuildConfig.DEBUG) Log.i(TAG, "Audio focus changed: " + focusChange);
         }
-
     }
 
     /** {@inheritDoc} */
@@ -743,14 +745,13 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         if (this.textViewContent != null) {
             this.textViewContent.setMovementMethod(LinkMovementMethod.getInstance());
             this.textViewContent.setFocusable(true);
-            this.textViewContent.getPaint().setAntiAlias(true);
             this.textViewContent.setOnTouchListener(new TextViewImageSpanClickHandler());
         }
         this.recyclerViewRelated = findViewById(R.id.recyclerViewRelated);
         if (Util.isXLargeTablet(this)) {
-            this.recyclerViewRelated.setLayoutManager(new GridLayoutManager(this, getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 4 : 3));
+            this.recyclerViewRelated.setLayoutManager(new GridLayoutManager(this, getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? RELATED_COLUMNS_TABLET_LANDSCAPE : RELATED_COLUMNS_TABLET_PORTRAIT));
         } else {
-            this.recyclerViewRelated.setLayoutManager(new GridLayoutManager(this, 2));
+            this.recyclerViewRelated.setLayoutManager(new GridLayoutManager(this, RELATED_COLUMNS_PHONE));
         }
         this.recyclerViewRelated.setAdapter(new RelatedAdapter(this));
         LinearLayout bottomVideoBlock = findViewById(R.id.bottomVideoBlock);
@@ -796,11 +797,11 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             public void onStateChanged(@NonNull View bottomSheet, final int newState) {
                 if (newState == BottomSheetBehavior.STATE_EXPANDED) {
                     // hide the textview that is shown when collapsed
-                    textViewBottomVideoPeek.setVisibility(View.GONE);
+                    NewsActivity.this.textViewBottomVideoPeek.setVisibility(View.GONE);
                     // display the video title at the bottom edge of the video
-                    textViewBottomVideoViewOverlay.setVisibility(View.VISIBLE);
-                    textViewBottomVideoViewOverlay.setSelected(true);
-                    handler.postDelayed(() -> textViewBottomVideoViewOverlay.setVisibility(View.INVISIBLE), 5_000L);
+                    NewsActivity.this.textViewBottomVideoViewOverlay.setVisibility(View.VISIBLE);
+                    NewsActivity.this.textViewBottomVideoViewOverlay.setSelected(true);
+                    NewsActivity.this.handler.postDelayed(() -> NewsActivity.this.textViewBottomVideoViewOverlay.setVisibility(View.INVISIBLE), 5_000L);
                     // stop the top video
                     stopTopVideo();
                     // stop audio
@@ -809,9 +810,9 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     playBottomVideo();
                 } else if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
                     // hide the textview that is shown when collapsed
-                    textViewBottomVideoPeek.setVisibility(View.VISIBLE);
+                    NewsActivity.this.textViewBottomVideoPeek.setVisibility(View.VISIBLE);
                     // hide the textview that is shown along the bottom edge of the video
-                    textViewBottomVideoViewOverlay.setVisibility(View.INVISIBLE);
+                    NewsActivity.this.textViewBottomVideoViewOverlay.setVisibility(View.INVISIBLE);
                     // stop the bottom video
                     stopBottomVideo();
                     // start the top video
@@ -991,8 +992,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         if (am != null) {
             this.maxAudioVolume = am.getStreamMaxVolume(App.STREAM_TYPE);
             this.originalAudioVolume = am.getStreamVolume(App.STREAM_TYPE);
-            if (BuildConfig.DEBUG)
-                Log.i(TAG, "The original audio volume is " + originalAudioVolume + " out of " + maxAudioVolume);
         }
     }
 
@@ -1040,12 +1039,13 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.exoPlayerAudio.setPlayWhenReady(true);
             return;
         }
-        Object src = buttonAudio.getTag();
+        Object src = this.buttonAudio.getTag();
         if (!(src instanceof String)) return;
         AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
         if (am == null) return;
         if (!Util.isNetworkAvailable(this)) {
-            Toast.makeText(this, R.string.error_no_network, Toast.LENGTH_SHORT).show();
+            //Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
+            showNoNetworkSnackbar();
             return;
         }
         int requestResult;
@@ -1056,6 +1056,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             requestResult = am.requestAudioFocus(this, App.STREAM_TYPE, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
         }
         if (requestResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            if (BuildConfig.DEBUG) Log.w(TAG, "Audio focus request denied.");
+            Snackbar.make(this.coordinatorLayout, R.string.error_audio_focus_denied, Snackbar.LENGTH_SHORT).show();
             return;
         }
         am.setMode(AudioManager.MODE_NORMAL);
@@ -1069,16 +1071,20 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
     }
 
+    /**
+     * Plays the bottom (a.k.a. content) video and stops the top video.
+     */
     private void playBottomVideo() {
         if (this.exoPlayerBottomVideo == null) return;
         if (!Util.isNetworkAvailable(this)) {
-            Toast.makeText(this, R.string.error_no_network, Toast.LENGTH_SHORT).show();
+            //Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
+            showNoNetworkSnackbar();
             return;
         }
         // play the video
         if (this.exoPlayerTopVideo != null) this.exoPlayerTopVideo.setPlayWhenReady(false);
         if (this.originalAudioVolume >= 0) {
-            setVolume((float) originalAudioVolume / (float) maxAudioVolume);
+            setVolume((float) this.originalAudioVolume / (float) this.maxAudioVolume);
         } else {
             ensureMinVolume(0.5f);
         }
@@ -1086,31 +1092,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     }
 
     /**
-     * Plays or pauses the bottom video (which originates in the {@link News#getContent() content} element.
-     *
-     * public void playOrPauseBottomVideo(@Nullable View ignored) {
-     * if (this.exoPlayerBottomVideo == null) return;
-     * if (BuildConfig.DEBUG) Log.i(TAG, "playOrPauseBottomVideo()");
-     * if (isBottomVideoPlaying()) {
-     * // pause the video
-     * this.exoPlayerBottomVideo.setPlayWhenReady(false);
-     * } else {
-     * if (!Util.isNetworkAvailable(this)) {
-     * Toast.makeText(this, R.string.error_no_network, Toast.LENGTH_SHORT).show();
-     * return;
-     * }
-     * // play the video
-     * if (this.exoPlayerTopVideo != null) this.exoPlayerTopVideo.setPlayWhenReady(false);
-     * if (this.originalAudioVolume >= 0) {
-     * setVolume((float)originalAudioVolume / (float)maxAudioVolume);
-     * } else {
-     * ensureMinVolume(0.5f);
-     * }
-     * this.exoPlayerBottomVideo.setPlayWhenReady(true);
-     * }
-     * }
+     * Plays the top (a.k.a. news) video and stops the bottom video.
      */
-
     private void playTopVideo() {
         if (this.exoPlayerTopVideo == null) return;
         if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.setPlayWhenReady(false);
@@ -1144,23 +1127,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
     }
 
-    /*
-     * Plays or pauses the top video (which originates in the {@link News#getStreams() streams} element.
-     * @param ignored View
-     *
-    private void playOrPauseTopVideo(@Nullable View ignored) {
-        if (this.exoPlayerTopVideo == null) return;
-        if (BuildConfig.DEBUG) Log.i(TAG, "playOrPauseTopVideo()");
-        if (isTopVideoPlaying()) {
-            // pause the video
-            this.exoPlayerTopVideo.setPlayWhenReady(false);
-        } else {
-            // play the video
-            if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.setPlayWhenReady(false);
-            this.exoPlayerTopVideo.setPlayWhenReady(true);
-        }
-    }*/
-
     /**
      * Sets the audio volume.
      * @param value [0..1]
@@ -1172,6 +1138,9 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         am.setStreamVolume(App.STREAM_TYPE, Math.round(value * max), 0);
     }
 
+    /**
+     * Reads the article to the user or stops reading it.
+     */
     private void startStopReading() {
         if (this.tts == null) {
             invalidateOptionsMenu();
@@ -1243,7 +1212,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         Content content = this.news.getContent();
         if (content == null) return;
         if (content.hasVideo()) {
-            if (!isBottomSheetExpanded()) {
+            if (isBottomSheetCollapsedOrHidden()) {
                 expandBottomSheet(null);
             } else {
                 collapseBottomSheet();
@@ -1293,8 +1262,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         /** {@inheritDoc} */
         @Override
         public void onBitmapFailed(Exception e, Drawable errorDrawable) {
-            if (BuildConfig.DEBUG)
-                Log.w(TAG, "Failed to load " + this.source + (e != null ? " - " + e.toString() : ""));
+            //if (BuildConfig.DEBUG) Log.i(TAG, "Failed to load " + this.source + (e != null ? " - " + e.toString() : ""));
             this.spannable.removeSpan(this.toReplace);
             NewsActivity activity = this.refActivity.get();
             if (activity != null) activity.spannableImageTargets.remove(this);
@@ -1342,7 +1310,12 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         @ColorInt
         private final int linkColor;
 
-        private URLSpanWChooser(String url, @IntRange(from = 1) @ColorInt int linkColor) {
+        /**
+         * Constructor
+         * @param url URL
+         * @param linkColor link color
+         */
+        private URLSpanWChooser(@NonNull String url, @IntRange(from = 1) @ColorInt int linkColor) {
             super(Util.makeHttps(url));
             this.linkColor = linkColor;
         }
@@ -1368,6 +1341,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
         /** {@inheritDoc} */
         @Override
+        @NonNull
         public String toString() {
             return getClass().getSimpleName() + " to \"" + getURL() + '\"';
         }
@@ -1427,6 +1401,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
         /** {@inheritDoc} */
         @Override
+        @NonNull
         public String toString() {
             return "InternalURLSpan \"" + getURL() + "\"";
         }

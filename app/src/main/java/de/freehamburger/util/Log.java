@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.util.ArrayDeque;
 import java.util.Date;
@@ -28,19 +29,13 @@ public class Log {
 
     private static final String FILENAME = "log.txt";
     private static final DateFormat DF = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
-    private static final Charset CHARSET = Charset.forName("UTF-8");
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
     /** max. log file size */
     private static final long MAX_SIZE = 1_048_576L;
     private static final Deque<String> QUEUE = new ArrayDeque<>(96);
     private static final Object QUEUE_LOCK = new Object();
     public static final Object FILE_LOCK = new Object();
     private static File file;
-
-    public static void d(@NonNull String tag, String msg) {
-        if (!BuildConfig.DEBUG) return;
-        android.util.Log.d(tag, msg);
-        write('D', tag, msg);
-    }
 
     public static boolean deleteFile() {
         boolean deleted;
@@ -138,6 +133,21 @@ public class Log {
         write('W', tag, msg);
     }
 
+    public static void w(@NonNull String tag, @NonNull String msg, @NonNull Throwable t, int depth) {
+        if (!BuildConfig.DEBUG) return;
+        final StackTraceElement[] ste = t.getStackTrace();
+        final int l = Math.min(ste.length, depth);
+        final StringBuilder sb = new StringBuilder(msg.length() + 128);
+        sb.append(msg);
+        for (int i = 0; i < l; i++) {
+            sb.append("\nat ").append(ste[i].toString());
+        }
+        msg = sb.toString();
+
+        android.util.Log.w(tag, msg);
+        write('W', tag, msg);
+    }
+
     /**
      * Enqueues the log messages.
      * @param level log level
@@ -204,7 +214,6 @@ public class Log {
             }
         }
 
-        @SuppressWarnings("ObjectAllocationInLoop")
         @Override
         public void run() {
             for (;;) {

@@ -35,7 +35,7 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
     protected final Result doInBackground(@Size(1) Downloader.Order... params) {
         if (params == null || params.length == 0) {
             if (BuildConfig.DEBUG) Log.e(getClass().getSimpleName(), "No resource given!");
-            return new Result(null, 500, null, null, null);
+            return new Result(null, 500, null, null);
         }
         return load(params[0]);
     }
@@ -92,8 +92,6 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
     public static class Result {
         /** the uri that supplied the data (not necessarily the uri that the user had requested; there might have been a redirect) */
         final String sourceUri;
-        @Nullable
-        final byte[] data;
         /** the HTTP return code */
         public final int rc;
         /** the HTTP return message */
@@ -112,15 +110,13 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
          * @param sourceUri the uri that supplied the data (not necessarily the uri that the user had requested; there might have been a redirect)
          * @param rc HTTP status code
          * @param msg HTTP status message
-         * @param data the data
          * @param listener optional DownloaderListener
          */
-        Result(String sourceUri, int rc, @Nullable String msg, @Nullable byte[] data, @Nullable DownloaderListener listener) {
+        Result(String sourceUri, int rc, @Nullable String msg, @Nullable DownloaderListener listener) {
             super();
             this.sourceUri = sourceUri;
             this.rc = rc;
             this.msg = msg;
-            this.data = data;
             this.listener = listener;
             this.file = null;
             this.contentType = null;
@@ -132,18 +128,16 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
          * @param sourceUri the uri that supplied the data (not necessarily the uri that the user had requested; there might have been a redirect)
          * @param rc HTTP status code
          * @param msg HTTP status message
-         * @param data the data
          * @param file the file
          * @param contentType the content type
          * @param contentLength content length
          * @param listener optional DownloaderListener
          */
-        Result(String sourceUri, int rc, @Nullable String msg, @Nullable byte[] data, @Nullable File file, @Nullable String contentType, long contentLength, @Nullable DownloaderListener listener) {
+        Result(String sourceUri, int rc, @Nullable String msg, @Nullable File file, @Nullable String contentType, long contentLength, @Nullable DownloaderListener listener) {
             super();
             this.sourceUri = sourceUri;
             this.rc = rc;
             this.msg = msg;
-            this.data = data;
             this.file = file;
             this.contentType = contentType;
             this.contentLength = contentLength;
@@ -152,6 +146,7 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
 
         /** {@inheritDoc} */
         @Override
+        @NonNull
         public String toString() {
             return "HTTP " + rc + (msg != null ? (" " + msg) : " for source \"" + sourceUri + "\" stored in \"" + file + "\", contentType = " + contentType);
         }

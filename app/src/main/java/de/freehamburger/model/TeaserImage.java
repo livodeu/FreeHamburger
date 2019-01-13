@@ -244,5 +244,11 @@ public class TeaserImage implements Serializable {
             this.width = width;
             this.height = height;
         }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return width + "x" + height + "-px image at " + url;
+        }
     }
 }
