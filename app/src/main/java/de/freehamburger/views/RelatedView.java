@@ -2,6 +2,7 @@ package de.freehamburger.views;
 
 import android.content.Context;
 import android.support.annotation.LayoutRes;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -31,16 +32,31 @@ public class RelatedView extends RelativeLayout {
     @Nullable
     private Related related;
 
+    /**
+     * Constructor.
+     * @param context Context
+     */
     public RelatedView(Context context) {
         super(context);
         init(context);
     }
 
+    /**
+     * Constructor.
+     * @param context Context
+     * @param attrs AttributeSet
+     */
     public RelatedView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
 
+    /**
+     * Constructor.
+     * @param context Context
+     * @param attrs AttributeSet
+     * @param defStyleAttr int
+     */
     public RelatedView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);
@@ -56,7 +72,7 @@ public class RelatedView extends RelativeLayout {
         return R.layout.related_view;
     }
 
-    private void init(Context ctx) {
+    private void init(@NonNull Context ctx) {
         LayoutInflater inflater = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         if (inflater == null) return;
         inflater.inflate(getLayoutId(), this);

@@ -132,6 +132,8 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     /** displays the article picture when the corresponding menu item is invoked */
     private ImageView quickView;
     private boolean quickViewRequestCancelled;
+    /** point of time when the user paused this Activity most recently */
+    private long pausedAt = -1L;
 
     /**
      * Switches to another {@link Source}.<br>
@@ -158,6 +160,9 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         onRefreshUseCache();
     }
 
+    /**
+     * Removes the temporary search filter.
+     */
     private void clearSearch() {
         this.searchFilter = null;
         if (this.newsAdapter != null) this.newsAdapter.clearTemporaryFilters();
@@ -188,6 +193,8 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         return super.dispatchKeyEvent(event);
     }
 
+    /** {@inheritDoc} */
+    @Override
     public NewsRecyclerAdapter getAdapter() {
         return this.newsAdapter;
     }
@@ -753,9 +760,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
-            if (BuildConfig.DEBUG) {
-                Log.i(TAG, "onCreate(): savedInstanceState is non-null");
-            }
+            if (BuildConfig.DEBUG) Log.i(TAG, "onCreate(): savedInstanceState is non-null");
             this.currentSource = Source.valueOf(savedInstanceState.getString(STATE_SOURCE, Source.HOME.name()));
             updateTitle();
             this.recentSources.clear();
@@ -927,10 +932,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             startActivity(new Intent(this, FilterActivity.class));
             return true;
         }
-        /*if (id == R.id.action_data_protection) {
-            loadDetails(News.getDataProtectionNews());
-            return true;
-        }*/
         if (id == R.id.action_select_regions) {
             AlertDialog ad = Region.selectRegions(this);
             ad.setOnDismissListener(dialog -> onRefreshUseCache());
@@ -998,7 +999,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             shareIntent.setType("text/plain");
             shareIntent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(this, App.getFileProvider(), tempFile));
             shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Log " + now);
-            //shareIntent.addFlags(Intent.FLAG_DEBUG_LOG_RESOLUTION);
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             if (getPackageManager().resolveActivity(shareIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
                 startActivity(shareIntent);
@@ -1009,10 +1009,10 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         }
         if (id == R.id.action_info) {
             BufferedReader reader = null;
-            final StringBuilder info = new StringBuilder(256);
-            info.append("Licenses\n\n");
-            // https://www.gnome.org/fonts/
-            info.append("--- Vera ---\n");
+            final StringBuilder info = new StringBuilder(2342);
+            info.append(getString(R.string.label_licenses)).append("\n\n");
+            // License source: https://www.gnome.org/fonts/#Final_Bitstream_Vera_Fonts (May 2019)
+            info.append("--- Bitstream Vera ---\n");
             try {
                 reader = new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.vera_cr)));
                 for (;;) {
@@ -1060,7 +1060,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         } else if (isWebVw
                 || (isStory && TextUtils.isEmpty(urlToDetailsJson) && !TextUtils.isEmpty(news.getDetailsWeb()))) {   // <- in the "news" section the items do not have a "content"
             if (!Util.isNetworkAvailable(this)) {
-                //Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
                 showNoNetworkSnackbar();
                 intent = null;
             } else {
@@ -1068,7 +1067,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             }
         } else if (isVideo) {
             if (!Util.isNetworkAvailable(this)) {
-                //Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
                 showNoNetworkSnackbar();
                 intent = null;
             } else {
@@ -1105,6 +1103,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     /** {@inheritDoc} */
     @Override
     protected void onPause() {
+        this.pausedAt = System.currentTimeMillis();
         if (this.intro != null && this.intro.isPlaying()) {
             this.intro.cancel();
             // play the intro again next time
@@ -1159,7 +1158,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         // check whether loading is possible
         if (!Util.isNetworkAvailable(app)) {
             this.swipeRefreshLayout.setRefreshing(false);
-            //Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
             showNoNetworkSnackbar();
             return;
         }
@@ -1244,7 +1242,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                 parseLocalFileAsync(localFile);
                 if (!networkAvailable) {
                     showNoNetworkSnackbar();
-                    //Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
                 }
                 return;
             }
@@ -1252,7 +1249,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         // if there is neither a local file nor a network connection, there is nothing we can do here
         if (!networkAvailable) {
             showNoNetworkSnackbar();
-            //Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
             return;
         }
         if (BuildConfig.DEBUG) {
@@ -1269,8 +1265,19 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
 
     /** {@inheritDoc} */
     @Override
+    protected void onRestart() {
+        super.onRestart();
+        if (this.pausedAt > 0L && System.currentTimeMillis() - this.pausedAt > 300_000L) {
+            // scroll to the top if the most recent user interaction was quite a while ago
+            this.listPositionToRestore = 0;
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
     protected void onResume() {
         super.onResume();
+        if (BuildConfig.DEBUG) Log.i(TAG, "onResume()");
         this.newsAdapter.setFilters(TextFilter.createTextFiltersFromPreferences(this));
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         if (prefs.getBoolean(App.PREF_PLAY_INTRO, true)) {
@@ -1278,6 +1285,12 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             SharedPreferences.Editor ed = prefs.edit();
             ed.putBoolean(App.PREF_PLAY_INTRO, false);
             ed.apply();
+        }
+        if (this.listPositionToRestore >= 0) {
+            if (BuildConfig.DEBUG) Log.i(TAG, "Restoring list position " + this.listPositionToRestore);
+            RecyclerView.LayoutManager lm = this.recyclerView.getLayoutManager();
+            if (lm != null) lm.scrollToPosition(this.listPositionToRestore);
+            this.listPositionToRestore = -1;
         }
     }
 
@@ -1391,6 +1404,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             ((App)getApplicationContext()).trimCacheIfNeeded();
 
             if (MainActivity.this.listPositionToRestore >= 0) {
+                if (BuildConfig.DEBUG) Log.i(TAG, "Restoring list position " + listPositionToRestore);
                 RecyclerView.LayoutManager lm = recyclerView.getLayoutManager();
                 if (lm != null) lm.scrollToPosition(MainActivity.this.listPositionToRestore);
                 MainActivity.this.listPositionToRestore = -1;
@@ -1521,7 +1535,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                 vh.itemView.setTag(originalTint);
                 vh.itemView.setBackgroundTintList(ColorStateList.valueOf(tint));
                 vh.itemView.setPressed(true);
-                //vh.itemView.performClick();
                 vh.itemView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS | HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING | HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
             }
         };
@@ -1566,7 +1579,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         }
         String s = getString(this.currentSource.getLabel());
         this.clockView.setText(s);
-        setTaskDescription(new ActivityManager.TaskDescription(getString(R.string.app_task_description, s), null, getResources().getColor(R.color.colorPrimary)));
+        setTaskDescription(new ActivityManager.TaskDescription(getString(R.string.app_task_description, s), null, Util.getColor(this, R.color.colorPrimary)));
     }
 
 }

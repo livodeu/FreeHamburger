@@ -232,6 +232,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     /** {@inheritDoc} */
     @Override
     protected void onPause() {
+        if (this.helpDialog != null && this.helpDialog.isShowing()) {
+            this.helpDialog.dismiss();
+            this.helpDialog = null;
+        }
         if (this.service != null) {
             try {
                 unbindService(this);

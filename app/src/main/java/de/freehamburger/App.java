@@ -99,7 +99,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** int: 0 closes the app; 1 navigates to home category; 2 navigates to recent section; see {@link BackButtonBehaviour} */
     public static final String PREF_USE_BACK_IN_APP = "pref_use_back";
     /** int: number of columns shown on tablets in landscape orientation */
-    public static final String PREF_MAIN_COLS_TABLET_LANDSCAPE = "pref_main_cols_tablet_landscape";
+    public static final String PREF_MAIN_COLS_TABLET_LANDSCAPE = "pref_main_cols_tablet_landscape\uD83C\uDF54";
     /** int: number of columns shown on tablets in portrait orientation */
     public static final String PREF_MAIN_COLS_TABLET_PORTRAIT = "pref_main_cols_tablet_portrait";
     /** default number of columns shown on tablets in landscape orientation */
