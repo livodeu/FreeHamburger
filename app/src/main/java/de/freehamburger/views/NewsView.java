@@ -178,12 +178,6 @@ public class NewsView extends RelativeLayout {
         Date date = news.hasDate() ? news.getDate() : null;
         if (date != null) {
             boolean timeMode = prefs.getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
-            /*try {
-                timeMode = prefs.getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
-            } catch (Exception e) {
-                if (BuildConfig.DEBUG) android.util.Log.e(getClass().getSimpleName(), e.toString(), e);
-                timeMode = App.PREF_TIME_MODE_RELATIVE_DEFAULT;
-            }*/
             this.textViewDate.setText(timeMode ? getRelativeTime(ctx, date, null) : DF.format(date));
         } else {
             this.textViewDate.setText(null);
@@ -225,18 +219,32 @@ public class NewsView extends RelativeLayout {
                 this.imageView.setImageDrawable(null);
                 this.imageView.setTag(null);
                 this.imageView.setVisibility(View.GONE);
+                // let textViewTitle start to the end of textViewDate instead of imageView
                 if (this.textViewTitle != null) {
                     RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewTitle.getLayoutParams();
                     lp.removeRule(RelativeLayout.END_OF);
-                    lp.addRule(RelativeLayout.ALIGN_PARENT_START);
+                    lp.addRule(RelativeLayout.END_OF, R.id.textViewDate);
+                }
+                // let textViewFirstSentence start to the end of textViewDate instead of imageView
+                if (this.textViewFirstSentence != null) {
+                    RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
+                    lp.removeRule(RelativeLayout.END_OF);
+                    lp.addRule(RelativeLayout.END_OF, R.id.textViewDate);
                 }
                 return;
             }
             // restore imageView, in case it had been removed previously
             this.imageView.setVisibility(View.VISIBLE);
+            // restore layout parameters of textViewTitle
             if (this.textViewTitle != null) {
                 RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewTitle.getLayoutParams();
-                lp.removeRule(RelativeLayout.ALIGN_PARENT_START);
+                lp.removeRule(RelativeLayout.END_OF);
+                lp.addRule(RelativeLayout.END_OF, R.id.imageView);
+            }
+            // restore layout parameters of textViewFirstSentence
+            if (this.textViewFirstSentence != null) {
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
+                lp.removeRule(RelativeLayout.END_OF);
                 lp.addRule(RelativeLayout.END_OF, R.id.imageView);
             }
             //
