@@ -15,7 +15,7 @@
     android:focusableInTouchMode="false"
     >
 
-    <!-- in der Original-App ist die Reihenfolge: topline, title, firstSentence -->
+    <!-- in the original app the sequence is: topline, title, firstSentence -->
 
     <TextView
         android:id="@+id/textViewTopline"
@@ -34,10 +34,10 @@
 
     <TextView
         android:id="@+id/textViewDate"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
         android:layout_below="@+id/textViewTopline"
-        android:layout_toStartOf="@id/textViewFirstSentence"
         android:ellipsize="end"
         android:fontFamily="sans-serif-condensed"
         android:maxLines="1"
@@ -66,6 +66,7 @@
         android:background="@drawable/bg_image"
         android:scaleType="fitCenter"
         tools:ignore="RtlSymmetry"
+        tools:visibility="visible"
         tools:srcCompat="@drawable/placeholder"/>
 
     <TextView
