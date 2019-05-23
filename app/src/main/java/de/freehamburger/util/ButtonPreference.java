@@ -160,7 +160,8 @@ public class ButtonPreference extends Preference implements View.OnClickListener
     protected View onCreateView(ViewGroup parent) {
         this.layout = super.onCreateView(parent);
         // super hides the widget_frame
-        this.layout.findViewById(android.R.id.widget_frame).setVisibility(View.VISIBLE);
+        View wf = this.layout.findViewById(android.R.id.widget_frame);
+        if (wf != null) wf.setVisibility(View.VISIBLE);
         //
         this.button = this.layout.findViewById(R.id.button);
         if (this.colors != null) {

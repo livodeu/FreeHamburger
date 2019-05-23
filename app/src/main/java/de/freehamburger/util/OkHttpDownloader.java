@@ -124,13 +124,15 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
             body = response.body();
             if (!response.isSuccessful() || body == null) {
                 if (body != null) body.close();
-                if (BuildConfig.DEBUG) Log.w(TAG, "Failed to load from " + order.url + ": HTTP " + response.code() + " " + response.message());
+                if (BuildConfig.DEBUG) {
+                    if (response.code() >= 400) Log.w(TAG, "Failed to load from " + order.url + ": HTTP " + response.code() + " " + response.message());
+                }
                 return new Result(order.url, response.code(), response.message(), f, null, 0L, order.listener);
             }
             MediaType mediaType = body.contentType();
             long contentLength = body.contentLength();
-            if (BuildConfig.DEBUG && contentLength <= 0L) {
-                Log.e(TAG, "No Content-Length after request with headers:\n" + request.headers().toString());
+            if (BuildConfig.DEBUG) {
+                if (contentLength <= 0L) Log.e(TAG, "No Content-Length after request with headers:\n" + request.headers().toString());
             }
             out = new BufferedOutputStream(new FileOutputStream(f));
             final InputStream in;

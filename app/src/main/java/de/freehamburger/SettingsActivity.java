@@ -67,7 +67,6 @@ import de.freehamburger.util.Util;
 public class SettingsActivity extends AppCompatPreferenceActivity implements ServiceConnection {
 
     private static final String EXTRA_STORAGE_ACTIVITY = "de.freehamburger.extra.storage.activity";
-    //private final Handler handler = new Handler();
     @Nullable
     private HamburgerService service;
     private List<PreferenceActivity.Header> headers;

@@ -10,3 +10,5 @@
 keystore.properties
 .directory
 /doc
+/app/src/androidTest/java/de/freehamburger/AndroidUnitTestPrivate.java
+/app/src/androidTest/resources
