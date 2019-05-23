@@ -13,6 +13,9 @@ android {
         versionCode 1
         versionName "0.1"
         resConfigs "en", "de"
+        testApplicationId "de.freehamburger.test"
+        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
+        testInstrumentationRunnerArguments disableAnalytics: 'true'
     }
 
     signingConfigs {
@@ -41,6 +44,7 @@ android {
             aaptOptions {
                 cruncherEnabled true
             }
+            testCoverageEnabled = true
         }
         release {
             manifestPlaceholders = [name: "@string/app_name", icon:"@mipmap/ic_launcher", roundicon: "@mipmap/ic_launcher_round"]
@@ -77,4 +81,7 @@ dependencies {
     implementation 'com.google.android.exoplayer:exoplayer-ui:2.9.6'    // also working: 2.9.[5..0]; not working: 2.10.0
     //noinspection GradleDependency
     implementation 'com.google.android.exoplayer:exoplayer-hls:2.9.6'   // also working: 2.9.[5..0]; not working: 2.10.0
+
+    androidTestImplementation 'com.android.support:support-annotations:28.0.0'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
 }
