@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringDef;
+import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.JsonToken;
@@ -317,7 +318,8 @@ public class News implements Comparable<News>, Serializable {
     }
 
     @NonNull
-    Set<String> getGeotags() {
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    public Set<String> getGeotags() {
         return this.geotags;
     }
 
@@ -326,7 +328,8 @@ public class News implements Comparable<News>, Serializable {
     }
 
     @NonNull
-    Set<Region> getRegions() {
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    public Set<Region> getRegions() {
         return this.regions;
     }
 
@@ -351,7 +354,8 @@ public class News implements Comparable<News>, Serializable {
     }
 
     @NonNull
-    Set<String> getTags() {
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    public Set<String> getTags() {
         return this.tags;
     }
 
@@ -437,6 +441,7 @@ public class News implements Comparable<News>, Serializable {
                 + "\", Ressort: \"" + ressort
                 + "\", Ext.Id: \"" + externalId
                 + "\", Shorttext: " + (shorttext != null ? "\"" + shorttext + "\"" : "<null>")
+                + ", Regional: " + regional
                 + ", Tags:" + tags.toString()
                 + ", Content: \"" + content + "\")";
     }

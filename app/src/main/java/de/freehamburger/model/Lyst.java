@@ -2,6 +2,7 @@ package de.freehamburger.model;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.util.JsonReader;
 import android.util.JsonToken;
 
@@ -12,7 +13,8 @@ import java.util.List;
 
 /**
  */
-class Lyst implements Serializable {
+@VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+public class Lyst implements Serializable {
 
 
     private final List<String> urls = new ArrayList<>(8);
@@ -73,7 +75,8 @@ class Lyst implements Serializable {
     }
 
     @NonNull
-    java.util.List<String> getUrls() {
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    public java.util.List<String> getUrls() {
         return this.urls;
     }
 

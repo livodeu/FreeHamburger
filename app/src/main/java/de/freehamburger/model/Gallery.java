@@ -1,6 +1,7 @@
 package de.freehamburger.model;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.JsonToken;
@@ -39,7 +40,8 @@ public class Gallery implements Serializable {
     }
 
     @NonNull
-    List<Item> getItems() {
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    public List<Item> getItems() {
         return items;
     }
 
@@ -102,7 +104,8 @@ public class Gallery implements Serializable {
         }
 
         @NonNull
-        Map<Quality, String> getImages() {
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+        public Map<Quality, String> getImages() {
             return images;
         }
 

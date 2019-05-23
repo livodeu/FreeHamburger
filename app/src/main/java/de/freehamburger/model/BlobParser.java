@@ -6,6 +6,7 @@ import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.Size;
+import android.support.annotation.VisibleForTesting;
 import android.util.JsonReader;
 
 import java.io.BufferedInputStream;
@@ -13,7 +14,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.nio.charset.StandardCharsets;
 
 import de.freehamburger.BuildConfig;
@@ -35,14 +36,15 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
      */
     public BlobParser(@NonNull Context ctx, @Nullable BlobParserListener listener) {
         super();
-        this.refctx = new WeakReference<>(ctx);
+        this.refctx = new SoftReference<>(ctx);
         this.listener = listener;
     }
 
     /** {@inheritDoc} */
     @Override
     @Nullable
-    protected Blob doInBackground(@Size(1) File[] files) {
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+    public Blob doInBackground(@Size(1) File[] files) {
         Context ctx = this.refctx.get();
         if (ctx == null) return null;
         Blob blob = null;

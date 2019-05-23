@@ -4,6 +4,7 @@ import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringDef;
+import android.support.annotation.VisibleForTesting;
 import android.text.Editable;
 import android.text.Html;
 import android.text.TextUtils;
@@ -190,6 +191,12 @@ public class Content implements Serializable {
         return audioList;
     }
 
+    @NonNull
+    @VisibleForTesting()
+    public List<ContentElement> getElementList() {
+        return elementList;
+    }
+
     public String getPlainText() {
         return plainText;
     }
@@ -238,7 +245,8 @@ public class Content implements Serializable {
     /**
      * A sub-element of {@link Content}
      */
-    static class ContentElement implements Comparable<ContentElement>, Serializable {
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    public static class ContentElement implements Comparable<ContentElement>, Serializable {
 
         static final int MIN_ORDER = 1;
         static final String TYPE_TEXT = "text";
@@ -327,7 +335,8 @@ public class Content implements Serializable {
         }
 
         @Nullable
-        Box getBox() {
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+        public Box getBox() {
             return box;
         }
 
@@ -340,12 +349,14 @@ public class Content implements Serializable {
         }*/
 
         @Nullable
-        Gallery getGallery() {
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+        public Gallery getGallery() {
             return gallery;
         }
 
         @Nullable
-        Lyst getList() {
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+        public Lyst getList() {
             return list;
         }
 
@@ -356,12 +367,14 @@ public class Content implements Serializable {
 
         @ContentType
         @Nullable
-        String getType() {
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+        public String getType() {
             return type;
         }
 
         @Nullable
-        String getValue() {
+        @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+        public String getValue() {
             return value;
         }
 
