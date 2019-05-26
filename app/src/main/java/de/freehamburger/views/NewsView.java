@@ -211,73 +211,79 @@ public class NewsView extends RelativeLayout {
                 }
             }
         }
-        // load image
-        if (this.imageView != null) {
-            TeaserImage image = news.getTeaserImage();
-            if (image == null) {
-                // it is perfectly normal to have no TeaserImage
-                this.imageView.setImageDrawable(null);
-                this.imageView.setTag(null);
-                this.imageView.setVisibility(View.GONE);
-                // let textViewTitle start to the end of textViewDate instead of imageView
-                if (this.textViewTitle != null) {
-                    RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewTitle.getLayoutParams();
-                    lp.removeRule(RelativeLayout.END_OF);
-                    lp.addRule(RelativeLayout.END_OF, R.id.textViewDate);
-                }
-                // let textViewFirstSentence start to the end of textViewDate instead of imageView
-                if (this.textViewFirstSentence != null) {
-                    RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
-                    lp.removeRule(RelativeLayout.END_OF);
-                    lp.addRule(RelativeLayout.END_OF, R.id.textViewDate);
-                }
-                return;
-            }
-            // restore imageView, in case it had been removed previously
-            this.imageView.setVisibility(View.VISIBLE);
-            // restore layout parameters of textViewTitle
+
+        // as the last step, load the image
+        if (this.imageView == null) return;
+        TeaserImage image = news.getTeaserImage();
+        if (image == null) {
+            // it is perfectly normal to have no TeaserImage
+            this.imageView.setImageDrawable(null);
+            this.imageView.setTag(null);
+            this.imageView.setVisibility(View.GONE);
+            // let textViewTitle start to the end of textViewDate instead of imageView
             if (this.textViewTitle != null) {
                 RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewTitle.getLayoutParams();
                 lp.removeRule(RelativeLayout.END_OF);
-                lp.addRule(RelativeLayout.END_OF, R.id.imageView);
+                lp.addRule(RelativeLayout.END_OF, R.id.textViewDate);
             }
-            // restore layout parameters of textViewFirstSentence
+            // let textViewFirstSentence start to the end of textViewDate instead of imageView
             if (this.textViewFirstSentence != null) {
                 RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
                 lp.removeRule(RelativeLayout.END_OF);
-                lp.addRule(RelativeLayout.END_OF, R.id.imageView);
+                lp.addRule(RelativeLayout.END_OF, R.id.textViewDate);
             }
-            //
-            int maxImageWidth;
-            if (this.imageView.getMaxWidth() > 0) {
-                maxImageWidth = this.imageView.getMaxWidth();
-            } else {
-                Point ds = Util.getDisplaySize(ctx);
-                maxImageWidth = ds.x;
-            }
-            // get the image url; if the type is "video", then preferrably in landscape orientation
-            final TeaserImage.MeasuredImage measuredImage = image.getBestImageForWidth(maxImageWidth, News.NEWS_TYPE_VIDEO.equals(news.getType()));
-            this.imageView.setTag(measuredImage != null ? measuredImage.url : null);
-            if (!TextUtils.isEmpty(image.getTitle())) {
-                this.imageView.setContentDescription(image.getTitle());
-            } else if (!TextUtils.isEmpty(image.getAlttext())) {
-                this.imageView.setContentDescription(image.getAlttext());
-            } else {
-                this.imageView.setContentDescription(null);
-            }
-            if (measuredImage == null || measuredImage.url == null) {
-                this.imageView.setImageBitmap(null);
-                return;
-            }
-            if (bitmapGetter == null) return;
-            Bitmap bitmap = bitmapGetter.getCachedBitmap(measuredImage.url);
-            if (bitmap != null) {
-                this.imageView.setImageBitmap(bitmap);
-                return;
-            }
-            //
-            bitmapGetter.loadImageIntoImageView(measuredImage.url, NewsView.this.imageView, measuredImage.width, measuredImage.height);
+            return;
         }
+        // restore imageView, in case it had been removed previously
+        this.imageView.setVisibility(View.VISIBLE);
+        // restore layout parameters of textViewTitle
+        if (this.textViewTitle != null) {
+            RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewTitle.getLayoutParams();
+            lp.removeRule(RelativeLayout.END_OF);
+            lp.addRule(RelativeLayout.END_OF, R.id.imageView);
+        }
+        // restore layout parameters of textViewFirstSentence
+        if (this.textViewFirstSentence != null) {
+            RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
+            lp.removeRule(RelativeLayout.END_OF);
+            lp.addRule(RelativeLayout.END_OF, R.id.imageView);
+        }
+        //
+        int maxImageWidth;
+        if (this.imageView.getMaxWidth() > 0) {
+            maxImageWidth = this.imageView.getMaxWidth();
+        } else {
+            Point ds = Util.getDisplaySize(ctx);
+            maxImageWidth = ds.x;
+        }
+        // get the image url; if the type is "video", then preferrably in landscape orientation
+        final TeaserImage.MeasuredImage measuredImage = image.getBestImageForWidth(maxImageWidth, News.NEWS_TYPE_VIDEO.equals(news.getType()));
+        this.imageView.setTag(measuredImage != null ? measuredImage.url : null);
+        if (!TextUtils.isEmpty(image.getTitle())) {
+            this.imageView.setContentDescription(image.getTitle());
+        } else if (!TextUtils.isEmpty(image.getAlttext())) {
+            this.imageView.setContentDescription(image.getAlttext());
+        } else {
+            this.imageView.setContentDescription(null);
+        }
+        if (measuredImage == null || measuredImage.url == null) {
+            this.imageView.setImageBitmap(null);
+            return;
+        }
+        if (bitmapGetter == null) {
+            this.imageView.setImageBitmap(null);
+            return;
+        }
+        Bitmap bitmap = bitmapGetter.getCachedBitmap(measuredImage.url);
+        if (bitmap != null) {
+            this.imageView.setImageBitmap(bitmap);
+            return;
+        }
+        // clear the image before loading it
+        this.imageView.setImageBitmap(null);
+        //
+        bitmapGetter.loadImageIntoImageView(measuredImage.url, this.imageView, measuredImage.width, measuredImage.height);
+
     }
 
     /** {@inheritDoc} */
