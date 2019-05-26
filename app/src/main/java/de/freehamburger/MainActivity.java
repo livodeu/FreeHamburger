@@ -477,6 +477,9 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         }
         boolean ask = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_ASK_BEFORE_FINISH, true);
         if (ask) {
+            // close drawer because otherwise the snackbar action is not visible
+            this.drawerLayout.closeDrawer(Gravity.END, true);
+            // ask user whether (s)he had enough
             this.snackbarMaybeQuit = Snackbar.make(this.coordinatorLayout, R.string.action_quit, 5_000);
             this.snackbarMaybeQuit.setAction(R.string.label_yes, v -> finish());
             Util.fadeSnackbar(this.snackbarMaybeQuit, 4900L);
