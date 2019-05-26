@@ -298,7 +298,7 @@ public class Util {
 
     /**
      * Displays a Snackbar and fades it over a given period of time.<br>
-     * The Snackbar will not be dismissed after the time is up, though!
+     * <b>The Snackbar will not be dismissed after the time is up, though!</b>
      * @param sb Snackbar <em>which is not shown yet</em>
      * @param duration duration in ms
      * @throws NullPointerException if {@code sb} is {@code null}
@@ -317,7 +317,7 @@ public class Util {
         final ObjectAnimator aa = ObjectAnimator.ofArgb(action, propertyName, buttonTextColor, buttonTextColorEnd).setDuration(duration);
         final AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.playTogether(oa, aa);
-        animatorSet.setInterpolator(new AccelerateInterpolator());
+        animatorSet.setInterpolator(new AccelerateInterpolator(1.5f));
         sb.show();
         animatorSet.start();
     }
