@@ -101,6 +101,7 @@ public class News implements Comparable<News>, Serializable {
 
     private static void loop(@NonNull final JsonReader reader, @NonNull final News news) throws IOException {
         String name = null;
+        final Set<TeaserImage> images = new HashSet<>(1);
         reader.beginObject();
         while (reader.hasNext()) {
             JsonToken token = reader.peek();
@@ -179,6 +180,14 @@ public class News implements Comparable<News>, Serializable {
                 reader.endArray();
             } else if ("teaserImage".equals(name)) {
                 news.teaserImage = TeaserImage.parse(reader);
+            } else if ("images".equals(name)) {
+                // as of May 2019, the images element apparently always contains only 1 image
+                reader.beginArray();
+                while (reader.hasNext()) {
+                    TeaserImage anotherTeaserImage = TeaserImage.parse(reader);
+                    images.add(anotherTeaserImage);
+                }
+                reader.endArray();
             } else if ("type".equals(name)) {
                 // type is usually "story", it often is "webview" for sports, "video" for videos, and <null> for weather
                 news.type = reader.nextString();
@@ -187,6 +196,12 @@ public class News implements Comparable<News>, Serializable {
             }
         }
         reader.endObject();
+
+        // if there is no 'teaserImage' but the 'images' set is not empty, pick one of those and set it as 'teaserImage'
+        if (news.teaserImage == null && !images.isEmpty()) {
+            if (BuildConfig.DEBUG) Log.i(TAG, "Using element of 'images' as 'teaserImage' in '" + news.getTitle() + "'");
+            news.teaserImage = images.iterator().next();
+        }
     }
 
     /**
