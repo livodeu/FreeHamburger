@@ -157,6 +157,8 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         //
         updateTitle();
         //
+        updateMenu();
+        //
         onRefreshUseCache();
     }
 
@@ -605,6 +607,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                         this.currentSource = this.recentSources.pop();
                         this.listPositionToRestore = 0;
                         updateTitle();
+                        updateMenu();
                         onRefreshUseCache();
                     } else {
                         maybeQuit();
@@ -800,38 +803,33 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         this.sourceForMenuItem.put(R.id.action_section_video, Source.VIDEO);
         this.sourceForMenuItem.put(R.id.action_section_channels, Source.CHANNELS);
         // check menuItem matching currentSource on initialisation
-        int index = this.sourceForMenuItem.indexOfValue(this.currentSource);
-        int menuid = this.sourceForMenuItem.keyAt(index);
-        navigationView.getMenu().findItem(menuid).setChecked(true);
-        //
+        updateMenu();
+        // react to selections being made in the navigation menu
         navigationView.setNavigationItemSelectedListener(
                 menuItem -> {
+                    // ignore if intro is playing
                     if (MainActivity.this.intro != null && MainActivity.this.intro.isPlaying()) return true;
+                    // get selected menu item
                     int id = menuItem.getItemId();
-                    // set item as selected to persist highlight
-                    Menu menu = navigationView.getMenu();
-                    int n = menu.size();
-                    for (int i = 0; i < n; i++) {
-                        MenuItem mi = menu.getItem(i);
-                        mi.setChecked(mi == menuItem);
-                    }
-                    // close drawer when item is tapped
-                    MainActivity.this.drawerLayout.closeDrawers();
-                    //
+                    // when item is tapped, close drawer (after a brief pause to let the user see the new selection)
+                    MainActivity.this.handler.postDelayed(() -> MainActivity.this.drawerLayout.closeDrawer(Gravity.END, true), 500L);
+                    // select source that matches the menu item
                     changeSource(MainActivity.this.sourceForMenuItem.get(id), true);
                     return true;
                 });
-
+        // refresh via top-bottom swipe
         this.swipeRefreshLayout = findViewById(R.id.swiperefresh);
         if (this.swipeRefreshLayout != null) {
             this.swipeRefreshLayout.setOnRefreshListener(this);
             this.swipeRefreshLayout.setNestedScrollingEnabled(false);
         }
+        //
         this.coordinatorLayout = findViewById(R.id.coordinator_layout);
         this.fab = findViewById(R.id.fab);
         this.quickView = findViewById(R.id.quickView);
         this.recyclerView = findViewById(R.id.recyclerView);
         RecyclerView.LayoutManager lm;
+        // one column for phones, more columns for tablets
         if (Util.isXLargeTablet(this)) {
             int numColumns;
             if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -845,7 +843,9 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             lm.setItemPrefetchEnabled(true);
         }
         this.recyclerView.setLayoutManager(lm);
+        // enable context menus for news items
         this.recyclerView.setOnCreateContextMenuListener(this);
+        //
         this.newsAdapter = new NewsRecyclerAdapter(this, Util.loadFont(this));
         this.recyclerView.setAdapter(this.newsAdapter);
         this.clockView = findViewById(R.id.clockView);
@@ -1566,6 +1566,20 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         this.intro.addStep(lastStep);
         //
         this.handler.post(this.intro);
+    }
+
+    /**
+     * Selects the menu item in the navigation view that matches the current source.
+     */
+    private void updateMenu() {
+        int index = this.sourceForMenuItem.indexOfValue(this.currentSource);
+        final int menuid = index >= 0 ? this.sourceForMenuItem.keyAt(index): Integer.MIN_VALUE;
+        final Menu menu = ((NavigationView)findViewById(R.id.navigationView)).getMenu();
+        final int n = menu.size();
+        for (int i = 0; i < n; i++) {
+            MenuItem item = menu.getItem(i);
+            item.setChecked(menuid == item.getItemId());
+        }
     }
 
     /**
