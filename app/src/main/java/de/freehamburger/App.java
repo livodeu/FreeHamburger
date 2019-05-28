@@ -437,6 +437,14 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
         de.freehamburger.util.Log.init(this);
 
+        if (BuildConfig.DEBUG) {
+            com.google.android.exoplayer2.util.Log.setLogLevel(com.google.android.exoplayer2.util.Log.LOG_LEVEL_WARNING);
+            com.google.android.exoplayer2.util.Log.setLogStackTraces(true);
+        } else {
+            com.google.android.exoplayer2.util.Log.setLogLevel(com.google.android.exoplayer2.util.Log.LOG_LEVEL_OFF);
+            com.google.android.exoplayer2.util.Log.setLogStackTraces(false);
+        }
+
         PERMITTED_HOSTS.addAll(Util.loadResourceTextFile(this, R.raw.permitted_hosts, 27));
 
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
