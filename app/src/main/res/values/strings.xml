@@ -83,6 +83,7 @@
     <string name="error_poll_failed">This failed at %1$s with no reason given.</string>
     <string name="error_poll_maximum_interval">The maximum interval is %1$d minutes.</string>
     <string name="error_poll_minimum_interval">The minimum interval is %1$d minutes.</string>
+    <string name="error_timeout">A timeout has occurred.</string>
     <string name="error_tts_fail">Speaking failed!</string>
     <string name="error_tts_fail_network">Speaking failed due to network problems!</string>
     <string name="error_tts_fail_not_downloaded">Speaking failed! Voice not downloaded yet.</string>

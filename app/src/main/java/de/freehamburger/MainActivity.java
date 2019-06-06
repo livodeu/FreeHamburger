@@ -1202,9 +1202,10 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                 if (result.rc != HttpURLConnection.HTTP_OK) {
                     MainActivity.this.swipeRefreshLayout.setRefreshing(false);
                     String msg = result.msg != null ? result.msg : "HTTP " + result.rc;
-                    if (BuildConfig.DEBUG) Log.e(TAG, msg);
                     if ("Pin verification failed".equals(msg)) {
                         msg = getString(R.string.error_pin_verification);
+                    } else if ("timeout".equals(msg)) {
+                        msg = getString(R.string.error_timeout);
                     }
                     Snackbar.make(MainActivity.this.coordinatorLayout, msg, BuildConfig.DEBUG ? Snackbar.LENGTH_INDEFINITE : Snackbar.LENGTH_LONG).show();
                     return;
