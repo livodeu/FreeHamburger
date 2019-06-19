@@ -12,13 +12,12 @@
         android:visible="true"
         android:icon="@drawable/ic_local_library_black_24dp"
         android:title="@string/action_section_news"/>
-    <!-- icon source https://commons.wikimedia.org/wiki/File:Karte_Bundesrepublik_Deutschland.svg -->
     <item
         android:id="@+id/action_section_inland"
         android:alphabeticShortcut="i"
-        android:visible="true"
         android:icon="@drawable/ic_germany"
-        android:title="@string/action_section_inland"/>
+        android:title="@string/action_section_inland"
+        android:visible="true"/>
     <item
         android:id="@+id/action_section_ausland"
         android:alphabeticShortcut="a"
