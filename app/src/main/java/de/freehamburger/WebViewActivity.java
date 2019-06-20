@@ -251,6 +251,12 @@ public class WebViewActivity extends AppCompatActivity {
         }
 
         /**
+         * Determines whether an Uri should be blocked.<br>
+         * <ul>
+         * <li>Uris that are neither http(s) nor data will be blocked.</li>
+         * <li>Uris that refer to hosts that are not on the white list will be blocked.</li>
+         * <li>Uris that contain {@link #BADWORDS naughty} words will be blocked.</li>
+         * </ul>
          * @param uri Uri to check
          * @return {@code true} if the given Uri should be blocked
          * @throws NullPointerException if {@code uri} is {@code null}
