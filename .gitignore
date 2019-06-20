@@ -1,13 +1,16 @@
+.idea/
+.gradle/
+build/
 *.iml
-.gradle
-/local.properties
-/.idea
-.DS_Store
-/build
-/captures
+local.properties
+gradle.properties
+captures/
 .externalNativeBuild
 keystore.properties
 .directory
-/doc
-/app/src/androidTest/java/de/freehamburger/AndroidUnitTestPrivate.java
+/app/src/main/gen/
+#Private test cases
+/app/src/androidTest/java/de/freehamburger/*Private.java
 /app/src/androidTest/resources
+
+
