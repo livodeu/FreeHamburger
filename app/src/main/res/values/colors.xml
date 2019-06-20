@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorBackground">#d9f1ff</color>
-    <color name="colorPrimaryVeryDark">#064a91</color>
     <color name="colorPrimaryDark">#0f70aa</color>
     <color name="colorPrimaryDarkSemiTrans">#770f70aa</color>
     <color name="colorPrimary">#1288cc</color>
@@ -9,7 +7,6 @@
     <color name="colorPrimarySemiTrans">#771288cc</color>
     <color name="colorPrimaryLight">#1599e6</color>
     <color name="colorAccent">#fe8b35</color>
-    <color name="colorAccentDark">#cc712b</color>
     <color name="colorLinkInternal">#ffa866</color>
     <color name="colorLinkExternal">#fe8b35</color>
     <color name="colorFilter">#55ffdd00</color>
@@ -28,9 +25,6 @@
     <color name="colorRegionalNews">#4c0918</color><!--#810a26-->
     <!-- title text color for "breaking" (whatever that possibly means) news -->
     <color name="colorBreakingNews">#ff0000</color>
-
-    <color name="colorFastScrollerLabelBg">#99ffffff</color>
-    <color name="colorFastScrollerLabel">#ff5011</color>
 
     <color name="colorBlurBright1">#22ffffff</color>
     <color name="colorBlurBright">#55ffffff</color>
