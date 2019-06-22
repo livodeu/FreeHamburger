@@ -147,9 +147,6 @@ public class AndroidUnitTest {
             if (PREFERRED_REGION.toString().equals(news.getTopline())) {
                 assertTrue("News with top line '" + PREFERRED_REGION.toString() + "' is not regional", news.isRegional());
             }
-            if ("ausland".equals(news.getRessort())) {
-                assertTrue("No geo tags for ressort 'ausland'", news.getGeotags().size() > 0);
-            }
         }
     }
 }
