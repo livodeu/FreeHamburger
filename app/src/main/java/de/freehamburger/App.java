@@ -1,7 +1,6 @@
 package de.freehamburger;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Application;
@@ -166,13 +165,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
     private OkHttpClient client;
 
     /**
+     * Creates an OkHttpClient instance.
      * @param ctx Context
      * @param cacheDir cache directory
      * @param maxSize the maximum number of bytes the cache should use to store
      * @return OkHttpClient
      * @throws IllegalArgumentException if {@code maxSize} is &lt;= 0
      */
-    @SuppressLint("LogConditional")
     @NonNull
     private static OkHttpClient createOkHttpClient(@NonNull Context ctx, final File cacheDir, final long maxSize) {
         final OkHttpClient.Builder builder = new OkHttpClient.Builder()
@@ -457,16 +456,19 @@ public class App extends Application implements Application.ActivityLifecycleCal
                     return;
                 }
 
-                try {
-                    AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-                    if (am != null) {
-                        Intent mainActivityIntent = new Intent(App.this, MainActivity.class);
-                        mainActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        mainActivityIntent.putExtra(EXTRA_CRASH, true);
-                        PendingIntent intent = PendingIntent.getActivity(getBaseContext(), 0, mainActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
-                        am.set(AlarmManager.RTC, System.currentTimeMillis() + 2_000L, intent);
+                // if the user has been using the app, restart it
+                if (hasCurrentActivity()) {
+                    try {
+                        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                        if (am != null) {
+                            Intent mainActivityIntent = new Intent(App.this, MainActivity.class);
+                            mainActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            mainActivityIntent.putExtra(EXTRA_CRASH, true);
+                            PendingIntent intent = PendingIntent.getActivity(getBaseContext(), 0, mainActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+                            am.set(AlarmManager.RTC, System.currentTimeMillis() + 2_000L, intent);
+                        }
+                    } catch (Throwable ignored) {
                     }
-                } catch (Throwable ignored) {
                 }
 
                 System.exit(-2);
@@ -479,7 +481,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 String channelStandard = getString(R.string.label_notification_channel);
                 String channelHiPri = getString(R.string.label_notification_channel_hipri);
 
-                // https://developer.android.com/guide/topics/ui/notifiers/notifications.html
                 this.notificationChannel = new NotificationChannel(channelStandard, channelStandard, NotificationManager.IMPORTANCE_DEFAULT);
                 this.notificationChannel.setDescription(getString(R.string.label_notification_channel_desc));
                 this.notificationChannel.enableLights(false);
@@ -502,9 +503,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
         registerActivityLifecycleCallbacks(this);
 
         PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
-
-        // https://developer.android.com/training/articles/security-config.html
-        // https://medium.com/@appmattus/android-security-ssl-pinning-1db8acb6621e
 
         FileDeleter.run();
 
@@ -609,8 +607,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
      * @param userInitiated {@code true} if the user initiated the update, {@code false} if the {@link UpdateJobService} did it
      */
     void setMostRecentUpdate(@NonNull Source source, @IntRange(from = 0) long timestamp, boolean userInitiated) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "setMostRecentUpdate(" + source + ", " + new java.util.Date(timestamp) + ", " + (userInitiated ? "by user" : "by job") + ")");
-        //TODO should this be called with timestamp 0 if the .source file is missing?
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor ed = prefs.edit();
         if (timestamp > 0L) {
@@ -649,9 +645,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
         }
     }
 
-    /**
-     * See <a href="https://developer.android.com/studio/write/annotations#enum-annotations">here</a>
-     */
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({USE_BACK_FINISH, USE_BACK_HOME, USE_BACK_BACK})
     @interface BackButtonBehaviour {}
