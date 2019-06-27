@@ -10,6 +10,7 @@ import android.text.Html;
 import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.JsonToken;
+import android.util.MalformedJsonException;
 
 import org.xml.sax.XMLReader;
 
@@ -22,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import de.freehamburger.BuildConfig;
 import de.freehamburger.util.Util;
 
 /**
@@ -282,44 +284,49 @@ public class Content implements Serializable {
         private static ContentElement parseContentElement(@NonNull final JsonReader reader) throws IOException {
             final ContentElement ce = new ContentElement();
             String name = null;
-            reader.beginObject();
-            for (; reader.hasNext(); ) {
-                JsonToken token = reader.peek();
-                if (token == JsonToken.END_DOCUMENT) break;
-                if (token == JsonToken.NAME) {
-                    name = reader.nextName();
-                    continue;
+            try {
+                reader.beginObject();
+                for (; reader.hasNext(); ) {
+                    JsonToken token = reader.peek();
+                    if (token == JsonToken.END_DOCUMENT) break;
+                    if (token == JsonToken.NAME) {
+                        name = reader.nextName();
+                        continue;
+                    }
+                    if (token == JsonToken.NULL) {
+                        reader.skipValue();
+                        continue;
+                    }
+                    if ("type".equals(name)) {
+                        ce.type = reader.nextString();
+                    } else if ("value".equals(name)) {
+                        ce.value = reader.nextString();
+                    } else if ("gallery".equals(name)) {
+                        ce.gallery = Gallery.parse(reader);
+                    } else if ("video".equals(name)) {
+                        ce.video = Video.parseVideo(reader);
+                    } else if ("audio".equals(name)) {
+                        ce.audio = Audio.parseAudio(reader);
+                    } else if ("box".equals(name)) {
+                        ce.box = Box.parse(reader);
+                    } else if ("list".equals(name)) {
+                        ce.list = Lyst.parse(reader);
+                    } else if ("quotation".equals(name)) {
+                        reader.beginObject();
+                        reader.nextName();
+                        ce.value = reader.nextString();
+                        reader.endObject();
+                    } else if ("related".equals(name)) {
+                        ce.related = Related.parse(reader);
+                    } else {
+                        reader.skipValue();
+                    }
                 }
-                if (token == JsonToken.NULL) {
-                    reader.skipValue();
-                    continue;
-                }
-                if ("type".equals(name)) {
-                    ce.type = reader.nextString();
-                } else if ("value".equals(name)) {
-                    ce.value = reader.nextString();
-                } else if ("gallery".equals(name)) {
-                    ce.gallery = Gallery.parse(reader);
-                } else if ("video".equals(name)) {
-                    ce.video = Video.parseVideo(reader);
-                } else if ("audio".equals(name)) {
-                    ce.audio = Audio.parseAudio(reader);
-                } else if ("box".equals(name)) {
-                    ce.box = Box.parse(reader);
-                } else if ("list".equals(name)) {
-                    ce.list = Lyst.parse(reader);
-                } else if ("quotation".equals(name)) {
-                    reader.beginObject();
-                    reader.nextName();
-                    ce.value = reader.nextString();
-                    reader.endObject();
-                } else if ("related".equals(name)) {
-                    ce.related = Related.parse(reader);
-                } else {
-                    reader.skipValue();
-                }
+                reader.endObject();
+            } catch (MalformedJsonException mje) {
+                if (BuildConfig.DEBUG) android.util.Log.e(Content.class.getSimpleName(), mje.toString());
+                throw new InformativeJsonException(mje, reader);
             }
-            reader.endObject();
             return ce;
         }
 
