@@ -442,22 +442,18 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                         if (App.isHostAllowed(host)) {
                             InternalURLSpan internalURLSpan = new InternalURLSpan(url, getResources().getColor(R.color.colorLinkInternal));
                             spannable.setSpan(internalURLSpan, start, end, 0);
-                            //if (BuildConfig.DEBUG) Log.i(TAG, "Replacing link \"" + url + "\" with internal link: " + internalURLSpan);
                         } else {
                             URLSpanWChooser urlSpanWChooser = new URLSpanWChooser(url, getResources().getColor(R.color.colorLinkExternal));
                             spannable.setSpan(urlSpanWChooser, start, end, 0);
-                            //if (BuildConfig.DEBUG) Log.i(TAG, "Replacing link \"" + url + "\" with chooser link: " + urlSpanWChooser);
                         }
                     } else {
                         if (url.endsWith(".json")) {
                             // it does not make sense to pass json links to the browser
                             InternalURLSpan internalURLSpan = new InternalURLSpan(url, getResources().getColor(R.color.colorLinkInternal));
                             spannable.setSpan(internalURLSpan, start, end, 0);
-                            //if (BuildConfig.DEBUG) Log.i(TAG, "Replacing link \"" + url + "\" with internal link: " + internalURLSpan);
                         } else {
                             URLSpanWChooser urlSpanWChooser = new URLSpanWChooser(url, getResources().getColor(R.color.colorLinkExternal));
                             spannable.setSpan(urlSpanWChooser, start, end, 0);
-                            //if (BuildConfig.DEBUG) Log.i(TAG, "Replacing link \"" + url + "\" with chooser link: " + urlSpanWChooser);
                         }
                     }
                 }
