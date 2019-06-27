@@ -1,6 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="PluralsCandidate">
     <string name="app_name" translatable="false">Hamburger</string>
     <string name="app_name_debug" translatable="false">Hamburger - Debug</string>
+    <string name="app_build_date">Build date: %1$s</string>
+    <string name="app_license">This app is licensed under the GNU Affero General Public License v3.0</string>
     <string name="app_task_description" translatable="false">Hamburger - %1$s</string>
 
     <string name="action_add_filter">Add</string>
@@ -45,7 +47,6 @@
     <string name="action_quality_select">Select video quality</string>
     <string name="action_quit">Quit the app?</string>
     <string name="action_view_picture">View picture</string>
-    <string name="action_weather">Weather</string>
 
     <string name="hint_download">Download medium</string>
     <string name="hint_filter">The phrase to filter</string>
@@ -99,7 +100,7 @@
     <string name="label_filter_anywhere">anywhere</string>
     <string name="label_filter_at_start">at start</string>
     <string name="label_filter_at_end">at end</string>
-    <string name="label_licenses">Licenses</string>
+    <string name="label_license">License</string>
     <string name="label_sections">Categories</string>
     <string name="label_select_app">Please select app for %1$s</string>
     <string name="label_service">This is the background service for Hamburger that is required to load data from the network</string>
@@ -159,9 +160,6 @@
     </plurals>
     <string name="label_video_size" translatable="false">%1$d &#215; %2$d</string>
     <string name="label_video_title" translatable="false">%1$s (%2$d &#215; %3$d)</string>
-    <string name="label_weather_forecast">Forecast</string>
-    <string name="label_weather_radar">Radar</string>
-    <string name="label_weather_stations">Stations</string>
     <string name="label_weblink">Link</string>
     <string name="label_yes">Yes</string>
 
@@ -178,11 +176,11 @@
     <string name="msg_font_import_failed">Font import failed!</string>
     <string name="msg_font_none">There is no imported font.</string>
     <string name="msg_found">\"%1$s\" has been found %2$d times.</string>
-    <string name="msg_no_app_kml">No app can display the weather stations!</string>
     <string name="msg_not_found">Not found: \"%1$s\"</string>
     <string name="msg_not_modified">Not modified.</string>
     <string name="msg_search_cleared">Search history cleared.</string>
     <string name="msg_sorry">Sorry for the interruption!</string>
+    <string name="msg_text_copied">The text has been copied to the clipboard.</string>
     <string name="msg_view_it_now">View it now?</string>
     <string name="msg_volume_mute">Audio is muted.</string>
 
