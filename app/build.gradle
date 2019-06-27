@@ -13,6 +13,7 @@ android {
         versionCode 1
         versionName "0.1"
         resConfigs "en", "de"
+        buildConfigField("long", "BUILD_TIME", String.valueOf(System.currentTimeMillis()) + "L")
         testApplicationId "de.freehamburger.test"
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
         testInstrumentationRunnerArguments disableAnalytics: 'true'
