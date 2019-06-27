@@ -1,7 +1,10 @@
 package de.freehamburger;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.SearchManager;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -38,7 +41,12 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
 import android.util.JsonReader;
 import android.util.SparseArray;
 import android.util.TypedValue;
@@ -54,11 +62,11 @@ import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -134,6 +142,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     private boolean quickViewRequestCancelled;
     /** point of time when the user paused this Activity most recently */
     private long pausedAt = -1L;
+    private AlertDialog infoDialog;
 
     /**
      * Switches to another {@link Source}.<br>
@@ -1011,28 +1020,44 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             return true;
         }
         if (id == R.id.action_info) {
-            BufferedReader reader = null;
-            final StringBuilder info = new StringBuilder(2342);
-            info.append(getString(R.string.label_licenses)).append("\n\n");
-            // License source: https://www.gnome.org/fonts/#Final_Bitstream_Vera_Fonts (May 2019)
-            info.append("--- Bitstream Vera ---\n");
-            try {
-                reader = new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.vera_cr)));
-                for (;;) {
-                    String line = reader.readLine();
-                    if (line == null) break;
-                    info.append(line).append('\n');
-                }
-            } catch (Exception ignored) {
-            } finally {
-                Util.close(reader);
-            }
+            final SpannableStringBuilder info = new SpannableStringBuilder().append('\n');
+            SpannableString title = new SpannableString(getString(R.string.app_name));
+            title.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            SpannableString version = new SpannableString(BuildConfig.VERSION_NAME);
+            version.setSpan(new RelativeSizeSpan(0.75f), 0, version.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            info.append(title).append(' ').append(version);
+            info.append("\n\n").append(getString(R.string.app_build_date, DateFormat.getDateTimeInstance().format(new Date(BuildConfig.BUILD_TIME))));
+            info.append("\n\n").append(getString(R.string.app_license));
             AlertDialog.Builder builder = new AlertDialog.Builder(this)
                     .setTitle(R.string.action_info)
                     .setMessage(info)
                     .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
+                    .setNeutralButton(R.string.label_license, (dialog, which) -> {
+                        dialog.dismiss();
+                        List<String> l = Util.loadResourceTextFile(MainActivity.this, R.raw.agpl, 662);
+                        StringBuilder sb = new StringBuilder(34523);
+                        for (String line : l) sb.append(line).append('\n');
+                        @SuppressLint("InflateParams")
+                        ScrollView sv = (ScrollView)getLayoutInflater().inflate(R.layout.multi_text_view, null);
+                        TextView tv = sv.findViewById(R.id.textView);
+                        tv.setTextScaleX(0.75f);
+                        tv.setText(sb);
+                        tv.setContentDescription(getString(R.string.label_license));
+                        ClipboardManager cm = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                        AlertDialog.Builder lb = new AlertDialog.Builder(MainActivity.this)
+                                .setTitle(R.string.label_license)
+                                .setView(sv)
+                                .setPositiveButton(android.R.string.ok, (dialog1, which1) -> dialog1.dismiss());
+                        if (cm != null) {
+                            lb.setNeutralButton(android.R.string.copy, (dialog12, which12) -> {
+                                cm.setPrimaryClip(ClipData.newPlainText("AGPL-3.0", sb));
+                                Snackbar.make(coordinatorLayout, R.string.msg_text_copied, Snackbar.LENGTH_SHORT).show();
+                            });
+                        }
+                        MainActivity.this.infoDialog = lb.show();
+                    })
                     ;
-            builder.show();
+            this.infoDialog = builder.show();
         }
         return false;
     }
@@ -1107,6 +1132,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     @Override
     protected void onPause() {
         this.pausedAt = System.currentTimeMillis();
+        if (this.infoDialog != null && this.infoDialog.isShowing()) this.infoDialog.dismiss();
         if (this.intro != null && this.intro.isPlaying()) {
             this.intro.cancel();
             // play the intro again next time
