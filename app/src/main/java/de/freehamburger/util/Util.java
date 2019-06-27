@@ -79,9 +79,8 @@ import de.freehamburger.R;
  */
 public class Util {
 
-    private static final String TAG = "Util";
-
     public static final Typeface CONDENSED = Typeface.create("sans-serif-condensed", Typeface.NORMAL);
+    private static final String TAG = "Util";
     private static final Typeface NORMAL = Typeface.create("sans-serif", Typeface.NORMAL);
 
     /**
@@ -90,8 +89,9 @@ public class Util {
      * @param pos position in {@code array}
      * @param chars chars to heck
      * @return true / false
+     * @throws NullPointerException if {@code array} or {@code chars} are {@code null}
      */
-    private static boolean areNextChars(@NonNull final char[] array, final int pos, final char... chars) {
+    private static boolean areNextChars(@NonNull final char[] array, final int pos, @NonNull final char... chars) {
         final int n = chars.length;
         try {
             for (int i = 0; i < n; i++) {
@@ -172,8 +172,9 @@ public class Util {
      * If anything goes wrong while copying, the destination file will be deleted!
      * @param src source file
      * @param dest destination file
+     * @param maxSize maximum number of bytes to copy
      * @return true / false
-     * @throws NullPointerException if either parameter is {@code null}
+     * @throws NullPointerException if either file parameter is {@code null}
      */
     public static boolean copyFile(File src, File dest, long maxSize) {
         if (!src.isFile()) return false;
@@ -417,8 +418,10 @@ public class Util {
     }
 
     /**
+     * Returns the ExoPlayer error message contained in the given Exception.
      * @param error ExoPlaybackException
      * @return error message
+     * @throws NullPointerException if {@code error} is {@code null}
      */
     @NonNull
     public static String getExoPlaybackExceptionMessage(@NonNull final ExoPlaybackException error) {
@@ -474,6 +477,7 @@ public class Util {
      * @param tv TextView
      * @param text text that will be set
      * @return Typeface
+     * @throws NullPointerException if {@code tv} is {@code null}
      */
     @NonNull
     public static Typeface getTypefaceForTextView(@NonNull final TextView tv, @Nullable final String text) {
@@ -596,7 +600,6 @@ public class Util {
      * @param rawId raw resource id
      * @param expextedNumberOfLines expected number of lines to be read
      * @return List of Strings, one for each line
-     * @throws NullPointerException if {@code ctx} is {@code null}
      * @throws IllegalArgumentException if {@code expectedNumberOfLines} is negative
      */
     @NonNull
@@ -671,6 +674,7 @@ public class Util {
      * Makes sure that the given url uses https and not http.
      * @param url http(s) url
      * @return https url
+     * @throws NullPointerException if {@code url} is {@code null}
      */
     @NonNull
     public static String makeHttps(@NonNull final String url) {
@@ -768,6 +772,7 @@ public class Util {
      * @param ctx Context
      * @param url url
      * @param title title (optional)
+     * @throws NullPointerException if {@code ctx} or {@code url} are {@code null}
      */
     public static void sendBinaryData(@NonNull final Context ctx, @NonNull final String url, @Nullable CharSequence title) {
         final Intent intent = new Intent(Intent.ACTION_SEND);
@@ -820,6 +825,7 @@ public class Util {
      * @param ctx Context
      * @param bm Bitmap
      * @param title title (optional)
+     * @throws NullPointerException if {@code ctx} is {@code null}
      */
     static void sendBitmap(@NonNull Context ctx, @NonNull Bitmap bm, @Nullable String title) {
         boolean ok = true;
@@ -855,8 +861,10 @@ public class Util {
 
     /**
      * Shares the given url via {@link Intent#ACTION_SEND ACTION_SEND}. Displays an error message if there isn't any suitable app installed.
+     * @param ctx Context
      * @param url URL
      * @param title title (optional)
+     * @throws NullPointerException if {@code ctx} is {@code null}
      */
     public static void sendUrl(@NonNull Context ctx, @NonNull String url, @Nullable CharSequence title) {
         final Intent intent = new Intent(Intent.ACTION_SEND);
@@ -877,6 +885,27 @@ public class Util {
             } else {
                 Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_LONG).show();
             }
+        }
+    }
+
+    /**
+     * Sets a {@link Snackbar snackbar's} action font (family and size).
+     * @param s Snackbar
+     * @param font font to set (optional), see {@link Typeface#create(String, int)}
+     * @param textSize text size to set (set this to 0 to skip)
+     */
+    public static void setSnackbarActionFont(@Nullable Snackbar s, @Nullable Typeface font, float textSize) {
+        if (s == null) return;
+        Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) s.getView();
+        TextView textView = snackLayout.findViewById(android.support.design.R.id.snackbar_action);
+        if (textView == null) {
+            return;
+        }
+        if (font != null) {
+            textView.setTypeface(font);
+        }
+        if (textSize >= 1f) {
+            textView.setTextSize(textSize);
         }
     }
 
@@ -908,11 +937,12 @@ public class Util {
      * @param maxLength maximum length of each part
      * @return List of Strings
      * @throws IllegalArgumentException if {@code maxLength} is negative
-     * @throws ArithmeticException if {@code maxLength} is 0
+     * @throws ArithmeticException if {@code maxLength} is -1
      */
     @NonNull
     public static List<String> splitString(@NonNull final String s, @IntRange(from = 1) final int maxLength) {
         final int n = s.length();
+        if (n == 0) return new ArrayList<>(0);
         final List<String> list = new ArrayList<>(n / maxLength + 1);
         for (int p = 0;;) {
             int l = Math.min(p + maxLength, n);
