@@ -293,8 +293,11 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
 
     /** {@inheritDoc} */
     @Override
-    public void blobParsed(@Nullable Blob blob, boolean ok) {
-        if (!ok || blob == null) {
+    public void blobParsed(@Nullable Blob blob, boolean ok, Throwable oops) {
+        if (!ok || blob == null || oops != null) {
+            if (BuildConfig.DEBUG && oops != null) {
+                Log.e(TAG + id, "Parsing failed: " + oops.toString());
+            }
             done();
             return;
         }

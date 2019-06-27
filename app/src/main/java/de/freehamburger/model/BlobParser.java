@@ -28,6 +28,8 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
 
     @NonNull private final Reference<Context> refctx;
     @Nullable private BlobParserListener listener;
+    @VisibleForTesting
+    public Exception thrown;
 
     /**
      * Constructor.
@@ -54,6 +56,7 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
             reader.setLenient(true);
             blob = Blob.parseApi(ctx, reader);
         } catch (Exception e) {
+            this.thrown = e;
             if (BuildConfig.DEBUG) Log.e(getClass().getSimpleName(), e.toString(), e);
         } finally {
             Util.close(reader);
@@ -66,7 +69,7 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
     @MainThread
     protected void onCancelled() {
         if (this.listener != null) {
-            this.listener.blobParsed(null, false);
+            this.listener.blobParsed(null, false, this.thrown);
             this.listener = null;
         }
     }
@@ -76,7 +79,7 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
     @MainThread
     protected void onPostExecute(@Nullable Blob blob) {
         if (this.listener != null) {
-            this.listener.blobParsed(blob, blob != null);
+            this.listener.blobParsed(blob, blob != null && this.thrown == null, this.thrown);
             this.listener = null;
         }
     }
@@ -90,7 +93,8 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
          * The json data has been parsed and a {@link Blob} might have been generated.
          * @param blob Blob
          * @param ok {@code true} / {@code false}
+         * @param oops this could be an Exception that was thrown while parsing
          */
-        void blobParsed(@Nullable Blob blob, boolean ok);
+        void blobParsed(@Nullable Blob blob, boolean ok, @Nullable Throwable oops);
     }
 }

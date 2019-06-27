@@ -1368,8 +1368,15 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         if (file == null) {
             return;
         }
-        BlobParser blobParser = new BlobParser(this, (blob, ok) -> {
-            if (!ok || blob == null) {
+        BlobParser blobParser = new BlobParser(this, (blob, ok, oops) -> {
+            if (!ok || blob == null || oops != null) {
+                if (BuildConfig.DEBUG) Log.e(TAG, "Parsing failed: " + oops);
+                Snackbar sb = Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_INDEFINITE);
+                sb.setAction("↻", v -> handler.postDelayed(this::onRefresh, 500L));
+                sb.setActionTextColor(getResources().getColor(R.color.colorPrimaryLight));
+                Util.setSnackbarActionFont(sb, Typeface.DEFAULT_BOLD, 26f);
+                sb.show();
+                MainActivity.this.swipeRefreshLayout.setRefreshing(false);
                 return;
             }
             List<News> jointList = blob.getAllNews();
