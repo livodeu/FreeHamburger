@@ -53,10 +53,6 @@
         <item name="actionOverflowButtonStyle">@null</item>
     </style>
 
-    <style name="AppTheme.Snackbar" parent="android:Widget">
-        <item name="android:background">@drawable/bg_button</item>
-    </style>
-
     <style name="AppTheme.ListMenuViewStyle" parent="Widget.AppCompat.ListMenuView">
         <item name="android:textAppearance">@style/TextAppearance.AppCompat.Body2.White</item>
         <item name="android:itemTextAppearance">@style/TextAppearance.AppCompat.Body2.White</item>
