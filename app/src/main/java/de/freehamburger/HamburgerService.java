@@ -125,7 +125,8 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         return key != null ? this.memoryCache.get(key) : null;
     }
 
-    /** {@inheritDoc} */
+    /** {@inheritDoc}
+     * <br>This class implements {@link Html.ImageGetter} which is used in {@link Html#fromHtml(String, int, Html.ImageGetter, Html.TagHandler)} */
     @Override
     public Drawable getDrawable(@NonNull String source) {
         Bitmap cached = getCachedBitmap(source);
