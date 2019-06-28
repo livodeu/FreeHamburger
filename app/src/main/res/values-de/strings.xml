@@ -126,7 +126,7 @@
     <string name="pref_title_open_links_internally_off">werden im Browser geöffnet</string>
     <string name="pref_title_open_links_internally_on">werden in der App geöffnet</string>
     <string name="pref_title_background">Hintergrund</string>
-    <string name="pref_title_warn_mute">Wenn Audio stumm ist,</string>
+    <string name="pref_title_warn_mute">Wenn stummgeschaltet,</string>
     <string name="pref_title_warn_mute_on">wird eine Warnung angezeigt</string>
     <string name="pref_title_warn_mute_off">wird das ignoriert</string>
     <string name="pref_title_quotationmarks_fix">Anführungszeichen</string>
