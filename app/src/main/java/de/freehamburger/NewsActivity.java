@@ -239,17 +239,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     @Nullable
     private TextToSpeech tts;
     private boolean ttsInitialised = false;
-
-    /*
-    @FloatRange(from = 0f, to = 1f)
-    private float getVolume() {
-        AudioManager am = (AudioManager)getSystemService(AUDIO_SERVICE);
-        if (am == null) return 0f;
-        int max = am.getStreamMaxVolume(App.STREAM_TYPE);
-        int value = am.getStreamVolume(App.STREAM_TYPE);
-        return (float)value / (float)max;
-    }
-    */
     private boolean ttsSpeaking = false;
 
     /**
