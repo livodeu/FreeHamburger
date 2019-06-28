@@ -105,7 +105,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
         } finally {
             Util.close(in);
         }
-        webView.loadData(sb.toString(), "text/html", null);
+        webView.loadDataWithBaseURL("about:blank", sb.toString(), "text/html", "UTF-8", null);
         AlertDialog.Builder builder = new AlertDialog.Builder(activity, R.style.AppAlertDialogTheme)
                 .setTitle(R.string.action_help)
                 .setView(webView)
