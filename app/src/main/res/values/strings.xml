@@ -1,12 +1,11 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="PluralsCandidate">
     <string name="app_name" translatable="false">Hamburger</string>
-    <string name="app_name_debug" translatable="false">Hamburger - Debug</string>
+    <string name="app_name_debug" translatable="false" tools:ignore="UnusedResources">Hamburger - Debug</string>
     <string name="app_build_date">Build date: %1$s</string>
     <string name="app_license">This app is licensed under the GNU Affero General Public License v3.0</string>
     <string name="app_task_description" translatable="false">Hamburger - %1$s</string>
 
     <string name="action_add_filter">Add</string>
-    <string name="action_back">Back</string>
     <string name="action_clear_cache">Clear cache</string>
     <string name="action_delete_log" translatable="false">Delete log</string>
     <string name="action_details">More…</string>
@@ -20,7 +19,6 @@
     <string name="action_info">Info</string>
     <string name="action_read">Read</string>
     <string name="action_read_stop">Stop reading</string>
-    <string name="action_save">Save</string>
     <string name="action_scroll_to_top">Scroll to top</string>
     <string name="action_search">Search</string>
     <string name="action_search_clear">Clear search history</string>
@@ -41,25 +39,20 @@
     <string name="action_share_image">Share picture</string>
     <string name="action_share_news">Share article</string>
     <string name="action_share_video">Share video</string>
-    <string name="action_show_cache">Show cache</string>
     <string name="action_show_updates" translatable="false">Show bg updates</string>
     <string name="action_teletext">Teletext</string>
     <string name="action_quality_select">Select video quality</string>
     <string name="action_quit">Quit the app?</string>
     <string name="action_view_picture">View picture</string>
 
-    <string name="hint_download">Download medium</string>
     <string name="hint_filter">The phrase to filter</string>
     <string name="hint_filter_button_clear">Click to clear the phrase</string>
     <string name="hint_filter_button_delete">Click to delete the filter</string>
-    <string name="hint_filter_new">Add a filter</string>
-    <string name="hint_filters">Each filter defined here will be used to remove unwanted news items. You can ignore upper/lower case.</string>
     <string name="hint_intro_will_be_played">The introduction will be shown during the next start.</string>
     <string name="hint_menu_search">This menu item invokes the search function</string>
     <string name="hint_permission_location">Permit access to device location.</string>
     <string name="hint_pic">The illustration for this story</string>
     <string name="hint_search">Search</string>
-    <string name="hint_view">View video</string>
 
     <string name="intro_1">Select categories in the right-hand drawer.</string>
     <string name="intro_2">Search, apply filters, change settings here.</string>
@@ -90,9 +83,6 @@
     <string name="error_tts_fail_not_downloaded">Speaking failed! Voice not downloaded yet.</string>
     <string name="error_unknown_host">has not been found</string>
 
-    <string name="label_back_finish">closes the app</string>
-    <string name="label_back_home">navigates to home category</string>
-    <string name="label_back_back">navigates to recent section</string>
     <string name="label_current_cache_size">currently %1$d MB out of %2$d MB</string>
     <string name="label_current_cache_size_kb">currently %1$d kB out of %2$d MB</string>
     <string name="label_every_minutes">every %1$s minutes</string>
@@ -109,13 +99,6 @@
     <string name="label_streamquality_m">Medium (%1$d px wide)</string>
     <string name="label_streamquality_l">Large (%1$d px wide)</string>
     <string name="label_streamquality_xl">XLarge (%1$d px wide)</string>
-    <string name="label_mime_audio">Audio</string>
-    <string name="label_mime_default">media</string>
-    <string name="label_mime_image">Image</string>
-    <string name="label_mime_video">Video</string>
-    <string name="label_mm_livestreams">Live streams</string>
-    <string name="label_mm_picturesoftheday">Pictures of the day</string>
-    <string name="label_mm_ts_in_hundred_seconds">Tagesschau in 100s</string>
     <string name="label_notification_channel">News</string>
     <string name="label_notification_channel_hipri">Breaking news</string>
     <string name="label_notification_channel_desc">Hamburger news of standard priority</string>
@@ -158,13 +141,8 @@
         <item quantity="one">%1$d day ago</item>
         <item quantity="other">%1$d days ago</item>
     </plurals>
-    <string name="label_video_size" translatable="false">%1$d &#215; %2$d</string>
-    <string name="label_video_title" translatable="false">%1$s (%2$d &#215; %3$d)</string>
-    <string name="label_weblink">Link</string>
     <string name="label_yes">Yes</string>
 
-    <string name="msg_download_complete">Download complete.</string>
-    <string name="msg_filters_none">Currently there are no filters.</string>
     <string name="msg_filters_removed">All filters have been removed.</string>
     <plurals name="msg_filters_stored">
         <item quantity="one">Stored %1$d filter.</item>
@@ -181,7 +159,6 @@
     <string name="msg_search_cleared">Search history cleared.</string>
     <string name="msg_sorry">Sorry for the interruption!</string>
     <string name="msg_text_copied">The text has been copied to the clipboard.</string>
-    <string name="msg_view_it_now">View it now?</string>
     <string name="msg_volume_mute">Audio is muted.</string>
 
     <string name="pref_default_proxy_type" translatable="false">DIRECT</string>
@@ -231,13 +208,10 @@
     <string name="pref_title_time_mode_on">Relative</string>
     <string name="pref_title_time_mode_off">Absolute</string>
     <string name="pref_title_use_back">The back button</string>
-    <string name="pref_title_use_back_on">navigates to recent sections</string>
-    <string name="pref_title_use_back_off">closes the app</string>
     <string name="pref_title_warn_mute">If audio is muted,</string>
     <string name="pref_title_warn_mute_on">show a warning</string>
     <string name="pref_title_warn_mute_off">ignore it</string>
 
     <string name="dummy_button" translatable="false">Dummy Button</string>
-    <string name="dummy_content" translatable="false">DUMMY\nCONTENT</string>
 
 </resources>

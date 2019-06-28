@@ -19,13 +19,8 @@
     <string name="label_notification_channel_desc_hipri">Diese Kategorie betrifft Hamburger Nachrichten hoher Priorität (Eilmeldungen)</string>
     <string name="error_no_network">Kein Datennetz.</string>
     <string name="error_no_network_ext">Für eine sinnvolle Verwendung sollten Sie das Gerät mit dem Internet verbinden.</string>
-    <string name="msg_view_it_now">Jetzt anschauen?</string>
-    <string name="msg_download_complete">Ladevorgang abgeschlossen.</string>
-    <string name="hint_view">Video ansehen</string>
-    <string name="hint_download">Video herunterladen</string>
     <string name="hint_search">Suche</string>
     <string name="error_no_further_details">Keine weiteren Details verfügbar.</string>
-    <string name="action_back">Zurück</string>
     <string name="hint_pic">Die Illustration für diesen Artikel</string>
     <string name="action_settings">Einstellungen</string>
     <string name="error_download_failed">Ladevorgang fehlgeschlagen:\n%1$s</string>
@@ -41,20 +36,11 @@
     <string name="label_current_cache_size_kb">momentan %1$d kB von %2$d MB genutzt</string>
     <string name="label_select_app">Bitte App für %1$s wählen</string>
     <string name="msg_not_modified">Die Daten sind noch aktuell.</string>
-    <string name="label_mm_livestreams">Livestreams</string>
-    <string name="label_mm_picturesoftheday">Bilder des Tages</string>
-    <string name="label_mm_ts_in_hundred_seconds">Tagesschau in 100s</string>
-    <string name="action_save">Speichern</string>
-    <string name="label_mime_audio">Audio</string>
-    <string name="label_mime_default">Medium</string>
-    <string name="label_mime_image">Bild</string>
-    <string name="label_mime_video">Video</string>
     <string name="action_search">Suche</string>
     <string name="action_share">Teilen</string>
     <string name="action_scroll_to_top">Nach oben</string>
     <string name="action_search_clear">Suchverlauf löschen</string>
     <string name="msg_search_cleared">Suchverlauf gelöscht.</string>
-    <string name="action_show_cache">Cache zeigen</string>
     <string name="msg_not_found">Nicht gefunden: „%1$s”</string>
     <string name="msg_sorry">Entschuldigen Sie bitte die Unterbrechung!</string>
     <string name="pref_title_pref_load_over_mobile">Laden im Mobilnetz</string>
@@ -114,8 +100,6 @@
         <item quantity="other">vor %1$d Tagen</item>
     </plurals>
     <string name="pref_title_use_back">„Zurück”-Schaltfläche</string>
-    <string name="pref_title_use_back_on">führt zur letzten Kategorie</string>
-    <string name="pref_title_use_back_off">beendet die App</string>
     <string name="pref_header_data">Daten</string>
     <string name="pref_header_other">Anderes</string>
     <string name="pref_header_general">Allgemein</string>
@@ -127,18 +111,15 @@
     <string name="pref_title_proxy_server">Proxyserver</string>
     <string name="pref_title_proxy_type">Proxytyp</string>
     <string name="action_filter">Filter</string>
-    <string name="hint_filters">Jeder Filter entfernt passende Artikel aus der Liste. Groß-/Kleinschreibung wird ignoriert.</string>
     <string name="hint_filter">zu filternder Text</string>
     <string name="hint_filter_button_clear">Antippen um den Text zu löschen</string>    <!-- https://de.wikipedia.org/wiki/Infinitivgruppe -->
     <string name="hint_filter_button_delete">Antippen um den Filter zu entfernen</string>    <!-- https://de.wikipedia.org/wiki/Infinitivgruppe -->
-    <string name="msg_filters_none">Es sind zur Zeit keine Filter definiert.</string>
     <string name="msg_filters_removed">Alle Filter wurden gelöscht.</string>
     <plurals name="msg_filters_stored">
         <item quantity="one">%1$d Filter gespeichert.</item>
         <item quantity="other">%1$d Filter gespeichert.</item>
     </plurals>
     <string name="hint_permission_location">Zugriff auf den Standort erlauben?</string>
-    <string name="hint_filter_new">Einen Filter hinzufügen</string>
     <string name="pref_title_play_intro">Einführung zeigen</string>
     <string name="hint_intro_will_be_played">Die Einführung wird beim nächsten Start angezeigt.</string>
     <string name="pref_title_open_links_internally">Interne Verknüpfungen</string>
@@ -172,9 +153,6 @@
     <string name="label_filter_anywhere">irgendwo</string>
     <string name="label_filter_at_start">am Anfang</string>
     <string name="label_filter_at_end">am Ende</string>
-    <string name="label_back_finish">beendet die App</string>
-    <string name="label_back_home">führt zur Übersicht</string>
-    <string name="label_back_back">führt zur letzten Kategorie</string>
     <string name="action_view_picture">Bild ansehen</string>
     <string name="label_service">Dies ist der Hintergrunddienst für Hamburger, der für das Laden der Nachrichten verantwortlich ist.</string>
     <string name="error_tts_fail">Sprachausgabe fehlgeschlagen!</string>
@@ -211,7 +189,6 @@
     <string name="label_related">☛ Mehr zum Thema</string>
     <string name="action_help">Hilfe</string>
     <string name="error_pin_verification">Es wurde ein ungültiges Sicherheitszertifikat verwendet!</string>
-    <string name="label_weblink">Verknüpfung</string>
     <string name="pref_summary_font_import_replace">„%1$s” ersetzen</string>
     <string name="label_quoted">„%1$s”</string>
     <string name="pref_title_time_mode">Zeitdarstellung</string>

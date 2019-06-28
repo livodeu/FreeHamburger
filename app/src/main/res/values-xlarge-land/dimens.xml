@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="image_width_normal">240dp</dimen>
-    <dimen name="images_view_min_height">480dp</dimen>
 
     <dimen name="width_navigation_drawer">220dp</dimen>
 

@@ -1,7 +1,6 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="image_width_normal">120dp</dimen>
-    <dimen name="images_view_min_height">240dp</dimen>
     <dimen name="space_between_image_and_text">8dp</dimen>
     <dimen name="bottomsheet_height">200dp</dimen>
     <dimen name="space_between_menu_items">8dp</dimen>
