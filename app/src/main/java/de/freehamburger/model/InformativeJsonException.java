@@ -10,7 +10,7 @@ import java.io.IOException;
 /**
  * Wraps a MalformedJsonException and the state of the JsonReader that caused it.
  */
-public class InformativeJsonException extends IOException {
+class InformativeJsonException extends IOException {
 
     @Nullable private final String readerState;
 
