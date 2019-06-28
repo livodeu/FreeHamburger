@@ -356,10 +356,8 @@ public class WebViewActivity extends AppCompatActivity {
                     wr = new WebResourceResponse("text/html", CHARSET, new ByteArrayInputStream(HTTP_404_BYTES));
                     wr.setStatusCodeAndReasonPhrase(HttpURLConnection.HTTP_NOT_FOUND, "Not found.");
                 }
-                //if (BuildConfig.DEBUG) Log.w(TAG, "shouldInterceptRequest() - blocking " + uri);
+                if (BuildConfig.DEBUG) Log.w(TAG, "shouldInterceptRequest() - blocking " + uri);
                 return wr;
-            } else if (BuildConfig.DEBUG) {
-                Log.i(TAG, "shouldInterceptRequest() - permitting " + uri);
             }
             if (("http".equals(scheme) || "https".equals(scheme)) && "GET".equals(request.getMethod()) && isDownloadableResource(uri.toString())) {
                 if (request.hasGesture()) {
