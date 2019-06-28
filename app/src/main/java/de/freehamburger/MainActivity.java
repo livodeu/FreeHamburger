@@ -578,9 +578,9 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                     finish();
                 })
                 .create();
-        Window w = ad.getWindow();
-        if (w != null) {
-            w.setBackgroundDrawableResource(R.drawable.bg_dialog);
+        Window dw = ad.getWindow();
+        if (dw != null) {
+            dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
         }
         ad.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
         ad.show();
@@ -699,7 +699,10 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                         dialog.cancel();
                     });
                 }
-                builder.show();
+                AlertDialog d = builder.create();
+                Window dw = d.getWindow();
+                if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
+                d.show();
             } else {
                 Util.sendUrl(this, streams.values().iterator().next(), news.getTitle());
             }
@@ -1028,7 +1031,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             info.append(title).append(' ').append(version);
             info.append("\n\n").append(getString(R.string.app_build_date, DateFormat.getDateTimeInstance().format(new Date(BuildConfig.BUILD_TIME))));
             info.append("\n\n").append(getString(R.string.app_license));
-            AlertDialog.Builder builder = new AlertDialog.Builder(this)
+            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppAlertDialogTheme)
                     .setTitle(R.string.action_info)
                     .setMessage(info)
                     .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
@@ -1044,7 +1047,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                         tv.setText(sb);
                         tv.setContentDescription(getString(R.string.label_license));
                         ClipboardManager cm = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
-                        AlertDialog.Builder lb = new AlertDialog.Builder(MainActivity.this)
+                        AlertDialog.Builder lb = new AlertDialog.Builder(MainActivity.this, R.style.AppAlertDialogTheme)
                                 .setTitle(R.string.label_license)
                                 .setView(sv)
                                 .setPositiveButton(android.R.string.ok, (dialog1, which1) -> dialog1.dismiss());
@@ -1054,10 +1057,18 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                                 Snackbar.make(coordinatorLayout, R.string.msg_text_copied, Snackbar.LENGTH_SHORT).show();
                             });
                         }
-                        MainActivity.this.infoDialog = lb.show();
+                        this.infoDialog = lb.create();
+                        Window dw = this.infoDialog.getWindow();
+                        if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
+                        this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+                        this.infoDialog.show();
                     })
                     ;
-            this.infoDialog = builder.show();
+            this.infoDialog = builder.create();
+            Window dw = this.infoDialog.getWindow();
+            if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
+            this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+            this.infoDialog.show();
         }
         return false;
     }
