@@ -34,11 +34,14 @@ import android.support.annotation.RequiresApi;
 import android.support.annotation.RequiresPermission;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.FileProvider;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.webkit.MimeTypeMap;
@@ -242,7 +245,6 @@ public class Util {
             FileDeleter.add(file);
         }
     }
-
 
     /**
      * Deletes old files in the cache directory.
@@ -506,6 +508,22 @@ public class Util {
             }
         }
         return NORMAL;
+    }
+
+    /**
+     * Hides or shows the action, status and navigation bars.
+     * @param a Activity
+     * @param hide {@code true} to hide, {@code false} to reset
+     * @throws NullPointerException if {@code a} is {@code null}
+     */
+    public static void hideActionNavigationStatusBar(@NonNull AppCompatActivity a, boolean hide) {
+        View decorView = a.getWindow().getDecorView();
+        ActionBar actionBar = a.getSupportActionBar();
+        if (actionBar != null) {
+            if (hide) actionBar.hide(); else actionBar.show();
+        }
+        int uiOptions = hide ? View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE : 0;
+        decorView.setSystemUiVisibility(uiOptions);
     }
 
     /**
