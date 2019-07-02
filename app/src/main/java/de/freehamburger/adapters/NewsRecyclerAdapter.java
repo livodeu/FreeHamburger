@@ -7,6 +7,7 @@ import android.support.annotation.IntRange;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.UiThread;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.ContextMenu;
@@ -59,6 +60,8 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     private Source source;
 
     /**
+     * Determines the appropriate layout variant ({@link R.layout#news_view news_view}, {@link R.layout#news_view_nocontent news_view_nocontent} or {@link R.layout#news_view_nocontent_notitle news_view_nocontent_notitle})
+     * depending on the content of a News object.
      * @param news News
      * @return suitable layout resource
      */
@@ -165,7 +168,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     /**
      * Attempts to find a News by its {@link News#getExternalId() externalId} field.
      * @param newsExternalId externalId field of News to find
-     * @return index
+     * @return index or -1
      */
     @IntRange(from = -1)
     public int findNews(@NonNull final String newsExternalId) {
@@ -183,7 +186,13 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         return this.contextMenuIndex;
     }
 
-    public News getItem(int position) {
+    /**
+     * Returns the News at a given position.
+     * @param position news position
+     * @return News
+     * @throws IndexOutOfBoundsException if the position is out of range (<tt>position &lt; 0 || position &gt;= getItemCount()</tt>)
+     */
+    public News getItem(@IntRange(from = 0) int position) {
         return isFiltered() ? this.filteredNews.get(position) : this.newsList.get(position);
     }
 
@@ -232,7 +241,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     }
 
     /**
-     * @return true if a filter has been set
+     * @return {@code true} if a filter has been set
      */
     private boolean isFiltered() {
         return !this.filters.isEmpty();
@@ -240,6 +249,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
 
     /** {@inheritDoc} */
     @Override
+    @UiThread
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         NewsView newsView = (NewsView) holder.itemView;
         newsView.setBackgroundResource(this.background == App.BACKGROUND_LIGHT ? R.drawable.bg_news_light : R.drawable.bg_news);
@@ -408,28 +418,5 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             MenuItem menuItemViewImage = menu.findItem(R.id.action_view_picture);
             menuItemViewImage.setEnabled(hasImage);
         }
-
-        /*
-         * {@inheritDoc}
-         * @throws RuntimeException if the View's Context does not implement {@link NewsAdapterController}
-         *
-        @Override
-        public boolean onLongClick(View v) {
-            if (BuildConfig.DEBUG) Log.i(TAG, "Long click on " + v);
-            Context ctx = v.getContext();
-            if (!(ctx instanceof NewsAdapterController)) {
-                throwWrongContext(ctx);
-            }
-            NewsAdapterController newsAdapterController = (NewsAdapterController)ctx;
-            NewsRecyclerAdapter adapter = newsAdapterController.getAdapter();
-            int position = getAdapterPosition();
-            try {
-                News news = adapter.isFiltered() ? adapter.filteredNews.get(position) : adapter.newsList.get(position);
-                if (news != null) return newsAdapterController.onNewsLongClicked(v, news);
-            } catch (IndexOutOfBoundsException e) {
-                if (BuildConfig.DEBUG) Log.e(TAG, "Long click on " + v + " @ position " + position + " -> " + e.toString());
-            }
-            return false;
-        }*/
     }
 }
