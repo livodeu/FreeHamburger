@@ -11,6 +11,7 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.UiThread;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,11 +48,12 @@ public class NewsView extends RelativeLayout {
     private TextView textViewFirstSentence;
 
     /**
+     * Returns a textual representation of a time difference, e.g. "2¼ hours ago".
      * @param ctx Context
      * @param time Date
-     * @param basedOn Date
+     * @param basedOn Date (set to {@code null} to compare time to current time)
      * @return relative time
-     * @throws NullPointerException if {@code ctx} is {@code null}
+     * @throws NullPointerException if {@code ctx} is {@code null} and {@code time} is not {@code null}
      */
     @NonNull
     public static String getRelativeTime(@NonNull Context ctx, @Nullable Date time, @Nullable Date basedOn) {
@@ -63,7 +65,7 @@ public class NewsView extends RelativeLayout {
             delta = Math.abs(time.getTime() - basedOn.getTime());
         }
         if (delta < 60_000L) {
-            int seconds = (int)(delta / 1000L);
+            int seconds = (int)(delta / 1_000L);
             return ctx.getResources().getQuantityString(R.plurals.label_time_rel_seconds, seconds, seconds);
         }
         if (delta < 60 * 60_000L) {
@@ -93,6 +95,7 @@ public class NewsView extends RelativeLayout {
     /**
      * Constructor.
      * @param ctx Context
+     * @throws NullPointerException if {@code ctx} is {@code null}
      */
     public NewsView(@NonNull Context ctx) {
         super(ctx, null, 0, 0);
@@ -100,6 +103,7 @@ public class NewsView extends RelativeLayout {
     }
 
     /**
+     * Returns the layout resource for this View.
      * @return layout resource id
      */
     @LayoutRes
@@ -134,6 +138,7 @@ public class NewsView extends RelativeLayout {
      * @param bitmapGetter BitmapGetter implementation
      */
     @CallSuper
+    @UiThread
     public void setNews(@Nullable final News news, @Nullable BitmapGetter bitmapGetter) {
         if (news == null) {
             this.textViewTopline.setText(null);
@@ -283,7 +288,6 @@ public class NewsView extends RelativeLayout {
         this.imageView.setImageBitmap(null);
         //
         bitmapGetter.loadImageIntoImageView(measuredImage.url, this.imageView, measuredImage.width, measuredImage.height);
-
     }
 
     /** {@inheritDoc} */
