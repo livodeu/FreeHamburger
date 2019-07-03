@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:clipChildren="false"
-                android:background="@android:color/transparent">
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="end"
+    android:background="@android:color/transparent"
+    android:clipChildren="false">
 
     <TextView
         android:id="@+id/textView"
@@ -14,19 +14,19 @@
         android:layout_alignParentTop="true"
         android:layout_toStartOf="@id/clock"
         android:fontFamily="@font/vera"
-        android:text="@string/app_name"
-        android:textSize="@dimen/text_size_clockview_title"
-        android:textStyle="bold"
-        android:maxLines="1"
         android:gravity="center_vertical|start"
-        android:textColor="@android:color/white"/>
+        android:maxLines="1"
+        android:text="@string/app_name"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/text_size_clockview_title"
+        android:textStyle="bold"/>
 
     <de.freehamburger.views.Clock
         android:id="@+id/clock"
         android:layout_width="@android:dimen/app_icon_size"
         android:layout_height="@android:dimen/app_icon_size"
-        android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
         android:layout_marginEnd="4dp"
         android:soundEffectsEnabled="true"/>
 
