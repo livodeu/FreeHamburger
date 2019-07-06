@@ -2,6 +2,7 @@ package de.freehamburger.model;
 
 import android.content.Context;
 import android.preference.PreferenceManager;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 
@@ -41,8 +42,8 @@ public enum Source {
      */
     @NonNull
     public static CharSequence getParamsForRegional(@NonNull Context ctx) {
-        final StringBuilder params = new StringBuilder();
         final Set<String> regionIds = PreferenceManager.getDefaultSharedPreferences(ctx).getStringSet(App.PREF_REGIONS, new HashSet<>(0));
+        final StringBuilder params = new StringBuilder(regionIds.size() * 3);
         // "0" is not valid (leads to HTTP 400 Bad Request)
         String idUnknown = String.valueOf(Region.UNKNOWN.getId());
         //
@@ -58,21 +59,59 @@ public enum Source {
         return "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16";
     }
 
+    /**
+     * Returns an icon for a given Source.
+     * @param source  Source
+     * @return drawable resource
+     */
+    @DrawableRes
+    public static int iconForSource(@NonNull final Source source) {
+        switch (source) {
+            case HOME: return R.drawable.ic_home_black_24dp;
+            case NEWS: return R.drawable.ic_local_library_black_24dp;
+            case SPORT: return R.drawable.ic_directions_run_black_24dp;
+            case AUSLAND: return R.drawable.ic_language_black_24dp;
+            case VIDEO: return R.drawable.ic_videocam_black_24dp;
+            case INLAND: return R.drawable.ic_germany;
+            case CHANNELS: return R.drawable.ic_tv_black_24dp;
+            case REGIONAL: return R.drawable.ic_place_black_24dp;
+            case WIRTSCHAFT: return R.drawable.ic_build_black_24dp;
+        }
+        return 0;
+    }
+
+    /**
+     * Constructor.
+     * @param label string resource id
+     * @param url url
+     */
     Source(@StringRes int label, String url) {
         this(label, url, false);
     }
 
+    /**
+     * Constructor.
+     * @param label string resource id
+     * @param url url
+     * @param needsParams {@code true} if this Source needs additional parameters
+     */
     Source(@StringRes int label, String url, boolean needsParams) {
         this.label = label;
         this.url = url;
         this.needsParams = needsParams;
     }
 
+    /**
+     * @return string resource id of the label
+     */
     @StringRes
     public int getLabel() {
         return label;
     }
 
+    /**
+     * @return the url
+     */
     public String getUrl() {
         return url;
     }
