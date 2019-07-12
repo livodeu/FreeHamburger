@@ -4,18 +4,22 @@ import android.content.Context;
 import android.preference.PreferenceManager;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
 import de.freehamburger.App;
+import de.freehamburger.BuildConfig;
 import de.freehamburger.R;
 
 /**
  *
  */
 public enum Source {
+
 
     HOME(R.string.action_section_homepage, App.URL_PREFIX + "homepage/", R.drawable.ic_home_black_24dp),
     NEWS(R.string.action_section_news, App.URL_PREFIX + "news/", R.drawable.ic_local_library_black_24dp),
@@ -28,6 +32,8 @@ public enum Source {
     /** params look like "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" */
     REGIONAL(R.string.action_section_regional, App.URL_PREFIX + "news/?regions=", R.drawable.ic_place_black_24dp, true)
     ;
+
+    public static final String FILE_SUFFIX = ".source";
 
     @StringRes
     private final int label;
@@ -59,6 +65,25 @@ public enum Source {
             return params;
         }
         return "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16";
+    }
+
+    /**
+     * Returns the Source that a given local file belongs to.<br>
+     * The File object has been created by {@link App#getLocalFile(Source)}.
+     * @param file File
+     * @return Source
+     */
+    @Nullable
+    public static Source getSourceFromFile(File file) {
+        if (file == null) return null;
+        String name = file.getName();
+        if (!name.endsWith(FILE_SUFFIX)) return null;
+        try {
+            return valueOf(name.substring(0, name.length() - FILE_SUFFIX.length()));
+        } catch (Exception e) {
+            if (BuildConfig.DEBUG) de.freehamburger.util.Log.e(Source.class.getSimpleName(), e.toString());
+        }
+        return null;
     }
 
     /**
