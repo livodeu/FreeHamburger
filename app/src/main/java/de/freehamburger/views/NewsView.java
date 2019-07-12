@@ -152,6 +152,9 @@ public class NewsView extends RelativeLayout {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         final boolean fixQ = prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, false);
         // the original order is: topline, title, firstSentence
+
+        // Occasionally, it seems, the folks seem to be a bit negligent and enter text with leading and/or trailing spaces; therefore we have to trim the Strings.
+
         // topline
         boolean titleReplacesTopline = false;
         String newsTopline = news.getTopline();
@@ -159,6 +162,7 @@ public class NewsView extends RelativeLayout {
             titleReplacesTopline = true;
             newsTopline = news.getTitle();
         }
+        if (newsTopline != null) newsTopline = newsTopline.trim();
         this.textViewTopline.setTypeface(Util.getTypefaceForTextView(this.textViewTopline, newsTopline));
         this.textViewTopline.setText(fixQ ? Util.fixQuotationMarks(newsTopline) : newsTopline);
         if (news.isBreakingNews()) {
@@ -171,7 +175,7 @@ public class NewsView extends RelativeLayout {
         //
         if (this.textViewTitle != null) {
             if (!titleReplacesTopline) {
-                String title = news.getTitle();
+                String title = news.getTitle(); if (title != null) title = title.trim();
                 this.textViewTitle.setText(fixQ ? Util.fixQuotationMarks(title) : title);
                 this.textViewTitle.setVisibility(View.VISIBLE);
             } else {
@@ -191,12 +195,12 @@ public class NewsView extends RelativeLayout {
         if (this.textViewFirstSentence != null) {
             String fs = news.getFirstSentence();
             if (!TextUtils.isEmpty(fs)) {
-                this.textViewFirstSentence.setText(fixQ ? Util.fixQuotationMarks(fs) : fs);
+                this.textViewFirstSentence.setText(fixQ ? Util.fixQuotationMarks(fs.trim()) : fs.trim());
                 this.textViewFirstSentence.setVisibility(View.VISIBLE);
             } else {
                 String st = news.getShorttext();
                 if (!TextUtils.isEmpty(st) && !st.equals(news.getTitle())) {
-                    this.textViewFirstSentence.setText(fixQ ? Util.fixQuotationMarks(st) : st);
+                    this.textViewFirstSentence.setText(fixQ ? Util.fixQuotationMarks(st.trim()) : st.trim());
                     this.textViewFirstSentence.setVisibility(View.VISIBLE);
                 } else {
                     Content content = news.getContent();
