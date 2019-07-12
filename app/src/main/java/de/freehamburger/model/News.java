@@ -286,9 +286,9 @@ public class News implements Comparable<News>, Serializable {
         if (this.date != null) return this.date;
         if (this.dateString != null) {
             try {
-                this.date = DF.parse(dateString);
-            } catch (ParseException | ArrayIndexOutOfBoundsException e) {
-                if (BuildConfig.DEBUG) android.util.Log.e(getClass().getSimpleName(), "While parsing date: " + e.toString());
+                this.date = parseDate(dateString);
+            } catch (ParseException | ArrayIndexOutOfBoundsException | NumberFormatException e) {
+                if (BuildConfig.DEBUG) android.util.Log.e(getClass().getSimpleName(), "While parsing date '" + dateString + "': " + e.toString());
             }
             return this.date;
         }
