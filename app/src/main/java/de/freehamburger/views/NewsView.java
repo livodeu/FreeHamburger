@@ -12,6 +12,7 @@ import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
+import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -38,14 +39,16 @@ public class NewsView extends RelativeLayout {
 
     private static final DateFormat DF = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
     private static final List<String> REGION_LABELS = Region.getValidLabels();
-    @Nullable
-    TextView textViewTitle;
-    private TextView textViewTopline;
-    private TextView textViewDate;
-    @Nullable
-    private ImageView imageView;
-    @Nullable
-    private TextView textViewFirstSentence;
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE) @Nullable
+    public TextView textViewTitle;
+    @VisibleForTesting
+    public TextView textViewTopline;
+    @VisibleForTesting
+    public TextView textViewDate;
+    @VisibleForTesting @Nullable
+    public ImageView imageView;
+    @VisibleForTesting @Nullable
+    public TextView textViewFirstSentence;
 
     /**
      * Returns a textual representation of a time difference, e.g. "2¼ hours ago".
