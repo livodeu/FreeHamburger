@@ -1,6 +1,7 @@
 package de.freehamburger.views;
 
 import android.content.Context;
+import android.preference.PreferenceManager;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -14,6 +15,7 @@ import android.widget.TextView;
 
 import java.text.DateFormat;
 
+import de.freehamburger.App;
 import de.freehamburger.HamburgerActivity;
 import de.freehamburger.HamburgerService;
 import de.freehamburger.R;
@@ -77,7 +79,8 @@ public class RelatedView extends RelativeLayout {
         if (inflater == null) return;
         inflater.inflate(getLayoutId(), this);
         imageViewRelated = findViewById(R.id.imageViewRelated);
-        imageViewRelated.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        boolean hwBmps = PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_USE_HARDWARE_BMPS, true);
+        imageViewRelated.setLayerType(hwBmps ? View.LAYER_TYPE_HARDWARE : View.LAYER_TYPE_SOFTWARE, null);
         textViewDate = findViewById(R.id.textViewDate);
         textViewTitle = findViewById(R.id.textViewTitle);
     }
