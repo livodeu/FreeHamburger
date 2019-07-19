@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.support.annotation.WorkerThread;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.ActionBar;
@@ -222,7 +223,8 @@ public class WebViewActivity extends AppCompatActivity {
     /**
      * A WebViewClient implementation.
      */
-    private static class HamburgerWebViewClient extends WebViewClient {
+    @VisibleForTesting
+    public static class HamburgerWebViewClient extends WebViewClient {
 
         private static final String[] DOWNLOADABLE_RESOURCES = new String[] {
                 ".7z", ".apk", ".arw", ".bin", ".bz2", ".cr2", ".deb", ".dng", ".doc", ".epub", ".exe",
@@ -261,7 +263,8 @@ public class WebViewActivity extends AppCompatActivity {
          * @return {@code true} if the given Uri should be blocked
          * @throws NullPointerException if {@code uri} is {@code null}
          */
-        private static boolean shouldBlock(@NonNull Uri uri) {
+        @VisibleForTesting
+        public static boolean shouldBlock(@NonNull Uri uri) {
             @Nullable final String host = uri.getHost();    // is null when scheme is 'data'
             @Nullable final String path = uri.getPath();    // is null when scheme is 'data'
             if (host == null || path == null) return false;
