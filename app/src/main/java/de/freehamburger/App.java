@@ -1,6 +1,7 @@
 package de.freehamburger;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Application;
@@ -25,7 +26,10 @@ import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresPermission;
+import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
+
+import com.squareup.picasso.Request;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -129,6 +133,10 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_POLL_NIGHT_END = "pref_poll_night_end";
     /** boolean -  See <a href="https://en.wikipedia.org/wiki/Quotation_mark#German">here</a> */
     public static final String PREF_CORRECT_WRONG_QUOTATION_MARKS = "pref_correct_quotation_marks";
+    /** boolean - use {@link android.graphics.Bitmap.Config#HARDWARE} for decoding bitmaps (only for Oreo and beyond) */
+    public static final String PREF_USE_HARDWARE_BMPS = "pres_use_hardware_bmps";
+    /** ColorSpace to use when decoding bitmaps (apparently not [yet] supported by Picasso, see {@link com.squareup.picasso.RequestHandler#createBitmapOptions(Request)}) */
+    public static final String PREF_COLORSPACE = "pref_colorspace";
     public static final TimeZone TIMEZONE = TimeZone.getTimeZone("Europe/Berlin");
     static final String EXTRA_CRASH = "crash";
     /** back button behaviour: pressing back stops the app (respectively the Android default behaviour) */
@@ -140,7 +148,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** the AudioManager stream type to be used throughout the app */
     static final int STREAM_TYPE = AudioManager.STREAM_MUSIC;
     /** default proxy port (if not set by user) */
-    private static final int DEFAULT_PROXY_PORT = 80;
+    static final int DEFAULT_PROXY_PORT = 80;
     /** used to build a preferences key to store the most recent update of a {@link Source} */
     private static final String PREFS_PREFIX_MOST_RECENT_UPDATE = "latest_";
     /** used to build a preferences key to store the most recent <em>user-initiated</em> update of a {@link Source} */
@@ -148,8 +156,14 @@ public class App extends Application implements Application.ActivityLifecycleCal
     private static final String TAG = "App";
     private static final Set<String> PERMITTED_HOSTS = new HashSet<>(27);
 
+    /*
+     for info about latest 'official' app versions, call:
+     wget -U "F-Droid 1.6.2" https://service.tagesschau.de/app/repo/index-v1.jar
+     unpack the jar file
+     and look into the enclosed json file
+      */
     static {
-        String[] VERSIONS = new String[] {"2018080901", "2018102216"};
+        String[] VERSIONS = new String[] {"2018080901", "2018102216", "2019011010", "2019032813", "2019040312"};
         String[] OSS = new String[] {"6.0.1", "7.0.1", "7.1.0", "7.1.1", "7.1.2", "8.0.0", "8.1.0", "9.0.0"};
         USER_AGENT = "Tagesschau/de.tagesschau (" + VERSIONS[(int)(Math.random() * VERSIONS.length)] + ", Android: " + OSS[(int)(Math.random() * OSS.length)] + ")";
     }
@@ -250,7 +264,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
      * @param host host in lowercase chars
      * @return {@code true} / {@code false}
      */
-    static synchronized boolean isHostAllowed(@Nullable final String host) {
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    public static synchronized boolean isHostAllowed(@Nullable final String host) {
         if (host == null) return false;
         for (String allowedHost : PERMITTED_HOSTS) {
             if (host.endsWith(allowedHost)) {
@@ -258,6 +273,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
             }
         }
         return false;
+    }
+
+    @Nullable
+    @VisibleForTesting
+    public Activity getCurrentActivity() {
+        return currentActivity;
     }
 
     /**
@@ -274,7 +295,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
      */
     @NonNull
     public File getLocalFile(@NonNull Source source) {
-        return new File(getFilesDir(), source.toString() + ".source");
+        return new File(getFilesDir(), source.toString() + Source.FILE_SUFFIX);
     }
 
     /**
@@ -355,7 +376,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /**
      * @return the interval in ms if there is a scheduled job with the id {@link UpdateJobService#JOB_ID}; 0 otherwise
      */
-    private long isBackgroundJobScheduled() {
+    @VisibleForTesting
+    public long isBackgroundJobScheduled() {
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
         if (js == null) return 0L;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -448,8 +470,15 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             /** {@inheritDoc} */
+            @SuppressLint("ApplySharedPref")
             @Override
             public void uncaughtException(Thread t, Throwable e) {
+                if (e instanceof IllegalArgumentException && e.toString().contains("Software rendering doesn't support hardware bitmaps")) {
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(App.this);
+                    SharedPreferences.Editor ed = prefs.edit();
+                    ed.putBoolean(App.PREF_USE_HARDWARE_BMPS, false);
+                    ed.commit();
+                }
                 if (BuildConfig.DEBUG) {
                     boolean isCurrentThread = Thread.currentThread().equals(t);
                     Log.wtf(TAG, "*** Uncaught Exception in "  + (isCurrentThread ? "current thread: " : "another thread: ") + e.toString(), e);
@@ -506,12 +535,15 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
         FileDeleter.run();
 
+        Util.clearExports(this);
+
         scheduleStart();
     }
 
     /** {@inheritDoc} */
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+        if (BuildConfig.DEBUG) Log.i(TAG, "Preference '" + key + "' changed");
         if (PREF_POLL.equals(key)) {
             boolean on = prefs.getBoolean(key, false);
             if (on) {
@@ -519,6 +551,31 @@ public class App extends Application implements Application.ActivityLifecycleCal
             } else {
                 scheduleStop();
             }
+        } else if (PREF_PROXY_SERVER.equals(key) || PREF_PROXY_TYPE.equals(key)) {
+            // OkHttpClient needs to be rebuilt next time
+            closeClient();
+         }
+    }
+
+    private void closeClient() {
+        try {
+            if (this.client != null) {
+                final OkHttpClient cc = this.client;
+                this.client = null;
+                Util.close(cc.cache());
+                cc.dispatcher()
+                        .executorService()
+                        .shutdown();
+                // connectionPool().evictAll() might throw android.os.NetworkOnMainThreadException (@ okhttp3.internal.Util.closeQuietly(Util.java:155))
+                new Thread() {
+                    @Override
+                    public void run() {
+                        cc.connectionPool().evictAll();
+                    }
+                }.start();
+            }
+        } catch (Throwable t) {
+            if (BuildConfig.DEBUG) Log.e(TAG, t.toString(), t);
         }
     }
 
@@ -526,25 +583,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Override
     public void onTrimMemory(int level) {
         if (level > android.content.ComponentCallbacks2.TRIM_MEMORY_MODERATE) {
-            if (BuildConfig.DEBUG) Log.w(TAG, "onTrimMemory(" + level + ")");
-            try {
-                if (this.client != null) {
-                    Util.close(this.client.cache());
-                    this.client.dispatcher()
-                            .executorService()
-                            .shutdown();
-                    // connectionPool().evictAll() might throw android.os.NetworkOnMainThreadException (@ okhttp3.internal.Util.closeQuietly(Util.java:155))
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            client.connectionPool().evictAll();
-                            client = null;
-                        }
-                    }.start();
-                }
-            } catch (Throwable t) {
-                if (BuildConfig.DEBUG) Log.e(TAG, t.toString(), t);
-            }
+            closeClient();
         }
         super.onTrimMemory(level);
     }
