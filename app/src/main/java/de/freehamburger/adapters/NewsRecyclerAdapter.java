@@ -8,6 +8,7 @@ import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
+import android.support.annotation.VisibleForTesting;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.ContextMenu;
@@ -84,6 +85,20 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             return R.layout.news_view_nocontent_notitle;
         }
         return R.layout.news_view;
+    }
+
+    @VisibleForTesting
+    @NonNull
+    public static NewsView selectView(Context ctx, final int viewType) {
+        NewsView v;
+        if (viewType == R.layout.news_view_nocontent_notitle) {
+            v = new NewsViewNoContentNoTitle(ctx);
+        } else if (viewType == R.layout.news_view_nocontent) {
+            v = new NewsViewNoContent(ctx);
+        } else {
+            v = new NewsView(ctx);
+        }
+        return v;
     }
 
     /**
@@ -265,15 +280,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, final int viewType) {
-        final View v;
-        if (viewType == R.layout.news_view_nocontent_notitle) {
-            v = new NewsViewNoContentNoTitle(this.mainActivity);
-        } else if (viewType == R.layout.news_view_nocontent) {
-            v = new NewsViewNoContent(this.mainActivity);
-        } else {
-            v = new NewsView(this.mainActivity);
-        }
-        return new ViewHolder(v);
+        return new ViewHolder(selectView(this.mainActivity, viewType));
     }
 
     /**
