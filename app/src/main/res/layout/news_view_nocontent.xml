@@ -51,6 +51,7 @@
         android:layout_below="@+id/textViewDate"
         android:layout_alignParentStart="true"
         android:adjustViewBounds="true"
+        android:layerType="hardware"
         android:contentDescription="@string/hint_pic"
         android:cropToPadding="true"
         android:elevation="4dp"
@@ -60,7 +61,7 @@
         android:paddingBottom="8dp"
         android:scaleType="fitCenter"
         tools:ignore="RtlSymmetry"
-        tools:srcCompat="@drawable/placeholder"/>
+        tools:srcCompat="@tools:sample/backgrounds/scenic"/>
 
     <TextView
         android:id="@+id/textViewTitle"

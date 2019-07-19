@@ -52,6 +52,7 @@
         android:layout_toEndOf="@id/textViewDate"
         android:layout_alignParentEnd="true"
         android:adjustViewBounds="true"
+        android:layerType="hardware"
         android:contentDescription="@string/hint_pic"
         android:cropToPadding="true"
         android:maxWidth="@dimen/image_width_normal"
