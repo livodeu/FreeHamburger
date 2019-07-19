@@ -32,8 +32,8 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="?attr/actionBarSize"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_vertical"
         android:animateLayoutChanges="true"
         >
 
@@ -41,15 +41,13 @@
             android:id="@+id/bottomVideoView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="fill_horizontal"
-            android:layout_marginStart="2dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="2dp"
-            android:layout_marginBottom="8dp"
+            android:layout_centerVertical="true"
+            android:scaleX="0"
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:minHeight="@dimen/bottomsheet_height"
             android:layerType="hardware"
+            android:onClick="onBottomVideoTapped"
             app:surface_type="texture_view"
             app:resize_mode="fit"
             app:use_controller="false"
@@ -70,6 +68,22 @@
             android:textSize="@dimen/text_size_news_bottom_video"
             android:textColor="@color/colorDirtyWhite"
             tools:text="Video title again"/>
+
+        <ImageView
+            android:id="@+id/bottomVideoPauseIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:elevation="50dp"
+            android:src="@drawable/ic_pause_black_24dp"
+            android:tint="@color/colorAccent"
+            android:scaleX="3"
+            android:scaleY="3"
+            android:contentDescription="@string/hint_paused"
+            android:visibility="gone"
+            tools:visibility="visible"
+            />
     </RelativeLayout>
 
 
