@@ -85,7 +85,14 @@ public class Related implements Serializable, Comparable<Related> {
         }
         Date d = o.getDate();
         if (d == null) return -1;
-        return d.compareTo(getDate());
+        Date thisdate = null;
+        try {
+            thisdate = getDate();
+            return d.compareTo(thisdate);
+        } catch (Exception e) {
+            if (BuildConfig.DEBUG) de.freehamburger.util.Log.e(getClass().getSimpleName(), "While comparing " + d + " to " + thisdate + ": " + e.getMessage(), e);
+        }
+        return 0;
     }
 
     /**
@@ -96,8 +103,6 @@ public class Related implements Serializable, Comparable<Related> {
         if (date != null) return date;
         if (dateString != null) {
             try {
-                //date = News.DF.parse(dateString);
-                //date = News.getDateFormat().parse(dateString);
                 date = News.parseDate(dateString);
             } catch (Exception e) {
                 if (BuildConfig.DEBUG) de.freehamburger.util.Log.e(getClass().getSimpleName(), "Failed to parse \"" + dateString + "\"", e);
