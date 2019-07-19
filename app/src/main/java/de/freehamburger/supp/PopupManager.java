@@ -9,7 +9,6 @@ import android.support.annotation.NonNull;
 import android.transition.Fade;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -21,9 +20,14 @@ import android.widget.TextView;
 import de.freehamburger.R;
 
 /**
- * See http://androidsrc.net/android-popupwindow-show-tooltip/
+ * This class displays tooltip-like popup windows.<br>
+ * Usage:<br>
+ * <pre>
+ * PopupManager popupManager = new PopupManager();
+ * popupManager.showPopup(anchor_view, "the message", timeout_in_ms);
+ * </pre>
  */
-public class PopupManager implements PopupWindow.OnDismissListener {
+public class PopupManager {
 
     private final int[] sp = new int[2];
     private final Runnable dismisser = this::dismiss;
@@ -36,6 +40,9 @@ public class PopupManager implements PopupWindow.OnDismissListener {
         super();
     }
 
+    /**
+     * Removes and destroys the popup window.
+     */
     public void destroy() {
         dismiss();
         popupWindow = null;
@@ -46,14 +53,8 @@ public class PopupManager implements PopupWindow.OnDismissListener {
      */
     private void dismiss() {
         if (popupWindow != null && popupWindow.isShowing()) {
-            popupWindow.getContentView().playSoundEffect(SoundEffectConstants.CLICK);
             popupWindow.dismiss();
         }
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void onDismiss() {
     }
 
     /**
@@ -72,7 +73,6 @@ public class PopupManager implements PopupWindow.OnDismissListener {
         }
         if (popupWindow == null) {
             popupWindow = new PopupWindow(ctx);
-            popupWindow.setOnDismissListener(this);
             if (Build.VERSION.SDK_INT >= 23) {
                 popupWindow.setWindowLayoutType(WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL);
             }
