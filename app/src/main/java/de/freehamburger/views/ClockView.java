@@ -1,10 +1,16 @@
 package de.freehamburger.views;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Build;
 import android.support.annotation.ColorInt;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -51,11 +57,22 @@ public class ClockView extends RelativeLayout {
         init(context);
     }
 
+    /** {@inheritDoc} */
+    @Nullable
+    @Override
+    public CharSequence getTooltipText() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            return this.clock.getTooltipText();
+        }
+        return "";
+    }
+
     /**
      * Initialisation.
      * @param ctx Context
      * @throws NullPointerException if {@code ctx} is {@code null}
      */
+    @SuppressLint("ClickableViewAccessibility")
     private void init(@NonNull Context ctx) {
         LayoutInflater inflater = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         if (inflater == null) return;
@@ -63,6 +80,32 @@ public class ClockView extends RelativeLayout {
         this.clock = findViewById(R.id.clock);
         this.textView = findViewById(R.id.textView);
         setTime(System.currentTimeMillis());
+        this.clock.setOnTouchListener((v, event) -> {
+            int a = event.getAction();
+            if (a == MotionEvent.ACTION_DOWN) {
+                setBackground(R.drawable.clock_dial_b_flat);
+            } else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) {
+                setBackground(R.drawable.clock_dial_b);
+            }
+            return false;
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean performClick() {
+        super.performClick();
+        return this.clock.performClick();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean performLongClick() {
+        return this.clock.performLongClick();
+    }
+
+    private void setBackground(@DrawableRes int id) {
+        this.clock.setDial(id);
     }
 
     /**
@@ -73,6 +116,12 @@ public class ClockView extends RelativeLayout {
     @Override
     public void setEnabled(boolean enabled) {
         this.clock.setEnabled(enabled);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void setOnClickListener(@Nullable View.OnClickListener l) {
+        this.clock.setOnClickListener(l);
     }
 
     public void setText(CharSequence text) {
@@ -97,5 +146,13 @@ public class ClockView extends RelativeLayout {
      */
     public void setTint(@ColorInt int tint) {
         this.clock.setTint(tint);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void setTooltipText(@Nullable CharSequence tooltipText) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            this.clock.setTooltipText(tooltipText);
+        }
     }
 }

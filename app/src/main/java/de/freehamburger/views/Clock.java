@@ -9,6 +9,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.support.annotation.ColorInt;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
@@ -23,17 +24,16 @@ import de.freehamburger.R;
 /**
  *
  */
-
 public class Clock extends View {
 
     private final Handler handler = new Handler();
 
     private final Drawable hourHand;
     private final Drawable minuteHand;
-    private final Drawable dial;
+    private Drawable dial;
 
-    private final int dialWidth;
-    private final int dialHeight;
+    private int dialWidth;
+    private int dialHeight;
 
     private final GregorianCalendar calendar;
     private SlowTimeSetter slowTimeSetter;
@@ -232,6 +232,15 @@ public class Clock extends View {
         this.changed = true;
 
         updateContentDescription();
+    }
+
+    public void setDial(@DrawableRes int id) {
+        this.dial = getContext().getDrawable(id);
+        if (this.dial == null) return;
+        this.dialWidth = this.dial.getIntrinsicWidth();
+        this.dialHeight = this.dial.getIntrinsicHeight();
+        this.changed = true;
+        invalidate();
     }
 
     private void setTime(Calendar target) {
