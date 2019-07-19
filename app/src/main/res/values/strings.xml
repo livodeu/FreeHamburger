@@ -4,6 +4,7 @@
     <string name="app_build_date">Build date: %1$s</string>
     <string name="app_license">This app is licensed under the GNU Affero General Public License v3.0</string>
     <string name="app_task_description" translatable="false">Hamburger - %1$s</string>
+    <string name="app_search_auth" translatable="false">de.freehamburger.SearchContentProvider</string>
 
     <string name="action_add_filter">Add</string>
     <string name="action_clear_cache">Clear cache</string>
@@ -21,7 +22,6 @@
     <string name="action_read_stop">Stop reading</string>
     <string name="action_scroll_to_top">Scroll to top</string>
     <string name="action_search">Search</string>
-    <string name="action_search_clear">Clear search history</string>
     <string name="action_section_ausland">World</string>
     <string name="action_section_channels">Programmes</string>
     <string name="action_section_homepage">Home</string>
@@ -50,9 +50,12 @@
     <string name="hint_filter_button_delete">Click to delete the filter</string>
     <string name="hint_intro_will_be_played">The introduction will be shown during the next start.</string>
     <string name="hint_menu_search">This menu item invokes the search function</string>
+    <string name="hint_paused">The video is paused.</string>
     <string name="hint_permission_location">Permit access to device location.</string>
     <string name="hint_pic">The illustration for this story</string>
     <string name="hint_search">Search</string>
+    <string name="hint_search_reset">Press ◀ to reset.</string>
+    <string name="hint_search_reset2">Press ◀ down here.</string>
 
     <string name="intro_1">Select categories in the right-hand drawer.</string>
     <string name="intro_2">Search, apply filters, change settings here.</string>
@@ -77,6 +80,7 @@
     <string name="error_poll_failed">This failed at %1$s with no reason given.</string>
     <string name="error_poll_maximum_interval">The maximum interval is %1$d minutes.</string>
     <string name="error_poll_minimum_interval">The minimum interval is %1$d minutes.</string>
+    <string name="error_proxy_connection_failed">The host %1$s that is set as proxy does not accept connections at port %2$s!</string>
     <string name="error_timeout">A timeout has occurred.</string>
     <string name="error_tts_fail">Speaking failed!</string>
     <string name="error_tts_fail_network">Speaking failed due to network problems!</string>
@@ -156,7 +160,6 @@
     <string name="msg_found">\"%1$s\" has been found %2$d times.</string>
     <string name="msg_not_found">Not found: \"%1$s\"</string>
     <string name="msg_not_modified">Not modified.</string>
-    <string name="msg_search_cleared">Search history cleared.</string>
     <string name="msg_sorry">Sorry for the interruption!</string>
     <string name="msg_text_copied">The text has been copied to the clipboard.</string>
     <string name="msg_volume_mute">Audio is muted.</string>
@@ -213,5 +216,7 @@
     <string name="pref_title_warn_mute_off">ignore it</string>
 
     <string name="dummy_button" translatable="false">Dummy Button</string>
+
+    <string name="url_wikipedia_http_streaming">https://en.m.wikipedia.org/wiki/HTTP_Live_Streaming</string>
 
 </resources>

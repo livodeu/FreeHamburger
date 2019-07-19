@@ -11,6 +11,7 @@
     <string name="pref_title_ask_before_finish_off">nichts tun.</string>
     <string name="pref_title_ask_before_finish_on">nach Bestätigung fragen.</string>
     <string name="action_import_font">Schrift importieren</string>
+    <string name="error_proxy_connection_failed">Der als Proxy eingestellte Host %1$s nimmt keine Verbindung an Port %2$s an!</string>
     <string name="label_license">Lizenz</string>
     <string name="label_yes">Ja</string>
     <string name="label_notification_channel">Meldungen</string>
@@ -26,6 +27,8 @@
     <string name="error_download_failed">Ladevorgang fehlgeschlagen:\n%1$s</string>
     <string name="error_download_failed2">Ladevorgang fehlgeschlagen.</string>
     <string name="pref_header_appearance">Darstellung</string>
+    <string name="hint_search_reset">Zum Zurücksetzen ◀ drücken.</string>
+    <string name="hint_search_reset2">Hier unten ◀ drücken.</string>
     <string name="error_filter_not_added">Filter wurde nicht hinzugefügt.</string>
     <string name="error_poll_failed">Dies ist am %1$s ohne Angabe einer Ursache fehlgeschlagen.</string>
     <string name="pref_title_pref_cache_max_size">Max. Cachegröße</string>
@@ -39,8 +42,6 @@
     <string name="action_search">Suche</string>
     <string name="action_share">Teilen</string>
     <string name="action_scroll_to_top">Nach oben</string>
-    <string name="action_search_clear">Suchverlauf löschen</string>
-    <string name="msg_search_cleared">Suchverlauf gelöscht.</string>
     <string name="msg_not_found">Nicht gefunden: „%1$s”</string>
     <string name="msg_sorry">Entschuldigen Sie bitte die Unterbrechung!</string>
     <string name="pref_title_pref_load_over_mobile">Laden im Mobilnetz</string>
@@ -119,6 +120,7 @@
         <item quantity="one">%1$d Filter gespeichert.</item>
         <item quantity="other">%1$d Filter gespeichert.</item>
     </plurals>
+    <string name="hint_paused">Das Video ist pausiert.</string>
     <string name="hint_permission_location">Zugriff auf den Standort erlauben?</string>
     <string name="pref_title_play_intro">Einführung zeigen</string>
     <string name="hint_intro_will_be_played">Die Einführung wird beim nächsten Start angezeigt.</string>
@@ -197,4 +199,7 @@
     <string name="hint_menu_search">Dieser Menüeintrag startet die Suchfunktion</string>
     <string name="error_timeout">Beim Laden ist eine Zeitüberschreitung aufgetreten.</string>
     <string name="msg_text_copied">Der Text wurde in die Zwischenablage kopiert.</string>
+
+    <string name="url_wikipedia_http_streaming">https://de.m.wikipedia.org/wiki/HTTP-Streaming</string>
+
 </resources>
