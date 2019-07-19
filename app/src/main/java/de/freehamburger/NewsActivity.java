@@ -171,8 +171,13 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     };
     private int exoPlayerBottomState = 0;
     private boolean exoPlayerBottomPlayWhenReady = false;
+    private ImageView bottomVideoPauseIndicator;
     /** Listener for the bottom video */
     private final Player.EventListener listenerBottom = new Player.EventListener() {
+
+        // flag that remembers whether the bottom video has been collapsed after the playback ended
+        private boolean bottomVideoHiddenAfterPlayback = false;
+
         /** {@inheritDoc} */
         @Override
         public void onPlayerError(ExoPlaybackException error) {
@@ -200,6 +205,29 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
             NewsActivity.this.exoPlayerBottomPlayWhenReady = playWhenReady;
             NewsActivity.this.exoPlayerBottomState = playbackState;
+            if (playWhenReady && playbackState != Player.STATE_ENDED) {
+                this.bottomVideoHiddenAfterPlayback = false;
+                float sx = bottomVideoView.getScaleX();
+                if (sx < 1f) {
+                    ObjectAnimator.ofFloat(NewsActivity.this.bottomVideoView, "scaleX", sx, 1f).setDuration(300L).start();
+                }
+                if (playbackState == Player.STATE_READY) NewsActivity.this.bottomVideoPauseIndicator.setVisibility(View.GONE);
+            }
+            // wind the tape back when finished
+            if (!playWhenReady && playbackState == Player.STATE_ENDED) NewsActivity.this.exoPlayerBottomVideo.seekTo(0);
+            // collapse the bottom video when finished
+            if (playWhenReady && playbackState == Player.STATE_ENDED && !this.bottomVideoHiddenAfterPlayback) {
+                this.bottomVideoHiddenAfterPlayback = true;
+                ObjectAnimator.ofFloat(NewsActivity.this.bottomVideoView, "scaleX", 1f, 0f).setDuration(500L).start();
+                NewsActivity.this.handler.postDelayed(() -> {
+                    collapseBottomSheet();
+                    NewsActivity.this.bottomVideoView.setScaleX(1f);
+                }, 500L);
+            }
+            // show or hide the pause indicator (only if the bottom sheet is visible)
+            if (playbackState == Player.STATE_READY && !isBottomSheetCollapsedOrHidden()) {
+                NewsActivity.this.bottomVideoPauseIndicator.setVisibility(playWhenReady ? View.GONE : View.VISIBLE);
+            }
         }
     };
     @Nullable
@@ -708,6 +736,20 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
     }
 
+    /**
+     * The user has tapped the bottom video.
+     * This is used to pause or resume the video.
+     * @param ignored the bottom video view which is not needed here
+     */
+    public void onBottomVideoTapped(@Nullable View ignored) {
+        if (this.exoPlayerBottomState != Player.STATE_READY) return;
+        if (this.exoPlayerBottomPlayWhenReady) {
+            stopBottomVideo();
+        } else {
+            playBottomVideo();
+        }
+    }
+
     /** {@inheritDoc} */
     @SuppressLint("ClickableViewAccessibility")
     @TargetApi(21)
@@ -743,6 +785,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         this.textViewBottomVideoPeek = findViewById(R.id.textViewBottomVideoPeek);
         this.bottomVideoView = findViewById(R.id.bottomVideoView);
         this.textViewBottomVideoViewOverlay = findViewById(R.id.textViewBottomVideoViewOverlay);
+        this.bottomVideoPauseIndicator = findViewById(R.id.bottomVideoPauseIndicator);
         this.buttonAudio.setOnLongClickListener(v -> {
             Object tag = v.getTag();
             if (!(tag instanceof String)) return false;
@@ -793,7 +836,11 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     stopAudio();
                     // play the bottom video
                     playBottomVideo();
+                    // more room for the bottom video
+                    Util.hideActionNavigationStatusBar(NewsActivity.this, true);
                 } else if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
+                    // restore default layout
+                    Util.hideActionNavigationStatusBar(NewsActivity.this, false);
                     // hide the textview that is shown when collapsed
                     NewsActivity.this.textViewBottomVideoPeek.setVisibility(View.VISIBLE);
                     // hide the textview that is shown along the bottom edge of the video
@@ -812,17 +859,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
 
         final Intent intent = getIntent();
-        if (BuildConfig.DEBUG) {
-            Log.i(TAG, "" + intent);
-            Bundle e = intent.getExtras();
-            if (e != null) {
-                Log.i(TAG, e.size() + " Extra(s):");
-                Set<String> keys = e.keySet();
-                for (String key : keys) {
-                    Log.i(TAG, " - " + key + "=" + e.get(key));
-                }
-            }
-        }
 
         ActionBar ab = getSupportActionBar();
         if (ab != null) {
