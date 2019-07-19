@@ -32,6 +32,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RawRes;
 import android.support.annotation.RequiresApi;
 import android.support.annotation.RequiresPermission;
+import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.ActionBar;
@@ -94,7 +95,8 @@ public class Util {
      * @return true / false
      * @throws NullPointerException if {@code array} or {@code chars} are {@code null}
      */
-    private static boolean areNextChars(@NonNull final char[] array, final int pos, @NonNull final char... chars) {
+    @VisibleForTesting
+    public static boolean areNextChars(@NonNull final char[] array, final int pos, @NonNull final char... chars) {
         final int n = chars.length;
         try {
             for (int i = 0; i < n; i++) {
@@ -104,6 +106,23 @@ public class Util {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Deletes the {@link App#EXPORTS_DIR exports} directory.
+     * @param ctx Context
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static void clearExports(@NonNull Context ctx) {
+        File exports = new File(ctx.getCacheDir(), App.EXPORTS_DIR);
+        if (!exports.isDirectory()) return;
+        final List<File> contents = listFiles(exports);
+        for (File file : contents) {
+            if (BuildConfig.DEBUG) Log.w(TAG, "Deleting exports file " + file + " (from " + new java.util.Date(file.lastModified()) + ", " + file.length() + " bytes)");
+            deleteFile(file);
+        }
+        exports.delete();
     }
 
     /**
@@ -444,7 +463,8 @@ public class Util {
      * @return space used in bytes
      */
     @RequiresApi(21)
-    private static long getOccupiedSpace(@Nullable File file) {
+    @VisibleForTesting
+    public static long getOccupiedSpace(@Nullable File file) {
         if (file == null) return 0L;
         long space;
         try {
@@ -720,6 +740,8 @@ public class Util {
                 } else if (areNextChars(c, pos, '/', 'a', '>')) {
                     pos += 3;
                     insideA = false;
+                } else {
+                    out.append('<');
                 }
              } else if (!insideA) {
                 out.append(c[pos]);
