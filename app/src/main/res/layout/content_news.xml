@@ -8,6 +8,7 @@
     android:layout_height="match_parent"
     android:fastScrollEnabled="true"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    android:fitsSystemWindows="true"
     tools:context=".NewsActivity"
     tools:showIn="@layout/activity_news"
     >
