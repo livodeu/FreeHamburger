@@ -4,12 +4,14 @@ import android.Manifest;
 import android.app.Service;
 import android.content.ComponentCallbacks2;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.PaintDrawable;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -48,7 +50,7 @@ import de.freehamburger.views.NewsView;
 
 /**
  */
-public class HamburgerService extends Service implements Html.ImageGetter, Picasso.Listener, NewsView.BitmapGetter {
+public class HamburgerService extends Service implements Html.ImageGetter, Picasso.Listener, NewsView.BitmapGetter, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = "HamburgerService";
 
@@ -88,6 +90,36 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     }
 
     /**
+     * Builds the Picasso instance.
+     */
+    void buildPicasso() {
+        if (BuildConfig.DEBUG) Log.i(TAG, "Building Picasso.");
+        // first, cleanup if there are old things around
+        if (this.loaderExecutor != null) {
+            this.loaderExecutor.shutdown();
+        }
+        if (this.memoryCache != null) {
+            this.memoryCache.clear();
+        }
+        //
+        this.loaderExecutor = Executors.newCachedThreadPool();
+        createMemoryCache();
+        // as the docs say that Bitmap.Config.HARDWARE "is optimal for cases, when the only operation with the bitmap is to draw it on a screen", we try to use it here
+        Bitmap.Config config = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_USE_HARDWARE_BMPS, true)
+                ? Bitmap.Config.HARDWARE : Bitmap.Config.RGB_565;
+        // start Picasso
+        this.picasso = new Picasso.Builder(this)
+                .memoryCache(this.memoryCache)
+                .downloader(new OkHttpDownloader(this))
+                .defaultBitmapConfig(config)
+                .loggingEnabled(BuildConfig.DEBUG)
+                .listener(this)
+                .executor(this.loaderExecutor)
+                .build();
+    }
+
+    /**
      * Checks for network connection and Picasso instantiation.
      * @return {@code true} if downloading is NOT possible, {@code false} if it is
      */
@@ -109,8 +141,8 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      */
     void createMemoryCache() {
         clearMemoryCache();
-        int maxRamCacheSize = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(App.PREF_MEM_CACHE_MAX_SIZE, App.DEFAULT_MEM_CACHE_MAX_SIZE));
-        this.memoryCache = new LruCache(maxRamCacheSize << 20);
+        int maxRamCacheSizeInMB = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(App.PREF_MEM_CACHE_MAX_SIZE, App.DEFAULT_MEM_CACHE_MAX_SIZE));
+        this.memoryCache = new LruCache(maxRamCacheSizeInMB << 20);
     }
 
     /**
@@ -147,22 +179,24 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      * Loads a remote resource.
      * @param url Url to load from
      * @param localFile local file to save to
-     * @param listener DownloaderListener
+     * @param listener DownloaderListener (optional)
      * @throws NullPointerException if {@code localFile} is {@code null}
      */
     @RequiresPermission(Manifest.permission.INTERNET)
-    public void loadFile(@NonNull String url, @NonNull File localFile, @Nullable Downloader.DownloaderListener listener) {
-        OkHttpDownloader fd = new OkHttpDownloader(this);
-        try {
-            fd.executeOnExecutor(this.loaderExecutor, new Downloader.Order(url, localFile.getAbsolutePath(), 0L, false, listener));
-        } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, "loadFile(\"" + url + "\", ..., ...) failed: " + e.toString());
-            if (listener != null) listener.downloaded(false, null);
-        }
+    void loadFile(@NonNull String url, @NonNull File localFile, @Nullable Downloader.DownloaderListener listener) {
+        loadFile(url, localFile, 0L, listener);
     }
 
+    /**
+     * Loads a remote resource.
+     * @param url Url to load from
+     * @param localFile local file to save to
+     * @param mostRecentUpdate timestamp of point in time when the resource has been loaded most recently; will set the "If-Modified-Since" header
+     * @param listener DownloaderListener (optional)
+     * @throws NullPointerException if {@code localFile} is {@code null}
+     */
     @RequiresPermission(Manifest.permission.INTERNET)
-    public void loadFile(@NonNull String url, @NonNull File localFile, long mostRecentUpdate, @Nullable Downloader.DownloaderListener listener) {
+    void loadFile(@NonNull String url, @NonNull File localFile, long mostRecentUpdate, @Nullable Downloader.DownloaderListener listener) {
         OkHttpDownloader fd = new OkHttpDownloader(this);
         try {
             fd.executeOnExecutor(this.loaderExecutor, new Downloader.Order(url, localFile.getAbsolutePath(), mostRecentUpdate, false, listener));
@@ -218,29 +252,32 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      * <hr>
      * Attempts to {@link #startService(Intent) start} the service, too.<br>
      * As of Oreo, the OS will prevent that if the App is in the background.
-     * See <a href="https://developer.android.com/about/versions/oreo/background">here</a>.
+     * See <a href="https://developer.android.com/about/versions/oreo/background">here</a>.<br>
+     * Starts up <a href="https://square.github.io/picasso">Picasso</a>, too.<br>
+     * For OkHttp, see their <a href="https://square.github.io/okhttp">page</a>.
      */
     @Override
     public void onCreate() {
         super.onCreate();
-        this.loaderExecutor = Executors.newCachedThreadPool();
-        createMemoryCache();
-        // https://square.github.io/okhttp
-        // https://square.github.io/picasso
-        this.picasso = new Picasso.Builder(this).memoryCache(this.memoryCache).downloader(new OkHttpDownloader(this)).defaultBitmapConfig(Bitmap.Config.RGB_565).loggingEnabled(BuildConfig.DEBUG).listener(this).executor(this.loaderExecutor).build();
+        buildPicasso();
+        // make sure this service is started; otherwise each activity would create its own instance
         try {
-            // make sure this service is started; otherwise each activity would create its own instance
             startService(new Intent(this, getClass()));
         } catch (IllegalStateException e) {
-            // java.lang.IllegalStateException: Not allowed to start service Intent { cmp=de.freehamburger.debug/de.freehamburger.HamburgerService }: app is in background uid UidRecord{...}
-            // https://developer.android.com/about/versions/oreo/background
+            /*
+             * This is likely:
+             * java.lang.IllegalStateException:
+             * Not allowed to start service Intent { cmp=de.freehamburger.debug/de.freehamburger.HamburgerService }: app is in background uid UidRecord{...}
+             */
             if (BuildConfig.DEBUG) Log.w(TAG, "onCreate() - startService(): " + e.toString(), e, 4);
         }
+        PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).registerOnSharedPreferenceChangeListener(this);
     }
 
     /** {@inheritDoc} */
     @Override
     public void onDestroy() {
+        PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).unregisterOnSharedPreferenceChangeListener(this);
         if (this.picasso != null) {
             this.picasso.shutdown();
             this.picasso = null;
@@ -266,8 +303,17 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
              and com.squareup.picasso.NetworkPolicy was 4
              */
             if (s.contains("HTTP 504")) return;
-            if (s.contains("NetworkRequestHandler$ResponseException")) Log.e(TAG, "Loading image from '" + uri + "' failed: " + e.getMessage());
-            else Log.e(TAG, "Loading image from '" + uri + "' failed: " + e);
+            if (s.contains("NetworkRequestHandler$ResponseException")) Log.e(TAG, "Loading image from '" + uri + "' failed: " + e.getMessage(), e);
+            else Log.e(TAG, "Loading image from '" + uri + "' failed: " + e, e);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (App.PREF_PROXY_SERVER.equals(key) || App.PREF_PROXY_TYPE.equals(key)) {
+            // Picasso needs to be rebuilt; otherwise we'd get a "java.lang.IllegalStateException: cache is closed" because the 'downloader' cannot be changed once Picasso is built
+            buildPicasso();
         }
     }
 
@@ -320,9 +366,9 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         private final Reference<Target> refTarget;
         private final float ratio;
         @Nullable
-        private ImageView dest;
-        @Nullable
         private final Drawable placeholder;
+        @Nullable
+        private ImageView dest;
         /** initially false to indicate that loading from network has not been attempted yet */
         private boolean loadingFromWebAttempted;
         private int width, height;
