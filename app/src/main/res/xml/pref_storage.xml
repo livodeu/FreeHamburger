@@ -17,11 +17,4 @@
         android:title="@string/action_clear_cache"
         android:icon="@drawable/ic_delete_forever_ededed_24dp"
         />
-
-    <Preference
-        android:key="action_search_clear"
-        android:title="@string/action_search_clear"
-        android:icon="@drawable/ic_search_ededed_24dp">
-        <intent android:action="de.freehamburger.action_search_clear" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
-    </Preference>
 </PreferenceScreen>
