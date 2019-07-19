@@ -15,6 +15,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.ColorSpace;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PersistableBundle;
@@ -105,7 +106,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private static int nextid = 1;
 
     static {
-        BITMAPFACTORY_OPTIONS.inPreferredConfig = Bitmap.Config.RGB_565;
         BITMAPFACTORY_OPTIONS.inSampleSize = 2;
         BITMAPFACTORY_OPTIONS.inPreferQualityOverSpeed = false;
     }
@@ -663,6 +663,20 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         super.onCreate();
         this.loaderExecutor = Executors.newSingleThreadExecutor();
         this.filters.addAll(TextFilter.createTextFiltersFromPreferences(this));
+        //
+        try {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            BITMAPFACTORY_OPTIONS.inPreferredConfig = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    && prefs
+                    .getBoolean(App.PREF_USE_HARDWARE_BMPS, true)
+                    ? Bitmap.Config.HARDWARE : Bitmap.Config.RGB_565;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                String cs = prefs.getString(App.PREF_COLORSPACE, ColorSpace.Named.SRGB.name());
+                BITMAPFACTORY_OPTIONS.inPreferredColorSpace = ColorSpace.get(ColorSpace.Named.valueOf(cs));
+            }
+        } catch (Throwable t) {
+            if (BuildConfig.DEBUG) Log.e(TAG, t.toString(), t);
+        }
     }
 
     /** {@inheritDoc} */
