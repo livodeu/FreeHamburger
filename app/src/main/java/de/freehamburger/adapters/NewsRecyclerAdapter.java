@@ -286,16 +286,18 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     /**
      * Sets the Filters.
      * @param filters Filters to set
+     * @return {@code true} if among the filters there is one that is temporary
      */
-    public void setFilters(@Nullable final Collection<Filter> filters) {
+    public boolean setFilters(@Nullable final Collection<Filter> filters) {
         boolean justClearAllFilters = filters == null || filters.isEmpty();
-        if (justClearAllFilters && this.filters.isEmpty()) return;
+        if (justClearAllFilters && this.filters.isEmpty()) return false;
         this.filters.clear();
         if (justClearAllFilters) {
             updateFilter();
-            return;
+            return false;
         }
         addFilters(filters);
+        return hasTemporaryFilter();
     }
 
     public void setNewsList(@Nullable final Collection<News> newsList, @NonNull Source source) {
