@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
@@ -75,13 +74,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     private Snackbar snackbar;
     private WebView webViewForHelp;
     private AlertDialog helpDialog;
-
-    /**
-     * @return {@code true} if the device has an extra-large screen. For example, 10" tablets are extra-large.
-     */
-    private static boolean isXLargeTablet(@NonNull Context context) {
-        return (context.getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_XLARGE;
-    }
 
     /**
      * @param activity Activity
@@ -212,7 +204,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     /** {@inheritDoc} */
     @Override
     public boolean onIsMultiPane() {
-        return isXLargeTablet(this);
+        return Util.isXLargeTablet(this);
     }
 
     /** {@inheritDoc} */
@@ -424,7 +416,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
         public boolean onOptionsItemSelected(MenuItem item) {
             int id = item.getItemId();
             if (id == android.R.id.home) {
-                if (!isXLargeTablet(getActivity())) {
+                if (!Util.isXLargeTablet(getActivity())) {
                     startActivity(new Intent(getActivity(), SettingsActivity.class));
                     return true;
                 }
@@ -514,7 +506,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
         public boolean onOptionsItemSelected(MenuItem item) {
             int id = item.getItemId();
             if (id == android.R.id.home) {
-                if (!isXLargeTablet(getActivity())) {
+                if (!Util.isXLargeTablet(getActivity())) {
                     startActivity(new Intent(getActivity(), SettingsActivity.class));
                     return true;
                 }
