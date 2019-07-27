@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.CallSuper;
@@ -261,15 +260,14 @@ public class NewsView extends RelativeLayout {
             lp.addRule(RelativeLayout.END_OF, R.id.imageView);
         }
         //
-        int maxImageWidth;
+        int imageViewMaxWidth;
         if (this.imageView.getMaxWidth() > 0) {
-            maxImageWidth = this.imageView.getMaxWidth();
+            imageViewMaxWidth = this.imageView.getMaxWidth();   // should be the same as getResources().getDimensionPixelSize(R.dimen.image_width_normal)
         } else {
-            Point ds = Util.getDisplaySize(ctx);
-            maxImageWidth = ds.x;
+            imageViewMaxWidth = Util.getDisplaySize(ctx).x;
         }
         // get the image url; if the type is "video", then preferrably in landscape orientation
-        final TeaserImage.MeasuredImage measuredImage = image.getBestImageForWidth(maxImageWidth, News.NEWS_TYPE_VIDEO.equals(news.getType()));
+        final TeaserImage.MeasuredImage measuredImage = image.getBestImageForWidth(imageViewMaxWidth, News.NEWS_TYPE_VIDEO.equals(news.getType()));
         this.imageView.setTag(measuredImage != null ? measuredImage.url : null);
         if (!TextUtils.isEmpty(image.getTitle())) {
             this.imageView.setContentDescription(image.getTitle());
