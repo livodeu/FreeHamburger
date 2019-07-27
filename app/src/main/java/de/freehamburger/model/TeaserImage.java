@@ -113,25 +113,6 @@ public class TeaserImage implements Serializable {
         return null;
     }
 
-    /*@Nullable
-    public String getBestImage0() {
-        final String url;
-        if (this.images.containsKey(TeaserImage.Quality.L)) {
-            url = this.images.get(TeaserImage.Quality.L);
-        } else if (this.images.containsKey(TeaserImage.Quality.P2)) {
-            url = this.images.get(TeaserImage.Quality.P2);
-        } else if (this.images.containsKey(TeaserImage.Quality.M)) {
-            url = this.images.get(TeaserImage.Quality.M);
-        } else if (this.images.containsKey(TeaserImage.Quality.P1)) {
-            url = this.images.get(TeaserImage.Quality.P1);
-        } else if (this.images.containsKey(TeaserImage.Quality.S)) {
-            url = this.images.get(TeaserImage.Quality.S);
-        } else {
-            url = null;
-        }
-        return url;
-    }*/
-
     /**
      * Returns the image variant whose width is greater than the given width.
      * @param width width in px
