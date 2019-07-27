@@ -23,7 +23,6 @@ import android.text.Html;
 import android.widget.ImageView;
 
 import com.squareup.picasso.Callback;
-import com.squareup.picasso.LruCache;
 import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Request;
@@ -61,12 +60,12 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     /** see <a href="https://developer.android.com/training/articles/perf-tips.html#PackageInner">https://developer.android.com/training/articles/perf-tips.html#PackageInner</a> */
     private Picasso picasso;
     private ExecutorService loaderExecutor;
-    private LruCache memoryCache;
+    private com.squareup.picasso.LruCache memoryCache;
 
     /**
      * Generates a Picasso cache key.<br>
      * <em>Must be adjusted if the parameters given to Picasso in {@link PictureLoader PictureLoader}
-     * (like, for example, {@link RequestCreator#centerInside() centerInside} or {@link RequestCreator#resize(int, int) resize}) change!</em><br>
+     * (like, for example, {@link RequestCreator#centerCrop() centerCrop} or {@link RequestCreator#resize(int, int) resize}) change!</em><br>
      * See {@link com.squareup.picasso.Utils#createKey(Request, StringBuilder)}.
      * @param url image url
      * @param width image width
@@ -75,7 +74,8 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      */
     @NonNull
     private static String makeCacheKey(String url, int width, int height) {
-        return url + '\n' + "resize:" + width + 'x' + height + '\n' + "centerInside" + '\n';
+        // 17 is Gravity.CENTER - see com.squareup.picasso.RequestCreator.centerCrop()
+        return url + '\n' + "resize:" + width + 'x' + height + '\n' + "centerCrop:17" + '\n';
     }
 
     /**
@@ -92,14 +92,14 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     /**
      * Builds the Picasso instance.
      */
-    void buildPicasso() {
+    private void buildPicasso() {
         if (BuildConfig.DEBUG) Log.i(TAG, "Building Picasso.");
         // first, cleanup if there are old things around
         if (this.loaderExecutor != null) {
             this.loaderExecutor.shutdown();
         }
         if (this.memoryCache != null) {
-            this.memoryCache.clear();
+            clearMemoryCache();
         }
         //
         this.loaderExecutor = Executors.newCachedThreadPool();
@@ -142,7 +142,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     void createMemoryCache() {
         clearMemoryCache();
         int maxRamCacheSizeInMB = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(App.PREF_MEM_CACHE_MAX_SIZE, App.DEFAULT_MEM_CACHE_MAX_SIZE));
-        this.memoryCache = new LruCache(maxRamCacheSizeInMB << 20);
+        this.memoryCache = new com.squareup.picasso.LruCache(maxRamCacheSizeInMB << 20);
     }
 
     /**
