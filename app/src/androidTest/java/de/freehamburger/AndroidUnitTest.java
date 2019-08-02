@@ -1,35 +1,56 @@
 package de.freehamburger;
 
 import android.app.DownloadManager;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.test.filters.SmallTest;
+import android.text.TextUtils;
 import android.util.JsonReader;
+import android.view.View;
+
+import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import de.freehamburger.adapters.NewsRecyclerAdapter;
 import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Region;
 import de.freehamburger.model.Source;
+import de.freehamburger.supp.SearchHelper;
+import de.freehamburger.util.MediaSourceHelper;
+import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
+import de.freehamburger.views.NewsView;
+import okhttp3.OkHttpClient;
 
 import static android.support.test.InstrumentationRegistry.getTargetContext;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  *
@@ -39,6 +60,7 @@ public class AndroidUnitTest {
 
     private static final String TAG = "AndroidUnitTest";
     private static final String FILENAME = "homepage.json";
+    private static final Source SOURCE = Source.HOME;
     /** the preferred region to assume for the test */
     private static final Region PREFERRED_REGION = Region.BW;
     /** assuming the download does not take more than 3 seconds */
@@ -75,7 +97,7 @@ public class AndroidUnitTest {
         file = new File(externalFilesDir, FILENAME);
         if (file.isFile() && file.length() > 0L && file.lastModified() - System.currentTimeMillis() < FILE_MAX_AGE) return;
         assertTrue("No network", Util.isNetworkAvailable(ctx));
-        DownloadManager.Request r = new DownloadManager.Request(Uri.parse(Source.HOME.getUrl()));
+        DownloadManager.Request r = new DownloadManager.Request(Uri.parse(SOURCE.getUrl()));
         r.setVisibleInDownloadsUi(true);
         r.setAllowedOverMetered(false);
         r.setAllowedOverRoaming(false);
@@ -149,4 +171,225 @@ public class AndroidUnitTest {
             }
         }
     }
+
+    /**
+     * Tests {@link App#isHostAllowed(String)}.
+     */
+    @Test
+    public void testHostAllowed() {
+        Uri uri;
+        uri = Uri.parse("https://www.google.com");
+        assertFalse(App.isHostAllowed(uri.getHost()));
+        uri = Uri.parse("https://www.tagesschau.de");
+        assertTrue(App.isHostAllowed(uri.getHost()));
+        uri = Uri.parse(App.URL_PREFIX);
+        assertTrue(App.isHostAllowed(uri.getHost()));
+        uri = Uri.parse(App.URL_TELETEXT);
+        assertTrue(App.isHostAllowed(uri.getHost()));
+        uri = Uri.parse("https://www.facebook.com");
+        assertFalse(App.isHostAllowed(uri.getHost()));
+    }
+
+    /**
+     * Tests {@link MediaSourceHelper}.
+     */
+    @Test
+    public void testMediaSourceHelper() {
+        MediaSourceHelper msh = new MediaSourceHelper();
+        Uri uri = Uri.parse("http://tagesschau-lh.akamaihd.net/i/tagesschau_3@66339/master.m3u8");
+        MediaSource ms = msh.buildMediaSource(uri);
+        assertNotNull(ms);
+        assertTrue(ms instanceof HlsMediaSource);
+        uri = Uri.parse("https://media.tagesschau.de/video/2019/0718/TV-20190718-0659-2401.webm.h264.mp4");
+        ms = msh.buildMediaSource(uri);
+        assertNotNull(ms);
+        assertTrue(ms instanceof ExtractorMediaSource);
+    }
+
+    /**
+     * Tests the application of {@link News} objects to {@link NewsView NewsViews}.
+     */
+    @Test
+    public void testNewsView() {
+        assertNotNull(file);
+        if (!file.isFile() || file.length() == 0L) {
+            try {
+                Thread.sleep(DOWNLOAD_TIMEOUT);
+            } catch (Exception e) {
+                fail(e.toString());
+            }
+            assertTrue(FILENAME + " does not exist (yet)", file.isFile());
+            assertTrue(FILENAME + " is empty", file.length() > 0L);
+        }
+        assertTrue(FILENAME + " cannot be read", file.canRead());
+        BlobParser bp = new BlobParser(ctx, null);
+        Blob blob = bp.doInBackground(new File[] {file});
+        assertNotNull("BlobParser returned null", blob);
+        // all news
+        List<News> list = blob.getAllNews();
+        assertNotNull("News list is null", list);
+        assertTrue("News list is empty", list.size() > 0);
+
+        Context ctx = getTargetContext();
+        NewsView nv;
+        for (News news : list) {
+            assertNotNull(news);
+            //
+            nv = NewsRecyclerAdapter.selectView(ctx, NewsRecyclerAdapter.getViewType(news));
+            assertNotNull(nv);
+            // all NewsView subtypes have these 3 views
+            assertNotNull(nv.textViewDate);
+            assertNotNull(nv.textViewTopline);
+            assertNotNull(nv.imageView);
+            //
+            @News.NewsType String type = news.getType();
+            if (news.getTitle() != null && !news.getTitle().contains("Wetter")) {
+                assertNotNull(type);
+            }
+            boolean hasTitle = !TextUtils.isEmpty(news.getTitle());
+            boolean hasFirstSentence = !TextUtils.isEmpty(news.getFirstSentence());
+            boolean hasShorttext= !TextUtils.isEmpty(news.getShorttext());
+            boolean hasPlainText = news.getContent() != null && !TextUtils.isEmpty(news.getContent().getPlainText());
+            boolean hasTextFor3rdView = hasFirstSentence || hasShorttext || hasPlainText;
+            // video type
+            if (News.NEWS_TYPE_VIDEO.equals(type)) {
+                assertNull(nv.textViewTitle);
+                assertNull(nv.textViewFirstSentence);
+                continue;
+            }
+            if (hasTitle && !hasTextFor3rdView) {
+                assertNull(nv.textViewFirstSentence);
+            }
+            if (!hasTitle && !hasTextFor3rdView) {
+                assertNull(nv.textViewTitle);
+                assertNull(nv.textViewFirstSentence);
+            }
+            // apply the News
+            nv.setNews(news, null);
+            // date
+            if (news.hasDate()) {
+                assertFalse(TextUtils.isEmpty(nv.textViewDate.getText()));
+            } else {
+                assertTrue(TextUtils.isEmpty(nv.textViewDate.getText()));
+            }
+            // image
+            if (news.getTeaserImage() != null && news.getTeaserImage().hasImage()) {
+                assertEquals(nv.imageView.getVisibility(), View.VISIBLE);
+            } else {
+                assertNotEquals(nv.imageView.getVisibility(), View.VISIBLE);
+            }
+
+        }
+    }
+
+    /**
+     * Tests the creation of notification channels.
+     */
+    @Test
+    public void testNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Context ctx = getTargetContext();
+            App app = (App)ctx.getApplicationContext();
+            assertNotNull(app.getNotificationChannel());
+            assertNotNull(app.getNotificationChannelHiPri());
+        }
+    }
+
+    /**
+     * Tests {@link App#getOkHttpClient()}.
+     */
+    @Test
+    public void testOkHttp() {
+        Context ctx = getTargetContext();
+        App app = (App)ctx.getApplicationContext();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String proxyServer = prefs.getString(App.PREF_PROXY_SERVER, null);
+        String proxyType = prefs.getString(App.PREF_PROXY_TYPE, "DIRECT");
+        OkHttpClient c = app.getOkHttpClient();
+        assertNotNull(c);
+        if (!TextUtils.isEmpty(proxyServer) && !"DIRECT".equals(proxyType)) {
+            assertNotNull(c.proxy());
+        } else {
+            assertNull(c.proxy());
+        }
+    }
+
+    /**
+     * This method tests the creation of search suggestions (w/o actually inserting them into the database).
+     */
+    @Test
+    public void testSearchSuggestions() {
+        Set<String> s = new HashSet<>();
+        SearchHelper.splitSentence("Linux is the world's most popular computing platform. " +
+                "It powers PCs, mainframes, phones, tablets, watches, TVs, cars, and anything your weird imagination can dream up.", s);
+        assertEquals(25, s.size());
+        //
+        assertNotNull(file);
+        if (!file.isFile() || file.length() == 0L) {
+            try {
+                Thread.sleep(DOWNLOAD_TIMEOUT);
+            } catch (Exception e) {
+                fail(e.toString());
+            }
+            assertTrue(FILENAME + " does not exist (yet)", file.isFile());
+            assertTrue(FILENAME + " is empty", file.length() > 0L);
+        }
+        assertTrue(FILENAME + " cannot be read", file.canRead());
+        BlobParser bp = new BlobParser(ctx, null);
+        Blob blob = bp.doInBackground(new File[] {file});
+        assertNotNull("BlobParser returned null", blob);
+        SearchHelper.Inserter inserter = SearchHelper.createSearchSuggestions(getTargetContext(), SOURCE, blob.getAllNews(), true);
+        assertNotNull(inserter);
+        try {
+            inserter.join();
+            ContentValues[] cv = inserter.cv;
+            assertNotNull(cv);
+            assertTrue(cv.length > 0);
+            for (ContentValues c : cv) {
+                assertNotNull(c);
+                assertEquals(5, c.size());
+                assertNotNull(c.getAsLong("date"));
+                assertNotNull(c.getAsString("display1"));
+                assertNotNull(c.getAsString("display2"));
+                assertNotNull(c.getAsString("query"));
+                assertNotNull(c.getAsString("symbol"));
+            }
+        } catch (InterruptedException e) {
+            fail(e.toString());
+        }
+    }
+
+    /**
+     * Tests {@link TtfInfo}.
+     */
+    @Test
+    public void testTtf() {
+        File file = new File("/system/fonts/DroidSans.ttf");
+        assertTrue("Not a file: " + file.getAbsolutePath(), file.isFile());
+        try {
+            TtfInfo tti = TtfInfo.getTtfInfo(file);
+            assertNotNull(tti);
+            assertEquals("Roboto", tti.getFontFullName());
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    /**
+     * Tests scheduling the background update service.
+     */
+    @Test
+    public void testUpdateService() {
+        Context ctx = getTargetContext();
+        JobInfo jobInfo = UpdateJobService.makeJobInfo(ctx);
+        assertNotNull(jobInfo);
+        JobScheduler js = (JobScheduler)ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        assertNotNull(js);
+        int result = js.schedule(jobInfo);
+        App app = (App)ctx.getApplicationContext();
+        assertTrue(app.isBackgroundJobScheduled() != 0L);
+        js.cancel(jobInfo.getId());
+        assertEquals(result, JobScheduler.RESULT_SUCCESS);
+    }
+
 }
