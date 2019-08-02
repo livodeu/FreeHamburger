@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    style="@style/Widget.Design.Snackbar"
+    tools:context=".MainActivity"
+    android:soundEffectsEnabled="true"
+    >
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:textColor="@color/colorDirtyWhite"
+        android:breakStrategy="high_quality"
+        android:padding="8dp"
+        tools:text="@tools:sample/lorem/random"
+        tools:ignore="UnusedAttribute"/>
+</RelativeLayout>
