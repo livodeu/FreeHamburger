@@ -37,6 +37,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.text.TextUtils;
@@ -106,6 +107,41 @@ public class Util {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Clears the "app_webview" folder which is a sibling of the files folder.
+     * This folder contains some suspicious files (e.g. "Cookies") that we do not need and certainly do not want to keep.
+     * @param ctx Context
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
+    public static void clearAppWebview(@NonNull Context ctx) {
+        File dir = new File(ctx.getFilesDir().getParentFile(), "app_webview");
+        if (!dir.isDirectory()) return;
+        final List<File> files = listFiles(dir);
+        if (files.isEmpty()) return;
+        // sort to that files come first, and sub-directories precede their parents
+        Collections.sort(files, (o1, o2) -> {
+            if (o1.isFile() && o2.isDirectory()) return -1;
+            if (o1.isDirectory() && o2.isFile()) return 1;
+            if (o1.isDirectory() && o2.isDirectory()) {
+                String p1 = o1.getAbsolutePath();
+                String p2 = o2.getAbsolutePath();
+                if (p1.length() < p2.length() && p2.startsWith(p1)) return 1;
+                if (p2.length() < p1.length() && p1.startsWith(p2)) return -1;
+            }
+            return o1.compareTo(o2);
+        });
+        // first, delete all files
+        for (File file : files) {
+            if (file.isDirectory()) continue;
+            if (!file.delete()) {if (BuildConfig.DEBUG) Log.w(TAG, "Could not delete file " + file);}
+        }
+        // second, delete all directories
+        for (File file : files) {
+            if (!file.isDirectory()) continue;
+            if (!file.delete()) {if (BuildConfig.DEBUG) Log.w(TAG, "Could not delete directory " + file);}
+        }
     }
 
     /**
@@ -531,6 +567,31 @@ public class Util {
     }
 
     /**
+     * Returns the visible Views in a RecyclerView.
+     * @param r RecyclerView
+     * @return Set of child Views that are <em>partly or completely</em> visible
+     * @throws NullPointerException if {@code r} is {@code null}
+     */
+    @NonNull
+    public static Set<View> getVisibleKids(@NonNull RecyclerView r) {
+        if (r.getVisibility() != View.VISIBLE) return new HashSet<>(0);
+        final RecyclerView.LayoutManager lm = r.getLayoutManager();
+        if (lm == null) return new HashSet<>(0);
+        final int n = lm.getChildCount();
+        final Set<View> vc = new HashSet<>(n);
+        for (int i = 0; i < n; i++) {
+            View kid = lm.getChildAt(i);
+            if (kid == null) continue;
+            if (lm.isViewPartiallyVisible(kid, false, true)) {
+                vc.add(kid);
+            } else if (lm.isViewPartiallyVisible(kid, true, true)) {
+                vc.add(kid);
+            }
+        }
+        return vc;
+    }
+
+    /**
      * Hides or shows the action, status and navigation bars.
      * @param a Activity
      * @param hide {@code true} to hide, {@code false} to reset
@@ -598,7 +659,7 @@ public class Util {
 
     /**
      * Lists the files in a directory.<br>
-     * Includes sub-directories.
+     * Includes sub-directories and their contents.
      * @param dir directory
      * @return list of Files
      */
