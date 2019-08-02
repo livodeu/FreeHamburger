@@ -105,6 +105,17 @@ public class NewsView extends RelativeLayout {
     }
 
     /**
+     * Returns the url of the image to be displayed.
+     * @return image url
+     */
+    @Nullable
+    public String getImageUrl() {
+        if (this.imageView == null) return null;
+        Object tag = this.imageView.getTag();
+        return tag instanceof String ? (String)tag : null;
+    }
+
+    /**
      * Returns the layout resource for this View.
      * @return layout resource id
      */
