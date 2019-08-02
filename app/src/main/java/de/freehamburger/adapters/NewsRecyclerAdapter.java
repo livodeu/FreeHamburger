@@ -28,7 +28,8 @@ import java.util.Set;
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.HamburgerActivity;
-import de.freehamburger.MainActivity;
+import de.freehamburger.HamburgerService;
+import de.freehamburger.NewsAdapterActivity;
 import de.freehamburger.R;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.News;
@@ -44,11 +45,9 @@ import de.freehamburger.views.NewsViewNoContentNoTitle;
 public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapter.ViewHolder> {
 
     private static final String TAG = "NewsRecyclerAdapter";
-    /** see <a href="https://developer.android.com/training/articles/perf-tips.html#PackageInner">https://developer.android.com/training/articles/perf-tips.html#PackageInner</a> */
     @NonNull private final List<News> newsList = new ArrayList<>(32);
-    /** see <a href="https://developer.android.com/training/articles/perf-tips.html#PackageInner">https://developer.android.com/training/articles/perf-tips.html#PackageInner</a> */
     @NonNull private final List<News> filteredNews = new ArrayList<>(32);
-    @NonNull private final MainActivity mainActivity;
+    @NonNull private final NewsAdapterActivity activity;
     @NonNull private final List<Filter> filters = new ArrayList<>(4);
     @App.BackgroundSelection private final int background;
     private int contextMenuIndex = -1;
@@ -87,9 +86,40 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         return R.layout.news_view;
     }
 
+    /**
+     * Checks whether the service's memory cache contains bitmaps for all the <em>visible</em> {@link NewsView views}.
+     * @param activity NewsAdapterActivity
+     * @return {@code true} if there is at least one missing cached image for a news item
+     */
+    public static boolean hasMissingImages(@NonNull NewsAdapterActivity activity) {
+        HamburgerService service = activity.getHamburgerService();
+        if (service == null) return true;
+        // R.dimen.image_width_normal should have been given as android:maxWidth in the NewsView layout file news_view.xml
+        final int imgWidth = service.getResources().getDimensionPixelSize(R.dimen.image_width_normal);
+        final Set<View> kids = activity.getVisibleNewsViews();
+        for (View kid : kids) {
+            if (!(kid instanceof NewsView)) continue;
+            NewsView nv = (NewsView)kid;
+            String imageUrl = nv.getImageUrl();
+            if (imageUrl == null) continue;
+            if (service.getCachedBitmap(imageUrl) == null) {
+                if (BuildConfig.DEBUG) Log.i(TAG, "Missing cached image for " + nv);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Instantiates a NewsView based on the given layout.
+     * @param ctx Context
+     * @param viewType view layout resource
+     * @return NewsView instance
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
     @VisibleForTesting
     @NonNull
-    public static NewsView selectView(Context ctx, final int viewType) {
+    public static NewsView selectView(@NonNull Context ctx, @LayoutRes final int viewType) {
         NewsView v;
         if (viewType == R.layout.news_view_nocontent_notitle) {
             v = new NewsViewNoContentNoTitle(ctx);
@@ -102,24 +132,14 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     }
 
     /**
-     * Throws a RuntimeException.
-     * @param ctx Context
-     * @throws RuntimeException (always)
-     */
-    private static void throwWrongContext(Context ctx) {
-        throw new RuntimeException((ctx != null ? ctx.getClass().getName() : "<null>") + " does not implement " + NewsAdapterController.class.getName());
-    }
-
-    /**
      * Constructor.
-     * @param mainActivity Context <em>that implements {@link NewsAdapterController}</em>
-     * @param typeface Typeface
-     * @throws RuntimeException if {@code ctx} does not implement {@code NewsAdapterController}
+     * @param activity NewsAdapterActivity
+     * @param typeface Typeface (optional)
      */
-    public NewsRecyclerAdapter(@NonNull MainActivity mainActivity, @Nullable Typeface typeface) {
+    public NewsRecyclerAdapter(@NonNull NewsAdapterActivity activity, @Nullable Typeface typeface) {
         super();
-        this.mainActivity = mainActivity;
-        this.background = HamburgerActivity.resolveBackground(mainActivity, null);
+        this.activity = activity;
+        this.background = HamburgerActivity.resolveBackground(activity, null);
         setHasStableIds(true);
         setTypeface(typeface);
     }
@@ -270,9 +290,9 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         newsView.setBackgroundResource(this.background == App.BACKGROUND_LIGHT ? R.drawable.bg_news_light : R.drawable.bg_news);
         applyTypeface(newsView);
         if (isFiltered()) {
-            newsView.setNews(this.filteredNews.get(position), this.mainActivity.getHamburgerService());
+            newsView.setNews(this.filteredNews.get(position), this.activity.getHamburgerService());
         } else {
-            newsView.setNews(this.newsList.get(position), this.mainActivity.getHamburgerService());
+            newsView.setNews(this.newsList.get(position), this.activity.getHamburgerService());
         }
     }
 
@@ -280,7 +300,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, final int viewType) {
-        return new ViewHolder(selectView(this.mainActivity, viewType));
+        return new ViewHolder(selectView(this.activity, viewType));
     }
 
     /**
@@ -339,20 +359,37 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         notifyDataSetChanged();
     }
 
+    /**
+     * To be implemented by activities that use this adapter.
+     */
     public interface NewsAdapterController {
 
         /**
          * @return NewsRecyclerAdapter
          */
+        @NonNull
         NewsRecyclerAdapter getAdapter();
 
+        /**
+         * Available (@NonNull) in {@link android.app.Activity}.
+         * @return MenuInflater
+         */
         MenuInflater getMenuInflater();
 
         /**
-         * The user has clicked one of the news.
-         * @param news News
+         * Returns the {@link NewsView news views} that are partly or completely visible.
          */
-        void onNewsClicked(@NonNull News news, View v, float x, float y);
+        @NonNull
+        Set<View> getVisibleNewsViews();
+
+        /**
+         * The user has tapped one of the news.
+         * @param news News
+         * @param v the view that has been tapped
+         * @param x the x coord of the event
+         * @param y the y coord of the event
+         */
+        void onNewsClicked(@NonNull News news, @NonNull View v, float x, float y);
     }
 
     /**
@@ -361,6 +398,15 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnCreateContextMenuListener {
 
         private float xPosOfEventActionUp, yPosOfEventActionUp;
+
+        /**
+         * Throws a RuntimeException.
+         * @param ctx Context
+         * @throws RuntimeException (always)
+         */
+        private static void throwWrongContext(@Nullable Context ctx) {
+            throw new RuntimeException((ctx != null ? ctx.getClass().getName() : "<null>") + " does not implement " + NewsAdapterController.class.getName());
+        }
 
         /**
          * Constructor.
@@ -387,15 +433,12 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         @Override
         public void onClick(View v) {
             Context ctx = v.getContext();
-            if (!(ctx instanceof NewsAdapterController)) {
-                throwWrongContext(ctx);
-            }
+            if (!(ctx instanceof NewsAdapterController)) throwWrongContext(ctx);
             NewsAdapterController newsAdapterController = (NewsAdapterController)ctx;
             NewsRecyclerAdapter adapter = newsAdapterController.getAdapter();
             int position = getAdapterPosition();
             try {
                 News news = adapter.isFiltered() ? adapter.filteredNews.get(position) : adapter.newsList.get(position);
-
                 if (news != null) newsAdapterController.onNewsClicked(news, v, xPosOfEventActionUp, yPosOfEventActionUp);
             } catch (IndexOutOfBoundsException e) {
                 if (BuildConfig.DEBUG) Log.e(TAG, "Click on " + v + " @ position " + position + " -> " + e.toString());
@@ -406,9 +449,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         @Override
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
             Context ctx = v.getContext();
-            if (!(ctx instanceof NewsAdapterController)) {
-                throwWrongContext(ctx);
-            }
+            if (!(ctx instanceof NewsAdapterController)) throwWrongContext(ctx);
             int position = getAdapterPosition();
             if (position < 0) return;
             NewsAdapterController ma = (NewsAdapterController) ctx;
