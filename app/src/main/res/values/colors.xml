@@ -22,12 +22,10 @@
     <color name="colorBgNewsFocusedLight">#c0208bc9</color>
 
     <!-- title text color for regional news -->
-    <color name="colorRegionalNews">#4c0918</color><!--#810a26-->
+    <color name="colorRegionalNews">#4c0918</color>
     <!-- title text color for "breaking" (whatever that possibly means) news -->
     <color name="colorBreakingNews">#ff0000</color>
 
     <color name="colorBlurBright1">#22ffffff</color>
     <color name="colorBlurBright">#55ffffff</color>
-
-    <color name="black_overlay">#66000000</color>
 </resources>
