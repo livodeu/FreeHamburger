@@ -55,7 +55,6 @@
     <string name="hint_pic">The illustration for this story</string>
     <string name="hint_search">Search</string>
     <string name="hint_search_reset">Press ◀ to reset.</string>
-    <string name="hint_search_reset2">Press ◀ down here.</string>
 
     <string name="intro_1">Select categories in the right-hand drawer.</string>
     <string name="intro_2">Search, apply filters, change settings here.</string>
@@ -160,6 +159,7 @@
     <string name="msg_found">\"%1$s\" has been found %2$d times.</string>
     <string name="msg_not_found">Not found: \"%1$s\"</string>
     <string name="msg_not_modified">Not modified.</string>
+    <string name="msg_search_sugg_deleted_locale">Search suggestions have been cleared due to the recent change of locale!</string>
     <string name="msg_sorry">Sorry for the interruption!</string>
     <string name="msg_text_copied">The text has been copied to the clipboard.</string>
     <string name="msg_volume_mute">Audio is muted.</string>

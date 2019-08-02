@@ -28,7 +28,6 @@
     <string name="error_download_failed2">Ladevorgang fehlgeschlagen.</string>
     <string name="pref_header_appearance">Darstellung</string>
     <string name="hint_search_reset">Zum Zurücksetzen ◀ drücken.</string>
-    <string name="hint_search_reset2">Hier unten ◀ drücken.</string>
     <string name="error_filter_not_added">Filter wurde nicht hinzugefügt.</string>
     <string name="error_poll_failed">Dies ist am %1$s ohne Angabe einer Ursache fehlgeschlagen.</string>
     <string name="pref_title_pref_cache_max_size">Max. Cachegröße</string>
@@ -111,6 +110,7 @@
     <string name="pref_summary_proxy_type">Proxytyp</string>
     <string name="pref_title_proxy_server">Proxyserver</string>
     <string name="pref_title_proxy_type">Proxytyp</string>
+    <string name="msg_search_sugg_deleted_locale">Die Suchvorschläge wurden wegen der Sprachänderung zurückgesetzt!</string>
     <string name="action_filter">Filter</string>
     <string name="hint_filter">zu filternder Text</string>
     <string name="hint_filter_button_clear">Antippen um den Text zu löschen</string>    <!-- https://de.wikipedia.org/wiki/Infinitivgruppe -->
