@@ -4,7 +4,6 @@
     <string name="app_build_date">Build date: %1$s</string>
     <string name="app_license">This app is licensed under the GNU Affero General Public License v3.0</string>
     <string name="app_task_description" translatable="false">Hamburger - %1$s</string>
-    <string name="app_search_auth" translatable="false">de.freehamburger.SearchContentProvider</string>
 
     <string name="action_add_filter">Add</string>
     <string name="action_clear_cache">Clear cache</string>
