@@ -33,12 +33,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
-            android:layout_toStartOf="@android:id/widget_frame"
+            android:layout_toStartOf="@+id/button"
             android:ellipsize="middle"
             android:singleLine="true"
             android:textAppearance="?android:attr/textAppearanceListItem"
             android:textColor="?android:attr/textColorPrimary"
-            tools:text="Preference title"/>
+            tools:text="@tools:sample/lorem/random"/>
 
         <TextView
             android:id="@android:id/summary"
@@ -46,10 +46,11 @@
             android:layout_height="wrap_content"
             android:layout_below="@android:id/title"
             android:layout_alignStart="@android:id/title"
+            android:layout_toStartOf="@+id/button"
             android:maxLines="2"
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:textColor="?android:attr/textColorSecondary"
-            tools:text="Preference summary"/>
+            tools:text="@tools:sample/lorem/random"/>
 
         <Button
             android:id="@+id/button"
