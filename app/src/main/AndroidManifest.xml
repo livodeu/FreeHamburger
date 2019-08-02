@@ -120,13 +120,14 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="de.freehamburger.MainActivity"/>
         </activity>
+
         <activity
             android:name=".VideoActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="false"
             android:label="@string/app_name"
             android:parentActivityName=".MainActivity"
-            android:theme="@style/FullscreenTheme">
+            android:theme="@style/AppTheme">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="de.freehamburger.MainActivity"/>

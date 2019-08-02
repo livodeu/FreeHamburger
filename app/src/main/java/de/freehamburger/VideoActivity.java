@@ -1,18 +1,17 @@
 package de.freehamburger;
 
-import android.annotation.SuppressLint;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.IntRange;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -36,77 +35,52 @@ import de.freehamburger.util.Util;
 public class VideoActivity extends AppCompatActivity {
     private static final String EXTRA_NEWS = "extra_news";
     private static final String TAG = "VideoActivity";
-    /** Whether or not the system UI should be auto-hidden after {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds. */
-    private static final boolean AUTO_HIDE = true;
-    /** If {@link #AUTO_HIDE} is set, the number of milliseconds to wait after user interaction before hiding the system UI. */
+    /** the number of milliseconds to wait after user interaction before hiding the system UI */
     private static final long AUTO_HIDE_DELAY_MILLIS = 3_000L;
     /** Some older devices needs a small delay between UI widget updates and a change of the status and navigation bar. */
     private static final long UI_ANIMATION_DELAY = 300L;
+    private static final int UI_FLAGS = View.SYSTEM_UI_FLAG_LOW_PROFILE
+            | View.SYSTEM_UI_FLAG_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            //| View.SYSTEM_UI_FLAG_IMMERSIVE
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
     private final Handler handler = new Handler();
-    private ViewGroup fullscreenContent;
-    private final Runnable mHidePart2Runnable = new Runnable() {
-        @Override
-        public void run() {
-            fullscreenContent.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LOW_PROFILE
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN
-                            //| View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            //| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                            //| View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-        }
-    };
+    private final Runnable hideStatusAndNavigationBars = () -> getWindow().getDecorView().setSystemUiVisibility(UI_FLAGS);
+    private final Runnable hideRunnable = this::hide;
+    private final MediaSourceHelper mediaSourceHelper = new MediaSourceHelper();
     private PlayerView playerView;
     private ProgressBar progressBar;
-    private View controlsView;
-    private final Runnable mShowPart2Runnable = new Runnable() {
-        @Override
-        public void run() {
-            // display of UI elements
-            ActionBar actionBar = getSupportActionBar();
-            if (actionBar != null) {
-                actionBar.show();
-            }
-            controlsView.setVisibility(View.VISIBLE);
-        }
-    };
-    private final Runnable hideRunnable = this::hide;
-    /**
-     * Touch listener to use for in-layout UI controls to delay hiding the system UI.
-     * This is to prevent the jarring behavior of controls going away while interacting with activity UI.
-     */
-    @SuppressLint("ClickableViewAccessibility")
-    private final View.OnTouchListener mDelayHideTouchListener = (view, motionEvent) -> {
-        if (AUTO_HIDE) {
-            delayedHide(AUTO_HIDE_DELAY_MILLIS);
-        }
-        return false;
-    };
-    private final MediaSourceHelper mediaSourceHelper = new MediaSourceHelper();
     private News news;
     @Nullable
     private ExoPlayer exoPlayerVideo;
-    //private int exoPlayerState = 0;
-    //private boolean exoPlayerPlayWhenReady = false;
 
     /**
-     * Schedules a call to hide() in delay milliseconds, canceling any previously scheduled calls.
+     * Hides ActionBar, status and navigation bar.
      */
-    private void delayedHide(@IntRange(from = 0) long delayMillis) {
-        this.handler.removeCallbacks(this.hideRunnable);
-        this.handler.postDelayed(this.hideRunnable, delayMillis);
+    private void hide() {
+        // hide ActionBar first
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) actionBar.hide();
+        // hide status and navigation bars after a short delay
+        this.handler.postDelayed(this.hideStatusAndNavigationBars, UI_ANIMATION_DELAY);
     }
 
-    private void hide() {
-        // Hide UI first
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.hide();
-        }
-        this.controlsView.setVisibility(View.GONE);
-        // Schedule a runnable to remove the status and navigation bar after a delay
-        this.handler.removeCallbacks(mShowPart2Runnable);
-        this.handler.postDelayed(mHidePart2Runnable, UI_ANIMATION_DELAY);
+    /**
+     * Hides the {@link #progressBar progress spinner}.
+     */
+    private void hideProgressBar() {
+        this.progressBar.animate()
+                .alpha(0f)
+                .setDuration(getResources().getInteger(android.R.integer.config_mediumAnimTime))
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        VideoActivity.this.progressBar.setVisibility(View.GONE);
+                        VideoActivity.this.progressBar.setAlpha(1f);
+                    }
+                });
+
     }
 
     /**
@@ -117,6 +91,8 @@ public class VideoActivity extends AppCompatActivity {
         this.exoPlayerVideo = ExoPlayerFactory.newSimpleInstance(this, new DefaultTrackSelector());
         // assign the ExoPlayer instance to the video view
         this.playerView.setPlayer(this.exoPlayerVideo);
+        View st = findViewById(R.id.exo_subtitles);
+        if (st != null) st.setVisibility(View.GONE);
         // listen to state changes
         Player.EventListener listener = new Player.EventListener() {
             /** {@inheritDoc} */
@@ -124,8 +100,7 @@ public class VideoActivity extends AppCompatActivity {
             public void onPlayerError(ExoPlaybackException error) {
                 String msg = Util.getExoPlaybackExceptionMessage(error);
                 if (BuildConfig.DEBUG) Log.e(TAG, "Video player error: " + msg, error);
-                Toast.makeText(VideoActivity.this, msg, Toast.LENGTH_LONG)
-                        .show();
+                Toast.makeText(VideoActivity.this, msg, Toast.LENGTH_LONG).show();
                 finish();
             }
 
@@ -133,9 +108,9 @@ public class VideoActivity extends AppCompatActivity {
             @Override
             public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
                 if (playbackState == Player.STATE_BUFFERING) {
-                    VideoActivity.this.progressBar.setVisibility(View.VISIBLE);
+                    showProgressBar();
                 } else {
-                    VideoActivity.this.progressBar.setVisibility(View.GONE);
+                    hideProgressBar();
                 }
                 if (playWhenReady && playbackState == Player.STATE_ENDED) {
                     VideoActivity.this.handler.postDelayed(() -> finish(), 750L);
@@ -147,35 +122,34 @@ public class VideoActivity extends AppCompatActivity {
 
     /** {@inheritDoc} */
     @Override
+    public void onBackPressed() {
+        // pause video before finishing the activity to make sure there is no audio when the activity has been finished
+        pauseVideo();
+        super.onBackPressed();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_video);
         ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-        }
+        if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(true);
 
         setVolumeControlStream(App.STREAM_TYPE);
 
         this.news = (News) getIntent().getSerializableExtra(EXTRA_NEWS);
 
-        this.controlsView = findViewById(R.id.fullscreen_content_controls);
-        this.fullscreenContent = findViewById(R.id.fullscreen_content);
         this.playerView = findViewById(R.id.playerView);
         this.progressBar = findViewById(R.id.progressBar);
-
-        // Upon interacting with UI controls, delay any scheduled hide()
-        // operations to prevent the jarring behavior of controls going away while interacting with the UI.
-        findViewById(R.id.dummy_button).setOnTouchListener(this.mDelayHideTouchListener);
-
-        View decorView = getWindow().getDecorView();
-        decorView.setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
+        getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
             /** {@inheritDoc} */
             @Override
             public void onSystemUiVisibilityChange(int visibility) {
                 if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
-                    handler.postDelayed(VideoActivity.this::hide, 3_000L);
+                    VideoActivity.this.handler.removeCallbacks(VideoActivity.this::hide);
+                    VideoActivity.this.handler.postDelayed(VideoActivity.this::hide, AUTO_HIDE_DELAY_MILLIS);
                 }
             }
         });
@@ -186,6 +160,7 @@ public class VideoActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == android.R.id.home) {
+            pauseVideo();
             NavUtils.navigateUpFromSameTask(this);
             return true;
         }
@@ -205,8 +180,8 @@ public class VideoActivity extends AppCompatActivity {
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        // Trigger the initial hide() shortly after the activity has been created, to briefly hint to the user that UI controls are available.
-        delayedHide(100);
+        this.handler.removeCallbacks(this.hideRunnable);
+        this.handler.postDelayed(this.hideRunnable, 100);
     }
 
     /** {@inheritDoc} */
@@ -257,19 +232,17 @@ public class VideoActivity extends AppCompatActivity {
         super.onStop();
     }
 
-    /*
-     *
-    public void playVideo(@Nullable View ignored) {
+    /**
+     * Pauses the video playback.
+     */
+    private void pauseVideo() {
         if (this.exoPlayerVideo == null) return;
-        if (BuildConfig.DEBUG) Log.i(TAG, "playVideo()");
-        if (isVideoPlaying()) {
-            // pause the video
-            this.exoPlayerVideo.setPlayWhenReady(false);
-        } else {
-            this.exoPlayerVideo.setPlayWhenReady(true);
-        }
-    }*/
+        this.exoPlayerVideo.setPlayWhenReady(false);
+    }
 
+    /**
+     * Releases the {@link #exoPlayerVideo ExoPlayer}.
+     */
     private void releasePlayer() {
         if (this.exoPlayerVideo != null) {
             this.exoPlayerVideo.release();
@@ -277,22 +250,15 @@ public class VideoActivity extends AppCompatActivity {
         }
     }
 
-    /*
-    private void show() {
-        // Show the system bar
-        this.fullscreenContent.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
-        // Schedule a runnable to display UI elements after a delay
-        this.handler.removeCallbacks(this.mHidePart2Runnable);
-        this.handler.postDelayed(this.mShowPart2Runnable, UI_ANIMATION_DELAY);
+    /**
+     * Shows the {@link #progressBar progress spinner}.
+     */
+    private void showProgressBar() {
+        this.progressBar.setAlpha(0f);
+        this.progressBar.setVisibility(View.VISIBLE);
+        this.progressBar.animate()
+                .alpha(1f)
+                .setDuration(getResources().getInteger(android.R.integer.config_longAnimTime))
+                ;
     }
-    */
-
-    /*private void toggle() {
-        if (BuildConfig.DEBUG) Log.i(TAG, "toggle()");
-        if (this.visible) {
-            hide();
-        } else {
-            show();
-        }
-    }*/
 }
