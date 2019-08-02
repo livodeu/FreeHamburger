@@ -33,11 +33,9 @@
         <meta-data
             android:name="android.webkit.WebView.MetricsOptOut"
             android:value="true"/>
+
         <meta-data android:name="android.webkit.WebView.EnableSafeBrowsing"
             android:value="false"/>
-        <meta-data
-            android:name="android.app.default_searchable"
-            android:value=".MainActivity"/>
 
         <activity
             android:name=".MainActivity"
@@ -94,9 +92,11 @@
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts"/>
+
             <meta-data
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable"/>
+
         </activity>
         <activity
             android:name=".NewsActivity"
@@ -177,8 +177,8 @@
             />
 
         <provider
-            android:name=".supp.SearchSuggestionsProvider"
-            android:authorities="${applicationId}.supp.SearchSuggestionsProvider"
+            android:name=".supp.SearchContentProvider"
+            android:authorities="@string/app_search_auth"
             android:exported="false"/>
 
         <provider
