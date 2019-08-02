@@ -3,10 +3,13 @@ package de.freehamburger;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.SearchManager;
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
@@ -16,13 +19,15 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
-import android.provider.SearchRecentSuggestions;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -45,6 +50,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.style.ImageSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.JsonReader;
@@ -80,6 +86,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import de.freehamburger.adapters.NewsRecyclerAdapter;
@@ -93,7 +100,9 @@ import de.freehamburger.model.StreamQuality;
 import de.freehamburger.model.TeaserImage;
 import de.freehamburger.model.TextFilter;
 import de.freehamburger.model.Video;
-import de.freehamburger.supp.SearchSuggestionsProvider;
+import de.freehamburger.supp.PopupManager;
+import de.freehamburger.supp.SearchContentProvider;
+import de.freehamburger.supp.SearchHelper;
 import de.freehamburger.util.Downloader;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.Intro;
@@ -105,14 +114,15 @@ import de.freehamburger.views.ClockView;
 
 import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 
-public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapter.NewsAdapterController, SwipeRefreshLayout.OnRefreshListener {
+public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLayout.OnRefreshListener {
 
     private static final String TAG = "MainActivity";
 
     private static final String STATE_SOURCE = "de.freehamburger.state.source";
     private static final String STATE_RECENT_SOURCES = "de.freehamburger.state.recentsources";
     private static final String STATE_LIST_POS = "de.freehamburger.state.list.pos";
-    private static final String ACTION_CLEAR_SEARCH_HISTORY = "de.freehamburger.action_search_clear";
+    /** contains a News object if the {@link #quickView} should be restored */
+    private static final String STATE_QUIKVIEW = "de.freehamburger.state.quikview";
     private static final String ACTION_IMPORT_FONT = "de.freehamburger.action_font_import";
     private static final String ACTION_DELETE_FONT = "de.freehamburger.action_font_delete";
     /** used when the user has picked a font file to import */
@@ -121,9 +131,21 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     /** maximum number of recent sources/categories to keep */
     private static final int MAX_RECENT_SOURCES = 10;
 
+    private static final BitmapFactory.Options OPTS_FOR_QUICKVIEW = new BitmapFactory.Options();
+    static {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            OPTS_FOR_QUICKVIEW.inPreferredConfig = Bitmap.Config.HARDWARE;
+        } else {
+            OPTS_FOR_QUICKVIEW.inPreferredConfig = Bitmap.Config.RGB_565;
+            OPTS_FOR_QUICKVIEW.inDither = true;
+        }
+        OPTS_FOR_QUICKVIEW.inMutable = false;
+    }
+
     /** remembers Sources used recently to provide a 'back' navigation */
     private final Stack<Source> recentSources = new Stack<>();
     private final SparseArray<Source> sourceForMenuItem = new SparseArray<>();
+    private final ConnectivityReceiver connectivityReceiver = new ConnectivityReceiver();
     private CoordinatorLayout coordinatorLayout;
     private SwipeRefreshLayout swipeRefreshLayout;
     private FloatingActionButton fab;
@@ -131,7 +153,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     private NewsRecyclerAdapter newsAdapter;
     private DrawerLayout drawerLayout;
     private ClockView clockView;
-    private boolean searchIsLaunched = false;
     private Filter searchFilter = null;
     private int listPositionToRestore = -1;
     @NonNull private Source currentSource = Source.HOME;
@@ -139,18 +160,24 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     private Intro intro;
     /** displays the article picture when the corresponding menu item is invoked */
     private ImageView quickView;
+    /** the {@link News} that corresponds to the image displayed in {@link #quickView} */
+    private News newsForQuickView;
     private boolean quickViewRequestCancelled;
     /** point of time when the user paused this Activity most recently */
     private long pausedAt = -1L;
     private AlertDialog infoDialog;
+    /** timestamp indicating when a refresh failed because there was no network available */
+    private long lastTimeRefreshFailedDueToNoNetwork = 0L;
+    private PopupManager popupManager;
 
     /**
      * Switches to another {@link Source}.<br>
      * Does not do anything if the given Source is the current one.
      * @param newSource Source
      * @param addToRecent {@code true} to add the Source to the Stack of recent Sources
+     * @param cacheOnly {@code true} to never load data from remote, instead use local cache only
      */
-    private void changeSource(@NonNull Source newSource, boolean addToRecent) {
+    private void changeSource(@NonNull Source newSource, boolean addToRecent, boolean cacheOnly) {
         if (newSource == this.currentSource) return;
         //
         if (addToRecent) {
@@ -168,16 +195,17 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         //
         updateMenu();
         //
-        onRefreshUseCache();
+        onRefreshUseCache(cacheOnly);
     }
 
     /**
      * Removes the temporary search filter.
      */
     private void clearSearch() {
+        if (BuildConfig.DEBUG) Log.i(TAG, "clearSearch()");
         this.searchFilter = null;
         if (this.newsAdapter != null) this.newsAdapter.clearTemporaryFilters();
-        this.clockView.setTint(0);
+        this.clockView.setTint(Color.TRANSPARENT);
     }
 
     /** {@inheritDoc} */
@@ -206,6 +234,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public NewsRecyclerAdapter getAdapter() {
         return this.newsAdapter;
     }
@@ -214,6 +243,13 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     @Override
     int getMainLayout() {
         return R.layout.activity_main;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @NonNull
+    public Set<View> getVisibleNewsViews() {
+        return Util.getVisibleKids(this.recyclerView);
     }
 
     /**
@@ -264,29 +300,42 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         }
         if (ACTION_IMPORT_FONT.equals(action)) {
             Intent pickIntent = new Intent(Intent.ACTION_GET_CONTENT);
-            //pickIntent.setType("application/x-font-ttf");
-            pickIntent.setType("*/*");
+            pickIntent.setType("*/*");    // Android does not know a suitable mime type for ttf
             pickIntent.addCategory(Intent.CATEGORY_OPENABLE);
             pickIntent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-            startActivityForResult(pickIntent, REQUEST_CODE_FONT_IMPORT);
-            return;
-        }
-        if (ACTION_CLEAR_SEARCH_HISTORY.equals(action)) {
-            SearchRecentSuggestions suggestions = new SearchRecentSuggestions(this, SearchSuggestionsProvider.AUTHORITY, SearchSuggestionsProvider.MODE);
-            suggestions.clearHistory();
-            Toast.makeText(getApplicationContext(), R.string.msg_search_cleared, Toast.LENGTH_SHORT).show();
-            Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
-            settingsActivityIntent.putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, SettingsActivity.StoragePreferenceFragment.class.getName());
-            startActivity(settingsActivityIntent);
+            if (getPackageManager().resolveActivity(pickIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                startActivityForResult(pickIntent, REQUEST_CODE_FONT_IMPORT);
+            }
             return;
         }
         if (Intent.ACTION_SEARCH.equals(action)) {
             String query = intent.getStringExtra(SearchManager.QUERY);
-            if (BuildConfig.DEBUG) Log.i(TAG, "Search query is '" + query + "'");
-            this.searchFilter = new TextFilter(query.toLowerCase(Locale.GERMAN).trim(), true, true);
-            SearchRecentSuggestions suggestions = new SearchRecentSuggestions(this, SearchSuggestionsProvider.AUTHORITY, SearchSuggestionsProvider.MODE);
-            suggestions.saveRecentQuery(query, null);
-            onRefreshUseCache();
+            if (BuildConfig.DEBUG) {
+                Bundle extras = intent.getExtras();
+                if (extras != null) {
+                    Set<String> keys = extras.keySet();
+                    for (String key : keys) {
+                        Object value = extras.get(key);
+                        if (value != null) Log.i(TAG, "'" + key + "'='" + value + "' (" + value.getClass() + ")");
+                        else Log.i(TAG, "'" + key + "'= null");
+                    }
+                }
+            }
+            int sep = query.lastIndexOf('#');
+            String queryString = sep > 0 ? query.substring(0, sep) : query;
+            @Nullable Source source = null;
+            try {
+                if (sep > 0) source = Source.valueOf(query.substring(sep + 1));
+            } catch (IllegalArgumentException ignored) {
+            }
+            this.searchFilter = new TextFilter(queryString.toLowerCase(Locale.GERMAN).trim(), true, true);
+            if (source == null) source = this.currentSource;
+            if (source != this.currentSource) {
+                changeSource(source, true, true);
+            } else {
+                File file = ((App)getApplicationContext()).getLocalFile(source);
+                parseLocalFileAsync(file);
+            }
         } else if (Intent.ACTION_VIEW.equals(action)) {
             handleViewAction(intent);
         } else if ("action_section_news".equals(action)) {
@@ -441,6 +490,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
      */
     private void loadDetails(@NonNull News news) {
         String url = news.getDetails();
+        // check that url is non-null
         if (url == null) return;
         try {
             File tempFile = File.createTempFile("details", ".json");
@@ -569,7 +619,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                         MainActivity.this.recentSources.pop();
                     }
                     //
-                    changeSource(selected, false);
+                    changeSource(selected, false, false);
                     dialog.dismiss();
                 })
                 .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel())
@@ -609,7 +659,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                     if (this.currentSource != Source.HOME) {
                         this.listPositionToRestore = 0;
                         this.recentSources.clear();
-                        changeSource(Source.HOME, false);
+                        changeSource(Source.HOME, false, false);
                     } else {
                         maybeQuit();
                     }
@@ -620,7 +670,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                         this.listPositionToRestore = 0;
                         updateTitle();
                         updateMenu();
-                        onRefreshUseCache();
+                        onRefreshUseCache(false);
                     } else {
                         maybeQuit();
                     }
@@ -691,17 +741,20 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                             dialog.dismiss();
                         })
                         .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());
-                if ("de".equals(Locale.getDefault().getLanguage()) && qualities.contains(StreamQuality.ADAPTIVESTREAMING)) {
-                    builder.setNeutralButton(getString(R.string.label_streamquality_adaptive) + "? (Wikipedia)", (dialog, which) -> {
-                        Intent wotswotwot = new Intent(Intent.ACTION_VIEW);
-                        wotswotwot.setDataAndType(Uri.parse("https://de.wikipedia.org/wiki/HTTP-Streaming"), "text/html");
-                        startActivity(wotswotwot);
-                        dialog.cancel();
-                    });
+                if (qualities.contains(StreamQuality.ADAPTIVESTREAMING)) {
+                    Intent wotswotwot = new Intent(Intent.ACTION_VIEW);
+                    wotswotwot.setDataAndType(Uri.parse(getString(R.string.url_wikipedia_http_streaming)), "text/html");
+                    if (getPackageManager().resolveActivity(wotswotwot, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                        builder.setNeutralButton(getString(R.string.label_streamquality_adaptive) + "? (Wikipedia)", (dialog, which) -> {
+                            dialog.cancel();
+                            startActivity(wotswotwot);
+                        });
+                    }
                 }
                 AlertDialog d = builder.create();
                 Window dw = d.getWindow();
                 if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
+                d.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
                 d.show();
             } else {
                 Util.sendUrl(this, streams.values().iterator().next(), news.getTitle());
@@ -729,46 +782,9 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             return true;
         }
         if (id == R.id.action_view_picture) {
+            // the menu item should have been disabled if there is no image (see NewsRecyclerAdapter.onCreateContextMenu())
             News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
-            TeaserImage image = news.getTeaserImage();
-            if (image == null) return true;
-            String url = image.getBestImage();
-            if (url == null) return true;
-            String newsid = news.getExternalId();
-            if (newsid == null) newsid = "temp";
-            final File temp = new File(getCacheDir(), "quik_" + newsid.replace('/', '_').replace('>', '_') + ".jpg");
-            findViewById(R.id.plane).setVisibility(View.VISIBLE);
-            this.service.loadFile(url, temp, temp.lastModified(), (completed, result) -> {
-                if (MainActivity.this.quickViewRequestCancelled) {
-                    MainActivity.this.quickViewRequestCancelled = false;
-                    FileDeleter.add(temp);
-                    findViewById(R.id.plane).setVisibility(View.GONE);
-                    return;
-                }
-                if (!completed || result == null || result.rc >= 400) {
-                    FileDeleter.add(temp);
-                    findViewById(R.id.plane).setVisibility(View.GONE);
-                    if (result != null && !TextUtils.isEmpty(result.msg)) {
-                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
-                    } else {
-                        Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
-                    }
-                    return;
-                }
-                Bitmap bm = BitmapFactory.decodeFile(temp.getAbsolutePath());
-                if (bm != null) {
-                    MainActivity.this.quickView.setVisibility(View.VISIBLE);
-                    MainActivity.this.quickView.setImageBitmap(bm);
-                } else {
-                    findViewById(R.id.plane).setVisibility(View.GONE);
-                    if (!TextUtils.isEmpty(result.msg)) {
-                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
-                    } else {
-                        Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
-                    }
-                }
-                FileDeleter.add(temp);
-            });
+            viewImage(news, true);
             return true;
         }
         return super.onContextItemSelected(menuItem);
@@ -793,10 +809,14 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                 }
             }
             this.listPositionToRestore = savedInstanceState.getInt(STATE_LIST_POS, -1);
+            this.newsForQuickView = (News)savedInstanceState.getSerializable(STATE_QUIKVIEW);
         }
+        //TODO super.onCreate() takes quite long (ca. 660 ms)
         super.onCreate(savedInstanceState);
 
         setVolumeControlStream(App.STREAM_TYPE);
+
+        this.popupManager = new PopupManager();
 
         this.drawerLayout = findViewById(R.id.drawerLayout);
         NavigationView navigationView = findViewById(R.id.navigationView);
@@ -829,7 +849,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                     // when item is tapped, close drawer (after a brief pause to let the user see the new selection)
                     MainActivity.this.handler.postDelayed(() -> MainActivity.this.drawerLayout.closeDrawer(Gravity.END, true), 500L);
                     // select source that matches the menu item
-                    changeSource(MainActivity.this.sourceForMenuItem.get(id), true);
+                    changeSource(MainActivity.this.sourceForMenuItem.get(id), true, false);
                     return true;
                 });
         // refresh via top-bottom swipe
@@ -843,6 +863,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         this.fab = findViewById(R.id.fab);
         this.quickView = findViewById(R.id.quickView);
         this.recyclerView = findViewById(R.id.recyclerView);
+        this.recyclerView.setHasFixedSize(true);
         RecyclerView.LayoutManager lm;
         // one column for phones, more columns for tablets
         if (Util.isXLargeTablet(this)) {
@@ -868,7 +889,6 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         this.clockView.setOnClickListener(v -> openOptionsMenu());
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-
             this.fab.setOnClickListener(v -> {
                 MainActivity.this.recyclerView.smoothScrollToPosition(0);
                 ((AppBarLayout)findViewById(R.id.appbar_layout)).setExpanded(true);
@@ -884,7 +904,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                     this.verticalScrollPosition += dy;
                     if (this.verticalScrollPosition > this.displayHeight) {
                         MainActivity.this.fab.show(null);
-                        //TODO set elevation because for some reason it is beneath other views as defined in the xmls
+                        // set elevation because for some reason it is beneath other views as defined in the xmls
                         MainActivity.this.fab.setElevation(48f);
                         MainActivity.this.handler.postDelayed(this.fabHider, HIDE_FAB_AFTER);
                     } else {
@@ -922,6 +942,13 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
 
     /** {@inheritDoc} */
     @Override
+    protected void onDestroy() {
+        this.popupManager.destroy();
+        super.onDestroy();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public boolean onKeyLongPress(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (onBackLongPressed()) return true;
@@ -940,6 +967,14 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     private boolean onMenuItemSelected(@NonNull MenuItem item) {
         final int id = item.getItemId();
         if (id == R.id.action_search) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            long sd = prefs.getLong(SearchContentProvider.PREF_SEARCHSUGGESTIONS_DELETED_LOCALE_CHANGE, 0L);
+            if (sd > 0L) {
+                Snackbar.make(this.coordinatorLayout, R.string.msg_search_sugg_deleted_locale, Snackbar.LENGTH_LONG).show();
+                SharedPreferences.Editor ed = prefs.edit();
+                ed.remove(SearchContentProvider.PREF_SEARCHSUGGESTIONS_DELETED_LOCALE_CHANGE);
+                ed.apply();
+            }
             onSearchRequested();
             return true;
         }
@@ -949,7 +984,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         }
         if (id == R.id.action_select_regions) {
             AlertDialog ad = Region.selectRegions(this);
-            ad.setOnDismissListener(dialog -> onRefreshUseCache());
+            ad.setOnDismissListener(dialog -> onRefreshUseCache(false));
             return true;
         }
         if (id == R.id.action_teletext) {
@@ -1037,7 +1072,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                     .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
                     .setNeutralButton(R.string.label_license, (dialog, which) -> {
                         dialog.dismiss();
-                        List<String> l = Util.loadResourceTextFile(MainActivity.this, R.raw.agpl, 662);
+                        List<String> l = Util.loadResourceTextFile(MainActivity.this, R.raw.agpl, 544);
                         StringBuilder sb = new StringBuilder(34523);
                         for (String line : l) sb.append(line).append('\n');
                         @SuppressLint("InflateParams")
@@ -1081,7 +1116,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
 
     /** {@inheritDoc} */
     @Override
-    public void onNewsClicked(@NonNull News news, View v, float x, float y) {
+    public void onNewsClicked(@NonNull News news, @NonNull View v, float x, float y) {
         if (this.intro != null && this.intro.isPlaying()) return;
         final Intent intent;
         @News.NewsType String type = news.getType();
@@ -1143,6 +1178,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     @Override
     protected void onPause() {
         this.pausedAt = System.currentTimeMillis();
+        unregisterReceiver(this.connectivityReceiver);
         if (this.infoDialog != null && this.infoDialog.isShowing()) this.infoDialog.dismiss();
         if (this.intro != null && this.intro.isPlaying()) {
             this.intro.cancel();
@@ -1156,6 +1192,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             finish();
         }
         super.onPause();
+        // next lifecycle method to be called will be onStop()
     }
 
     /**
@@ -1187,6 +1224,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     public void onQuickViewClicked(@Nullable View ignored) {
         this.quickView.setVisibility(View.GONE);
         this.quickView.setImageBitmap(null);
+        this.newsForQuickView = null;
         View plane = findViewById(R.id.plane);
         if (plane != null) plane.setVisibility(View.GONE);
     }
@@ -1194,17 +1232,27 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     /** {@inheritDoc} */
     @Override
     public void onRefresh() {
+        onRefresh(true);
+    }
+
+    /**
+     * Refreshes the data.
+     * @param showMsgOnNetworkFailure if {@code true} show a message if there is no network connection
+     */
+    private void onRefresh(boolean showMsgOnNetworkFailure) {
         App app = (App) getApplicationContext();
         // check whether loading is possible
         if (!Util.isNetworkAvailable(app)) {
             this.swipeRefreshLayout.setRefreshing(false);
-            showNoNetworkSnackbar();
+            lastTimeRefreshFailedDueToNoNetwork = System.currentTimeMillis();
+            if (showMsgOnNetworkFailure) showNoNetworkSnackbar();
             return;
         }
         if (this.service == null) {
             this.swipeRefreshLayout.setRefreshing(false);
             return;
         }
+        this.lastTimeRefreshFailedDueToNoNetwork = 0L;
 
         // load remote file
         String url = this.currentSource.getUrl();
@@ -1213,7 +1261,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                 url = url + Source.getParamsForRegional(this);
             } else {
                 // unhandled case; source needs parameters but we don't know how to append them => revert to default source
-                changeSource(Source.HOME, true);
+                changeSource(Source.HOME, true, false);
                 url = this.currentSource.getUrl();
             }
         }
@@ -1243,6 +1291,23 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
                         msg = getString(R.string.error_pin_verification);
                     } else if ("timeout".equals(msg)) {
                         msg = getString(R.string.error_timeout);
+                    } else if (msg.startsWith("Failed to connect to")) {
+                        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+                        String pp = prefs.getString(App.PREF_PROXY_SERVER, null);
+                        if (pp != null && msg.toLowerCase(Locale.US).contains(pp.toLowerCase(Locale.US))) {
+                            int colon = pp.indexOf(':');
+                            String proxyServer, proxyPort;
+                            if (colon > 0) {
+                                proxyServer = pp.substring(0, colon)
+                                        .trim();
+                                proxyPort = pp.substring(colon + 1)
+                                        .trim();
+                            } else {
+                                proxyServer = pp;
+                                proxyPort = String.valueOf(App.DEFAULT_PROXY_PORT);
+                            }
+                            msg = getString(R.string.error_proxy_connection_failed, proxyServer, proxyPort);
+                        }
                     }
                     Snackbar.make(MainActivity.this.coordinatorLayout, msg, BuildConfig.DEBUG ? Snackbar.LENGTH_INDEFINITE : Snackbar.LENGTH_LONG).show();
                     return;
@@ -1260,8 +1325,9 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
 
     /**
      * Similar to {@link #onRefresh()} but tries the cache first.
+     * @param cacheOnly if this is {@code true} then remote data will never be loaded
      */
-    private void onRefreshUseCache() {
+    private void onRefreshUseCache(boolean cacheOnly) {
         App app = (App)getApplicationContext();
         boolean networkAvailable = Util.isNetworkAvailable(this);
         // first try the local file
@@ -1273,31 +1339,19 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             It does not denote the most recent attempt (successful or not) to download the data!
              */
             boolean fileIsQuiteNew = System.currentTimeMillis() - app.getMostRecentUpdate(this.currentSource) < App.LOCAL_FILE_MAXAGE;
-            if (fileIsQuiteNew || !networkAvailable) {
-                /*
-                if (BuildConfig.DEBUG) {
-                    if (!networkAvailable) Log.i(TAG, "The local file's \"" +  localFile + "\" content shall be sufficient for now because there's no network connection");
-                    else Log.i(TAG, "The local file's \"" +  localFile + "\" content shall be sufficient for now because it's younger than " + Math.round(App.LOCAL_FILE_MAXAGE/60000f) + " mins");
-                }
-                */
+            if (cacheOnly || fileIsQuiteNew || !networkAvailable) {
                 parseLocalFileAsync(localFile);
-                if (!networkAvailable) {
+                if (!cacheOnly && !networkAvailable) {
                     showNoNetworkSnackbar();
                 }
                 return;
             }
         }
+        if (cacheOnly) return;
         // if there is neither a local file nor a network connection, there is nothing we can do here
         if (!networkAvailable) {
             showNoNetworkSnackbar();
             return;
-        }
-        if (BuildConfig.DEBUG) {
-            if (!localFile.isFile()) Log.i(TAG, "Loading remote file because local file \""+ localFile + "\" does not exist");
-            else {
-                long lm = app.getMostRecentUpdate(this.currentSource);
-                if (System.currentTimeMillis() - lm >= App.LOCAL_FILE_MAXAGE) Log.i(TAG, "Loading remote file because local file \"" + localFile + "\" is older than " + Math.round(App.LOCAL_FILE_MAXAGE/60000f) + " min.: " + new Date(lm)  + " (" + lm + ")");
-            }
         }
         // if there is no local file or if it is too old, download the resource
         this.swipeRefreshLayout.setRefreshing(true);
@@ -1308,18 +1362,20 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
     @Override
     protected void onRestart() {
         super.onRestart();
+        //
         if (this.pausedAt > 0L && System.currentTimeMillis() - this.pausedAt > 300_000L) {
-            // scroll to the top if the most recent user interaction was quite a while ago
+            // scroll to the top if the most recent user interaction was quite a while ago (so the user will likely have forgotten)
             this.listPositionToRestore = 0;
         }
+        // next lifecycle method to be called will be onStart() followed by onResume()
     }
 
     /** {@inheritDoc} */
     @Override
     protected void onResume() {
         super.onResume();
-        if (BuildConfig.DEBUG) Log.i(TAG, "onResume()");
-        this.newsAdapter.setFilters(TextFilter.createTextFiltersFromPreferences(this));
+        boolean hasTemporaryFilter = this.newsAdapter.setFilters(TextFilter.createTextFiltersFromPreferences(this));
+        this.clockView.setTint(hasTemporaryFilter ? Util.getColor(this, R.color.colorFilter) : Color.TRANSPARENT);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         if (prefs.getBoolean(App.PREF_PLAY_INTRO, true)) {
             playIntro();
@@ -1333,6 +1389,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             if (lm != null) lm.scrollToPosition(this.listPositionToRestore);
             this.listPositionToRestore = -1;
         }
+        registerReceiver(connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
     /** {@inheritDoc} */
@@ -1344,6 +1401,8 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             recentSourcesArray[i] = this.recentSources.get(i).name();
         }
         outState.putStringArray(STATE_RECENT_SOURCES, recentSourcesArray);
+        //
+        outState.putSerializable(STATE_QUIKVIEW, this.quickView != null && this.quickView.getVisibility() == View.VISIBLE ? this.newsForQuickView : null);
         //
         RecyclerView.LayoutManager rlm = this.recyclerView.getLayoutManager();
         int top = RecyclerView.NO_POSITION;
@@ -1368,31 +1427,30 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
 
     /** {@inheritDoc} */
     @Override
-    public boolean onSearchRequested() {
-        this.searchIsLaunched = super.onSearchRequested();
-        if (this.searchIsLaunched) {
-            SearchManager sm = (SearchManager) getSystemService(SEARCH_SERVICE);
-            if (sm == null) return this.searchIsLaunched;
-            sm.setOnDismissListener(() -> {
-                if (BuildConfig.DEBUG) Log.i(TAG, "Search dismissed.");
-                MainActivity.this.handler.postDelayed(() -> {
-                    MainActivity.this.searchIsLaunched = false;
-                    SearchManager sm1 = (SearchManager) getSystemService(SEARCH_SERVICE);
-                    if (sm1 != null) sm1.setOnDismissListener(null);
-                }, 500L);
-            });
-        }
-        return this.searchIsLaunched;
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         super.onServiceConnected(name, service);
-        // check whether we need to refresh (if the data is too old or if the adapter is empty or if it displays the wrong data)
-        boolean adapterDataIsOld = System.currentTimeMillis() - this.newsAdapter.getUpdated() >= App.LOCAL_FILE_MAXAGE;
-        if (adapterDataIsOld || this.newsAdapter.getItemCount() == 0 || this.currentSource != this.newsAdapter.getSource()) {
-            onRefreshUseCache();
+        if (this.newsForQuickView != null) {
+            viewImage(this.newsForQuickView, true);
+            return;
+        }
+        // refresh data only if there is currently no search filter
+        if (this.searchFilter == null) {
+            // check whether we need to refresh (if the data is too old or if the adapter is empty or if it displays the wrong data)
+            boolean adapterIsEmpty = this.newsAdapter.getItemCount() == 0;
+            boolean adapterDataIsOld = System.currentTimeMillis() - this.newsAdapter.getUpdated() >= App.LOCAL_FILE_MAXAGE;
+            boolean wrongSource = this.currentSource != this.newsAdapter.getSource();
+            boolean missingImages = NewsRecyclerAdapter.hasMissingImages(this);
+            if (adapterDataIsOld || adapterIsEmpty || wrongSource || missingImages) {
+                if (BuildConfig.DEBUG) {
+                    if (adapterDataIsOld) Log.i(TAG, "Refreshing because adapter data is old");
+                    if (adapterIsEmpty) Log.i(TAG, "Refreshing because adapter is empty");
+                    if (wrongSource) Log.i(TAG, "Refreshing because current source (" + currentSource + ") is other than adapter source (" + newsAdapter.getSource() + ")");
+                    if (missingImages) Log.i(TAG, "Refreshing because adapter does not have all images");
+                }
+                onRefreshUseCache(false);
+            } else if (BuildConfig.DEBUG) {
+                Log.i(TAG, "No need to refresh - adapter contains " + newsAdapter.getItemCount()  + " " + newsAdapter.getSource() + " items from " + DateFormat.getTimeInstance().format(new Date(newsAdapter.getUpdated())));
+            }
         }
     }
 
@@ -1402,9 +1460,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
      * @param file File to parse
      */
     private void parseLocalFileAsync(@Nullable File file) {
-        if (file == null) {
-            return;
-        }
+        if (file == null) return;
         BlobParser blobParser = new BlobParser(this, (blob, ok, oops) -> {
             if (!ok || blob == null || oops != null) {
                 if (BuildConfig.DEBUG) Log.e(TAG, "Parsing failed: " + oops);
@@ -1418,49 +1474,80 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             }
             List<News> jointList = blob.getAllNews();
             MainActivity.this.newsAdapter.setNewsList(jointList, MainActivity.this.currentSource);
-            Date date = blob.getDate();
-            if (date != null) {
-                if (!file.setLastModified(date.getTime())) {
+            Date blobDate = blob.getDate();
+            if (blobDate != null) {
+                if (!file.setLastModified(blobDate.getTime())) {
                     if (BuildConfig.DEBUG) Log.w(TAG, "Failed to set last modified date!");
                 }
             }
+            /*
+            The different timestamps
+            -------------------------
+            - Blob.getDate():                                               the newest News item in the current Source
+            - localFile.lastModified():                                     equals Blob.getDate()
+            - prefs.getLong(PREF_PREFIX_SEARCHSUGGESTIONS + source.name()): last time the search suggestions for a Source were updated
+            - App.getMostRecentManualUpdate(Source):                        most recent successful user-initiated update of the Source
+             */
             MainActivity.this.newsAdapter.addFilter(MainActivity.this.searchFilter);
-            boolean filtered = MainActivity.this.newsAdapter.hasTemporaryFilter();
-            MainActivity.this.clockView.setTime(date != null ? date.getTime() : file.lastModified());
-            if (filtered) {
-                MainActivity.this.clockView.setTint(Util.getColor(this, R.color.colorFilter));
-            } else {
-                MainActivity.this.clockView.setTint(0);
+            boolean hasTemporaryFilter = MainActivity.this.newsAdapter.hasTemporaryFilter();
+            MainActivity.this.clockView.setTime(blobDate != null ? blobDate.getTime() : file.lastModified());
+            MainActivity.this.clockView.setTint(hasTemporaryFilter ? Util.getColor(this, R.color.colorFilter) : 0);
+            if (hasTemporaryFilter) {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                boolean hintResetSearchShown = prefs.getBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, false);
+                if (!hintResetSearchShown) {
+                    String orig = getString(R.string.hint_search_reset);
+                    SpannableString ss = new SpannableString(orig);
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                        BitmapDrawable bb = (BitmapDrawable)getResources().getDrawable(R.drawable.ic_backbutton, getTheme());
+                        ImageSpan is = new ImageSpan(this, Bitmap.createScaledBitmap(bb.getBitmap(), bb.getIntrinsicWidth() * 3 / 4, bb.getIntrinsicHeight() * 3 / 4, true));
+                        int i = orig.indexOf('◀');
+                        ss.setSpan(is, i, i + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
+                    MainActivity.this.popupManager.showPopup(clockView, ss, 5_000L);
+                    SharedPreferences.Editor ed = prefs.edit();
+                    ed.putBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, true);
+                    ed.apply();
+                }
             }
 
             MainActivity.this.swipeRefreshLayout.setRefreshing(false);
             //
-            if (filtered) {
+            if (hasTemporaryFilter) {
                 if (MainActivity.this.newsAdapter.getItemCount() == 0) {
                     Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_not_found, searchFilter.getText()), Snackbar.LENGTH_LONG).show();
                 } else {
-                    String msg = getString(R.string.msg_found, searchFilter.getText(), newsAdapter.getItemCount());
-                    Snackbar sb = Snackbar.make(MainActivity.this.coordinatorLayout, msg, 5_000);
-                    sb.setAction(android.R.string.ok, v -> {
-                        sb.dismiss();
-                        onBackPressed();
-                    });
-                    sb.show();
+                    Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_found, MainActivity.this.searchFilter.getText(), MainActivity.this.newsAdapter.getItemCount()), Snackbar.LENGTH_SHORT).show();
                 }
             }
-            //
-            ((App)getApplicationContext()).trimCacheIfNeeded();
+
+            App app = (App)getApplicationContext();
+
+            // if the search suggestions for the Source are older than the Blob that we have just parsed, update the search suggestions
+            if (blobDate != null) {
+                Source source = Source.getSourceFromFile(file);
+                if (source != null) {
+                    long ts = SearchHelper.getCreationTime(app, source);
+                    if (ts < blobDate.getTime()) {
+                        SearchHelper.createSearchSuggestions(app, source, jointList, false);
+                    }
+                }
+            }
 
             if (MainActivity.this.listPositionToRestore >= 0) {
-                if (BuildConfig.DEBUG) Log.i(TAG, "Restoring list position " + listPositionToRestore);
                 RecyclerView.LayoutManager lm = recyclerView.getLayoutManager();
                 if (lm != null) lm.scrollToPosition(MainActivity.this.listPositionToRestore);
                 MainActivity.this.listPositionToRestore = -1;
             }
+
+            app.trimCacheIfNeeded();
         });
         blobParser.executeOnExecutor(THREAD_POOL_EXECUTOR, file);
     }
 
+    /**
+     * Plays the introduction sequence.
+     */
     private void playIntro() {
         final int tint = 0x77ff0000;
         if (this.intro != null && this.intro.isPlaying()) return;
@@ -1498,7 +1585,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
             }
         };
         this.intro.addStep(step1);
-        // dye drawer reddish
+        // colorise drawer reddish
         Intro.Step step1b = new Intro.Step(1_000) {
             @Override
             public void run() {
@@ -1539,7 +1626,7 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         Intro.Step step4 = new Intro.Step(6_000) {
             @Override
             public void run() {
-                MainActivity.this.clockView.setTint(0);
+                MainActivity.this.clockView.setTint(Color.TRANSPARENT);
                 closeOptionsMenu();
             }
         };
@@ -1642,6 +1729,102 @@ public class MainActivity extends HamburgerActivity implements NewsRecyclerAdapt
         String s = getString(this.currentSource.getLabel());
         this.clockView.setText(s);
         setTaskDescription(new ActivityManager.TaskDescription(getString(R.string.app_task_description, s), null, Util.getColor(this, R.color.colorPrimary)));
+    }
+
+    /**
+     * Lets the user view the associated image ({@link TeaserImage#getBestImage()}) in the largest possible size.
+     * @param news News
+     * @param retryIfNoService set to {@code true} to retry after 500 ms if {@link #service} is {@code null}
+     */
+    private void viewImage(@NonNull final News news, boolean retryIfNoService) {
+        TeaserImage image = news.getTeaserImage();
+        if (image == null) {
+            // the menu item action_view_picture should have been disabled if there is no image (see NewsRecyclerAdapter.onCreateContextMenu())
+            // therefore we should never be here
+            return;
+        }
+        String url = image.getBestImage();
+        if (url == null) {
+            // see above
+            return;
+        }
+        this.newsForQuickView = news;
+        if (this.service == null) {
+            if (retryIfNoService) this.handler.postDelayed(() -> viewImage(news, false), 500L);
+            else this.newsForQuickView = null;
+            return;
+        }
+        String newsid = news.getExternalId();
+        if (newsid == null) newsid = "temp";
+        final File temp = new File(getCacheDir(), "quik_" + newsid.replace('/', '_').replace('\0', '_') + ".jpg");
+        findViewById(R.id.plane).setVisibility(View.VISIBLE);
+        this.service.loadFile(url, temp, temp.lastModified(), (completed, result) -> {
+            if (MainActivity.this.quickViewRequestCancelled) {
+                MainActivity.this.quickViewRequestCancelled = false;
+                FileDeleter.add(temp);
+                findViewById(R.id.plane).setVisibility(View.GONE);
+                MainActivity.this.newsForQuickView = null;
+                return;
+            }
+            if (!completed || result == null || result.rc >= 400 || temp.length() == 0L) {
+                FileDeleter.add(temp);
+                findViewById(R.id.plane).setVisibility(View.GONE);
+                MainActivity.this.newsForQuickView = null;
+                if (result != null && !TextUtils.isEmpty(result.msg)) {
+                    Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
+                } else {
+                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
+                }
+                return;
+            }
+            Bitmap bm = BitmapFactory.decodeFile(temp.getAbsolutePath(), OPTS_FOR_QUICKVIEW);
+            if (bm != null) {
+                MainActivity.this.quickView.setVisibility(View.VISIBLE);
+                MainActivity.this.quickView.setImageBitmap(bm);
+            } else {
+                if (BuildConfig.DEBUG) Log.w(TAG, "Failed to decode bitmap from " + url);
+                findViewById(R.id.plane).setVisibility(View.GONE);
+                MainActivity.this.newsForQuickView = null;
+                if (!TextUtils.isEmpty(result.msg)) {
+                    Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
+                } else {
+                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
+                }
+            }
+            FileDeleter.add(temp);
+        });
+    }
+
+    /**
+     * You just came home, tried to refresh, only to find out that your device hasn't connected to wifi yet.<br>
+     * Seconds later the connection is established and, annoyingly, you'd have to do the swipe again.<br>
+     * This is where the ***NEW*** ConnectivityReceiver steps in.<br>
+     * Get yours now while stocks last!<br>
+     * <hr>
+     * This Receiver gets called when the network connection changes.<br>
+     * Used to refresh the data without further user interaction
+     * <em>if</em> the user has {@link #ONE_MINUTE recently} tried &amp; failed to refresh the data.
+     *
+     */
+    private class ConnectivityReceiver extends BroadcastReceiver {
+
+        /** the definition of 'recently' */
+        private static final long ONE_MINUTE = 60_000L;
+
+        /** {@inheritDoc} */
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) return;
+            // if we have just established a network connection AND the user had recently tried to refresh to no avail, we do it here for her/him
+            if (intent.getBooleanExtra("noConnectivity", false)) return;
+            NetworkInfo info = intent.getParcelableExtra("networkInfo");
+            if (info == null || info.getDetailedState() != NetworkInfo.DetailedState.CONNECTED) return;
+            if (System.currentTimeMillis() - MainActivity.this.lastTimeRefreshFailedDueToNoNetwork < ONE_MINUTE) {
+                // onRefresh() checks the network connection by itself again (important in case loading via mobile is prohibited)
+                onRefresh(false);
+            }
+        }
+
     }
 
 }
