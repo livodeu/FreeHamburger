@@ -537,13 +537,20 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
         Util.clearExports(this);
 
-        scheduleStart();
+        Util.clearAppWebview(this);
+
+        // scheduleStart() takes quite long (ca. 1/3 sec. on upper-lower-middle middle class SoC) -> run it in different thread
+       new Thread() {
+            @Override
+            public void run() {
+                scheduleStart();
+            }
+        }.start();
     }
 
     /** {@inheritDoc} */
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "Preference '" + key + "' changed");
         if (PREF_POLL.equals(key)) {
             boolean on = prefs.getBoolean(key, false);
             if (on) {
@@ -592,7 +599,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
      * Schedules automatic background updates.
      */
     @RequiresPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED)
+    @AnyThread
     private void scheduleStart() {
+        //TODO takes quite long (350 ms on SnapDragon 630)
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
         if (js == null) {
