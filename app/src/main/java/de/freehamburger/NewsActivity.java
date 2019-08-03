@@ -604,9 +604,11 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             if (NewsActivity.this.tts == null) return;
             NewsActivity.this.ttsInitialised = true;
             AudioAttributes aa = new AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
                     .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
+                    //TODO enable the following line when migrating to API 29 (Q) (see https://android-developers.googleblog.com/2019/07/capturing-audio-in-android-q.html)
+                    //.setAllowedCapturePolicy(ALLOW_CAPTURE_BY_NONE)
                     .build();
             NewsActivity.this.tts.setAudioAttributes(aa);
             NewsActivity.this.tts.setLanguage(Locale.GERMAN);
