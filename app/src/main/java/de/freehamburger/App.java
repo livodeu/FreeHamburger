@@ -59,7 +59,12 @@ import okhttp3.TlsVersion;
 public class App extends Application implements Application.ActivityLifecycleCallbacks, SharedPreferences.OnSharedPreferenceChangeListener {
 
     public final static String URL_PREFIX = "https://www.tagesschau.de/api2/";
-    final static String URL_TELETEXT = "https://www.ard-text.de/mobil/100";
+    /** teletext url without page number (must be appended) */
+    final static String URL_TELETEXT_WO_PAGE = "https://www.ard-text.de/mobil/";
+    /** teletext url */
+    final static String URL_TELETEXT = URL_TELETEXT_WO_PAGE + "100";
+    /** teletext host */
+    final static String URI_TELETEXT_HOST = Uri.parse(URL_TELETEXT).getHost();
     //public final static String DATENSCHUTZERKLAERUNG = "datenschutzerklaerung100.json";
     /** the user agent to be used in the http requests */
     public static final String USER_AGENT;
@@ -101,14 +106,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_ASK_BEFORE_FINISH = "pref_ask_before_finish";
     /** int: 0 closes the app; 1 navigates to home category; 2 navigates to recent section; see {@link BackButtonBehaviour} */
     public static final String PREF_USE_BACK_IN_APP = "pref_use_back";
-    /** int: number of columns shown on tablets in landscape orientation */
-    public static final String PREF_MAIN_COLS_TABLET_LANDSCAPE = "pref_main_cols_tablet_landscape\uD83C\uDF54";
-    /** int: number of columns shown on tablets in portrait orientation */
-    public static final String PREF_MAIN_COLS_TABLET_PORTRAIT = "pref_main_cols_tablet_portrait";
-    /** default number of columns shown on tablets in landscape orientation */
-    public static final int PREF_MAIN_COLS_TABLET_LANDSCAPE_DEFAULT = 3;
-    /** default number of columns shown on tablets in portrait orientation */
-    public static final int PREF_MAIN_COLS_TABLET_PORTRAIT_DEFAULT = 2;
     /** boolean */
     public static final String PREF_WARN_MUTE = "pref_warn_mute";
     /** String: proxyserver:port */
