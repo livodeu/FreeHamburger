@@ -38,8 +38,10 @@
     <string name="action_share_image">Share picture</string>
     <string name="action_share_news">Share article</string>
     <string name="action_share_video">Share video</string>
+    <string name="action_shortcut_create">Create shortcut</string>
     <string name="action_show_updates" translatable="false">Show bg updates</string>
     <string name="action_teletext">Teletext</string>
+    <string name="action_teletext_short">TT</string>
     <string name="action_quality_select">Select video quality</string>
     <string name="action_quit">Quit the app?</string>
     <string name="action_view_picture">View picture</string>
@@ -79,6 +81,7 @@
     <string name="error_poll_maximum_interval">The maximum interval is %1$d minutes.</string>
     <string name="error_poll_minimum_interval">The minimum interval is %1$d minutes.</string>
     <string name="error_proxy_connection_failed">The host %1$s that is set as proxy does not accept connections at port %2$s!</string>
+    <string name="error_shortcut_fail">Could not create shortcut!</string>
     <string name="error_timeout">A timeout has occurred.</string>
     <string name="error_tts_fail">Speaking failed!</string>
     <string name="error_tts_fail_network">Speaking failed due to network problems!</string>
@@ -159,6 +162,7 @@
     <string name="msg_not_found">Not found: \"%1$s\"</string>
     <string name="msg_not_modified">Not modified.</string>
     <string name="msg_search_sugg_deleted_locale">Search suggestions have been cleared due to the recent change of locale!</string>
+    <string name="msg_shortcut_exists">The shortcut already exists.</string>
     <string name="msg_sorry">Sorry for the interruption!</string>
     <string name="msg_text_copied">The text has been copied to the clipboard.</string>
     <string name="msg_volume_mute">Audio is muted.</string>

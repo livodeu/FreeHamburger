@@ -5,6 +5,10 @@
     <string name="action_info">Info</string>
     <string name="action_details">Mehr…</string>
     <string name="action_teletext">Videotext</string>
+    <string name="action_teletext_short">VT</string>
+    <string name="action_shortcut_create">Verknüpfung erstellen</string>
+    <string name="error_shortcut_fail">Die Verknüpfung konnte nicht erstellt werden!</string>
+    <string name="msg_shortcut_exists">Die Verknüpfung existiert bereits.</string>
     <string name="app_build_date">Erstelldatum: %1$s</string>
     <string name="app_license">Diese App wird lizenziert unter der „GNU Affero General Public License v3.0”</string>
     <string name="pref_title_ask_before_finish">Vor dem Beenden</string>
