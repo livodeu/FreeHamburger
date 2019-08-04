@@ -20,17 +20,16 @@ import de.freehamburger.R;
  */
 public enum Source {
 
-
-    HOME(R.string.action_section_homepage, App.URL_PREFIX + "homepage/", R.drawable.ic_home_black_24dp),
-    NEWS(R.string.action_section_news, App.URL_PREFIX + "news/", R.drawable.ic_local_library_black_24dp),
-    INLAND(R.string.action_section_inland, App.URL_PREFIX + "news/?ressort=inland", R.drawable.ic_germany),
-    AUSLAND(R.string.action_section_ausland, App.URL_PREFIX + "news/?ressort=ausland", R.drawable.ic_language_black_24dp),
-    SPORT(R.string.action_section_sport, App.URL_PREFIX + "news/?ressort=sport", R.drawable.ic_directions_run_black_24dp),
-    VIDEO(R.string.action_section_video, App.URL_PREFIX + "news/?ressort=video", R.drawable.ic_videocam_black_24dp),
-    WIRTSCHAFT(R.string.action_section_wirtschaft, App.URL_PREFIX + "news/?ressort=wirtschaft", R.drawable.ic_build_black_24dp),
-    CHANNELS(R.string.action_section_channels, App.URL_PREFIX + "channels/", R.drawable.ic_tv_black_24dp),
+    HOME(R.string.action_section_homepage, App.URL_PREFIX + "homepage/", R.drawable.ic_home_black_24dp, false),
+    NEWS(R.string.action_section_news, App.URL_PREFIX + "news/", R.drawable.ic_local_library_black_24dp, false, "action_section_news"),
+    INLAND(R.string.action_section_inland, App.URL_PREFIX + "news/?ressort=inland", R.drawable.ic_germany, false, "action_section_inland"),
+    AUSLAND(R.string.action_section_ausland, App.URL_PREFIX + "news/?ressort=ausland", R.drawable.ic_language_black_24dp, false, "action_section_ausland"),
+    SPORT(R.string.action_section_sport, App.URL_PREFIX + "news/?ressort=sport", R.drawable.ic_directions_run_black_24dp, false, "action_section_sport"),
+    VIDEO(R.string.action_section_video, App.URL_PREFIX + "news/?ressort=video", R.drawable.ic_videocam_black_24dp, false, "action_section_video"),
+    WIRTSCHAFT(R.string.action_section_wirtschaft, App.URL_PREFIX + "news/?ressort=wirtschaft", R.drawable.ic_build_black_24dp, false, "action_section_wirtschaft"),
+    CHANNELS(R.string.action_section_channels, App.URL_PREFIX + "channels/", R.drawable.ic_tv_black_24dp, false, "action_section_sendungen"),
     /** params look like "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" */
-    REGIONAL(R.string.action_section_regional, App.URL_PREFIX + "news/?regions=", R.drawable.ic_place_black_24dp, true)
+    REGIONAL(R.string.action_section_regional, App.URL_PREFIX + "news/?regions=", R.drawable.ic_place_black_24dp, true, "action_section_regional")
     ;
 
     public static final String FILE_SUFFIX = ".source";
@@ -41,6 +40,7 @@ public enum Source {
     private final boolean needsParams;
     @DrawableRes
     private final int icon;
+    @Nullable private String action;
 
     /**
      * Returns the parameter char sequence for {@link #REGIONAL}, based on the user's preferences.
@@ -68,6 +68,20 @@ public enum Source {
     }
 
     /**
+     * Attempts to find the Source that the given action String belongs to.
+     * @param action action
+     * @return Source
+     */
+    @Nullable
+    public static Source getSourceFromAction(final String action) {
+        if (action == null) return null;
+        for (Source source : values()) {
+            if (action.equals(source.getAction())) return source;
+        }
+        return null;
+    }
+
+    /**
      * Returns the Source that a given local file belongs to.<br>
      * The File object has been created by {@link App#getLocalFile(Source)}.
      * @param file File
@@ -90,6 +104,7 @@ public enum Source {
      * Constructor.
      * @param label string resource id
      * @param url url
+     * @param icon icon resource
      */
     Source(@StringRes int label, String url, @DrawableRes int icon) {
         this(label, url, icon, false);
@@ -99,14 +114,33 @@ public enum Source {
      * Constructor.
      * @param label string resource id
      * @param url url
+     * @param icon icon resource
      * @param needsParams {@code true} if this Source needs additional parameters
      */
     Source(@StringRes int label, String url, @DrawableRes int icon, boolean needsParams) {
+        this(label, url, icon, needsParams, null);
+    }
+
+    /**
+     * Constructor.
+     * @param label string resource id
+     * @param url url
+     * @param icon icon resource
+     * @param needsParams {@code true} if this Source needs additional parameters
+     * @param action action string for an Intent to display this Source
+     */
+    Source(@StringRes int label, String url, @DrawableRes int icon, boolean needsParams, @Nullable String action) {
         this.label = label;
         this.url = url;
         this.icon = icon;
         this.needsParams = needsParams;
+        this.action = action;
         if (icon == 0) throw new java.lang.AssertionError("No source icon");
+    }
+
+    @Nullable
+    public String getAction() {
+        return action;
     }
 
     /**
