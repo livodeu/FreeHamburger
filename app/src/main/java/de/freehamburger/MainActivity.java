@@ -12,12 +12,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.pm.ShortcutManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
@@ -29,9 +31,11 @@ import android.os.IBinder;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresPermission;
+import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -336,29 +340,35 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 File file = ((App)getApplicationContext()).getLocalFile(source);
                 parseLocalFileAsync(file);
             }
-        } else if (Intent.ACTION_VIEW.equals(action)) {
+            return;
+        }
+        if (Intent.ACTION_VIEW.equals(action)) {
             handleViewAction(intent);
-        } else if ("action_section_news".equals(action)) {
-            this.currentSource = Source.NEWS;
-            updateTitle();
-        } else if ("action_section_sport".equals(action)) {
-            this.currentSource = Source.SPORT;
-            updateTitle();
-        } else if ("action_section_ausland".equals(action)) {
-            this.currentSource = Source.AUSLAND;
-            updateTitle();
-        } else if ("action_section_inland".equals(action)) {
-            this.currentSource = Source.INLAND;
-            updateTitle();
-        } else if ("action_section_wirtschaft".equals(action)) {
-            this.currentSource = Source.WIRTSCHAFT;
-            updateTitle();
-        } else if ("action_section_regional".equals(action)) {
-            this.currentSource = Source.REGIONAL;
-            updateTitle();
-        } else if (BuildConfig.DEBUG && action != null && !Intent.ACTION_MAIN.equals(action)) {
+            return;
+        }
+        if (handleShortcutIntent(intent)) {
+            return;
+        }
+        if (BuildConfig.DEBUG && action != null && !Intent.ACTION_MAIN.equals(action)) {
             Log.w(TAG, "Unhandled action: " + action);
         }
+    }
+
+    @VisibleForTesting
+    public boolean handleShortcutIntent(@NonNull Intent intent) {
+        Source source = Source.getSourceFromAction(intent.getAction());
+        if (source != null) {
+            changeSource(source, true, false);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N_MR1) {
+                try {
+                    ShortcutManager shortcutManager = (ShortcutManager) getSystemService(Context.SHORTCUT_SERVICE);
+                    if (shortcutManager != null) shortcutManager.reportShortcutUsed(source.name());
+                } catch (Exception ignored) {
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -372,6 +382,20 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (data == null) {
             if (BuildConfig.DEBUG) Log.e(TAG, "No url received!");
             finish();
+            return;
+        }
+        String host = data.getHost();
+        if (host != null && host.equals(App.URI_TELETEXT_HOST)) {
+            String lps = data.getLastPathSegment();
+            int page = 100;
+            if (lps != null) {
+                try {
+                    page = Integer.parseInt(lps);
+                    if (page < 100 || page > 899) page = 100;
+                } catch (Exception ignored) {
+                }
+            }
+            startTeletext(true, page);
             return;
         }
         // check whether it is a ttf file
@@ -390,8 +414,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 return;
             }
         }
-        String host = data.getHost();
-        if (("https".equals(scheme) || "http".equals(scheme)) && !"www.tagesschau.de".equalsIgnoreCase(host)) {
+        if (("https".equals(scheme) || "http".equals(scheme)) && !"www.tagesschau.de".equalsIgnoreCase(host) && !"www.ard-text.de".equalsIgnoreCase(host)) {
             if (BuildConfig.DEBUG) Log.e(TAG, "Invalid host \"" + host + "\"");
             finish();
         }
@@ -864,21 +887,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         this.quickView = findViewById(R.id.quickView);
         this.recyclerView = findViewById(R.id.recyclerView);
         this.recyclerView.setHasFixedSize(true);
-        RecyclerView.LayoutManager lm;
-        // one column for phones, more columns for tablets
-        if (Util.isXLargeTablet(this)) {
-            int numColumns;
-            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                numColumns = PreferenceManager.getDefaultSharedPreferences(this).getInt(App.PREF_MAIN_COLS_TABLET_LANDSCAPE, App.PREF_MAIN_COLS_TABLET_LANDSCAPE_DEFAULT);
-            } else {
-                numColumns = PreferenceManager.getDefaultSharedPreferences(this).getInt(App.PREF_MAIN_COLS_TABLET_PORTRAIT, App.PREF_MAIN_COLS_TABLET_PORTRAIT_DEFAULT);
-            }
-            lm = new GridLayoutManager(this, numColumns);
-        } else {
-            lm = new LinearLayoutManager(this);
-            lm.setItemPrefetchEnabled(true);
-        }
-        this.recyclerView.setLayoutManager(lm);
+        selectLayoutManager();
         // enable context menus for news items
         this.recyclerView.setOnCreateContextMenuListener(this);
         //
@@ -988,9 +997,15 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return true;
         }
         if (id == R.id.action_teletext) {
-            Intent intent = new Intent(this, WebViewActivity.class);
-            intent.putExtra(WebViewActivity.EXTRA_URL, App.URL_TELETEXT);
-            startActivity(intent);
+            startTeletext(false, 100);
+            return true;
+        }
+        if (id == R.id.action_shortcut_create) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (!Util.createShortcut(this, this.currentSource, null)) {
+                    Snackbar.make(coordinatorLayout, R.string.error_shortcut_fail, Snackbar.LENGTH_LONG).show();
+                }
+            }
             return true;
         }
         if (id == R.id.action_settings) {
@@ -1213,6 +1228,15 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         boolean network = Util.isNetworkAvailable(this);
         MenuItem itemTeletext = menu.findItem(R.id.action_teletext);
         itemTeletext.setVisible(network);
+        // pinned shortcuts are available only from Oreo on and only in some launchers (https://developer.android.com/guide/topics/ui/shortcuts/creating-shortcuts#pinned)
+        MenuItem itemShortcutCreate = menu.findItem(R.id.action_shortcut_create);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && this.currentSource.getAction() != null) {
+            ShortcutManager shortcutManager = (ShortcutManager)getSystemService(Context.SHORTCUT_SERVICE);
+            itemShortcutCreate.setVisible(Util.canCreateShortcut(shortcutManager)
+                    && !Util.hasShortcut(this, this.currentSource, shortcutManager));
+        } else {
+            itemShortcutCreate.setVisible(false);
+        }
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -1701,6 +1725,46 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         this.intro.addStep(lastStep);
         //
         this.handler.post(this.intro);
+    }
+
+    /**
+     * Selects the LayoutManager for the RecyclerView, based on the screen size.<br>
+     * With horizontal separator values of 7.5 and 6,
+     * a 10-inch tablet in landscape mode should show 3 columns,
+     * a 7-inch tablet in landscape mode should show 2 columns,
+     * all other devices/orientations should have 1 column.
+     */
+    private void selectLayoutManager() {
+        RecyclerView.LayoutManager old = this.recyclerView.getLayoutManager();
+        PointF ds = Util.getDisplayDim(this);
+        if (ds.x > 7.5f) {
+            if (old instanceof GridLayoutManager && ((GridLayoutManager)old).getSpanCount() == 3) return;
+            this.recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
+        } else if (ds.x > 6.0f) {
+            if (old instanceof GridLayoutManager && ((GridLayoutManager)old).getSpanCount() == 2) return;
+            this.recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+        } else {
+            if (old instanceof LinearLayoutManager) return;
+            this.recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        }
+    }
+
+    /**
+     * Starts the {@link TeletextActivity}.
+     * @param fromExternal {@code true} if the request originated outside of this app (via Intent.ACTION_VIEW)
+     */
+    private void startTeletext(boolean fromExternal, @IntRange(from = 100, to = 899) int page) {
+        Intent intent = new Intent(this, TeletextActivity.class);
+        if (page == 100) {
+            intent.putExtra(WebViewActivity.EXTRA_URL, App.URL_TELETEXT);
+        } else {
+            intent.putExtra(WebViewActivity.EXTRA_URL, App.URL_TELETEXT_WO_PAGE + page);
+        }
+        if (fromExternal) {
+            intent.putExtra(WebViewActivity.EXTRA_NO_HOME_AS_UP, true);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        }
+        startActivity(intent);
     }
 
     /**
