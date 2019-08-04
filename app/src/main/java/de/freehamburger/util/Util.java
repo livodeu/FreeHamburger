@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -16,8 +18,10 @@ import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.graphics.drawable.Icon;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -41,6 +45,7 @@ import android.support.v7.widget.RecyclerView;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -73,11 +78,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
+import de.freehamburger.MainActivity;
 import de.freehamburger.R;
+import de.freehamburger.model.Source;
 
 /**
  *
@@ -107,6 +115,11 @@ public class Util {
             return false;
         }
         return true;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static boolean canCreateShortcut(@Nullable ShortcutManager shortcutManager) {
+        return shortcutManager != null && shortcutManager.isRequestPinShortcutSupported();
     }
 
     /**
@@ -261,6 +274,38 @@ public class Util {
         }
         if (!ok) deleteFile(dest);
         return ok;
+    }
+
+    /**
+     * Creates a pinned shortcut to the given Source.<br>
+     * The shortcut id is {@link Source#name()}.
+     * @param ctx Context
+     * @param source Source
+     * @return true / false
+     */
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static boolean createShortcut(@NonNull Context ctx, @NonNull Source source, @Nullable ShortcutManager shortcutManager) {
+        if (shortcutManager == null) shortcutManager = (ShortcutManager)ctx.getSystemService(Context.SHORTCUT_SERVICE);
+        if (shortcutManager == null) return false;
+        boolean test = isTest(ctx);
+        if (!shortcutManager.isRequestPinShortcutSupported() || (!test && hasShortcut(ctx, source, shortcutManager))) {
+            return false;
+        }
+        String label = ctx.getString(source.getLabel());
+        String action = source.getAction();
+        if (TextUtils.isEmpty(action)) return false;
+        Intent intent = new Intent(ctx, MainActivity.class);
+        intent.setAction(action);
+        ShortcutInfo pinShortcutInfo = new ShortcutInfo.Builder(ctx, source.name())
+                .setShortLabel(label)
+                .setLongLabel(label)
+                .setIcon(Icon.createWithResource(ctx, source.getIcon()))
+                .setIntent(intent)
+                .build();
+         if (test) {
+            return true;
+        }
+        return shortcutManager.requestPinShortcut(pinShortcutInfo, null);
     }
 
     /**
@@ -451,6 +496,29 @@ public class Util {
     }
 
     /**
+     * Returns the display size in inches.
+     * Examples:<ul>
+     * <li>10 inch tablet / landscape:    8.00 x 4.50</li>
+     * <li>7 inch tablet / landscape:    6.40 x 3.75</li>
+     * <li>5.2 inch phone / portrait:     2.52 x 4.53</li>
+     * </ul>
+     * @param ctx Context
+     * @return display size in inches
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
+    @NonNull
+    public static PointF getDisplayDim(@NonNull Context ctx) {
+        WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
+        final PointF size = new PointF();
+        if (wm == null) return size;
+        DisplayMetrics dm = new DisplayMetrics();
+        wm.getDefaultDisplay().getRealMetrics(dm);
+        size.x = dm.widthPixels / dm.xdpi;
+        size.y = dm.heightPixels / dm.ydpi;
+        return size;
+    }
+
+    /**
      * Gets the height of the display in pixels. The height is adjusted based on the current rotation of the display
      * @param ctx Context
      * @return display height
@@ -592,6 +660,29 @@ public class Util {
     }
 
     /**
+     * Determines whether a pinned shortcut to the given Source exists.
+     * @param ctx Context
+     * @param source Source
+     * @return true / false
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
+    public static boolean hasShortcut(@NonNull Context ctx, @Nullable Source source, @Nullable ShortcutManager shortcutManager) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || source == null) return false;
+        if (shortcutManager == null) shortcutManager = (ShortcutManager)ctx.getSystemService(Context.SHORTCUT_SERVICE);
+        if (shortcutManager == null) return false;
+        if (!shortcutManager.isRequestPinShortcutSupported()) {
+            return false;
+        }
+        final List<ShortcutInfo> allExistingShortcuts = shortcutManager.getPinnedShortcuts();
+        for (ShortcutInfo existingShortcut : allExistingShortcuts) {
+            if (existingShortcut.getId().equals(source.name())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Hides or shows the action, status and navigation bars.
      * @param a Activity
      * @param hide {@code true} to hide, {@code false} to reset
@@ -647,6 +738,11 @@ public class Util {
         NetworkInfo networkInfo = connMgr != null ? connMgr.getActiveNetworkInfo() : null;
         if (networkInfo == null || !networkInfo.isConnected()) return false;
         return (networkInfo.getType() == ConnectivityManager.TYPE_MOBILE || networkInfo.getType() == ConnectivityManager.TYPE_MOBILE_DUN);
+    }
+
+    private static boolean isTest(@NonNull Context ctx) {
+        // Contexts for unit tests are android.app.ContextImpl
+        return BuildConfig.DEBUG && !ctx.getClass().getName().startsWith(Objects.requireNonNull(MainActivity.class.getPackage()).getName());
     }
 
     /**
