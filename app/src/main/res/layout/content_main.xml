@@ -32,20 +32,10 @@
             android:foreground="@color/colorPrimarySemiTrans"
             android:elevation="30dp"
             android:visibility="gone"
-            tools:visibility="visible"
+            tools:visibility="gone"
             android:onClick="onPlaneClicked"
             android:importantForAccessibility="no"
             />
-
-        <View
-            android:id="@+id/blurTop"
-            android:layout_width="match_parent"
-            android:layout_height="24dp"
-            android:layout_alignTop="@+id/recyclerView"
-            android:background="@drawable/blur_top"
-            android:elevation="8dp"
-            android:visibility="gone"
-            android:importantForAccessibility="no"/>
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/recyclerView"
@@ -54,20 +44,11 @@
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
             android:scrollbars="none"
-            tools:listitem="@layout/news_view">
+            android:background="@color/colorPrimaryLight"
+            tools:listitem="@layout/news_view"
+            >
             <requestFocus/>
         </android.support.v7.widget.RecyclerView>
-
-        <View
-            android:id="@+id/blurBottom"
-            android:layout_width="match_parent"
-            android:layout_height="24dp"
-            android:layout_alignBottom="@+id/recyclerView"
-            android:background="@drawable/blur_bottom"
-            android:elevation="8dp"
-            android:visibility="gone"
-            android:importantForAccessibility="no"
-            />
 
         <ImageView
             android:id="@+id/quickView"
@@ -85,7 +66,7 @@
             android:onClick="onQuickViewClicked"
             tools:ignore="ContentDescription"
             tools:src="@tools:sample/backgrounds/scenic"
-            tools:visibility="visible"/>
+            tools:visibility="gone"/>
 
     </RelativeLayout>
 
