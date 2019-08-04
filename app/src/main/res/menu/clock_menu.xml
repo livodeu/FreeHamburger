@@ -27,9 +27,15 @@
         android:visible="true"
         android:title="@string/action_teletext"/>
     <item
+        android:id="@+id/action_shortcut_create"
+        android:alphabeticShortcut="l"
+        android:numericShortcut="4"
+        android:visible="false"
+        android:title="@string/action_shortcut_create"/>
+    <item
         android:id="@+id/action_settings"
         android:alphabeticShortcut="e"
-        android:numericShortcut="4"
+        android:numericShortcut="5"
         android:title="@string/action_settings"
         android:icon="@drawable/ic_settings_ededed_24dp"
         />
