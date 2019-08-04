@@ -7,7 +7,6 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
@@ -30,7 +29,6 @@ import android.webkit.MimeTypeMap;
 import android.webkit.RenderProcessGoneDetail;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -66,9 +64,8 @@ public class WebViewActivity extends AppCompatActivity {
     private static final byte[] HTTP_400_BYTES_MAILTO = HTTP_400_MAILTO.getBytes(Charset.forName(CHARSET));
     /** these are a big no-no (well, favicon isn't really, but we don't need it) */
     private static final String[] BADWORDS = new String[] {"analytics", "cpix", "favicon", "sitestat", "tracker", "tracking", "webtrekk", "xtcore"};
-
+    WebView webView;
     private News news;
-    private WebView webView;
 
     /**
      * Initiates a download via the system's {@link DownloadManager}.
@@ -187,9 +184,7 @@ public class WebViewActivity extends AppCompatActivity {
             Intent intent = getIntent();
             String url = intent.getStringExtra(EXTRA_URL);
             if (url != null) {
-                url = Util.makeHttps(url);
-                if (BuildConfig.DEBUG) android.util.Log.i(TAG, "Loading \"" + url + "\"");
-                this.webView.loadUrl(url);
+                this.webView.loadUrl(Util.makeHttps(url));
             }
         }
     }
@@ -264,7 +259,7 @@ public class WebViewActivity extends AppCompatActivity {
          * @throws NullPointerException if {@code uri} is {@code null}
          */
         @VisibleForTesting
-        public static boolean shouldBlock(@NonNull Uri uri) {
+        static boolean shouldBlock(@NonNull Uri uri) {
             @Nullable final String host = uri.getHost();    // is null when scheme is 'data'
             @Nullable final String path = uri.getPath();    // is null when scheme is 'data'
             if (host == null || path == null) return false;
@@ -311,29 +306,12 @@ public class WebViewActivity extends AppCompatActivity {
 
         /** {@inheritDoc} */
         @Override
-        public void onPageStarted(WebView view, String url, Bitmap favicon) {
-            if (BuildConfig.DEBUG) Log.i(TAG, "onPageStarted(..., \"" + url + "\", " + (favicon != null ? "favicon" : "no favicon") + ")");
-        }
-
-        /** {@inheritDoc} */
-        @Override
-        public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-            if (BuildConfig.DEBUG) Log.i(TAG, "onReceivedError(..., \"" + request.getUrl()  + "\", " + error + ")");
-        }
-
-        /** {@inheritDoc} */
-        @Override
-        public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-            if (BuildConfig.DEBUG) Log.w(TAG, "onReceivedHttpError(..., \"" + request.getUrl() + "\", HTTP " + errorResponse.getStatusCode() + ")");
-        }
-
-        /** {@inheritDoc} */
-        @Override
         public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
             if (BuildConfig.DEBUG) Log.e(TAG, "onReceivedSslError(..., " + error + ")");
             handler.cancel();
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
             if (BuildConfig.DEBUG) Log.e(TAG, "onRenderProcessGone(..., " + detail + ")");
@@ -359,7 +337,7 @@ public class WebViewActivity extends AppCompatActivity {
                     wr = new WebResourceResponse("text/html", CHARSET, new ByteArrayInputStream(HTTP_404_BYTES));
                     wr.setStatusCodeAndReasonPhrase(HttpURLConnection.HTTP_NOT_FOUND, "Not found.");
                 }
-                if (BuildConfig.DEBUG) Log.w(TAG, "shouldInterceptRequest() - blocking " + uri);
+                //if (BuildConfig.DEBUG) Log.w(TAG, "shouldInterceptRequest() - blocking " + uri);
                 return wr;
             }
             if (("http".equals(scheme) || "https".equals(scheme)) && "GET".equals(request.getMethod()) && isDownloadableResource(uri.toString())) {
@@ -378,7 +356,6 @@ public class WebViewActivity extends AppCompatActivity {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             Uri uri = request.getUrl();
-            if (BuildConfig.DEBUG) Log.i(TAG, "shouldOverrideUrlLoading(..., \"" + uri + "\"" + ")");
             if ("http".equalsIgnoreCase(uri.getScheme())) {
                 this.handler.postDelayed(() -> {
                     String oldUrl = uri.toString();
@@ -439,7 +416,11 @@ public class WebViewActivity extends AppCompatActivity {
         public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
             if (BuildConfig.DEBUG) {
                 int line = consoleMessage.lineNumber();
-                Log.i(getClass().getSimpleName(), consoleMessage.sourceId() + (line > 0 ? " - Line " + line : "") + ": " + consoleMessage.message());
+                switch (consoleMessage.messageLevel()) {
+                    case WARNING: Log.w(getClass().getSimpleName(), consoleMessage.sourceId() + (line > 0 ? " - Line " + line : "") + ": " + consoleMessage.message()); break;
+                    case ERROR: Log.e(getClass().getSimpleName(), consoleMessage.sourceId() + (line > 0 ? " - Line " + line : "") + ": " + consoleMessage.message()); break;
+                    default: return true;
+                }
             }
             return true;
         }
