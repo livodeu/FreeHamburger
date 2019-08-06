@@ -83,6 +83,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+
 import de.freehamburger.adapters.RelatedAdapter;
 import de.freehamburger.model.Audio;
 import de.freehamburger.model.Content;
@@ -185,15 +187,37 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             if (BuildConfig.DEBUG) Log.e(TAG, "Bottom video onPlayerError(): " + msg, error);
             // show error message, but only if bottom sheet is expanded
             if (isBottomSheetCollapsedOrHidden()) return;
-            if (msg.contains("Unable to connect to")) {
+            String key = "Unable to connect to";
+            boolean unableToConnect = msg.startsWith(key);
+            SSLPeerUnverifiedException puve = Util.isPeerUnverified(error);
+            String url = null;
+            if (puve != null) {
+                // may have originated in okhttp3.internal.connection.RealConnection.connectTls()
+                if (unableToConnect) {
+                    url = msg.substring(key.length()).trim();
+                    Uri uri = Uri.parse(url);
+                    String host = uri.getHost();
+                    if (!TextUtils.isEmpty(host)) msg = getString(R.string.error_peer_not_verified, host);
+                    else msg = puve.getMessage();
+                } else {
+                    msg = puve.getMessage();
+                }
+            } else if (unableToConnect) {
                 // instead of "Unable to connect to https://lengthy.url" we show a simple message
                 msg = getString(R.string.error_connection_interrupted);
             }
             collapseBottomSheet();
+            msg = getString(R.string.error_video) + ": " + msg;
             View coordinatorLayout = findViewById(R.id.coordinator_layout);
             if (coordinatorLayout != null) {
-                Snackbar sb = Snackbar.make(coordinatorLayout, msg, Snackbar.LENGTH_LONG);
+                Snackbar sb = Snackbar.make(coordinatorLayout, msg, Snackbar.LENGTH_INDEFINITE);
                 Util.setSnackbarFont(sb, Util.CONDENSED, 14f);
+                if (url != null && url.toLowerCase(Locale.US).startsWith("http")) {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    if (intent.resolveActivity(getPackageManager()) != null) {
+                        sb.setAction("↗", v -> startActivity(intent));
+                    }
+                }
                 sb.show();
             } else {
                 Toast.makeText(NewsActivity.this, msg, Toast.LENGTH_LONG).show();
