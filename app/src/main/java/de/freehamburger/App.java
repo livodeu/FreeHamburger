@@ -151,7 +151,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** used to build a preferences key to store the most recent <em>user-initiated</em> update of a {@link Source} */
     private static final String PREFS_PREFIX_MOST_RECENT_MANUAL_UPDATE = "latest_manual_";
     private static final String TAG = "App";
-    private static final Set<String> PERMITTED_HOSTS = new HashSet<>(27);
+    private static final Set<String> PERMITTED_HOSTS = new HashSet<>(28);
 
     /*
      for info about latest 'official' app versions, call:
@@ -160,8 +160,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
      and look into the enclosed json file
       */
     static {
-        String[] VERSIONS = new String[] {"2018080901", "2018102216", "2019011010", "2019032813", "2019040312"};
-        String[] OSS = new String[] {"6.0.1", "7.0.1", "7.1.0", "7.1.1", "7.1.2", "8.0.0", "8.1.0", "9.0.0"};
+        String[] VERSIONS = new String[] {"2018080901", "2018102216", "2019011010", "2019032813", "2019040312", "2019071716"};
+        String[] OSS = new String[] {"6.0.1", "7.0.1", "7.1.0", "7.1.1", "7.1.2", "8.0.0", "8.1.0", "9.0.0", "10.0.0"};
         USER_AGENT = "Tagesschau/de.tagesschau (" + VERSIONS[(int)(Math.random() * VERSIONS.length)] + ", Android: " + OSS[(int)(Math.random() * OSS.length)] + ")";
     }
 
@@ -449,13 +449,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
          Get {@link UserManager} once here to avoid a memory leak.
          Occurs in Android API >= 18 (Android 4.3)
          (reported by LeakCanary; introduced via https://github.com/android/platform_frameworks_base/commit/27db46850b708070452c0ce49daf5f79503fbde6)
-         See https://github.com/square/leakcanary/blob/master/leakcanary-android/src/main/java/com/squareup/leakcanary/AndroidExcludedRefs.java
+         See https://github.com/square/leakcanary/blob/v1.5.1/leakcanary-android/src/main/java/com/squareup/leakcanary/AndroidExcludedRefs.java
         */
-        getSystemService(USER_SERVICE);
-
-        de.freehamburger.util.Log.init(this);
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) getSystemService(USER_SERVICE);
 
         if (BuildConfig.DEBUG) {
+            de.freehamburger.util.Log.init(this);
             com.google.android.exoplayer2.util.Log.setLogLevel(com.google.android.exoplayer2.util.Log.LOG_LEVEL_WARNING);
             com.google.android.exoplayer2.util.Log.setLogStackTraces(true);
         } else {
@@ -463,7 +462,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
             com.google.android.exoplayer2.util.Log.setLogStackTraces(false);
         }
 
-        PERMITTED_HOSTS.addAll(Util.loadResourceTextFile(this, R.raw.permitted_hosts, 27));
+        // loading the permitted hosts asynchronously saves ca. 10 to 20 ms
+        new Thread() {
+            @Override
+            public void run() {
+                PERMITTED_HOSTS.addAll(Util.loadResourceTextFile(App.this, R.raw.permitted_hosts, 28));
+            }
+        }.start();
 
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             /** {@inheritDoc} */
@@ -532,9 +537,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
         FileDeleter.run();
 
-        Util.clearExports(this);
-
-        Util.clearAppWebview(this);
+        new Thread() {
+            @Override
+            public void run() {
+                Util.clearExports(App.this);
+                Util.clearAppWebview(App.this);
+            }
+        }.start();
 
         // scheduleStart() takes quite long (ca. 1/3 sec. on upper-lower-middle middle class SoC) -> run it in different thread
        new Thread() {
