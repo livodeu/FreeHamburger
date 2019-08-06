@@ -1,6 +1,7 @@
 package de.freehamburger.model;
 
 import android.content.SharedPreferences;
+import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringDef;
@@ -32,7 +33,7 @@ import de.freehamburger.util.Log;
 /**
  *
  */
-public class News implements Comparable<News>, Serializable {
+public final class News implements Comparable<News>, Serializable {
 
     public static final String NEWS_TYPE_STORY = "story";
     public static final String NEWS_TYPE_WEBVIEW = "webview";
@@ -55,8 +56,8 @@ public class News implements Comparable<News>, Serializable {
     /** {@code true} if this News has undergone corrective processing according to the User's preferences */
     private boolean corrected;
     @Nullable private Date date;
-    /** the date as received in the json data */
-    private String dateString;
+    /** equivalent to {@link #date} */
+    @IntRange(from = 0L) private long ts;
     /** a URL pointing to a json file */
     private String details;
     /** a URL pointing to a HTML file */
@@ -129,7 +130,12 @@ public class News implements Comparable<News>, Serializable {
             } else if ("content".equals(name)) {
                 news.content = Content.parseContent(reader);
             } else if ("date".equals(name)) {
-                news.dateString = reader.nextString();
+                String dateString = reader.nextString();
+                try {
+                    news.date = parseDate(dateString);
+                    if (news.date != null) news.ts = news.date.getTime();
+                } catch (Exception ignored) {
+                }
             } else if ("details".equals(name)) {
                 news.details = reader.nextString();
             } else if ("detailsweb".equals(name)) {
@@ -242,21 +248,18 @@ public class News implements Comparable<News>, Serializable {
     /** {@inheritDoc} */
     @Override
     public int compareTo(@NonNull News o) {
-        if (getType() == null) {
-            return o.getType() == null ? 0 : 1;
+        if (type == null) {
+            return o.type == null ? 0 : 1;
         }
         //
-        Date d = getDate();
-        Date od = o.getDate();
-        if (od == null) {
+        if (o.date == null) {
             // live streams do not have a date; this way they appear at the top of lists
-            return d == null ? 0 : 1;
+            return date == null ? 0 : 1;
         }
-        // Attention: d must not be null when passed to compareTo() or there'll be a NPE in Date.getMillisOf(Date.java:979)
-        if (d == null) {
+        if (date == null) {
             return -1;
         }
-        return od.compareTo(d);
+        return Long.compare(o.ts, ts);
     }
 
     /** {@inheritDoc} */
@@ -283,16 +286,7 @@ public class News implements Comparable<News>, Serializable {
      */
     @Nullable
     public Date getDate() {
-        if (this.date != null) return this.date;
-        if (this.dateString != null) {
-            try {
-                this.date = parseDate(dateString);
-            } catch (ParseException | ArrayIndexOutOfBoundsException | NumberFormatException e) {
-                if (BuildConfig.DEBUG) android.util.Log.e(getClass().getSimpleName(), "While parsing date '" + dateString + "': " + e.toString());
-            }
-            return this.date;
-        }
-        return null;
+        return this.date;
     }
 
     /**
@@ -417,13 +411,6 @@ public class News implements Comparable<News>, Serializable {
         return this.type;
     }
 
-    /**
-     * @return {@code true} if a date is available
-     */
-    public boolean hasDate() {
-        return this.dateString != null;
-    }
-
     /** {@inheritDoc} */
     @Override
     public int hashCode() {
@@ -451,7 +438,7 @@ public class News implements Comparable<News>, Serializable {
         return "News (" + id
                 + ", Title: \"" + title
                 + "\", Type: \"" + type
-                + "\", Date: " + dateString
+                + "\", Date: " + date
                 + ", Topline: \"" + topline
                 + "\", Ressort: \"" + ressort
                 + "\", Ext.Id: \"" + externalId
@@ -467,4 +454,5 @@ public class News implements Comparable<News>, Serializable {
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({NEWS_TYPE_STORY, NEWS_TYPE_WEBVIEW, NEWS_TYPE_VIDEO})
     public @interface NewsType {}
+
 }

@@ -13,7 +13,7 @@
     android:clipChildren="false"
     android:focusable="true"
     android:focusableInTouchMode="false"
-    >
+    tools:ignore="UnusedAttribute">
 
     <!-- in the original app the sequence is: topline, title, firstSentence -->
 

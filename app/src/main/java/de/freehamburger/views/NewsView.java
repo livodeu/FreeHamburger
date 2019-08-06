@@ -166,8 +166,6 @@ public class NewsView extends RelativeLayout {
         final boolean fixQ = prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, false);
         // the original order is: topline, title, firstSentence
 
-        // Occasionally, it seems, the folks seem to be a bit negligent and enter text with leading and/or trailing spaces; therefore we have to trim the Strings.
-
         // topline
         boolean titleReplacesTopline = false;
         String newsTopline = news.getTopline();
@@ -197,13 +195,14 @@ public class NewsView extends RelativeLayout {
         }
 
         // date
-        Date date = news.hasDate() ? news.getDate() : null;
+        Date date = news.getDate();
         if (date != null) {
             boolean timeMode = prefs.getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
             this.textViewDate.setText(timeMode ? getRelativeTime(ctx, date, null) : DF.format(date));
         } else {
             this.textViewDate.setText(null);
         }
+
         // firstSentence or shorttext
         if (this.textViewFirstSentence != null) {
             String fs = news.getFirstSentence();
