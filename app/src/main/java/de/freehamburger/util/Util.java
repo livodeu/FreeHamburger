@@ -81,6 +81,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.MainActivity;
@@ -123,11 +125,29 @@ public class Util {
     }
 
     /**
+     * Attempts to find a SSLPeerUnverifiedException among the causes of the given Throwable.
+     * @param e Throwable
+     * @return SSLPeerUnverifiedException
+     */
+    @Nullable
+    public static SSLPeerUnverifiedException isPeerUnverified(@NonNull Throwable e) {
+        if (e instanceof SSLPeerUnverifiedException) return (SSLPeerUnverifiedException)e;
+        for (;;) {
+            Throwable cause = e.getCause();
+            if (cause == null) break;
+            if (cause instanceof SSLPeerUnverifiedException) return (SSLPeerUnverifiedException)cause;
+            e = cause;
+        }
+        return null;
+    }
+
+    /**
      * Clears the "app_webview" folder which is a sibling of the files folder.
      * This folder contains some suspicious files (e.g. "Cookies") that we do not need and certainly do not want to keep.
      * @param ctx Context
      * @throws NullPointerException if {@code ctx} is {@code null}
      */
+    @AnyThread
     public static void clearAppWebview(@NonNull Context ctx) {
         File dir = new File(ctx.getFilesDir().getParentFile(), "app_webview");
         if (!dir.isDirectory()) return;
@@ -163,6 +183,7 @@ public class Util {
      * @throws NullPointerException if {@code ctx} is {@code null}
      */
     @SuppressWarnings("ResultOfMethodCallIgnored")
+    @AnyThread
     public static void clearExports(@NonNull Context ctx) {
         File exports = new File(ctx.getCacheDir(), App.EXPORTS_DIR);
         if (!exports.isDirectory()) return;
@@ -908,14 +929,17 @@ public class Util {
     }
 
     /**
-     * Removes &lt;ul&gt; and &lt;ol&gt;.
+     * Removes &lt;ul&gt; and &lt;ol&gt; tags and replaces their list items with &lt;br&gt; line feeds.<br>
+     * List items in a &lt;ul&gt; list will start with •,<br>
+     * list items in a &lt;ol&gt; list will start with a plain number (1,2,3 etc.).
+     * @param value characters to remove the tags from
      */
     @NonNull
-    public static StringBuilder removeUlliAndOlli(@Nullable final String value) {
+    public static StringBuilder removeHtmlLists(@Nullable final CharSequence value) {
         final int n = value != null ? value.length() : 0;
         if (n == 0) return new StringBuilder(0);
-        char[] c = new char[n];
-        value.getChars(0, n, c, 0);
+        final char[] c = new char[n];
+        TextUtils.getChars(value, 0, n, c, 0);
         final StringBuilder out = new StringBuilder(n);
         boolean insideUl = false;
         boolean insideOl = false;
