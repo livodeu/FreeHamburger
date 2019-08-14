@@ -1,11 +1,15 @@
 package de.freehamburger;
 
+import android.app.Activity;
 import android.app.DownloadManager;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.pm.ShortcutManager;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
@@ -267,7 +271,7 @@ public class AndroidUnitTest {
             // apply the News
             nv.setNews(news, null);
             // date
-            if (news.hasDate()) {
+            if (news.getDate() != null) {
                 assertFalse(TextUtils.isEmpty(nv.textViewDate.getText()));
             } else {
                 assertTrue(TextUtils.isEmpty(nv.textViewDate.getText()));
@@ -356,6 +360,47 @@ public class AndroidUnitTest {
             }
         } catch (InterruptedException e) {
             fail(e.toString());
+        }
+    }
+
+    @Test
+    public void testShortcutInvocation() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        ShortcutManager shortcutManager = (ShortcutManager)ctx.getSystemService(Context.SHORTCUT_SERVICE);
+        assertNotNull(shortcutManager);
+        if (!shortcutManager.isRequestPinShortcutSupported()) return;
+        try {
+            App app = (App)ctx.getApplicationContext();
+            final Source[] sources = Source.values();
+            for (; ; ) {
+                int i = (int) (Math.random() * sources.length);
+                Source source = sources[i];
+                if (source.getAction() == null) continue;
+                assertTrue(Util.createShortcut(ctx, source, shortcutManager));
+                Intent intent = new Intent(ctx, MainActivity.class);
+                intent.setAction(source.getAction());
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                assertNotNull(ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY));
+                ctx.startActivity(intent);
+                Thread checker = new Thread() {
+                    @Override
+                    public void run() {
+                        try {
+                            sleep(1000);
+                            Activity current = app.getCurrentActivity();
+                            assertTrue("Current activity is " + current, current instanceof MainActivity);
+                            assertTrue(((MainActivity)current).handleShortcutIntent(intent));
+                        } catch (Exception e) {
+                            fail(e.getMessage());
+                        }
+                    }
+                };
+                checker.start();
+                checker.join();
+                break;
+            }
+        } catch (Exception e) {
+            fail(e.getMessage());
         }
     }
 
