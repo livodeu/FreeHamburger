@@ -40,7 +40,7 @@ public enum Source {
     private final boolean needsParams;
     @DrawableRes
     private final int icon;
-    @Nullable private String action;
+    @Nullable private final String action;
 
     /**
      * Returns the parameter char sequence for {@link #REGIONAL}, based on the user's preferences.
