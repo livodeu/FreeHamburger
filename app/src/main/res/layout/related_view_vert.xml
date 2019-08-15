@@ -3,17 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="4dp"
+    android:padding="@dimen/related_view_padding"
     android:foreground="?android:attr/selectableItemBackground"
     android:focusable="true"
     android:focusableInTouchMode="false"
-    android:clipToPadding="false"
     tools:context=".NewsActivity"
+    tools:ignore="UnusedAttribute"
     >
 
     <ImageView
         android:id="@+id/imageViewRelated"
-        android:layout_width="160dp"
+        android:layout_width="@dimen/related_view_width"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:adjustViewBounds="true"
@@ -25,7 +25,7 @@
 
     <TextView
         android:id="@+id/textViewDate"
-        android:layout_width="wrap_content"
+        android:layout_width="@dimen/related_view_width"
         android:layout_height="wrap_content"
         android:layout_below="@id/imageViewRelated"
         android:layout_marginTop="8dp"
@@ -35,7 +35,7 @@
 
     <TextView
         android:id="@+id/textViewTitle"
-        android:layout_width="wrap_content"
+        android:layout_width="@dimen/related_view_width"
         android:layout_height="wrap_content"
         android:layout_below="@+id/textViewDate"
         android:layout_alignParentStart="true"
@@ -45,6 +45,6 @@
         android:hyphenationFrequency="full"
         android:breakStrategy="high_quality"
         android:maxLines="3"
-        tools:text="Knüppel statt Männerfreundschaft"
+        tools:text="@tools:sample/lorem/random"
         tools:ignore="UnusedAttribute"/>
 </RelativeLayout>
