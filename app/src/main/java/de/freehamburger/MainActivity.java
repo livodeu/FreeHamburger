@@ -1455,7 +1455,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         super.onServiceConnected(name, service);
         if (this.newsForQuickView != null) {
             viewImage(this.newsForQuickView, true);
-            return;
         }
         // refresh data only if there is currently no search filter
         if (this.searchFilter == null) {
