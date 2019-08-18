@@ -12,7 +12,8 @@
     <color name="colorFilter">#55ffdd00</color>
     <color name="colorContent">#000000</color>
     <color name="colorBottomSheetBackground">#ee0f70aa</color>
-
+    <color name="colorContentQuotation">#ff064a91</color>
+    <color name="colorContentBox">#ff064a91</color>
     <color name="colorDirtyWhite">#ededed</color>
 
     <!-- background color for news -->

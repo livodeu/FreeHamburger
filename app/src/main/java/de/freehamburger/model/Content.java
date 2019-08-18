@@ -32,8 +32,13 @@ import de.freehamburger.util.Util;
 public class Content implements Serializable {
 
     public static final String FONT_FACE_IMAGE_TITLE = "sans-serif-condensed";
+    private static final String[] REPLACE_TEXT = new String[] {"\t", "<br />", "\r\n\r\n"};
+    private static final CharSequence[] REPLACE_TEXT_WITH = new CharSequence[] {" ", "\n", "\n"};
     private static final String[] H_REPLACE_ME = new String[] {"<h2>", "</h2>"};
     private static final CharSequence[] H_REPLACE_WITH = new CharSequence[] {"<h4>", "</h4>"};
+    private static final String HTML_BR = "<br>";
+    private static String colorQuotation = "#064a91";
+    private static String colorBox = "#064a91";
 
     @NonNull private final List<ContentElement> elementList = new ArrayList<>(16);
     @NonNull private final List<Video> videoList = new ArrayList<>();
@@ -60,7 +65,7 @@ public class Content implements Serializable {
             ContentElement ce = ContentElement.parseContentElement(reader);
             ce.setOrder(order++);
             final String type = ce.getType();
-            //TODO we currently ignore "webview"
+            // we currently ignore "webview"
             if (ContentElement.TYPE_TEXT.equals(type)
                     || ContentElement.TYPE_HEADLINE.equals(type)
                     || ContentElement.TYPE_QUOTATION.equals(type)
@@ -75,56 +80,56 @@ public class Content implements Serializable {
         }
         reader.endArray();
         // build the text from the relevant content elements, textBuilder will usually end up with a 4-digit length, few are less, some are beyond 20K chars
-        final StringBuilder textBuilder = new StringBuilder(1024);
+        final StringBuilder htmlTextBuilder = new StringBuilder(2048);
         final StringBuilder plainTextBuilder = new StringBuilder(768);
         for (ContentElement ce : content.elementList) {
-            String type = ce.getType();
+            final String type = ce.getType();
             if (ContentElement.TYPE_TEXT.equals(type)) {
                 String value = ce.getValue();
                 if (value != null) {
-                    StringBuilder cs = Util.removeUlliAndOlli(value.replace('\t', ' ').replace("<br />", "\n").replace("\r\n\r\n", "\n"));
-                    textBuilder.append(cs).append("<br><br>");
-                    plainTextBuilder.append(Util.removeLinks(cs)).append("\n");
+                    StringBuilder cs = Util.removeHtmlLists(TextUtils.replace(value, REPLACE_TEXT, REPLACE_TEXT_WITH));
+                    htmlTextBuilder.append(cs).append("<br><br>");
+                    plainTextBuilder.append(Util.removeLinks(cs)).append('\n');
                 }
             } else if (ContentElement.TYPE_HEADLINE.equals(type)) {
                 String value = ce.getValue();
                 if (value != null) {
-                    textBuilder.append(TextUtils.replace(value, H_REPLACE_ME, H_REPLACE_WITH)).append("<br>");  // trailing <br> looks better if FROM_HTML_MODE_COMPACT is used
+                    htmlTextBuilder.append(TextUtils.replace(value, H_REPLACE_ME, H_REPLACE_WITH)).append(HTML_BR);  // trailing <br> looks better if FROM_HTML_MODE_COMPACT is used
                 }
             } else if (ContentElement.TYPE_QUOTATION.equals(type)) {
                 String value = ce.getValue();
                 if (value != null) {
-                    textBuilder.append("<i><blockquote><font color=\"#064a91\">❠&nbsp;&nbsp;").append(value).append("</font></blockquote></i><br><br>");
+                    htmlTextBuilder.append("<i><blockquote><font color=\"").append(colorQuotation).append("\">❠&nbsp;&nbsp;").append(value).append("</font></blockquote></i><br><br>");
                     plainTextBuilder.append(value);
                 }
             } else if (ContentElement.TYPE_LIST.equals(type)) {
                 Lyst list = ce.getList();
                 if (list != null && list.hasUrls()) {
                     String title = list.getTitle();
-                    if (!TextUtils.isEmpty(title)) textBuilder.append("<b>").append(title).append("</b><br>");
-                    textBuilder.append("<ul>\n");
+                    if (!TextUtils.isEmpty(title)) htmlTextBuilder.append("<b>").append(title).append("</b><br>");
+                    htmlTextBuilder.append("<ul>\n");
                     for (String url : list.getUrls()) {
-                        textBuilder.append("<li>&nbsp;&nbsp;").append(url).append("</li>\n");
+                        htmlTextBuilder.append("<li>&nbsp;&nbsp;").append(url).append("</li>\n");
                     }
-                    textBuilder.append("</ul>\n<br>\n");
+                    htmlTextBuilder.append("</ul>\n<br>\n");
                 }
             } else if (ContentElement.TYPE_BOX.equals(type)) {
                 Box box = ce.getBox();
                 if (box != null) {
-                    textBuilder.append("<p>");
+                    htmlTextBuilder.append("<p>");
                     String boxTitle = box.getTitle();
                     if (!TextUtils.isEmpty(boxTitle)) {
-                        textBuilder.append("<h6><font color=\"#064a91\">").append(boxTitle).append("</font></h6>");
+                        htmlTextBuilder.append("<h6><font color=\"").append(colorBox).append("\">").append(boxTitle).append("</font></h6>");
                     }
                     Box.Image boxImage = box.getImage();
                     if (boxImage != null && !TextUtils.isEmpty(boxImage.getUrl())) {
-                        textBuilder.append("<img src=\"").append(boxImage.getUrl()).append("\"/><br>");
+                        htmlTextBuilder.append("<img src=\"").append(boxImage.getUrl()).append("\"/><br>");
                     }
                     String boxText = box.getText();
                     if (!TextUtils.isEmpty(boxText)) {
-                        textBuilder.append("<font color=\"#064a91\"><small>").append(boxText).append("</small></font>");
+                        htmlTextBuilder.append("<font color=\"").append(colorBox).append("\"><small>").append(boxText).append("</small></font>");
                     }
-                    textBuilder.append("</p><br><br>");
+                    htmlTextBuilder.append("</p><br><br>");
                 }
             } else if (ContentElement.TYPE_IMAGE_GALLERY.equals(type)) {
                 Gallery gallery = ce.getGallery();
@@ -142,13 +147,13 @@ public class Content implements Serializable {
                             url = null;
                         }
                         if (url != null) {
-                            textBuilder.append("<br><img src=\"").append(url).append("\"/>");
+                            htmlTextBuilder.append("<br><img src=\"").append(url).append("\"/>");
                             if (!TextUtils.isEmpty(item.getTitle())) {
                                 // do not change the font face without adjusting TextViewImageSpanClickHandler
                                 // the <br> between </font> and </small> (sometimes) avoids an apparent bug that there is excess vertical space before the last line
-                                textBuilder.append("<p><small><font face=\"").append(FONT_FACE_IMAGE_TITLE).append("\">").append(item.getTitle()).append("</font><br></small></p>");
+                                htmlTextBuilder.append("<p><small><font face=\"").append(FONT_FACE_IMAGE_TITLE).append("\">").append(item.getTitle()).append("</font><br></small></p>");
                             }
-                            textBuilder.append("<br>");
+                            htmlTextBuilder.append(HTML_BR);
                         }
                     }
                 }
@@ -165,16 +170,24 @@ public class Content implements Serializable {
                 if (audio != null) content.audioList.add(audio);
             }
         }
-        content.text = textBuilder.toString();
+        content.text = htmlTextBuilder.toString();
         content.plainText = plainTextBuilder.toString();
         // cut off trailing <br> elements
-        while (content.text.endsWith("<br>")) {
-            content.text = content.text.substring(0, content.text.length() - 4);
+        while (content.text.endsWith(HTML_BR)) {
+            content.text = content.text.substring(0, content.text.length() - HTML_BR.length());
         }
         while (content.plainText.endsWith("\n")) {
             content.plainText = content.plainText.substring(0, content.plainText.length() - 1);
         }
         return content;
+    }
+
+    public static void setColorBox(@NonNull String color) {
+        colorBox = color;
+    }
+
+    public static void setColorQuotation(@NonNull String color) {
+        colorQuotation = color;
     }
 
     /**
