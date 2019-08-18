@@ -220,8 +220,6 @@
     <string name="pref_title_warn_mute_on">show a warning</string>
     <string name="pref_title_warn_mute_off">ignore it</string>
 
-    <string name="dummy_button" translatable="false">Dummy Button</string>
-
     <string name="url_wikipedia_http_streaming">https://en.m.wikipedia.org/wiki/HTTP_Live_Streaming</string>
 
 </resources>
