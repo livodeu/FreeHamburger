@@ -18,7 +18,9 @@ public class SpaceBetween extends RecyclerView.ItemDecoration {
 
     private static final String DEKO_LEFT = "❦";
     private static final String DEKO_RITE = "❦";
+
     private final int space;
+    private final int halfSpace;
     private final Paint paint = new Paint();
     private final Rect leftTextRect = new Rect();
     private final Rect riteTextRect = new Rect();
@@ -28,11 +30,14 @@ public class SpaceBetween extends RecyclerView.ItemDecoration {
 
     /**
      * Constructor.
+     * @param ctx Context
      * @param distance distance in px
+     * @throws NullPointerException if {@code ctx} is {@code null}
      */
-    public SpaceBetween(Context ctx, int distance) {
-        this.space = distance;
-        this.paint.setColor(0xaa1599e6);
+    public SpaceBetween(@NonNull Context ctx, int distance) {
+        this.space = Math.abs(distance);
+        this.halfSpace = this.space >> 1;
+        this.paint.setColor(ctx.getResources().getColor(R.color.colorPrimaryLightSemiTrans));
         this.paint.setTextSize(space);
         this.paint.getTextBounds(DEKO_LEFT, 0, DEKO_LEFT.length(), this.leftTextRect);
         this.paint.getTextBounds(DEKO_RITE, 0, DEKO_RITE.length(), this.riteTextRect);
@@ -54,20 +59,22 @@ public class SpaceBetween extends RecyclerView.ItemDecoration {
     @Override
     public void onDrawOver(@NonNull final Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
         if (parent.getLayoutManager() == null || parent.getChildCount() < 1) return;
+        final int cw = c.getWidth();
+        final int ch = c.getHeight();
         View kid0 = parent.getChildAt(0);
         parent.getDecoratedBoundsWithMargins(kid0, this.childRect);
-        int leftTopY = Math.round(this.childRect.bottom - this.leftTextRect.bottom);
-        int riteTopY = Math.round(this.childRect.bottom - this.riteTextRect.bottom);
+        int leftTopY = this.childRect.bottom - this.leftTextRect.bottom;
+        int riteTopY = this.childRect.bottom - this.riteTextRect.bottom;
         c.drawText(DEKO_LEFT, 0, leftTopY, this.paint);
-        c.drawText(DEKO_RITE, c.getWidth() - this.riteTextRect.right, riteTopY, paint);
-        c.drawText(DEKO_LEFT, 0, c.getHeight() - this.leftTextRect.bottom, paint);
-        c.drawText(DEKO_RITE, c.getWidth() - this.riteTextRect.right, c.getHeight() - this.riteTextRect.bottom, paint);
+        c.drawText(DEKO_RITE, cw - this.riteTextRect.right, riteTopY, paint);
+        c.drawText(DEKO_LEFT, 0, ch - this.leftTextRect.bottom, paint);
+        c.drawText(DEKO_RITE, cw - this.riteTextRect.right, ch - this.riteTextRect.bottom, paint);
 
-        int topLineTop = leftTopY - (this.space >> 1);
-        int topLineBottom = topLineTop + (this.space >> 1);
-        this.leftLine.setBounds(leftTextRect.right + this.space, topLineTop, c.getWidth() / 3, topLineBottom);
+        int topLineTop = leftTopY - this.halfSpace;
+        int topLineBottom = topLineTop + this.halfSpace;
+        this.leftLine.setBounds(leftTextRect.right + this.space, topLineTop, cw / 3, topLineBottom);
         this.leftLine.draw(c);
-        this.riteLine.setBounds(c.getWidth() * 2 / 3, topLineTop, c.getWidth() - riteTextRect.right - this.space, topLineBottom);
+        this.riteLine.setBounds(cw * 2 / 3, topLineTop, cw - riteTextRect.right - this.space, topLineBottom);
         this.riteLine.draw(c);
     }
 }

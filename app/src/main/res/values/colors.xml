@@ -6,6 +6,7 @@
     <color name="colorPrimaryTrans">#5c26a6f0</color>
     <color name="colorPrimarySemiTrans">#771288cc</color>
     <color name="colorPrimaryLight">#1599e6</color>
+    <color name="colorPrimaryLightSemiTrans">#aa1599e6</color>
     <color name="colorAccent">#fe8b35</color>
     <color name="colorLinkInternal">#ffa866</color>
     <color name="colorLinkExternal">#fe8b35</color>
