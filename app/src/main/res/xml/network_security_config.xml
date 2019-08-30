@@ -7,10 +7,5 @@
     </base-config>
     <domain-config>
         <domain includeSubdomains="true">www.tagesschau.de</domain>
-        <pin-set expiration="2019-10-11">
-            <pin digest="SHA-256">yeX9eQfCJBB0KmUhSlgfOo+BrjB/Mo7+kNiIv0+jqsU=</pin>
-            <!-- https://crt.sh/?id=598486110 -->
-            <pin digest="SHA-256">tkEzG0XqD2YXnR8pP6s7cs3m7QhzLW7TOLJ2n84BVSE=</pin>
-        </pin-set>
     </domain-config>
 </network-security-config>
