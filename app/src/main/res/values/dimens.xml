@@ -26,6 +26,8 @@
     <dimen name="text_size_navigation">14sp</dimen>
 
     <dimen name="news_content_margin_bottom">24dp</dimen>
+    <dimen name="news_content_margin_topblock_start">27dp</dimen>
+    <dimen name="news_content_margin_topblock_end">32dp</dimen>
 
     <dimen name="related_view_padding">4dp</dimen>
     <dimen name="related_view_width">160dp</dimen>

@@ -17,7 +17,8 @@
         android:id="@+id/topBlock"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp"
+        android:paddingStart="@dimen/news_content_margin_topblock_start"
+        android:paddingEnd="@dimen/news_content_margin_topblock_end"
         android:animateLayoutChanges="false"
         android:clipChildren="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
@@ -42,15 +43,15 @@
         <com.google.android.exoplayer2.ui.PlayerView
             android:id="@+id/topVideoView"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_marginStart="2dp"
             android:layout_marginEnd="2dp"
             android:layout_marginBottom="8dp"
             android:focusable="false"
             android:focusableInTouchMode="false"
-            android:minHeight="200dp"
             app:use_controller="false"
+            app:resize_mode="fixed_width"
             />
 
         <TextView
@@ -105,20 +106,7 @@
 
         </RelativeLayout>
 
-        <TextView
-            android:id="@+id/textViewContent"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/audioBlock"
-            android:textColor="@android:color/black"
-            android:textSize="@dimen/text_size_news_content"
-            android:autoLink="none"
-            android:linksClickable="false"
-            android:hyphenationFrequency="full"
-            android:breakStrategy="high_quality"
-            android:justificationMode="none"
-            tools:text="@tools:sample/lorem/random"
-            tools:ignore="UnusedAttribute"/>
+        <TextView android:id="@+id/textViewContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/audioBlock" android:autoLink="none" android:breakStrategy="high_quality" android:hyphenationFrequency="full" android:justificationMode="none" android:lineSpacingExtra="2sp" android:linksClickable="false" android:textColor="@android:color/black" android:textSize="@dimen/text_size_news_content" tools:ignore="UnusedAttribute" tools:text="@tools:sample/lorem/random" />
 
         <View
             android:id="@+id/dividerRelated"
