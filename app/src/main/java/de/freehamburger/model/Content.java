@@ -38,7 +38,39 @@ public class Content implements Serializable {
     private static final CharSequence[] H_REPLACE_WITH = new CharSequence[] {"<h4>", "</h4>"};
     private static final String HTML_BR = "<br>";
     private static String colorQuotation = "#064a91";
+    /** The color that a box element will be rendered in */
     private static String colorBox = "#064a91";
+    /**
+     * The html tag that a box element will be wrapped into ({@link #colorBox} will be applied, too)<br>
+     * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()}.<br>
+     * Background colors apply only to the letters, they do not extend to the edges of the screen!<br>
+     * Apparently tags cannot be nested, so a background color would not be rendered if there are other tags inside this one!
+     */
+    private static final String TAG_BOX = "p";
+    /**
+     * The html tag that a box element title will be wrapped into ({@link #colorBox} will be applied, too)<br>
+     * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()}<br>
+     * h1 - h6 will be rendered bold with a text size factor defined in Html.HtmlToSpannedConverter.HEADING_SIZES
+     */
+    private static final String TAG_BOX_TITLE = "h6";
+    /**
+     * The html tag that a box element text will be wrapped into ({@link #colorBox} will be applied, too)<br>
+     * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()} <br>
+     * &lt;small&gt; will be rendered with a text size of 80% (see Html.HtmlToSpannedConverter.handleEndTag())
+     */
+    static final String TAG_BOX_TEXT = "small";
+    /**
+     * The html tag that a list title will be wrapped into.
+     */
+    private static final String TAG_LIST_TITLE = "b";
+    /**
+     * The html tag that a list item will start with.
+     */
+    private static final String TAG_LISTITEM_START = "font face=\"sans-serif-condensed\"";
+    /**
+     * The html tag that a list item will end with.
+     */
+    private static final String TAG_LISTITEM_END = "font";
 
     @NonNull private final List<ContentElement> elementList = new ArrayList<>(16);
     @NonNull private final List<Video> videoList = new ArrayList<>();
@@ -106,20 +138,27 @@ public class Content implements Serializable {
                 Lyst list = ce.getList();
                 if (list != null && list.hasUrls()) {
                     String title = list.getTitle();
-                    if (!TextUtils.isEmpty(title)) htmlTextBuilder.append("<b>").append(title).append("</b><br>");
+                    if (!TextUtils.isEmpty(title)) {
+                        htmlTextBuilder.append('<').append(TAG_LIST_TITLE).append('>').append(title).append("</").append(TAG_LIST_TITLE).append("><br>");
+                    }
                     htmlTextBuilder.append("<ul>\n");
                     for (String url : list.getUrls()) {
-                        htmlTextBuilder.append("<li>&nbsp;&nbsp;").append(url).append("</li>\n");
+                        // url is not just a url but a whole <a href="...">url</a> element
+                        htmlTextBuilder.append("<li>&nbsp;&nbsp;<").append(TAG_LISTITEM_START).append('>').append(url).append("</").append(TAG_LISTITEM_END).append("></li>\n");
                     }
                     htmlTextBuilder.append("</ul>\n<br>\n");
                 }
             } else if (ContentElement.TYPE_BOX.equals(type)) {
                 Box box = ce.getBox();
                 if (box != null) {
-                    htmlTextBuilder.append("<p>");
+                    htmlTextBuilder.append("<").append(TAG_BOX).append('>');
                     String boxTitle = box.getTitle();
                     if (!TextUtils.isEmpty(boxTitle)) {
-                        htmlTextBuilder.append("<h6><font color=\"").append(colorBox).append("\">").append(boxTitle).append("</font></h6>");
+                        htmlTextBuilder
+                                .append('<').append(TAG_BOX_TITLE)
+                                .append("><font color=\"").append(colorBox).append("\">")
+                                .append(boxTitle)
+                                .append("</font></").append(TAG_BOX_TITLE).append('>');
                     }
                     Box.Image boxImage = box.getImage();
                     if (boxImage != null && !TextUtils.isEmpty(boxImage.getUrl())) {
@@ -127,9 +166,12 @@ public class Content implements Serializable {
                     }
                     String boxText = box.getText();
                     if (!TextUtils.isEmpty(boxText)) {
-                        htmlTextBuilder.append("<font color=\"").append(colorBox).append("\"><small>").append(boxText).append("</small></font>");
+                        htmlTextBuilder
+                                .append("<font color=\"").append(colorBox).append("\"><").append(TAG_BOX_TEXT).append('>')
+                                .append(boxText)    // appending a <br> directly after boxText and before TAG_BOX_TEXT avoids a strange vertical gap before the last line
+                                .append("<br></").append(TAG_BOX_TEXT).append("></font>");
                     }
-                    htmlTextBuilder.append("</p><br><br>");
+                    htmlTextBuilder.append("</").append(TAG_BOX).append("><br>");
                 }
             } else if (ContentElement.TYPE_IMAGE_GALLERY.equals(type)) {
                 Gallery gallery = ce.getGallery();
@@ -435,6 +477,8 @@ public class Content implements Serializable {
         @Override
         public void handleTag(boolean opening, String tag, Editable output, XMLReader xmlReader) {
             char lastChar = output.length() > 0 ? output.charAt(output.length() - 1) : 0;
+            android.util.Log.i("CTH",
+                    "handleTag(" + opening + ", \"" + tag + "\", " + (output.length() > 0 ? "[\"" + output.subSequence(Math.max(0, output.length() - 20), output.length())+ "\"]" : "[]") + ", ...)");
             if (opening) {
                 switch (tag) {
                     case "p":

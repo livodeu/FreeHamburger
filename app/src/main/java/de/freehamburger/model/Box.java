@@ -87,7 +87,7 @@ public class Box implements Serializable {
                             // insert a <small> into external links because box text will have that, too (see handling of the Box type in Content.parseContent())
                             int bracket1 = box.text.indexOf('>', textLinkStart + 2);
                             String linkText = box.text.substring(bracket1 + 1, textLinkEnd);
-                            box.text = box.text.substring(0, bracket1) + "<small>" + linkText + "</small>" + box.text.substring(textLinkEnd);
+                            box.text = box.text.substring(0, bracket1) + '<' + Content.TAG_BOX_TEXT + '>' + linkText + "</" + Content.TAG_BOX_TEXT + '>' + box.text.substring(textLinkEnd);
                         }
                     }
                 }
@@ -96,7 +96,6 @@ public class Box implements Serializable {
             } else if ("images".equals(name)) {
                 box.image = Image.parse(reader);
             } else {
-                //if (BuildConfig.DEBUG) android.util.Log.i(Box.class.getSimpleName(), "Skipping " + name);
                 reader.skipValue();
             }
         }
