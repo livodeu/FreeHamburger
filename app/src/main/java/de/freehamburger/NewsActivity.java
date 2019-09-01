@@ -463,7 +463,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     if (src == null) continue;
                     src = Util.makeHttps(src);
                     @SuppressWarnings("ObjectAllocationInLoop")
-                    SpannableImageTarget target = new SpannableImageTarget(this, spannable, imageSpan, 100);
+                    SpannableImageTarget target = new SpannableImageTarget(this, spannable, imageSpan);
                     // store target in an (otherwise unused) instance variable to avoid garbage collection, because the service holds only a WeakReference on the target
                     this.spannableImageTargets.add(target);
                     //
@@ -1095,7 +1095,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
         if (am == null) return;
         if (!Util.isNetworkAvailable(this)) {
-            //Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
             showNoNetworkSnackbar();
             return;
         }
@@ -1128,7 +1127,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private void playBottomVideo() {
         if (this.exoPlayerBottomVideo == null) return;
         if (!Util.isNetworkAvailable(this)) {
-            //Snackbar.make(this.coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT).show();
             showNoNetworkSnackbar();
             return;
         }
@@ -1301,6 +1299,17 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
          * @param spannable Spannable
          * @param toReplace ImageSpan
          */
+        SpannableImageTarget(@NonNull NewsActivity activity, @NonNull Spannable spannable, @NonNull ImageSpan toReplace) {
+            this(activity, spannable, toReplace, 100);
+        }
+
+        /**
+         * Constructor.
+         * @param activity NewsActivity
+         * @param spannable Spannable
+         * @param toReplace ImageSpan
+         * @param percentWidth width in percent
+         */
         SpannableImageTarget(@NonNull NewsActivity activity, @NonNull Spannable spannable, @NonNull ImageSpan toReplace, @IntRange(from = 1, to = 100) int percentWidth) {
             super();
             this.refActivity = new WeakReference<>(activity);
@@ -1313,7 +1322,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         /** {@inheritDoc} */
         @Override
         public void onBitmapFailed(Exception e, Drawable errorDrawable) {
-            //if (BuildConfig.DEBUG) Log.i(TAG, "Failed to load " + this.source + (e != null ? " - " + e.toString() : ""));
             this.spannable.removeSpan(this.toReplace);
             NewsActivity activity = this.refActivity.get();
             if (activity != null) activity.spannableImageTargets.remove(this);
@@ -1325,16 +1333,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         @Override
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
             NewsActivity activity = this.refActivity.get();
-            if (activity == null) {
-                return;
-            }
-            //TODO why is the bitmap not put into the Picasso cache by Picasso itself?!
-            String url = this.toReplace.getSource();
-            if (url != null && !activity.isUrlCached(url)) {
-                activity.service.addToCache(url, bitmap);
-            }
+            if (activity == null) return;
             int availableWidth = activity.textViewContent.getWidth() - activity.textViewContent.getPaddingStart() - activity.textViewContent.getPaddingEnd();
-            if (this.percentWidth > 0 && this.percentWidth <= 100) availableWidth = Math.round(availableWidth * this.percentWidth / 100f);
+            if (this.percentWidth == 100) availableWidth = Math.round(availableWidth);
+            else if (this.percentWidth > 0 && this.percentWidth < 100) availableWidth = Math.round(availableWidth * this.percentWidth / 100f);
             float factor = (float) bitmap.getHeight() / (float) bitmap.getWidth();
             bitmap = Bitmap.createScaledBitmap(bitmap, availableWidth, Math.round(availableWidth * factor), false);
             int start = this.spannable.getSpanStart(this.toReplace);
@@ -1349,22 +1351,24 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.toReplace = null;
         }
 
+        /** {@inheritDoc} */
         @Override
         public void onPrepareLoad(Drawable placeHolderDrawable) {
         }
     }
 
     /**
-     *
+     * URLSpan that displays a {@link Intent#createChooser(Intent, CharSequence) chooser} upon click.
      */
     private static class URLSpanWChooser extends URLSpan {
         @ColorInt
         private final int linkColor;
 
         /**
-         * Constructor
+         * Constructor.
          * @param url URL
          * @param linkColor link color
+         * @throws NullPointerException if {@code url} is {@code null}
          */
         private URLSpanWChooser(@NonNull String url, @IntRange(from = 1) @ColorInt int linkColor) {
             super(Util.makeHttps(url));
