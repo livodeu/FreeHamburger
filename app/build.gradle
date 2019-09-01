@@ -42,7 +42,6 @@ android {
             manifestPlaceholders = [name: "@string/app_name_debug", icon:"@mipmap/ic_launcher_debug", roundicon: "@mipmap/ic_launcher_round_debug"]
             resValue "string", "app_search_auth", defaultConfig.applicationId + applicationIdSuffix + '.SearchContentProvider'
             minifyEnabled false
-            useProguard false
             crunchPngs true
             aaptOptions {
                 cruncherEnabled true
@@ -54,7 +53,6 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            useProguard true
             crunchPngs true
             aaptOptions {
                 cruncherEnabled true
