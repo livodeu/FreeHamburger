@@ -143,6 +143,7 @@ public class Box implements Serializable {
 
         private String title;
         private String alttext;
+        private String copyright;
         private String url;
 
         @NonNull
@@ -163,6 +164,8 @@ public class Box implements Serializable {
                     image.title = reader.nextString();
                 } else if ("alttext".equals(name)) {
                     image.alttext = reader.nextString();
+                } else if ("copyright".equals(name)) {
+                    image.copyright = reader.nextString();
                 } else if ("videowebl".equals(name)) {
                     reader.beginObject();
                     String imageurl = reader.nextName();
@@ -173,7 +176,6 @@ public class Box implements Serializable {
                     }
                     reader.endObject();
                 } else {
-                    //if (BuildConfig.DEBUG) android.util.Log.i(Image.class.getSimpleName(), "Skipping " + name);
                     reader.skipValue();
                 }
             }
@@ -186,6 +188,9 @@ public class Box implements Serializable {
         public String getAlttext() {
             return alttext;
         }
+
+        @Nullable
+        public String getCopyright() { return copyright; }
 
         @Nullable
         public String getTitle() {
