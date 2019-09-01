@@ -1,5 +1,6 @@
 package de.freehamburger.model;
 
+import android.os.Build;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -37,6 +38,8 @@ public class Content implements Serializable {
     private static final String[] H_REPLACE_ME = new String[] {"<h2>", "</h2>"};
     private static final CharSequence[] H_REPLACE_WITH = new CharSequence[] {"<h4>", "</h4>"};
     private static final String HTML_BR = "<br>";
+    /** marker for superfluous new lines to be removed (this String can be anything that is very unlikely to occur in the text naturally) */
+    public static final String REMOVE_NEW_LINE = "#####";
     private static String colorQuotation = "#064a91";
     /** The color that a box element will be rendered in */
     private static String colorBox = "#064a91";
@@ -126,7 +129,11 @@ public class Content implements Serializable {
             } else if (ContentElement.TYPE_HEADLINE.equals(type)) {
                 String value = ce.getValue();
                 if (value != null) {
-                    htmlTextBuilder.append(TextUtils.replace(value, H_REPLACE_ME, H_REPLACE_WITH)).append(HTML_BR);  // trailing <br> looks better if FROM_HTML_MODE_COMPACT is used
+                    htmlTextBuilder.append(TextUtils.replace(value, H_REPLACE_ME, H_REPLACE_WITH));
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        // trailing <br> looks better if FROM_HTML_MODE_COMPACT is used
+                        htmlTextBuilder.append(HTML_BR);
+                    }
                 }
             } else if (ContentElement.TYPE_QUOTATION.equals(type)) {
                 String value = ce.getValue();
@@ -151,25 +158,35 @@ public class Content implements Serializable {
             } else if (ContentElement.TYPE_BOX.equals(type)) {
                 Box box = ce.getBox();
                 if (box != null) {
+                    // add the box, followed by a <br>
                     htmlTextBuilder.append("<").append(TAG_BOX).append('>');
                     String boxTitle = box.getTitle();
                     if (!TextUtils.isEmpty(boxTitle)) {
+                        // add the box title, not followed by a <br> because the TAG_BOX_TITLE should cause Html.fromHtml() to take care of that
                         htmlTextBuilder
                                 .append('<').append(TAG_BOX_TITLE)
                                 .append("><font color=\"").append(colorBox).append("\">")
                                 .append(boxTitle)
                                 .append("</font></").append(TAG_BOX_TITLE).append('>');
+                        // Html.FROM_HTML_MODE_LEGACY (used in Android up to 6) will introduce 2 new line chars here (which is one too many)
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) htmlTextBuilder.append(REMOVE_NEW_LINE);
                     }
                     Box.Image boxImage = box.getImage();
                     if (boxImage != null && !TextUtils.isEmpty(boxImage.getUrl())) {
+                        // add the box image, followed by a <br>
                         htmlTextBuilder.append("<img src=\"").append(boxImage.getUrl()).append("\"/><br>");
                     }
                     String boxText = box.getText();
                     if (!TextUtils.isEmpty(boxText)) {
+                        String imageCopyright = boxImage != null ? boxImage.getCopyright() : null;
                         htmlTextBuilder
                                 .append("<font color=\"").append(colorBox).append("\"><").append(TAG_BOX_TEXT).append('>')
-                                .append(boxText)    // appending a <br> directly after boxText and before TAG_BOX_TEXT avoids a strange vertical gap before the last line
-                                .append("<br></").append(TAG_BOX_TEXT).append("></font>");
+                                .append(boxText);
+                        if (!TextUtils.isEmpty(imageCopyright)) {
+                            htmlTextBuilder.append(" (&copy; ").append(imageCopyright).append(")");
+                        }
+                        // appending a <br> directly after boxText and before TAG_BOX_TEXT avoids a strange vertical gap before the last line
+                        htmlTextBuilder.append("<br></").append(TAG_BOX_TEXT).append("></font>");
                     }
                     htmlTextBuilder.append("</").append(TAG_BOX).append("><br>");
                 }
@@ -189,13 +206,21 @@ public class Content implements Serializable {
                             url = null;
                         }
                         if (url != null) {
-                            htmlTextBuilder.append("<br><img src=\"").append(url).append("\"/>");
+                            htmlTextBuilder.append("<img src=\"").append(url).append("\"/>");
                             if (!TextUtils.isEmpty(item.getTitle())) {
+                                htmlTextBuilder.append("<p>");
+                                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) htmlTextBuilder.append(REMOVE_NEW_LINE);
                                 // do not change the font face without adjusting TextViewImageSpanClickHandler
                                 // the <br> between </font> and </small> (sometimes) avoids an apparent bug that there is excess vertical space before the last line
-                                htmlTextBuilder.append("<p><small><font face=\"").append(FONT_FACE_IMAGE_TITLE).append("\">").append(item.getTitle()).append("</font><br></small></p>");
+                                htmlTextBuilder.append("<small><font face=\"").append(FONT_FACE_IMAGE_TITLE).append("\">");
+                                htmlTextBuilder.append(item.getTitle());
+                                if (!TextUtils.isEmpty(item.getCopyright())) {
+                                    htmlTextBuilder.append(" (&copy; ").append(item.getCopyright()).append(")");
+                                }
+                                htmlTextBuilder.append("</font><br></small></p>");
                             }
-                            htmlTextBuilder.append(HTML_BR);
+                            // for Html.FROM_HTML_MODE_COMPACT, add a new line
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) htmlTextBuilder.append(HTML_BR);
                         }
                     }
                 }
