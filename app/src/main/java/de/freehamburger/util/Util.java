@@ -44,6 +44,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.system.ErrnoException;
 import android.system.Os;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.Menu;
@@ -122,23 +123,6 @@ public class Util {
     @RequiresApi(api = Build.VERSION_CODES.O)
     public static boolean canCreateShortcut(@Nullable ShortcutManager shortcutManager) {
         return shortcutManager != null && shortcutManager.isRequestPinShortcutSupported();
-    }
-
-    /**
-     * Attempts to find a SSLPeerUnverifiedException among the causes of the given Throwable.
-     * @param e Throwable
-     * @return SSLPeerUnverifiedException
-     */
-    @Nullable
-    public static SSLPeerUnverifiedException isPeerUnverified(@NonNull Throwable e) {
-        if (e instanceof SSLPeerUnverifiedException) return (SSLPeerUnverifiedException)e;
-        for (;;) {
-            Throwable cause = e.getCause();
-            if (cause == null) break;
-            if (cause instanceof SSLPeerUnverifiedException) return (SSLPeerUnverifiedException)cause;
-            e = cause;
-        }
-        return null;
     }
 
     /**
@@ -761,6 +745,23 @@ public class Util {
         return (networkInfo.getType() == ConnectivityManager.TYPE_MOBILE || networkInfo.getType() == ConnectivityManager.TYPE_MOBILE_DUN);
     }
 
+    /**
+     * Attempts to find a SSLPeerUnverifiedException among the causes of the given Throwable.
+     * @param e Throwable
+     * @return SSLPeerUnverifiedException
+     */
+    @Nullable
+    public static SSLPeerUnverifiedException isPeerUnverified(@NonNull Throwable e) {
+        if (e instanceof SSLPeerUnverifiedException) return (SSLPeerUnverifiedException)e;
+        for (;;) {
+            Throwable cause = e.getCause();
+            if (cause == null) break;
+            if (cause instanceof SSLPeerUnverifiedException) return (SSLPeerUnverifiedException)cause;
+            e = cause;
+        }
+        return null;
+    }
+
     private static boolean isTest(@NonNull Context ctx) {
         // Contexts for unit tests are android.app.ContextImpl
         return BuildConfig.DEBUG && !ctx.getClass().getName().startsWith(Objects.requireNonNull(MainActivity.class.getPackage()).getName());
@@ -898,37 +899,6 @@ public class Util {
     }
 
     /**
-     * Removes &lt;a&gt;...&lt;a/&gt;.
-     * @param value StringBuilder to remove the anchors from
-     * @return StringBuilder with anchors removed
-     */
-    @NonNull
-    public static StringBuilder removeLinks(@Nullable final StringBuilder value) {
-        final int n = value != null ? value.length() : 0;
-        if (n == 0) return new StringBuilder(0);
-        char[] c = new char[n];
-        value.getChars(0, n, c, 0);
-        final StringBuilder out = new StringBuilder(n);
-        boolean insideA = false;
-        // <a href="https://url.de">Link</a>
-        for (int pos = 0; pos < n; pos++) {
-            if (c[pos] == '<') {
-                if (areNextChars(c, pos, 'a', ' ')) {
-                    insideA = true;
-                } else if (areNextChars(c, pos, '/', 'a', '>')) {
-                    pos += 3;
-                    insideA = false;
-                } else {
-                    out.append('<');
-                }
-             } else if (!insideA) {
-                out.append(c[pos]);
-            }
-        }
-        return out;
-    }
-
-    /**
      * Removes &lt;ul&gt; and &lt;ol&gt; tags and replaces their list items with &lt;br&gt; line feeds.<br>
      * List items in a &lt;ul&gt; list will start with •,<br>
      * list items in a &lt;ol&gt; list will start with a plain number (1,2,3 etc.).
@@ -985,6 +955,56 @@ public class Util {
             }
         }
         return out;
+    }
+
+    /**
+     * Removes &lt;a&gt;...&lt;a/&gt;.
+     * @param value StringBuilder to remove the anchors from
+     * @return StringBuilder with anchors removed
+     */
+    @NonNull
+    public static StringBuilder removeLinks(@Nullable final StringBuilder value) {
+        final int n = value != null ? value.length() : 0;
+        if (n == 0) return new StringBuilder(0);
+        char[] c = new char[n];
+        value.getChars(0, n, c, 0);
+        final StringBuilder out = new StringBuilder(n);
+        boolean insideA = false;
+        // <a href="https://url.de">Link</a>
+        for (int pos = 0; pos < n; pos++) {
+            if (c[pos] == '<') {
+                if (areNextChars(c, pos, 'a', ' ')) {
+                    insideA = true;
+                } else if (areNextChars(c, pos, '/', 'a', '>')) {
+                    pos += 3;
+                    insideA = false;
+                } else {
+                    out.append('<');
+                }
+             } else if (!insideA) {
+                out.append(c[pos]);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Replaces each occurrence of {@code source} with {@code destination}.
+     * @param template CharSequence to replace characters in
+     * @param source characters to replace
+     * @param destination characters to be inserted instead
+     * @return SpannableStringBuilder
+     * @throws NullPointerException if any parameter is {@code null}
+     */
+    public static SpannableStringBuilder replaceAll(@NonNull final CharSequence template, @NonNull final CharSequence source, @NonNull final CharSequence destination) {
+        final SpannableStringBuilder editable = new SpannableStringBuilder(template);
+        for (int pos = 0; ;) {
+            int where = TextUtils.indexOf(editable, source, pos);
+            if (where < 0) break;
+            editable.replace(where, where + source.length(), destination);
+            pos = where + destination.length();
+        }
+        return editable;
     }
 
     /**
