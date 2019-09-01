@@ -48,6 +48,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -69,6 +70,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     @Nullable
     private HamburgerService service;
     private List<PreferenceActivity.Header> headers;
+    private Header currentHeader;
     /** {@code true} if the user has clicked "Manage Storage" in the system settings for this app - identified by:<ol><li>{@link Intent} action is {@link Intent#ACTION_VIEW ACTION_VIEW},</li><li>Intent data is {@code null}</li></ol> */
     private boolean isManageStorageActivity;
     private Snackbar snackbar;
@@ -153,6 +155,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
         if (this.snackbar != null && this.snackbar.isShown()) {
             this.snackbar.dismiss();
             this.snackbar = null;
+        }
+        if (getFragmentManager().getBackStackEntryCount() == 0 && getIntent().getStringExtra(EXTRA_SHOW_FRAGMENT) == null) {
+            this.currentHeader = null;
+            invalidateOptionsMenu();
         }
         if (this.isManageStorageActivity) {
             // this leads back to the system settings
@@ -239,6 +245,15 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
 
     /** {@inheritDoc} */
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem menuItemHelp = menu.findItem(R.id.action_help);
+        // no help for overview and 'Other' settings
+        menuItemHelp.setVisible(this.currentHeader != null && this.currentHeader.titleRes != R.string.pref_header_other);
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     protected void onResume() {
         super.onResume();
         if (Intent.ACTION_VIEW.equals(getIntent().getAction()) && getIntent().getData() == null) {
@@ -316,6 +331,13 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             intent.putExtra(EXTRA_STORAGE_ACTIVITY, true);
         }
         super.startActivity(intent);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void switchToHeader(Header header) {
+        this.currentHeader = header;
+        super.switchToHeader(header);
     }
 
     /**
@@ -760,16 +782,16 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             this.prefPollStats = findPreference("pref_poll_stats");
             if (statStart > 0L && receivedSoFar > 0L) {
                 // fall 2018: 70531 bytes/job based on 734 jobs
+                // summer 2019: 71841 bytes/job based on 12042 jobs
                 String ds;
-                if (System.currentTimeMillis() - statStart > 24 * 3_600_000) {
+                if (System.currentTimeMillis() - statStart > 24 * 3_600_000L) {
                     ds = DateFormat.getDateInstance(DateFormat.SHORT).format(new Date(statStart));
                 } else {
                     ds = DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date(statStart));
                 }
                 String amount = receivedSoFar > 1_500_000L ? Math.round(receivedSoFar / 1_000_000f) + " MB" : Math.round(receivedSoFar / 1_000f) + " kB";
-                if (estimation) amount = "ca. " + amount;
-                if (BuildConfig.DEBUG) Log.i(SettingsActivity.class.getSimpleName(), jobsSoFar + " jobs, " + receivedSoFar + " bytes, ave. " + (receivedSoFar / jobsSoFar) + " bytes/job");
-                this.prefPollStats.setSummary(getResources().getQuantityString(R.plurals.label_poll_stats, jobsSoFar, jobsSoFar, amount, ds));
+                if (estimation) amount = getString(R.string.label_ca) + ' ' + amount;
+                this.prefPollStats.setSummary(getResources().getQuantityString(R.plurals.label_poll_stats, jobsSoFar, NumberFormat.getIntegerInstance().format(jobsSoFar), amount, ds));
             } else {
                 this.prefPollStats.setSummary(R.string.label_poll_stats_none);
                 this.prefPollStats.setEnabled(false);
@@ -812,7 +834,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class OtherPreferenceFragment extends PreferenceFragment {
 
-        private SwitchPreference prefPlayIntro;
         private boolean hintIntroShown;
 
         /** {@inheritDoc} */
@@ -822,8 +843,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             addPreferencesFromResource(R.xml.pref_other);
             setHasOptionsMenu(false);
 
-            this.prefPlayIntro = (SwitchPreference) findPreference(App.PREF_PLAY_INTRO);
-            this.prefPlayIntro.setOnPreferenceChangeListener((preference, newValue) -> {
+            SwitchPreference prefPlayIntro = (SwitchPreference) findPreference(App.PREF_PLAY_INTRO);
+            prefPlayIntro.setOnPreferenceChangeListener((preference, newValue) -> {
                 if (Boolean.TRUE.equals(newValue) && !this.hintIntroShown) {
                     Activity a = getActivity();
                     if (a != null) {
