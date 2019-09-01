@@ -444,6 +444,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 spanned = Html.fromHtml(text, Html.FROM_HTML_MODE_COMPACT, this.service, new Content.ContentTagHandler());
             } else {
                 spanned = Html.fromHtml(text, this.service, new Content.ContentTagHandler());
+                // remove superfluous blank lines that have been introduced by Html.FROM_HTML_MODE_LEGACY
+                spanned = Util.replaceAll(spanned, "\n" + Content.REMOVE_NEW_LINE, "");
+                // this is just to be sure that no REMOVE_NEW_LINE will be left
+                spanned = Util.replaceAll(spanned, Content.REMOVE_NEW_LINE, "");
             }
             this.textViewContent.setText(spanned, TextView.BufferType.SPANNABLE);
             this.textViewContent.setVisibility(View.VISIBLE);
