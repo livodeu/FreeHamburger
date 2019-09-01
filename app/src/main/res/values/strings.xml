@@ -90,6 +90,7 @@
     <string name="error_unknown_host">has not been found</string>
     <string name="error_video">Video playback error</string>
 
+    <string name="label_ca">ca.</string>
     <string name="label_current_cache_size">currently %1$d MB out of %2$d MB</string>
     <string name="label_current_cache_size_kb">currently %1$d kB out of %2$d MB</string>
     <string name="label_every_minutes">every %1$s minutes</string>
@@ -111,8 +112,8 @@
     <string name="label_notification_channel_desc">Hamburger news of standard priority</string>
     <string name="label_notification_channel_desc_hipri">Hamburger news of superior priority</string>
     <plurals name="label_poll_stats">
-        <item quantity="one">%1$d background update has received %2$s since %3$s.</item>
-        <item quantity="other">%1$d background updates have received %2$s since %3$s.</item>
+        <item quantity="one">%1$s background update has received %2$s since %3$s.</item>
+        <item quantity="other">%1$s background updates have received %2$s since %3$s.</item>
     </plurals>
     <string name="label_poll_stats_none">No background updates yet.</string>
     <string name="label_quoted">\"%1$s\"</string>

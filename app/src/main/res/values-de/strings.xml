@@ -172,6 +172,7 @@
     <string name="intro_3">Bewegen Sie die Liste, um die Artikel zu sehen.</string>
     <string name="intro_4">Tippen Sie einen Artikel an, um Details zu sehen.</string>
     <string name="intro_5">Hoffentlich finden Sie die App nützlich!</string>
+    <string name="label_ca">ca.</string>
     <string name="label_filter">Filter</string>
     <string name="action_section_sport">Sport</string>
     <string name="action_section_video">Video</string>
@@ -188,8 +189,8 @@
     <string name="label_every_minutes">alle %1$s Minuten</string>
     <string name="pref_title_poll_stats">Datenverbrauch</string>
     <plurals name="label_poll_stats">
-        <item quantity="one">Durch %1$d Hintergrundabfrage wurden seit %3$s %2$s empfangen.</item>
-        <item quantity="other">Durch %1$d Hintergrundabfragen wurden seit %3$s %2$s empfangen.</item>
+        <item quantity="one">Durch %1$s Hintergrundabfrage wurden seit %3$s %2$s empfangen.</item>
+        <item quantity="other">Durch %1$s Hintergrundabfragen wurden seit %3$s %2$s empfangen.</item>
     </plurals>
     <string name="label_poll_stats_none">Es sind keine Hintergrundabfragen registriert.</string>
     <string name="label_reset_q">Zurücksetzen?</string>
