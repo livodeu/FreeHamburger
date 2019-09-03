@@ -239,7 +239,7 @@ public class AndroidUnitTest {
         for (News news : list) {
             assertNotNull(news);
             //
-            nv = NewsRecyclerAdapter.selectView(ctx, NewsRecyclerAdapter.getViewType(news));
+            nv = NewsRecyclerAdapter.instantiateView(ctx, NewsRecyclerAdapter.getViewType(news));
             assertNotNull(nv);
             // all NewsView subtypes have these 3 views
             assertNotNull(nv.textViewDate);
