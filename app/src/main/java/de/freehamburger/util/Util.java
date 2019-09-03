@@ -1008,6 +1008,30 @@ public class Util {
     }
 
     /**
+     * Replaces each occurrence of each element in {@code sources} with the matching element in {@code destinations}.
+     * @param template CharSequence to replace characters in
+     * @param sources elements to replace
+     * @param destinations elements to be inserted instead
+     * @return SpannableStringBuilder
+     * @throws NullPointerException if any parameter is {@code null}
+     * @throws IllegalArgumentException if the arrays have different lengths
+     */
+    public static SpannableStringBuilder replaceAll(@NonNull final CharSequence template, @NonNull final CharSequence[] sources, @NonNull final CharSequence[] destinations) {
+        if (sources.length != destinations.length) throw new IllegalArgumentException("Non-matching lengths");
+        final int n = sources.length;
+        final SpannableStringBuilder editable = new SpannableStringBuilder(template);
+        for (int i = 0; i < n; i++) {
+            for (int pos = 0; ; ) {
+                int where = TextUtils.indexOf(editable, sources[i], pos);
+                if (where < 0) break;
+                editable.replace(where, where + sources[i].length(), destinations[i]);
+                pos = where + destinations[i].length();
+            }
+        }
+        return editable;
+    }
+
+    /**
      * Shares the given stream of data (represented by the url) via {@link Intent#ACTION_SEND ACTION_SEND}.
      * Displays an error message if there isn't any suitable app installed.
      * @param ctx Context
