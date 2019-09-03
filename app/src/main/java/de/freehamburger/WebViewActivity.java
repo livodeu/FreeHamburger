@@ -219,7 +219,7 @@ public class WebViewActivity extends AppCompatActivity {
      * A WebViewClient implementation.
      */
     @VisibleForTesting
-    public static class HamburgerWebViewClient extends WebViewClient {
+    static class HamburgerWebViewClient extends WebViewClient {
 
         private static final String[] DOWNLOADABLE_RESOURCES = new String[] {
                 ".7z", ".apk", ".arw", ".bin", ".bz2", ".cr2", ".deb", ".dng", ".doc", ".epub", ".exe",
