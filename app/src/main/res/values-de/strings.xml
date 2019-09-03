@@ -30,6 +30,7 @@
     <string name="error_no_further_details">Keine weiteren Details verfügbar.</string>
     <string name="hint_pic">Die Illustration für diesen Artikel</string>
     <string name="action_settings">Einstellungen</string>
+    <string name="action_settings_more">Weitere Einstellungen</string>
     <string name="error_download_failed">Ladevorgang fehlgeschlagen:\n%1$s</string>
     <string name="error_download_failed2">Ladevorgang fehlgeschlagen.</string>
     <string name="pref_header_appearance">Darstellung</string>
