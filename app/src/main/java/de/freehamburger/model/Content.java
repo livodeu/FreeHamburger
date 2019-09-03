@@ -33,10 +33,6 @@ import de.freehamburger.util.Util;
 public class Content implements Serializable {
 
     public static final String FONT_FACE_IMAGE_TITLE = "sans-serif-condensed";
-    private static final String[] REPLACE_TEXT = new String[] {"\t", "<br />", "\r\n\r\n"};
-    private static final CharSequence[] REPLACE_TEXT_WITH = new CharSequence[] {" ", "\n", "\n"};
-    private static final String[] H_REPLACE_ME = new String[] {"<h2>", "</h2>"};
-    private static final CharSequence[] H_REPLACE_WITH = new CharSequence[] {"<h4>", "</h4>"};
     private static final String HTML_BR = "<br>";
     /** marker for superfluous new lines to be removed (this String can be anything that is very unlikely to occur in the text naturally) */
     public static final String REMOVE_NEW_LINE = "#####";
@@ -122,14 +118,15 @@ public class Content implements Serializable {
             if (ContentElement.TYPE_TEXT.equals(type)) {
                 String value = ce.getValue();
                 if (value != null) {
-                    StringBuilder cs = Util.removeHtmlLists(TextUtils.replace(value, REPLACE_TEXT, REPLACE_TEXT_WITH));
-                    htmlTextBuilder.append(cs).append("<br><br>");
-                    plainTextBuilder.append(Util.removeLinks(cs)).append('\n');
+                    CharSequence cs = Util.replaceAll(value, new CharSequence [] {"<br />", "\t", "\r\n\r\n", "&nbsp;"}, new CharSequence[] {"\n", " ", "\n", " "});
+                    StringBuilder sb = Util.removeHtmlLists(cs);
+                    htmlTextBuilder.append(sb).append("<br><br>");
+                    plainTextBuilder.append(Util.removeLinks(sb)).append('\n');
                 }
             } else if (ContentElement.TYPE_HEADLINE.equals(type)) {
                 String value = ce.getValue();
                 if (value != null) {
-                    htmlTextBuilder.append(TextUtils.replace(value, H_REPLACE_ME, H_REPLACE_WITH));
+                    htmlTextBuilder.append(Util.replaceAll(value, new CharSequence[] {"<h2>", "</h2>"}, new CharSequence[] {"<h4>", "</h4>"}));
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         // trailing <br> looks better if FROM_HTML_MODE_COMPACT is used
                         htmlTextBuilder.append(HTML_BR);
