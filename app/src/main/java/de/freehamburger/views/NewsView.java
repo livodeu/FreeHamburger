@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.CallSuper;
 import android.support.annotation.LayoutRes;
@@ -25,7 +24,6 @@ import java.util.List;
 
 import de.freehamburger.App;
 import de.freehamburger.R;
-import de.freehamburger.model.Content;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Region;
 import de.freehamburger.model.TeaserImage;
@@ -135,11 +133,6 @@ public class NewsView extends RelativeLayout {
         inflater.inflate(getLid(), this);
         this.textViewTopline = findViewById(R.id.textViewTopline);
         this.textViewTitle = findViewById(R.id.textViewTitle);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && this.textViewTitle != null) {
-            // to suppress the logged warning in StaticLayout.getHeight(boolean)
-            int mh = (int)Math.ceil(this.textViewTitle.getMaxLines() * this.textViewTitle.getPaint().getFontSpacing());
-            this.textViewTitle.setMaxHeight(mh);
-        }
         this.textViewDate = findViewById(R.id.textViewDate);
         this.imageView = findViewById(R.id.imageView);
         this.textViewFirstSentence = findViewById(R.id.textViewFirstSentence);
@@ -166,13 +159,44 @@ public class NewsView extends RelativeLayout {
         final boolean fixQ = prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, false);
         // the original order is: topline, title, firstSentence
 
-        // topline
-        boolean titleReplacesTopline = false;
+        /*
+               news_view.xml
+        |-------------------------------------------|
+        | textViewTopline                           |
+        | textViewDate      textViewTitle           |
+        | imageView         textViewFirstSentence   |
+        |                                           |
+        |                                           |
+        |                                           |
+        |-------------------------------------------|
+
+               news_view_nocontent.xml
+        |-------------------------------------------|
+        | textViewTopline                           |
+        | textViewDate      textViewTitle           |
+        | imageView                                 |
+        |                                           |
+        |                                           |
+        |                                           |
+        |-------------------------------------------|
+
+               news_view_nocontent_notitle.xml
+        |-------------------------------------------|
+        | textViewTopline                           |
+        | textViewDate      imageView               |
+        |                                           |
+        |                                           |
+        |                                           |
+        |                                           |
+        |-------------------------------------------|
+
+         */
+
+        // topline (only the news items from Source.HOME have toplines)
         String newsTopline = news.getTopline();
-        if (TextUtils.isEmpty(newsTopline)) {
-            titleReplacesTopline = true;
-            newsTopline = news.getTitle();
-        }
+        boolean hasTopline = !TextUtils.isEmpty(newsTopline);
+        boolean titleReplacesTopline = !hasTopline;
+        if (!hasTopline) newsTopline = news.getTitle();
         if (newsTopline != null) newsTopline = newsTopline.trim();
         this.textViewTopline.setTypeface(Util.getTypefaceForTextView(this.textViewTopline, newsTopline));
         this.textViewTopline.setText(fixQ ? Util.fixQuotationMarks(newsTopline) : newsTopline);
@@ -183,14 +207,25 @@ public class NewsView extends RelativeLayout {
         } else {
             this.textViewTopline.setTextColor(Color.BLACK);
         }
-        //
+
+        // title
         if (this.textViewTitle != null) {
             if (!titleReplacesTopline) {
                 String title = news.getTitle(); if (title != null) title = title.trim();
                 this.textViewTitle.setText(fixQ ? Util.fixQuotationMarks(title) : title);
                 this.textViewTitle.setVisibility(View.VISIBLE);
+                if (this.textViewFirstSentence != null) {
+                    RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
+                    lp.removeRule(RelativeLayout.BELOW);
+                    lp.addRule(RelativeLayout.BELOW, R.id.textViewTitle);
+                }
             } else {
                 this.textViewTitle.setVisibility(View.GONE);
+                if (this.textViewFirstSentence != null) {
+                    RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
+                    lp.removeRule(RelativeLayout.BELOW);
+                    lp.addRule(RelativeLayout.BELOW, R.id.textViewTopline);
+                }
             }
         }
 
@@ -203,34 +238,16 @@ public class NewsView extends RelativeLayout {
             this.textViewDate.setText(null);
         }
 
-        // firstSentence or shorttext
+        // firstSentence or shorttext or content.plainText
         if (this.textViewFirstSentence != null) {
-            String fs = news.getFirstSentence();
+            String fs = news.getTextForTextViewFirstSentence();
             if (!TextUtils.isEmpty(fs)) {
                 this.textViewFirstSentence.setText(fixQ ? Util.fixQuotationMarks(fs.trim()) : fs.trim());
                 this.textViewFirstSentence.setVisibility(View.VISIBLE);
             } else {
-                String st = news.getShorttext();
-                if (!TextUtils.isEmpty(st) && !st.equals(news.getTitle())) {
-                    this.textViewFirstSentence.setText(fixQ ? Util.fixQuotationMarks(st.trim()) : st.trim());
-                    this.textViewFirstSentence.setVisibility(View.VISIBLE);
-                } else {
-                    Content content = news.getContent();
-                    if (content != null) {
-                        String pt = news.getContent().getPlainText();
-                        if (!TextUtils.isEmpty(pt)) {
-                            this.textViewFirstSentence.setText(fixQ ? Util.fixQuotationMarks(pt) : pt);
-                            this.textViewFirstSentence.setVisibility(View.VISIBLE);
-                        } else {
-                            this.textViewFirstSentence.setVisibility(View.GONE);
-                            this.textViewFirstSentence.setText(null);
-                        }
-                    } else {
-                        this.textViewFirstSentence.setVisibility(View.GONE);
-                        this.textViewFirstSentence.setText(null);
-                    }
-                }
-            }
+                this.textViewFirstSentence.setVisibility(View.GONE);
+                this.textViewFirstSentence.setText(null);
+             }
         }
 
         // as the last step, load the image
@@ -276,8 +293,10 @@ public class NewsView extends RelativeLayout {
         } else {
             imageViewMaxWidth = Util.getDisplaySize(ctx).x;
         }
-        // get the image url; if the type is "video", then preferrably in landscape orientation
-        final TeaserImage.MeasuredImage measuredImage = image.getBestImageForWidth(imageViewMaxWidth, News.NEWS_TYPE_VIDEO.equals(news.getType()));
+        // get the image url; if this NewsView was inflated from news_view_nocontent_notitle (no textViewTitle and no textViewFirstSentence), then preferrably in landscape orientation
+        boolean landscapePreferred = this.textViewTitle == null && this.textViewFirstSentence == null;
+        //
+        final TeaserImage.MeasuredImage measuredImage = image.getBestImageForWidth(imageViewMaxWidth, landscapePreferred);
         this.imageView.setTag(measuredImage != null ? measuredImage.url : null);
         if (!TextUtils.isEmpty(image.getTitle())) {
             this.imageView.setContentDescription(image.getTitle());

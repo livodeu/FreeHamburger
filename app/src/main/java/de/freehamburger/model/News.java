@@ -373,6 +373,29 @@ public final class News implements Comparable<News>, Serializable {
         return this.teaserImage;
     }
 
+    /**
+     * @return the text that goes into the {@link de.freehamburger.views.NewsView#textViewFirstSentence large TextView} within a {@link de.freehamburger.views.NewsView NewsView}
+     */
+    @Nullable
+    public String getTextForTextViewFirstSentence() {
+        if (!TextUtils.isEmpty(this.firstSentence)) {
+            return this.firstSentence;
+        }
+        if (!TextUtils.isEmpty(this.shorttext) && !this.shorttext.equals(getTextForTextViewTitle())) {
+            return this.shorttext;
+        }
+        if (this.content != null && !TextUtils.isEmpty(this.content.getPlainText())) {
+            return this.content.getPlainText();
+        }
+        return null;
+    }
+
+    @Nullable
+    private String getTextForTextViewTitle() {
+        if (!TextUtils.isEmpty(this.title) && !TextUtils.isEmpty(this.topline)) return this.title;
+        return null;
+    }
+
     @Nullable
     public String getTitle() {
         return this.title;
@@ -409,6 +432,31 @@ public final class News implements Comparable<News>, Serializable {
     @NewsType
     public final String getType() {
         return this.type;
+    }
+
+    /**
+     * Determines whether this News provides a text that goes into the 3rd level text view next to the image.
+     * @return {@code true} if this News has got text to fill the {@link de.freehamburger.views.NewsView#textViewFirstSentence large TextView} within a {@link de.freehamburger.views.NewsView NewsView}
+     */
+    public boolean hasTextForTextViewFirstSentence() {
+        return !TextUtils.isEmpty(this.firstSentence)
+                || (!TextUtils.isEmpty(this.shorttext) && !this.shorttext.equals(getTextForTextViewTitle()))
+                || (this.content != null && !TextUtils.isEmpty(this.content.getPlainText()));
+    }
+
+    /**
+     * Determines whether this News provides a text that goes into the 2nd level text view next to the date.
+     * @return {@code true} if this News has got a text that goes into the {@link de.freehamburger.views.NewsView#textViewTitle title view} within a {@link de.freehamburger.views.NewsView NewsView}
+     */
+    public boolean hasTextForTextViewTitle() {
+        return !TextUtils.isEmpty(this.title) && !TextUtils.isEmpty(this.topline);
+    }
+
+    /**
+     * @return {@code true} if this News has got a title
+     */
+    public boolean hasTitle() {
+        return !TextUtils.isEmpty(this.title);
     }
 
     /** {@inheritDoc} */
