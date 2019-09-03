@@ -816,11 +816,12 @@ public class Util {
      * @param ctx Context
      * @param rawId raw resource id
      * @param expextedNumberOfLines expected number of lines to be read
+     * @param trim if {@code true}, trim lines
      * @return List of Strings, one for each line
      * @throws IllegalArgumentException if {@code expectedNumberOfLines} is negative
      */
     @NonNull
-    public static List<String> loadResourceTextFile(@NonNull Context ctx, @RawRes int rawId, @IntRange(from = 0) int expextedNumberOfLines) {
+    public static List<String> loadResourceTextFile(@NonNull Context ctx, @RawRes int rawId, @IntRange(from = 0) int expextedNumberOfLines, final boolean trim) {
         final List<String> lines = new ArrayList<>(expextedNumberOfLines);
         InputStream in = null;
         try {
@@ -829,7 +830,7 @@ public class Util {
             for (; ; ) {
                 String line = reader.readLine();
                 if (line == null) break;
-                line = line.trim();
+                if (trim) line = line.trim();
                 if (line.length() == 0 || line.startsWith("#")) continue;
                 lines.add(line);
             }
