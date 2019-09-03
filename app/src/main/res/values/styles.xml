@@ -61,6 +61,7 @@
         <item name="android:textAppearance">@style/TextAppearance.AppCompat.Body2.White</item>
         <item name="android:itemTextAppearance">@style/TextAppearance.AppCompat.Body2.White</item>
         <item name="android:itemBackground">@drawable/bg_menuitem</item>
+        <item name="subMenuArrow">@drawable/ic_arrow_right_ededed_24dp</item>
     </style>
 
     <style name="TextAppearance.AppCompat.Body2.White" parent="TextAppearance.AppCompat.Body2">
