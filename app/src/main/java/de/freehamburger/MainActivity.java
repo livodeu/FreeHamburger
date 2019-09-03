@@ -817,7 +817,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         if (savedInstanceState != null) {
-            if (BuildConfig.DEBUG) Log.i(TAG, "onCreate(): savedInstanceState is non-null");
             this.currentSource = Source.valueOf(savedInstanceState.getString(STATE_SOURCE, Source.HOME.name()));
             updateTitle();
             this.recentSources.clear();
@@ -1027,7 +1026,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 latest = ts;
             }
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("All past background updates");
+            builder.setTitle("Past background updates");
             builder.setMessage(sb);
             builder.setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
             builder.show();
@@ -1087,13 +1086,16 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
                     .setNeutralButton(R.string.label_license, (dialog, which) -> {
                         dialog.dismiss();
-                        List<String> l = Util.loadResourceTextFile(MainActivity.this, R.raw.agpl, 544);
+                        List<String> l = Util.loadResourceTextFile(MainActivity.this, R.raw.agpl, 544, false);
                         StringBuilder sb = new StringBuilder(34523);
                         for (String line : l) sb.append(line).append('\n');
                         @SuppressLint("InflateParams")
                         ScrollView sv = (ScrollView)getLayoutInflater().inflate(R.layout.multi_text_view, null);
                         TextView tv = sv.findViewById(R.id.textView);
-                        tv.setTextScaleX(0.75f);
+                        // reduce text width for small to medium devices
+                        if (Util.getDisplayDim(MainActivity.this).x < 8f) {
+                            tv.setTextScaleX(0.75f);
+                        }
                         tv.setText(sb);
                         tv.setContentDescription(getString(R.string.label_license));
                         ClipboardManager cm = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
@@ -1495,8 +1497,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 MainActivity.this.swipeRefreshLayout.setRefreshing(false);
                 return;
             }
-            List<News> jointList = blob.getAllNews();
-            MainActivity.this.newsAdapter.setNewsList(jointList, MainActivity.this.currentSource);
+            List<News> sortedJointList = blob.getAllNews();
+            MainActivity.this.newsAdapter.setNewsList(sortedJointList, MainActivity.this.currentSource);
             Date blobDate = blob.getDate();
             if (blobDate != null) {
                 if (!file.setLastModified(blobDate.getTime())) {
@@ -1552,7 +1554,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 if (source != null) {
                     long ts = SearchHelper.getCreationTime(app, source);
                     if (ts < blobDate.getTime()) {
-                        SearchHelper.createSearchSuggestions(app, source, jointList, false);
+                        SearchHelper.createSearchSuggestions(app, source, sortedJointList, false);
                     }
                 }
             }
@@ -1744,7 +1746,10 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             this.recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
         } else {
             if (old instanceof LinearLayoutManager) return;
-            this.recyclerView.setLayoutManager(new LinearLayoutManager(this));
+            LinearLayoutManager llm = new LinearLayoutManager(this);
+            // https://medium.com/google-developers/recyclerview-prefetch-c2f269075710
+            llm.setInitialPrefetchItemCount(6);
+            this.recyclerView.setLayoutManager(llm);
         }
     }
 
