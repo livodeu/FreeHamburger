@@ -466,7 +466,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         new Thread() {
             @Override
             public void run() {
-                PERMITTED_HOSTS.addAll(Util.loadResourceTextFile(App.this, R.raw.permitted_hosts, 28));
+                PERMITTED_HOSTS.addAll(Util.loadResourceTextFile(App.this, R.raw.permitted_hosts, 28, true));
             }
         }.start();
 
