@@ -170,7 +170,7 @@ public class TextFilter implements Filter {
             if (startsWith(news.getFirstSentenceLowerCase(), phrase)) return false;
             if (startsWith(news.getToplineLowerCase(), phrase)) return false;
             if (startsWith(news.getTitleLowerCase(), phrase)) return false;
-            if (news.getContent() != null && startsWith(news.getContent().getText().toLowerCase(Locale.GERMAN), phrase)) return false;
+            if (news.getContent() != null && startsWith(news.getContent().getHtmlText().toLowerCase(Locale.GERMAN), phrase)) return false;
             for (String tag : news.getTags()) {
                 if (startsWith(tag.toLowerCase(Locale.GERMAN), phrase)) return false;
             }
@@ -181,7 +181,7 @@ public class TextFilter implements Filter {
             if (endsWith(news.getFirstSentenceLowerCase(), phrase)) return false;
             if (endsWith(news.getToplineLowerCase(), phrase)) return false;
             if (endsWith(news.getTitleLowerCase(), phrase)) return false;
-            if (news.getContent() != null && endsWith(news.getContent().getText().toLowerCase(Locale.GERMAN), phrase)) return false;
+            if (news.getContent() != null && endsWith(news.getContent().getHtmlText().toLowerCase(Locale.GERMAN), phrase)) return false;
             for (String tag : news.getTags()) {
                 if (endsWith(tag.toLowerCase(Locale.GERMAN), phrase)) return false;
             }
@@ -192,7 +192,7 @@ public class TextFilter implements Filter {
             if (news.getFirstSentenceLowerCase() != null && news.getFirstSentenceLowerCase().contains(phrase)) return false;
             if (news.getToplineLowerCase() != null && news.getToplineLowerCase().contains(phrase)) return false;
             if (news.getTitleLowerCase() != null && news.getTitleLowerCase().contains(phrase)) return false;
-            if (news.getContent() != null && news.getContent().getText().toLowerCase(Locale.GERMAN).contains(phrase)) return false;
+            if (news.getContent() != null && news.getContent().getHtmlText().toLowerCase(Locale.GERMAN).contains(phrase)) return false;
             for (String tag : news.getTags()) {
                 if (tag.toLowerCase(Locale.GERMAN).contains(phrase)) return false;
             }
