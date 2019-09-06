@@ -6,14 +6,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringDef;
 import android.support.annotation.VisibleForTesting;
-import android.text.Editable;
 import android.text.Html;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.JsonToken;
 import android.util.MalformedJsonException;
-
-import org.xml.sax.XMLReader;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -75,7 +73,9 @@ public class Content implements Serializable {
     @NonNull private final List<Video> videoList = new ArrayList<>();
     @NonNull private final List<Audio> audioList = new ArrayList<>();
     @NonNull private final List<Related> relatedList = new ArrayList<>();
+    /** the HTML text */
     private String text;
+    /** the plain text */
     private String plainText;
 
     /**
@@ -118,10 +118,14 @@ public class Content implements Serializable {
             if (ContentElement.TYPE_TEXT.equals(type)) {
                 String value = ce.getValue();
                 if (value != null) {
+                    // the value has to be pre-processed because Html.fromHtml() which is used in NewsActivity.applyNews() is not perfect…
                     CharSequence cs = Util.replaceAll(value, new CharSequence [] {"<br />", "\t", "\r\n\r\n", "&nbsp;"}, new CharSequence[] {"\n", " ", "\n", " "});
                     StringBuilder sb = Util.removeHtmlLists(cs);
+                    // create html text
                     htmlTextBuilder.append(sb).append("<br><br>");
-                    plainTextBuilder.append(Util.removeLinks(sb)).append('\n');
+                    // create plain text
+                    Spanned spannedPlainText = Util.fromHtml(Util.removeLinks(sb).toString(), null);
+                    plainTextBuilder.append(spannedPlainText).append('\n');
                 }
             } else if (ContentElement.TYPE_HEADLINE.equals(type)) {
                 String value = ce.getValue();
@@ -288,7 +292,7 @@ public class Content implements Serializable {
     /**
      * @return HTML text
      */
-    public String getText() {
+    public String getHtmlText() {
         return text;
     }
 
@@ -484,38 +488,5 @@ public class Content implements Serializable {
         @Retention(RetentionPolicy.SOURCE)
         @StringDef({TYPE_TEXT, TYPE_HEADLINE, TYPE_IMAGE_GALLERY, TYPE_VIDEO, TYPE_AUDIO, TYPE_BOX, TYPE_LIST, TYPE_RELATED, TYPE_QUOTATION, TYPE_SOCIALMEDIA, TYPE_WEBVIEW})
         @interface ContentType {}
-    }
-
-    /**
-     *
-     */
-    public static class ContentTagHandler implements Html.TagHandler {
-
-        public ContentTagHandler() {
-            super();
-        }
-
-        /** {@inheritDoc} */
-        @Override
-        public void handleTag(boolean opening, String tag, Editable output, XMLReader xmlReader) {
-            char lastChar = output.length() > 0 ? output.charAt(output.length() - 1) : 0;
-            android.util.Log.i("CTH",
-                    "handleTag(" + opening + ", \"" + tag + "\", " + (output.length() > 0 ? "[\"" + output.subSequence(Math.max(0, output.length() - 20), output.length())+ "\"]" : "[]") + ", ...)");
-            if (opening) {
-                switch (tag) {
-                    case "p":
-                    case "div":
-                        if (lastChar != '\n') output.append('\n');
-                        break;
-                    case "ul":
-                        output.append('\n');
-                        break;
-                    case "li":
-                        output.append(lastChar == '\n' ? " •  " : "\n •  ");
-                        break;
-                }
-
-            }
-        }
     }
 }
