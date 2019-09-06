@@ -173,6 +173,10 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /** timestamp indicating when a refresh failed because there was no network available */
     private long lastTimeRefreshFailedDueToNoNetwork = 0L;
     private PopupManager popupManager;
+    /** used to remember the preferences before SettingsActivity is invoked, should be set in {@link #onMenuItemSelected(MenuItem)} */
+    private Map<String, ?> recentPreferences = null;
+    /** used to remember the font before SettingsActivity is invoked (separate from recentPreferences because, {@link SharedPreferences#getAll() according to docs}, they must not be modified) */
+    private long recentFontTimestamp = 0L;
 
     /**
      * Switches to another {@link Source}.<br>
@@ -414,7 +418,9 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 return;
             }
         }
-        if (("https".equals(scheme) || "http".equals(scheme)) && !"www.tagesschau.de".equalsIgnoreCase(host) && !"www.ard-text.de".equalsIgnoreCase(host)) {
+        if (("https".equals(scheme) || "http".equals(scheme))
+                && !getString(R.string.viewable_host_1).equalsIgnoreCase(host)
+                && !getString(R.string.viewable_host_2).equalsIgnoreCase(host)) {
             if (BuildConfig.DEBUG) Log.e(TAG, "Invalid host \"" + host + "\"");
             finish();
         }
@@ -532,6 +538,9 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     News parsed = News.parseNews(reader, news.isRegional());
                     Util.close(reader);
                     reader = null;
+                    if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
+                        News.correct(parsed);
+                    }
                     Intent intent = new Intent(MainActivity.this, NewsActivity.class);
                     intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
                     startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(this, R.anim.fadein, R.anim.fadeout).toBundle());
@@ -564,7 +573,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             // ask user whether (s)he had enough
             this.snackbarMaybeQuit = Snackbar.make(this.coordinatorLayout, R.string.action_quit, 5_000);
             this.snackbarMaybeQuit.setAction(R.string.label_yes, v -> finish());
-            Util.fadeSnackbar(this.snackbarMaybeQuit, 4900L);
+            Util.fadeSnackbar(this.snackbarMaybeQuit, 4_900L);
         } else {
             finish();
         }
@@ -1008,9 +1017,65 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return true;
         }
         if (id == R.id.action_settings) {
+            // remember current preferences to be able to detect changes in onRestart()
+            this.recentPreferences = PreferenceManager.getDefaultSharedPreferences(this).getAll();
+            this.recentFontTimestamp = new File(getFilesDir(), App.FONT_FILE).lastModified();
+            //
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
+        if (id == R.id.action_info) {
+            final SpannableStringBuilder info = new SpannableStringBuilder().append('\n');
+            SpannableString title = new SpannableString(getString(R.string.app_name));
+            title.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            SpannableString version = new SpannableString(BuildConfig.VERSION_NAME);
+            version.setSpan(new RelativeSizeSpan(0.75f), 0, version.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            info.append(title).append(' ').append(version);
+            info.append("\n\n").append(getString(R.string.app_build_date, DateFormat.getDateTimeInstance().format(new Date(BuildConfig.BUILD_TIME))));
+            info.append("\n\n").append(getString(R.string.app_license));
+            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppAlertDialogTheme)
+                    .setTitle(R.string.action_info)
+                    .setMessage(info)
+                    .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
+                    .setNeutralButton(R.string.label_license, (dialog, which) -> {
+                        dialog.dismiss();
+                        List<String> l = Util.loadResourceTextFile(MainActivity.this, R.raw.agpl, 544, false);
+                        StringBuilder sb = new StringBuilder(34523);
+                        for (String line : l) sb.append(line).append('\n');
+                        @SuppressLint("InflateParams")
+                        ScrollView sv = (ScrollView)getLayoutInflater().inflate(R.layout.multi_text_view, null);
+                        TextView tv = sv.findViewById(R.id.textView);
+                        // reduce text width for small to medium devices
+                        if (Util.getDisplayDim(MainActivity.this).x < 8f) {
+                            tv.setTextScaleX(0.75f);
+                        }
+                        tv.setText(sb);
+                        tv.setContentDescription(getString(R.string.label_license));
+                        ClipboardManager cm = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                        AlertDialog.Builder lb = new AlertDialog.Builder(MainActivity.this, R.style.AppAlertDialogTheme)
+                                .setTitle(R.string.label_license)
+                                .setView(sv)
+                                .setPositiveButton(android.R.string.ok, (dialog1, which1) -> dialog1.dismiss());
+                        if (cm != null) {
+                            lb.setNeutralButton(android.R.string.copy, (dialog12, which12) -> {
+                                cm.setPrimaryClip(ClipData.newPlainText("AGPL-3.0", sb));
+                                Snackbar.make(coordinatorLayout, R.string.msg_text_copied, Snackbar.LENGTH_SHORT).show();
+                            });
+                        }
+                        this.infoDialog = lb.create();
+                        Window dw = this.infoDialog.getWindow();
+                        if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
+                        this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+                        this.infoDialog.show();
+                    })
+                    ;
+            this.infoDialog = builder.create();
+            Window dw = this.infoDialog.getWindow();
+            if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
+            this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+            this.infoDialog.show();
+        }
+        // the following commands are for debug only
         if (id == R.id.action_show_updates) {
             List<Long> tss = UpdateJobService.getAllRequests(this);
             int n = tss.size();
@@ -1070,57 +1135,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 Snackbar.make(this.coordinatorLayout, R.string.error_no_app, Snackbar.LENGTH_LONG).show();
             }
             return true;
-        }
-        if (id == R.id.action_info) {
-            final SpannableStringBuilder info = new SpannableStringBuilder().append('\n');
-            SpannableString title = new SpannableString(getString(R.string.app_name));
-            title.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            SpannableString version = new SpannableString(BuildConfig.VERSION_NAME);
-            version.setSpan(new RelativeSizeSpan(0.75f), 0, version.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            info.append(title).append(' ').append(version);
-            info.append("\n\n").append(getString(R.string.app_build_date, DateFormat.getDateTimeInstance().format(new Date(BuildConfig.BUILD_TIME))));
-            info.append("\n\n").append(getString(R.string.app_license));
-            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppAlertDialogTheme)
-                    .setTitle(R.string.action_info)
-                    .setMessage(info)
-                    .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
-                    .setNeutralButton(R.string.label_license, (dialog, which) -> {
-                        dialog.dismiss();
-                        List<String> l = Util.loadResourceTextFile(MainActivity.this, R.raw.agpl, 544, false);
-                        StringBuilder sb = new StringBuilder(34523);
-                        for (String line : l) sb.append(line).append('\n');
-                        @SuppressLint("InflateParams")
-                        ScrollView sv = (ScrollView)getLayoutInflater().inflate(R.layout.multi_text_view, null);
-                        TextView tv = sv.findViewById(R.id.textView);
-                        // reduce text width for small to medium devices
-                        if (Util.getDisplayDim(MainActivity.this).x < 8f) {
-                            tv.setTextScaleX(0.75f);
-                        }
-                        tv.setText(sb);
-                        tv.setContentDescription(getString(R.string.label_license));
-                        ClipboardManager cm = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
-                        AlertDialog.Builder lb = new AlertDialog.Builder(MainActivity.this, R.style.AppAlertDialogTheme)
-                                .setTitle(R.string.label_license)
-                                .setView(sv)
-                                .setPositiveButton(android.R.string.ok, (dialog1, which1) -> dialog1.dismiss());
-                        if (cm != null) {
-                            lb.setNeutralButton(android.R.string.copy, (dialog12, which12) -> {
-                                cm.setPrimaryClip(ClipData.newPlainText("AGPL-3.0", sb));
-                                Snackbar.make(coordinatorLayout, R.string.msg_text_copied, Snackbar.LENGTH_SHORT).show();
-                            });
-                        }
-                        this.infoDialog = lb.create();
-                        Window dw = this.infoDialog.getWindow();
-                        if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
-                        this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
-                        this.infoDialog.show();
-                    })
-                    ;
-            this.infoDialog = builder.create();
-            Window dw = this.infoDialog.getWindow();
-            if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
-            this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
-            this.infoDialog.show();
         }
         return false;
     }
@@ -1392,6 +1406,29 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (this.pausedAt > 0L && System.currentTimeMillis() - this.pausedAt > 300_000L) {
             // scroll to the top if the most recent user interaction was quite a while ago (so the user will likely have forgotten)
             this.listPositionToRestore = 0;
+        }
+        // check whether preferences have changed that affect the display (they might have if the user has just left the SettingsActivity)
+        if (this.recentPreferences != null) {
+            SharedPreferences currentPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+            // recent* are the settings that applied before SettingsActivity was invoked
+            Object recentBackground = this.recentPreferences.get(App.PREF_BACKGROUND);
+            Object recentTimeMode = this.recentPreferences.get(App.PREF_TIME_MODE_RELATIVE);
+            Object recentCorrectQuotationMarks = this.recentPreferences.get(App.PREF_CORRECT_WRONG_QUOTATION_MARKS);
+            // current* are the current settings
+            @App.BackgroundSelection int currentBackground = currentPrefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
+            boolean currentTimeMode = currentPrefs.getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
+            boolean currentCorrectQuotationMarks = currentPrefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT);
+            long currentFontTimestamp = new File(getFilesDir(), App.FONT_FILE).lastModified();
+            // if any of them changed…
+            if ((recentBackground instanceof Integer && (Integer)recentBackground != currentBackground)
+                    || (recentTimeMode instanceof Boolean && (Boolean)recentTimeMode != currentTimeMode)
+                    || (recentCorrectQuotationMarks instanceof Boolean && (Boolean)recentCorrectQuotationMarks != currentCorrectQuotationMarks)
+                    || this.recentFontTimestamp != currentFontTimestamp) {
+                // then the adapter must be updated
+                this.newsAdapter.notifyDataSetChanged();
+            }
+            this.recentPreferences = null;
+            this.recentFontTimestamp = 0L;
         }
         // next lifecycle method to be called will be onStart() followed by onResume()
     }
