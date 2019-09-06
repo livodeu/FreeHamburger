@@ -224,4 +224,8 @@
 
     <string name="url_wikipedia_http_streaming">https://en.m.wikipedia.org/wiki/HTTP_Live_Streaming</string>
 
+    <!-- viewable_host_x are referred to in the manifest as intent-filter for MainActivity -->
+    <string name="viewable_host_1" translatable="false">www.tagesschau.de</string>
+    <string name="viewable_host_2" translatable="false">www.ard-text.de</string>
+
 </resources>
