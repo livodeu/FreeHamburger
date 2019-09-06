@@ -303,8 +303,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.textViewContent.setText(null);
             return;
         }
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean fixQ = prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, false);
         // top video from news.streams
         String newsVideo = StreamQuality.getStreamsUrl(this, this.news.getStreams());
         if (newsVideo != null) {
@@ -318,7 +316,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         } else {
             this.topVideoView.setVisibility(View.GONE);
         }
-        this.textViewTitle.setText(fixQ ? Util.fixQuotationMarks(this.news.getTitle()) : this.news.getTitle());
+        this.textViewTitle.setText(this.news.getTitle());
         this.textViewTitle.setSelected(true);
         //
         Content content = this.news.getContent();
@@ -397,7 +395,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
         // if there is an audio element or a bottom video, show a warning if audio output is muted
         if (audio != null || (content != null && content.hasVideo())) {
-            if (this.originalAudioVolume == 0 && prefs.getBoolean(App.PREF_WARN_MUTE, true)) {
+            if (this.originalAudioVolume == 0 && PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_WARN_MUTE, true)) {
                 ImageView muteWarning = findViewById(R.id.muteWarning);
                 if (muteWarning != null) {
                     AnimatorSet set = new AnimatorSet();
@@ -724,6 +722,9 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     News news = News.parseNews(reader, false);
                     Util.close(reader);
                     reader = null;
+                    if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
+                        News.correct(news);
+                    }
                     Intent intent = new Intent(this, NewsActivity.class);
                     intent.putExtra(NewsActivity.EXTRA_NEWS, news);
                     // prevent going "back" to MainActivity because the preceding activity is <this>, not a MainActivity
@@ -1038,6 +1039,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     News parsed = News.parseNews(reader, this.news.isRegional());
                     Util.close(reader);
                     reader = null;
+                    // it is probably not necessary here to call News.correct()
                     Intent intent = new Intent(NewsActivity.this, VideoActivity.class);
                     intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
                     startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(this, R.anim.fadein, R.anim.fadeout).toBundle());
