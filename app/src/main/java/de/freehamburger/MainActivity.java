@@ -566,7 +566,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             finish();
             return;
         }
-        boolean ask = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_ASK_BEFORE_FINISH, true);
+        boolean ask = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_ASK_BEFORE_FINISH, App.PREF_ASK_BEFORE_FINISH_DEFAULT);
         if (ask) {
             // close drawer because otherwise the snackbar action is not visible
             this.drawerLayout.closeDrawer(Gravity.END, true);

@@ -81,7 +81,7 @@ public class RelatedView extends RelativeLayout {
         inflater.inflate(getLayoutId(), this);
         imageViewRelated = findViewById(R.id.imageViewRelated);
         imageViewType = findViewById(R.id.imageViewType);
-        boolean hwBmps = PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_USE_HARDWARE_BMPS, true);
+        boolean hwBmps = PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_USE_HARDWARE_BMPS, App.PREF_USE_HARDWARE_BMPS_DEFAULT);
         imageViewRelated.setLayerType(hwBmps ? View.LAYER_TYPE_HARDWARE : View.LAYER_TYPE_SOFTWARE, null);
         textViewDate = findViewById(R.id.textViewDate);
         textViewTitle = findViewById(R.id.textViewTitle);

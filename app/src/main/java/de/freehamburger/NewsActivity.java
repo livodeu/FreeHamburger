@@ -395,7 +395,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
         // if there is an audio element or a bottom video, show a warning if audio output is muted
         if (audio != null || (content != null && content.hasVideo())) {
-            if (this.originalAudioVolume == 0 && PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_WARN_MUTE, true)) {
+            if (this.originalAudioVolume == 0 && PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_WARN_MUTE, App.PREF_WARN_MUTE_DEFAULT)) {
                 ImageView muteWarning = findViewById(R.id.muteWarning);
                 if (muteWarning != null) {
                     AnimatorSet set = new AnimatorSet();
@@ -462,7 +462,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             }
 
             // if desired, replace all URLSpans linking to permitted hosts with InternalURLSpans which allows to open the urls internally
-            boolean internalLinks = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_OPEN_LINKS_INTERNALLY, true);
+            boolean internalLinks = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_OPEN_LINKS_INTERNALLY, App.PREF_OPEN_LINKS_INTERNALLY_DEFAULT);
 
             URLSpan[] urlSpans = spannable.getSpans(0, spannable.length(), URLSpan.class);
             if (urlSpans != null) {

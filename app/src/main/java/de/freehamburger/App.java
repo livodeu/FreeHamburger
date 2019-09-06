@@ -96,6 +96,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final boolean DEFAULT_LOAD_VIDEOS_OVER_MOBILE = false;
     /** boolean: open web links internally instead of posting an {@link Intent#ACTION_VIEW} intent */
     public static final String PREF_OPEN_LINKS_INTERNALLY = "pref_open_links_internally";
+    public static final boolean PREF_OPEN_LINKS_INTERNALLY_DEFAULT = true;
     /** String: DIRECT, HTTP or SOCKS */
     public static final String PREF_PROXY_TYPE = "pref_proxy_type";
     public static final String PREF_REGIONS = "pref_regions";
@@ -104,10 +105,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final boolean PREF_TIME_MODE_RELATIVE_DEFAULT = true;
     /** boolean: ask before leaving the app */
     public static final String PREF_ASK_BEFORE_FINISH = "pref_ask_before_finish";
+    public static final boolean PREF_ASK_BEFORE_FINISH_DEFAULT = true;
     /** int: 0 closes the app; 1 navigates to home category; 2 navigates to recent section; see {@link BackButtonBehaviour} */
     public static final String PREF_USE_BACK_IN_APP = "pref_use_back";
     /** boolean */
     public static final String PREF_WARN_MUTE = "pref_warn_mute";
+    public static final boolean PREF_WARN_MUTE_DEFAULT = true;
     /** String: proxyserver:port */
     public static final String PREF_PROXY_SERVER = "pref_proxy_server";
     /** String set */
@@ -130,8 +133,10 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_POLL_NIGHT_END = "pref_poll_night_end";
     /** boolean -  See <a href="https://en.wikipedia.org/wiki/Quotation_mark#German">here</a> */
     public static final String PREF_CORRECT_WRONG_QUOTATION_MARKS = "pref_correct_quotation_marks";
+    public static final boolean PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT = false;
     /** boolean - use {@link android.graphics.Bitmap.Config#HARDWARE} for decoding bitmaps (only for Oreo and beyond) */
     public static final String PREF_USE_HARDWARE_BMPS = "pres_use_hardware_bmps";
+    public static final boolean PREF_USE_HARDWARE_BMPS_DEFAULT = true;
     /** ColorSpace to use when decoding bitmaps (apparently not [yet] supported by Picasso, see {@link com.squareup.picasso.RequestHandler#createBitmapOptions(Request)}) */
     public static final String PREF_COLORSPACE = "pref_colorspace";
     public static final TimeZone TIMEZONE = TimeZone.getTimeZone("Europe/Berlin");
@@ -478,7 +483,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 if (e instanceof IllegalArgumentException && e.toString().contains("Software rendering doesn't support hardware bitmaps")) {
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(App.this);
                     SharedPreferences.Editor ed = prefs.edit();
-                    ed.putBoolean(App.PREF_USE_HARDWARE_BMPS, false);
+                    ed.putBoolean(PREF_USE_HARDWARE_BMPS, PREF_USE_HARDWARE_BMPS_DEFAULT);
                     ed.commit();
                 }
                 if (BuildConfig.DEBUG) {

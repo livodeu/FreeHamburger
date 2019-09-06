@@ -668,7 +668,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
             BITMAPFACTORY_OPTIONS.inPreferredConfig = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                     && prefs
-                    .getBoolean(App.PREF_USE_HARDWARE_BMPS, true)
+                    .getBoolean(App.PREF_USE_HARDWARE_BMPS, App.PREF_USE_HARDWARE_BMPS_DEFAULT)
                     ? Bitmap.Config.HARDWARE : Bitmap.Config.RGB_565;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 String cs = prefs.getString(App.PREF_COLORSPACE, ColorSpace.Named.SRGB.name());
