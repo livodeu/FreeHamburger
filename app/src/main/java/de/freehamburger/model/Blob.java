@@ -97,8 +97,10 @@ public class Blob {
         }
         reader.endObject();
         //
-        News.correct(prefs, blob.newsList);
-        News.correct(prefs, blob.regionalNewsList);
+        if (prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
+            News.correct(blob.newsList);
+            News.correct(blob.regionalNewsList);
+        }
         //
         return blob;
     }
