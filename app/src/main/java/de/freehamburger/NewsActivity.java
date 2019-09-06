@@ -35,10 +35,10 @@ import android.support.annotation.StringRes;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.Html;
 import android.text.Spannable;
 import android.text.Spanned;
 import android.text.TextPaint;
@@ -71,6 +71,7 @@ import com.google.android.exoplayer2.ui.PlayerView;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -434,21 +435,12 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
 
         //
-        String text = content != null ? content.getText() : null;
-        if (TextUtils.isEmpty(text)) {
+        String htmlText = content != null ? content.getHtmlText() : null;
+        if (TextUtils.isEmpty(htmlText)) {
             this.textViewContent.setVisibility(View.GONE);
             this.textViewContent.setText(null);
         } else {
-            Spanned spanned;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                spanned = Html.fromHtml(text, Html.FROM_HTML_MODE_COMPACT, this.service, new Content.ContentTagHandler());
-            } else {
-                spanned = Html.fromHtml(text, this.service, new Content.ContentTagHandler());
-                // remove superfluous blank lines that have been introduced by Html.FROM_HTML_MODE_LEGACY
-                spanned = Util.replaceAll(spanned, "\n" + Content.REMOVE_NEW_LINE, "");
-                // this is just to be sure that no REMOVE_NEW_LINE will be left
-                spanned = Util.replaceAll(spanned, Content.REMOVE_NEW_LINE, "");
-            }
+            Spanned spanned = Util.fromHtml(htmlText, this.service);
             this.textViewContent.setText(spanned, TextView.BufferType.SPANNABLE);
             this.textViewContent.setVisibility(View.VISIBLE);
 
@@ -1019,7 +1011,47 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         if (related == null) return;
         String url = related.getDetails();
         if (url == null) return;
-        newNewsActivity(url);
+        // if the type is video, launch a VideoActivity instead of a NewsActivity
+        if ("video".equals(related.getType())) {
+            if (Util.isNetworkMobile(this)) {
+                boolean loadVideos = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_LOAD_VIDEOS_OVER_MOBILE, App.DEFAULT_LOAD_VIDEOS_OVER_MOBILE);
+                if (!loadVideos) {
+                    Snackbar.make(this.coordinatorLayout, R.string.pref_title_pref_load_videos_over_mobile_off, Snackbar.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+            File tempFile = new File(getCacheDir(), "temp.json");
+            this.service.loadFile(url, tempFile, (completed, result) -> {
+                if (!completed || result == null) {
+                    Util.deleteFile(tempFile);
+                    return;
+                }
+                if (result.rc >= 400) {
+                    Snackbar.make(NewsActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
+                    Util.deleteFile(tempFile);
+                    return;
+                }
+                JsonReader reader = null;
+                try {
+                    reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
+                    reader.setLenient(true);
+                    News parsed = News.parseNews(reader, this.news.isRegional());
+                    Util.close(reader);
+                    reader = null;
+                    Intent intent = new Intent(NewsActivity.this, VideoActivity.class);
+                    intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
+                    startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(this, R.anim.fadein, R.anim.fadeout).toBundle());
+                } catch (Exception e) {
+                    Util.close(reader);
+                    if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
+                    Snackbar.make(NewsActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_LONG).show();
+                } finally {
+                    Util.deleteFile(tempFile);
+                }
+            });
+        } else {
+            newNewsActivity(url);
+        }
     }
 
     /** {@inheritDoc} */
