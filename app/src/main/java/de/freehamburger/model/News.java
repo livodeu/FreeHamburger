@@ -1,6 +1,5 @@
 package de.freehamburger.model;
 
-import android.content.SharedPreferences;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -26,9 +25,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.util.Log;
+import de.freehamburger.util.Util;
 
 /**
  *
@@ -83,21 +82,28 @@ public final class News implements Comparable<News>, Serializable {
     private transient String firstSentenceL;
 
     /**
-     * Fixes the given News objects according to the User's preferences.<br>
+     * Fixes the given News objects.<br>
      * This currently includes the correction of wrong (" ") quotation marks.
-     * @param prefs SharedPreferences
      * @param someNews Collection of News
      */
-    static void correct(@NonNull SharedPreferences prefs, @Nullable final Collection<News> someNews) {
-        if (someNews == null) return;
-        final boolean correctQuotationMarks = prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, false);
+    static void correct(@NonNull final Collection<News> someNews) {
         for (News news : someNews) {
-            if (news.corrected) continue;
-            if (correctQuotationMarks) {
-                if (news.content != null) news.content.fixQuotationMarks();
-            }
-            news.corrected = true;
+            correct(news);
         }
+    }
+
+    /**
+     * Fixes the given News object.<br>
+     * This currently includes the correction of wrong (" ") quotation marks.
+     * @param news News
+     */
+    public static void correct(@NonNull final News news) {
+        if (news.corrected) return;
+        if (news.content != null) news.content.fixQuotationMarks();
+        if (news.title != null) news.title = Util.fixQuotationMarks(news.title).toString();
+        if (news.firstSentence != null) news.firstSentence = Util.fixQuotationMarks(news.firstSentence).toString();
+        if (news.topline != null) news.topline = Util.fixQuotationMarks(news.topline).toString();
+        news.corrected = true;
     }
 
     private static void loop(@NonNull final JsonReader reader, @NonNull final News news) throws IOException {
