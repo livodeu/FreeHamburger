@@ -29,6 +29,7 @@ public class RelatedView extends RelativeLayout {
 
     private static final DateFormat DF = DateFormat.getDateInstance(DateFormat.MEDIUM);
     private ImageView imageViewRelated;
+    private ImageView imageViewType;
     private TextView textViewDate;
     private TextView textViewTitle;
     @Nullable
@@ -79,6 +80,7 @@ public class RelatedView extends RelativeLayout {
         if (inflater == null) return;
         inflater.inflate(getLayoutId(), this);
         imageViewRelated = findViewById(R.id.imageViewRelated);
+        imageViewType = findViewById(R.id.imageViewType);
         boolean hwBmps = PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_USE_HARDWARE_BMPS, true);
         imageViewRelated.setLayerType(hwBmps ? View.LAYER_TYPE_HARDWARE : View.LAYER_TYPE_SOFTWARE, null);
         textViewDate = findViewById(R.id.textViewDate);
@@ -89,6 +91,7 @@ public class RelatedView extends RelativeLayout {
         this.related = r;
         if (r == null) {
             imageViewRelated.setImageDrawable(null);
+            imageViewType.setVisibility(View.GONE);
             textViewTitle.setText(null);
             textViewDate.setText(null);
         } else {
@@ -100,6 +103,12 @@ public class RelatedView extends RelativeLayout {
             if (teaserImage == null) return;
             String url = teaserImage.getBestImage();
             if (url == null) return;
+            if ("video".equals(related.getType())) {
+                imageViewType.setVisibility(View.VISIBLE);
+                imageViewType.setImageResource(R.drawable.ic_videocam_ededed_24dp);
+            } else {
+                imageViewType.setVisibility(View.GONE);
+            }
             Context ctx = getContext();
             if (ctx instanceof HamburgerActivity) {
                 HamburgerService service = ((HamburgerActivity) ctx).getHamburgerService();
