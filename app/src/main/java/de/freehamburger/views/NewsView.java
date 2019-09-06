@@ -1,7 +1,6 @@
 package de.freehamburger.views;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.preference.PreferenceManager;
@@ -155,8 +154,6 @@ public class NewsView extends RelativeLayout {
             return;
         }
         Context ctx = getContext();
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        final boolean fixQ = prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, false);
         // the original order is: topline, title, firstSentence
 
         /*
@@ -199,7 +196,7 @@ public class NewsView extends RelativeLayout {
         if (!hasTopline) newsTopline = news.getTitle();
         if (newsTopline != null) newsTopline = newsTopline.trim();
         this.textViewTopline.setTypeface(Util.getTypefaceForTextView(this.textViewTopline, newsTopline));
-        this.textViewTopline.setText(fixQ ? Util.fixQuotationMarks(newsTopline) : newsTopline);
+        this.textViewTopline.setText(newsTopline);
         if (news.isBreakingNews()) {
             this.textViewTopline.setTextColor(getResources().getColor(R.color.colorBreakingNews));
         } else if (REGION_LABELS.contains(newsTopline)) {
@@ -212,7 +209,7 @@ public class NewsView extends RelativeLayout {
         if (this.textViewTitle != null) {
             if (!titleReplacesTopline) {
                 String title = news.getTitle(); if (title != null) title = title.trim();
-                this.textViewTitle.setText(fixQ ? Util.fixQuotationMarks(title) : title);
+                this.textViewTitle.setText(title);
                 this.textViewTitle.setVisibility(View.VISIBLE);
                 if (this.textViewFirstSentence != null) {
                     RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
@@ -232,7 +229,7 @@ public class NewsView extends RelativeLayout {
         // date
         Date date = news.getDate();
         if (date != null) {
-            boolean timeMode = prefs.getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
+            boolean timeMode = PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
             this.textViewDate.setText(timeMode ? getRelativeTime(ctx, date, null) : DF.format(date));
         } else {
             this.textViewDate.setText(null);
@@ -242,7 +239,7 @@ public class NewsView extends RelativeLayout {
         if (this.textViewFirstSentence != null) {
             String fs = news.getTextForTextViewFirstSentence();
             if (!TextUtils.isEmpty(fs)) {
-                this.textViewFirstSentence.setText(fixQ ? Util.fixQuotationMarks(fs.trim()) : fs.trim());
+                this.textViewFirstSentence.setText(fs.trim());
                 this.textViewFirstSentence.setVisibility(View.VISIBLE);
             } else {
                 this.textViewFirstSentence.setVisibility(View.GONE);
