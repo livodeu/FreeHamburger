@@ -44,7 +44,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.system.ErrnoException;
 import android.system.Os;
+import android.text.Html;
 import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.Menu;
@@ -88,6 +90,7 @@ import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.MainActivity;
 import de.freehamburger.R;
+import de.freehamburger.model.Content;
 import de.freehamburger.model.Source;
 
 /**
@@ -481,6 +484,27 @@ public class Util {
             pos = found + 1;
         }
         return out;
+    }
+
+    /**
+     * Converts html text into plain text.
+     * @param html html text
+     * @param im Html.ImageGetter implementation (can be {@code null} if images are not wanted)
+     * @return Spanned (specifically, a {@link SpannableStringBuilder})
+     */
+    @NonNull
+    public static Spanned fromHtml(@NonNull String html, @Nullable Html.ImageGetter im) {
+        Spanned spanned;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            spanned = Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT, im, null);
+        } else {
+            spanned = Html.fromHtml(html, im, null);
+            // remove superfluous blank lines that have been introduced by Html.FROM_HTML_MODE_LEGACY
+            spanned = replaceAll(spanned, "\n" + Content.REMOVE_NEW_LINE, "");
+            // this is just to be sure that no REMOVE_NEW_LINE will be left
+            spanned = replaceAll(spanned, Content.REMOVE_NEW_LINE, "");
+        }
+        return spanned;
     }
 
     /**
@@ -997,7 +1021,7 @@ public class Util {
      * @return SpannableStringBuilder
      * @throws NullPointerException if any parameter is {@code null}
      */
-    public static SpannableStringBuilder replaceAll(@NonNull final CharSequence template, @NonNull final CharSequence source, @NonNull final CharSequence destination) {
+    private static SpannableStringBuilder replaceAll(@NonNull final CharSequence template, @NonNull final CharSequence source, @NonNull final CharSequence destination) {
         final SpannableStringBuilder editable = new SpannableStringBuilder(template);
         for (int pos = 0; ;) {
             int where = TextUtils.indexOf(editable, source, pos);
