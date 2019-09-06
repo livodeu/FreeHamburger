@@ -520,7 +520,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             int iconSize = getResources().getDimensionPixelSize(R.dimen.pref_icon_size);
             // 0x1f918 -> https://en.wikibooks.org/wiki/Unicode/Character_reference/1F000-1FFFF
             this.prefCorrectQuotationMarks.setIcon(new BitmapDrawable(activity.getResources(),
-                    Util.makeCharBitmap("\uD83E\uDD18", 0f, iconSize, iconSize, Color.BLACK, Color.TRANSPARENT, new PorterDuffColorFilter(0xffededed, PorterDuff.Mode.SRC_ATOP)))); // new PorterDuffColorFilter(0xff000000, PorterDuff.Mode.SRC_ATOP)
+                    Util.makeCharBitmap("\uD83E\uDD18", 0f, iconSize, iconSize, Color.BLACK, Color.TRANSPARENT,
+                            new PorterDuffColorFilter(getResources().getColor(R.color.colorDirtyWhite), PorterDuff.Mode.SRC_ATOP))));
         }
 
         /** {@inheritDoc} */
