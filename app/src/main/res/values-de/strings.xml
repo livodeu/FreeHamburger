@@ -30,7 +30,7 @@
     <string name="error_no_further_details">Keine weiteren Details verfügbar.</string>
     <string name="hint_pic">Die Illustration für diesen Artikel</string>
     <string name="action_settings">Einstellungen</string>
-    <string name="action_settings_more">Weitere Einstellungen</string>
+    <string name="action_settings_more">Weitere…</string>
     <string name="error_download_failed">Ladevorgang fehlgeschlagen:\n%1$s</string>
     <string name="error_download_failed2">Ladevorgang fehlgeschlagen.</string>
     <string name="pref_header_appearance">Darstellung</string>
@@ -59,7 +59,7 @@
     <string name="error_no_app">Keine installierte App kann dies verarbeiten!</string>
     <string name="error_parsing">Fehler beim Verarbeiten der empfangenen Daten!</string>
     <string name="error_audio_focus_denied">Die Wiedergabe ist im Moment nicht möglich!</string>
-    <string name="action_select_regions">Regionen wählen</string>
+    <string name="action_select_regions">Regionen</string>
     <string name="label_regions">Regionen</string>
     <string name="label_streamquality_adaptive">„Adaptive Streaming”</string>
     <string name="label_streamquality_s">Klein (Breite %1$d Pixel)</string>
@@ -207,6 +207,9 @@
     <string name="hint_menu_search">Dieser Menüeintrag startet die Suchfunktion</string>
     <string name="error_timeout">Beim Laden ist eine Zeitüberschreitung aufgetreten.</string>
     <string name="msg_text_copied">Der Text wurde in die Zwischenablage kopiert.</string>
+    <string name="msg_standby_bucket_frequent">Die App wird nicht oft genutzt. Hintergrundabfragen können um bis zu 8 h verzögert sein!</string>
+    <string name="msg_standby_bucket_rare">Die App wird selten genutzt. Hintergrundabfragen können um bis zu 24 h verzögert sein!</string>
+    <string name="msg_standby_bucket_workingset">Die App wird nicht sehr oft genutzt. Hintergrundabfragen können um bis zu 2 h verzögert sein!</string>
 
     <string name="url_wikipedia_http_streaming">https://de.m.wikipedia.org/wiki/HTTP-Streaming</string>
 
