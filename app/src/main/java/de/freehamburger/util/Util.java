@@ -52,6 +52,7 @@ import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.webkit.MimeTypeMap;
@@ -431,6 +432,29 @@ public class Util {
         animatorSet.setInterpolator(new AccelerateInterpolator(1.5f));
         sb.show();
         animatorSet.start();
+    }
+
+    /**
+     * Attempts to find a TextView with a given text. The search is case-sensitive.
+     * @param parent starting point
+     * @param text text to find
+     * @return TextView
+     * @throws NullPointerException if {@code text} is {@code null}
+     */
+    @Nullable
+    public static TextView findTextView(@Nullable final ViewGroup parent, @NonNull final String text) {
+        if (parent == null) return null;
+        final int nc = parent.getChildCount();
+        for (int i = 0; i < nc; i++) {
+            View k = parent.getChildAt(i);
+            if (k instanceof ViewGroup) {
+                TextView kk = findTextView((ViewGroup)k, text);
+                if (kk != null) return kk; else continue;
+            }
+            if (!(k instanceof TextView)) continue;
+            if (text.equals(((TextView)k).getText().toString())) return (TextView)k;
+        }
+        return null;
     }
 
     /**
