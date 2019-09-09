@@ -31,6 +31,7 @@ import android.os.IBinder;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -94,6 +95,7 @@ import java.util.Set;
 import java.util.Stack;
 
 import de.freehamburger.adapters.NewsRecyclerAdapter;
+import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
 import de.freehamburger.model.Content;
 import de.freehamburger.model.Filter;
@@ -134,6 +136,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
     /** maximum number of recent sources/categories to keep */
     private static final int MAX_RECENT_SOURCES = 10;
+    /** used to colorise the progress image in {@link #swipeRefreshLayout } - this designates the percentage completed when download is done and parsing starts  */
+    @FloatRange(from = 0f, to = 255f) private static final float PROGRESS_DOWNLOAD_PARSE = 128f;
 
     private static final BitmapFactory.Options OPTS_FOR_QUICKVIEW = new BitmapFactory.Options();
     static {
@@ -523,35 +527,38 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (url == null) return;
         try {
             File tempFile = File.createTempFile("details", ".json");
-            this.service.loadFile(url, tempFile, (completed, result) -> {
-                if (!completed || result == null) {
-                    return;
-                }
-                if (result.rc >= 400) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
-                    return;
-                }
-                JsonReader reader = null;
-                try {
-                    reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
-                    reader.setLenient(true);
-                    News parsed = News.parseNews(reader, news.isRegional());
-                    Util.close(reader);
-                    reader = null;
-                    if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
-                        News.correct(parsed);
+            this.service.loadFile(url, tempFile, new Downloader.SimpleDownloaderListener() {
+                @Override
+                public void downloaded(boolean completed, @Nullable Downloader.Result result) {
+
+                    if (!completed || result == null) {
+                        return;
                     }
-                    Intent intent = new Intent(MainActivity.this, NewsActivity.class);
-                    intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
-                    startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(this, R.anim.fadein, R.anim.fadeout).toBundle());
-                } catch (Exception e) {
-                    Util.close(reader);
-                    if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_LONG).show();
-                } finally {
-                    Util.deleteFile(tempFile);
-                }
-            });
+                    if (result.rc >= 400) {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
+                        return;
+                    }
+                    JsonReader reader = null;
+                    try {
+                        reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
+                        reader.setLenient(true);
+                        News parsed = News.parseNews(reader, news.isRegional());
+                        Util.close(reader);
+                        reader = null;
+                        if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
+                            News.correct(parsed);
+                        }
+                        Intent intent = new Intent(MainActivity.this, NewsActivity.class);
+                        intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
+                        startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(MainActivity.this, R.anim.fadein, R.anim.fadeout).toBundle());
+                    } catch (Exception e) {
+                        Util.close(reader);
+                        if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
+                        Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_LONG).show();
+                    } finally {
+                        Util.deleteFile(tempFile);
+                    }
+                }});
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
         }
@@ -886,6 +893,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         // refresh via top-bottom swipe
         this.swipeRefreshLayout = findViewById(R.id.swiperefresh);
         if (this.swipeRefreshLayout != null) {
+            // the circular progress indicator will start with a transparent background and will receive an increasing alpha with a progressing download
+            this.swipeRefreshLayout.setProgressBackgroundColorSchemeColor(Color.TRANSPARENT);
             this.swipeRefreshLayout.setOnRefreshListener(this);
             this.swipeRefreshLayout.setNestedScrollingEnabled(false);
         }
@@ -1307,10 +1316,12 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
 
         long mostRecentUpdate = app.getMostRecentUpdate(this.currentSource);
+        this.swipeRefreshLayout.setProgressBackgroundColorSchemeColor(Color.TRANSPARENT);
         this.service.loadFile(url, app.getLocalFile(this.currentSource), mostRecentUpdate, new Downloader.DownloaderListener() {
 
             // let's remember the Source that we are loading now - in case the user changes it while we are loading...
             private final Source sourceToSetOnSuccess = MainActivity.this.currentSource;
+            private final int c = getResources().getColor(R.color.colorPrimary);
 
             /** {@inheritDoc} */
             @Override
@@ -1359,6 +1370,13 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 }
                 ((App)getApplicationContext()).setMostRecentUpdate(MainActivity.this.currentSource, System.currentTimeMillis(), true);
                 parseLocalFileAsync(result.file);
+            }
+
+            /** {@inheritDoc} */
+            @Override
+            public void downloadProgressed(@FloatRange(from = 0, to = 1) float progress) {
+                int p = (int)(PROGRESS_DOWNLOAD_PARSE * progress) << 24;
+                MainActivity.this.swipeRefreshLayout.setProgressBackgroundColorSchemeColor(p + c);
             }
         });
     }
@@ -1523,25 +1541,31 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      */
     private void parseLocalFileAsync(@Nullable File file) {
         if (file == null) return;
-        BlobParser blobParser = new BlobParser(this, (blob, ok, oops) -> {
-            if (!ok || blob == null || oops != null) {
-                if (BuildConfig.DEBUG) Log.e(TAG, "Parsing failed: " + oops);
-                Snackbar sb = Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_INDEFINITE);
-                sb.setAction("↻", v -> handler.postDelayed(this::onRefresh, 500L));
-                sb.setActionTextColor(getResources().getColor(R.color.colorPrimaryLight));
-                Util.setSnackbarActionFont(sb, Typeface.DEFAULT_BOLD, 26f);
-                sb.show();
-                MainActivity.this.swipeRefreshLayout.setRefreshing(false);
-                return;
-            }
-            List<News> sortedJointList = blob.getAllNews();
-            MainActivity.this.newsAdapter.setNewsList(sortedJointList, MainActivity.this.currentSource);
-            Date blobDate = blob.getDate();
-            if (blobDate != null) {
-                if (!file.setLastModified(blobDate.getTime())) {
-                    if (BuildConfig.DEBUG) Log.w(TAG, "Failed to set last modified date!");
+        BlobParser blobParser = new BlobParser(this, new BlobParser.BlobParserListener() {
+
+            private final int c = getResources().getColor(R.color.colorPrimary);
+
+            @Override
+            public void blobParsed(@Nullable Blob blob, boolean ok, @Nullable Throwable oops) {
+
+                if (!ok || blob == null || oops != null) {
+                    if (BuildConfig.DEBUG) Log.e(TAG, "Parsing failed: " + oops);
+                    Snackbar sb = Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_INDEFINITE);
+                    sb.setAction("↻", v -> handler.postDelayed(MainActivity.this::onRefresh, 500L));
+                    sb.setActionTextColor(getResources().getColor(R.color.colorPrimaryLight));
+                    Util.setSnackbarActionFont(sb, Typeface.DEFAULT_BOLD, 26f);
+                    sb.show();
+                    MainActivity.this.swipeRefreshLayout.setRefreshing(false);
+                    return;
                 }
-            }
+                List<News> sortedJointList = blob.getAllNews();
+                MainActivity.this.newsAdapter.setNewsList(sortedJointList, MainActivity.this.currentSource);
+                Date blobDate = blob.getDate();
+                if (blobDate != null) {
+                    if (!file.setLastModified(blobDate.getTime())) {
+                        if (BuildConfig.DEBUG) Log.w(TAG, "Failed to set last modified date!");
+                    }
+                }
             /*
             The different timestamps
             -------------------------
@@ -1550,59 +1574,67 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             - prefs.getLong(PREF_PREFIX_SEARCHSUGGESTIONS + source.name()): last time the search suggestions for a Source were updated
             - App.getMostRecentManualUpdate(Source):                        most recent successful user-initiated update of the Source
              */
-            MainActivity.this.newsAdapter.addFilter(MainActivity.this.searchFilter);
-            boolean hasTemporaryFilter = MainActivity.this.newsAdapter.hasTemporaryFilter();
-            MainActivity.this.clockView.setTime(blobDate != null ? blobDate.getTime() : file.lastModified());
-            MainActivity.this.clockView.setTint(hasTemporaryFilter ? Util.getColor(this, R.color.colorFilter) : 0);
-            if (hasTemporaryFilter) {
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-                boolean hintResetSearchShown = prefs.getBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, false);
-                if (!hintResetSearchShown) {
-                    String orig = getString(R.string.hint_search_reset);
-                    SpannableString ss = new SpannableString(orig);
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-                        BitmapDrawable bb = (BitmapDrawable)getResources().getDrawable(R.drawable.ic_backbutton, getTheme());
-                        ImageSpan is = new ImageSpan(this, Bitmap.createScaledBitmap(bb.getBitmap(), bb.getIntrinsicWidth() * 3 / 4, bb.getIntrinsicHeight() * 3 / 4, true));
-                        int i = orig.indexOf('◀');
-                        ss.setSpan(is, i, i + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
-                    MainActivity.this.popupManager.showPopup(clockView, ss, 5_000L);
-                    SharedPreferences.Editor ed = prefs.edit();
-                    ed.putBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, true);
-                    ed.apply();
-                }
-            }
-
-            MainActivity.this.swipeRefreshLayout.setRefreshing(false);
-            //
-            if (hasTemporaryFilter) {
-                if (MainActivity.this.newsAdapter.getItemCount() == 0) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_not_found, searchFilter.getText()), Snackbar.LENGTH_LONG).show();
-                } else {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_found, MainActivity.this.searchFilter.getText(), MainActivity.this.newsAdapter.getItemCount()), Snackbar.LENGTH_SHORT).show();
-                }
-            }
-
-            App app = (App)getApplicationContext();
-
-            // if the search suggestions for the Source are older than the Blob that we have just parsed, update the search suggestions
-            if (blobDate != null) {
-                Source source = Source.getSourceFromFile(file);
-                if (source != null) {
-                    long ts = SearchHelper.getCreationTime(app, source);
-                    if (ts < blobDate.getTime()) {
-                        SearchHelper.createSearchSuggestions(app, source, sortedJointList, false);
+                MainActivity.this.newsAdapter.addFilter(MainActivity.this.searchFilter);
+                boolean hasTemporaryFilter = MainActivity.this.newsAdapter.hasTemporaryFilter();
+                MainActivity.this.clockView.setTime(blobDate != null ? blobDate.getTime() : file.lastModified());
+                MainActivity.this.clockView.setTint(hasTemporaryFilter ? Util.getColor(MainActivity.this, R.color.colorFilter) : 0);
+                if (hasTemporaryFilter) {
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+                    boolean hintResetSearchShown = prefs.getBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, false);
+                    if (!hintResetSearchShown) {
+                        String orig = getString(R.string.hint_search_reset);
+                        SpannableString ss = new SpannableString(orig);
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                            BitmapDrawable bb = (BitmapDrawable)getResources().getDrawable(R.drawable.ic_backbutton, getTheme());
+                            ImageSpan is = new ImageSpan(MainActivity.this, Bitmap.createScaledBitmap(bb.getBitmap(), bb.getIntrinsicWidth() * 3 / 4, bb.getIntrinsicHeight() * 3 / 4, true));
+                            int i = orig.indexOf('◀');
+                            ss.setSpan(is, i, i + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        }
+                        MainActivity.this.popupManager.showPopup(clockView, ss, 5_000L);
+                        SharedPreferences.Editor ed = prefs.edit();
+                        ed.putBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, true);
+                        ed.apply();
                     }
                 }
+
+                MainActivity.this.swipeRefreshLayout.setRefreshing(false);
+                //
+                if (hasTemporaryFilter) {
+                    if (MainActivity.this.newsAdapter.getItemCount() == 0) {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_not_found, searchFilter.getText()), Snackbar.LENGTH_LONG).show();
+                    } else {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_found, MainActivity.this.searchFilter.getText(), MainActivity.this.newsAdapter.getItemCount()), Snackbar.LENGTH_SHORT).show();
+                    }
+                }
+
+                App app = (App)getApplicationContext();
+
+                // if the search suggestions for the Source are older than the Blob that we have just parsed, update the search suggestions
+                if (blobDate != null) {
+                    Source source = Source.getSourceFromFile(file);
+                    if (source != null) {
+                        long ts = SearchHelper.getCreationTime(app, source);
+                        if (ts < blobDate.getTime()) {
+                            SearchHelper.createSearchSuggestions(app, source, sortedJointList, false);
+                        }
+                    }
+                }
+
+                if (MainActivity.this.listPositionToRestore >= 0) {
+                    RecyclerView.LayoutManager lm = recyclerView.getLayoutManager();
+                    if (lm != null) lm.scrollToPosition(MainActivity.this.listPositionToRestore);
+                    MainActivity.this.listPositionToRestore = -1;
+                }
+
+                app.trimCacheIfNeeded();
             }
 
-            if (MainActivity.this.listPositionToRestore >= 0) {
-                RecyclerView.LayoutManager lm = recyclerView.getLayoutManager();
-                if (lm != null) lm.scrollToPosition(MainActivity.this.listPositionToRestore);
-                MainActivity.this.listPositionToRestore = -1;
+            /** {@inheritDoc} */
+            @Override
+            public void parsingProgressed(@FloatRange(from = 0, to = 1) float progress) {
+                int p = (int)(PROGRESS_DOWNLOAD_PARSE + (255f - PROGRESS_DOWNLOAD_PARSE) * progress) << 24;
+                MainActivity.this.swipeRefreshLayout.setProgressBackgroundColorSchemeColor(p + c);
             }
-
-            app.trimCacheIfNeeded();
         });
         blobParser.executeOnExecutor(THREAD_POOL_EXECUTOR, file);
     }
@@ -1863,41 +1895,43 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (newsid == null) newsid = "temp";
         final File temp = new File(getCacheDir(), "quik_" + newsid.replace('/', '_').replace('\0', '_') + ".jpg");
         findViewById(R.id.plane).setVisibility(View.VISIBLE);
-        this.service.loadFile(url, temp, temp.lastModified(), (completed, result) -> {
-            if (MainActivity.this.quickViewRequestCancelled) {
-                MainActivity.this.quickViewRequestCancelled = false;
-                FileDeleter.add(temp);
-                findViewById(R.id.plane).setVisibility(View.GONE);
-                MainActivity.this.newsForQuickView = null;
-                return;
-            }
-            if (!completed || result == null || result.rc >= 400 || temp.length() == 0L) {
-                FileDeleter.add(temp);
-                findViewById(R.id.plane).setVisibility(View.GONE);
-                MainActivity.this.newsForQuickView = null;
-                if (result != null && !TextUtils.isEmpty(result.msg)) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
-                } else {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
+        this.service.loadFile(url, temp, temp.lastModified(), new Downloader.SimpleDownloaderListener() {
+            @Override
+            public void downloaded(boolean completed, @Nullable Downloader.Result result) {
+                if (MainActivity.this.quickViewRequestCancelled) {
+                    MainActivity.this.quickViewRequestCancelled = false;
+                    FileDeleter.add(temp);
+                    findViewById(R.id.plane).setVisibility(View.GONE);
+                    MainActivity.this.newsForQuickView = null;
+                    return;
                 }
-                return;
-            }
-            Bitmap bm = BitmapFactory.decodeFile(temp.getAbsolutePath(), OPTS_FOR_QUICKVIEW);
-            if (bm != null) {
-                MainActivity.this.quickView.setVisibility(View.VISIBLE);
-                MainActivity.this.quickView.setImageBitmap(bm);
-            } else {
-                if (BuildConfig.DEBUG) Log.w(TAG, "Failed to decode bitmap from " + url);
-                findViewById(R.id.plane).setVisibility(View.GONE);
-                MainActivity.this.newsForQuickView = null;
-                if (!TextUtils.isEmpty(result.msg)) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
-                } else {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
+                if (!completed || result == null || result.rc >= 400 || temp.length() == 0L) {
+                    FileDeleter.add(temp);
+                    findViewById(R.id.plane).setVisibility(View.GONE);
+                    MainActivity.this.newsForQuickView = null;
+                    if (result != null && !TextUtils.isEmpty(result.msg)) {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
+                    } else {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
+                    }
+                    return;
                 }
-            }
-            FileDeleter.add(temp);
-        });
+                Bitmap bm = BitmapFactory.decodeFile(temp.getAbsolutePath(), OPTS_FOR_QUICKVIEW);
+                if (bm != null) {
+                    MainActivity.this.quickView.setVisibility(View.VISIBLE);
+                    MainActivity.this.quickView.setImageBitmap(bm);
+                } else {
+                    if (BuildConfig.DEBUG) Log.w(TAG, "Failed to decode bitmap from " + url);
+                    findViewById(R.id.plane).setVisibility(View.GONE);
+                    MainActivity.this.newsForQuickView = null;
+                    if (!TextUtils.isEmpty(result.msg)) {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
+                    } else {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
+                    }
+                }
+                FileDeleter.add(temp);
+            }});
     }
 
     /**

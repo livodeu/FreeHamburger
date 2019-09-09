@@ -83,12 +83,12 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     static final String PREF_STAT_COUNT = "pref_background_count";
     /** boolean: at least once we did not receive a Content-Length; therefore the byte count is just an estimation */
     static final String PREF_STAT_ESTIMATED = "pref_background_estimated";
-    /** boolean: show extended notification instead of standard one (only possible from {@link Build.VERSION_CODES#N Nougat}) */
-    private static final String PREF_NOTIFICATION_EXTENDED = "pref_notification_extended";
     /** the category that is used here */
     static final Source SOURCE = Source.HOME;
     /** if set, contains {@link News#getExternalId() News.externalId} */
     static final String EXTRA_FROM_NOTIFICATION = "de.freehamburger.from_notification";
+    /** boolean: show extended notification instead of standard one (only possible from {@link Build.VERSION_CODES#N Nougat}) */
+    private static final String PREF_NOTIFICATION_EXTENDED = "pref_notification_extended";
     /** String set: logs timestamps of all requests */
     private static final String PREF_STAT_ALL = "pref_stat_all";
     /** the time when the job was scheduled */
@@ -159,24 +159,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
-     * Returns the minimum interval in minutes, either {@link #HARD_MINIMUM_INTERVAL_MINUTES} or the value imposed by Android.
-     * @return minimum interval <em>in minutes</em>
-     */
-    @IntRange(from = 300)
-    static int getMinimumIntervalInMinutes() {
-        // the minimum interval is set by Android
-        int minimumIntervalInMinutes;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            minimumIntervalInMinutes = (int) (JobInfo.getMinPeriodMillis() / 60_000L);
-            // self-imposed minimum
-            if (minimumIntervalInMinutes < HARD_MINIMUM_INTERVAL_MINUTES) minimumIntervalInMinutes = HARD_MINIMUM_INTERVAL_MINUTES;
-        } else {
-            minimumIntervalInMinutes = 15;
-        }
-        return minimumIntervalInMinutes;
-    }
-
-    /**
      * @param ctx Context
      * @return List of timestamps
      * @throws NullPointerException if {@code ctx} is {@code null}
@@ -195,13 +177,31 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
-     * Returns the current time of day in hours. For example, at 22:30 PM this method returns 22.5.
+     * Returns the current time of day in hours. For example, at 22:30 (10:30 PM) this method returns 22.5.
      * @return current time of day in hours
      */
     @FloatRange(from = 0f, to = 24f)
     private static float getCurrentTimeInHours() {
         Calendar now = new GregorianCalendar(App.TIMEZONE);
         return now.get(Calendar.HOUR_OF_DAY) + now.get(Calendar.MINUTE) / 60f + now.get(Calendar.SECOND) / 3600f;
+    }
+
+    /**
+     * Returns the minimum interval in minutes, either {@link #HARD_MINIMUM_INTERVAL_MINUTES} or the {@link JobInfo#getMinPeriodMillis() value imposed by Android}.
+     * @return minimum interval <em>in minutes</em>
+     */
+    @IntRange(from = 300)
+    static int getMinimumIntervalInMinutes() {
+        // the minimum interval is set by Android
+        int minimumIntervalInMinutes;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            minimumIntervalInMinutes = (int) (JobInfo.getMinPeriodMillis() / 60_000L);
+            // self-imposed minimum
+            if (minimumIntervalInMinutes < HARD_MINIMUM_INTERVAL_MINUTES) minimumIntervalInMinutes = HARD_MINIMUM_INTERVAL_MINUTES;
+        } else {
+            minimumIntervalInMinutes = 15;
+        }
+        return minimumIntervalInMinutes;
     }
 
     /**
@@ -247,9 +247,10 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * @throws NullPointerException if {@code ctx} is {@code null}
      */
     @NonNull
+    @RequiresPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED)
     static JobInfo makeJobInfo(@NonNull Context ctx) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        final boolean loadOverMobile = prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, false);
+        final boolean loadOverMobile = prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE);
         final boolean pollOverMobile = prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, false);
         final boolean night = hasNightFallenOverBerlin();
         final long intervalMs = calcInterval(prefs, night);
@@ -257,7 +258,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 .setPeriodic(intervalMs)
                 .setRequiredNetworkType(loadOverMobile && pollOverMobile ? JobInfo.NETWORK_TYPE_ANY : JobInfo.NETWORK_TYPE_UNMETERED)
                 .setBackoffCriteria(120_000L, JobInfo.BACKOFF_POLICY_LINEAR)
-                .setPersisted(true);
+                .setPersisted(true);    // <- this one needs RECEIVE_BOOT_COMPLETED permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             jib.setEstimatedNetworkBytes(75_000L, 250L);
         }
@@ -378,13 +379,17 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                     try {
                         final News finalCopy = newsToDisplay;
                         final File temp = File.createTempFile("temp", ".jpg");
-                        loadFile(imageUrl, temp, (completed, result) -> {
-                            Bitmap bm = null;
-                            if (completed && result != null && result.file != null && result.rc < 400) {
-                                bm = BitmapFactory.decodeFile(result.file.getAbsolutePath(), BITMAPFACTORY_OPTIONS);
+                        loadFile(imageUrl, temp, new Downloader.SimpleDownloaderListener() {
+                            @Override
+                            public void downloaded(boolean completed, @Nullable Downloader.Result result) {
+                                Bitmap bm = null;
+                                if (completed && result != null && result.file != null && result.rc < 400) {
+                                    bm = BitmapFactory.decodeFile(result.file.getAbsolutePath(), BITMAPFACTORY_OPTIONS);
+                                }
+                                UpdateJobService.this.notify(finalCopy, bm);
+                                done();
+
                             }
-                            notify(finalCopy, bm);
-                            done();
                         });
                     } catch (Exception e) {
                         if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
@@ -412,6 +417,12 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         if (this.params == null) return;
         jobFinished(this.params, false);
         this.params = null;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void downloadProgressed(float progress) {
+        // not interesting
     }
 
     /** {@inheritDoc} */
@@ -722,8 +733,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         if (this.scheduledAt == 0L) this.scheduledAt = System.currentTimeMillis();
         //
         if (BuildConfig.DEBUG) {
-            String when = DateFormat.getDateTimeInstance()
-                    .format(new Date(this.scheduledAt));
+            String when = DateFormat.getDateTimeInstance().format(new Date(this.scheduledAt));
             Log.i(TAG + id, "Hamburger update, job scheduled at " + when);
             Set<String> allRequests = prefs.getStringSet(PREF_STAT_ALL, new HashSet<>());
             allRequests.add(String.valueOf(System.currentTimeMillis() - 1_500_000_000_000L));
@@ -772,6 +782,12 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             }
         }
         return false;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void parsingProgressed(float progress) {
+        // not interesting
     }
 
     private void reschedule() {

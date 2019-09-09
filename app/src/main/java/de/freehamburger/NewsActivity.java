@@ -10,7 +10,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
@@ -93,6 +92,7 @@ import de.freehamburger.model.News;
 import de.freehamburger.model.Related;
 import de.freehamburger.model.StreamQuality;
 import de.freehamburger.model.Video;
+import de.freehamburger.util.Downloader;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.MediaSourceHelper;
 import de.freehamburger.util.TextViewImageSpanClickHandler;
@@ -705,7 +705,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 if (progress != null) progress.setVisibility(View.GONE);
                 return;
             }
-            this.handler.postDelayed(() -> service.loadFile(url, temp, (completed, result) -> {
+            this.handler.postDelayed(() -> service.loadFile(url, temp, new Downloader.SimpleDownloaderListener() {
+                @Override
+                public void downloaded(boolean completed, @Nullable Downloader.Result result) {
+
                 if (progress != null) progress.setVisibility(View.GONE);
                 if (!completed || result == null) {
                     Util.deleteFile(temp);
@@ -713,7 +716,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 }
                 if (result.rc != 200 || result.file == null) {
                     Util.deleteFile(temp);
-                    Toast.makeText(this, getString(R.string.error_download_failed, result.msg), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(NewsActivity.this, getString(R.string.error_download_failed, result.msg), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 JsonReader reader = null;
@@ -722,10 +725,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     News news = News.parseNews(reader, false);
                     Util.close(reader);
                     reader = null;
-                    if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
+                    if (PreferenceManager.getDefaultSharedPreferences(NewsActivity.this).getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
                         News.correct(news);
                     }
-                    Intent intent = new Intent(this, NewsActivity.class);
+                    Intent intent = new Intent(NewsActivity.this, NewsActivity.class);
                     intent.putExtra(NewsActivity.EXTRA_NEWS, news);
                     // prevent going "back" to MainActivity because the preceding activity is <this>, not a MainActivity
                     intent.putExtra(NewsActivity.EXTRA_NO_HOME_AS_UP, true);
@@ -737,7 +740,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     Util.close(reader);
                 }
                 Util.deleteFile(temp);
-            }), 250L);
+            }}), 250L);
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
             if (progress != null) progress.setVisibility(View.GONE);
@@ -1022,35 +1025,38 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 }
             }
             File tempFile = new File(getCacheDir(), "temp.json");
-            this.service.loadFile(url, tempFile, (completed, result) -> {
-                if (!completed || result == null) {
-                    Util.deleteFile(tempFile);
-                    return;
-                }
-                if (result.rc >= 400) {
-                    Snackbar.make(NewsActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
-                    Util.deleteFile(tempFile);
-                    return;
-                }
-                JsonReader reader = null;
-                try {
-                    reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
-                    reader.setLenient(true);
-                    News parsed = News.parseNews(reader, this.news.isRegional());
-                    Util.close(reader);
-                    reader = null;
-                    // it is probably not necessary here to call News.correct()
-                    Intent intent = new Intent(NewsActivity.this, VideoActivity.class);
-                    intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
-                    startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(this, R.anim.fadein, R.anim.fadeout).toBundle());
-                } catch (Exception e) {
-                    Util.close(reader);
-                    if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
-                    Snackbar.make(NewsActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_LONG).show();
-                } finally {
-                    Util.deleteFile(tempFile);
-                }
-            });
+            this.service.loadFile(url, tempFile, new Downloader.SimpleDownloaderListener() {
+                @Override
+                public void downloaded(boolean completed, @Nullable Downloader.Result result) {
+
+                    if (!completed || result == null) {
+                        Util.deleteFile(tempFile);
+                        return;
+                    }
+                    if (result.rc >= 400) {
+                        Snackbar.make(NewsActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
+                        Util.deleteFile(tempFile);
+                        return;
+                    }
+                    JsonReader reader = null;
+                    try {
+                        reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
+                        reader.setLenient(true);
+                        News parsed = News.parseNews(reader, NewsActivity.this.news.isRegional());
+                        Util.close(reader);
+                        reader = null;
+                        // it is probably not necessary here to call News.correct()
+                        Intent intent = new Intent(NewsActivity.this, VideoActivity.class);
+                        intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
+                        startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(NewsActivity.this, R.anim.fadein, R.anim.fadeout).toBundle());
+                    } catch (Exception e) {
+                        Util.close(reader);
+                        if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
+                        Snackbar.make(NewsActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_LONG).show();
+                    } finally {
+                        Util.deleteFile(tempFile);
+                    }
+                }});
         } else {
             newNewsActivity(url);
         }

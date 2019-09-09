@@ -2,6 +2,7 @@ package de.freehamburger.util;
 
 import android.Manifest;
 import android.os.AsyncTask;
+import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
@@ -84,14 +85,29 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
          */
         @MainThread
         void downloaded(boolean completed, @Nullable Result result);
+
+        /**
+         * The download progress has changed.
+         * @param progress [0..1]
+         */
+        void downloadProgressed(@FloatRange(from = 0, to = 1) float progress);
+    }
+
+    /**
+     * Partial implementation of {@link DownloaderListener} with {@link DownloaderListener#downloadProgressed(float) downloadProgressed(float)} implemented as nop.
+     */
+    public abstract static class SimpleDownloaderListener implements DownloaderListener {
+
+        @Override
+        public void downloadProgressed(float progress) {
+            // nop
+        }
     }
 
     /**
      * The result of a download.
      */
     public static class Result {
-        /** the uri that supplied the data (not necessarily the uri that the user had requested; there might have been a redirect) */
-        final String sourceUri;
         /** the HTTP return code */
         public final int rc;
         /** the HTTP return message */
@@ -99,11 +115,12 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
         public final String msg;
         @Nullable
         public final File file;
+        public final long contentLength;
+        /** the uri that supplied the data (not necessarily the uri that the user had requested; there might have been a redirect) */
+        final String sourceUri;
         final String contentType;
         @Nullable
         private DownloaderListener listener;
-
-        public final long contentLength;
 
         /**
          * Constructor.

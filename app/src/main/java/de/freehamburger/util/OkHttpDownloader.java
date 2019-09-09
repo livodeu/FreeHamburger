@@ -11,6 +11,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
@@ -54,6 +56,7 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
     /** "has not been found" */
     private final String errorUnknownHost;
     private OkHttpClient client;
+    private Reference<DownloaderListener> listener;
 
     /**
      * Constructor.
@@ -90,6 +93,7 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
      */
     @NonNull
     protected Result load(@NonNull Order order) {
+        this.listener = new WeakReference<>(order.listener);
         File f = new File(order.localPath);
         Request.Builder requestBuilder = new Request.Builder()
                 .url(order.url)
@@ -127,9 +131,11 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
                 if (BuildConfig.DEBUG) {
                     if (response.code() >= 400) Log.w(TAG, "Failed to load from " + order.url + ": HTTP " + response.code() + " " + response.message());
                 }
+                publishProgress(1f);
                 return new Result(order.url, response.code(), response.message(), f, null, 0L, order.listener);
             }
             MediaType mediaType = body.contentType();
+            // contentLength is the number of bytes that will be transmitted - not the number of bytes written to out
             long contentLength = body.contentLength();
             if (BuildConfig.DEBUG) {
                 if (contentLength <= 0L) Log.e(TAG, "No Content-Length after request with headers:\n" + request.headers().toString());
@@ -137,18 +143,26 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
             out = new BufferedOutputStream(new FileOutputStream(f));
             final InputStream in;
             String contentEncoding = response.header("Content-Encoding");
-            if ("gzip".equals(contentEncoding)) {
-                in = new GZIPInputStream(body.byteStream());
+            final boolean gzip = "gzip".equals(contentEncoding);
+            if (gzip) {
+                in = new CountingGZIPInputStream(body.byteStream());
             } else {
                 in = body.byteStream();
             }
 
+            long total = 0L;
             for (byte[] buffer = new byte[READ_BUFFER]; ; ) {
                 int read = in.read(buffer);
                 if (read <= 0) break;
                 out.write(buffer, 0, read);
+                if (!gzip) total += read;
+                if (contentLength > 0L) {
+                    if (gzip) publishProgress((float)(((CountingGZIPInputStream)in).getTotal()) / (float)contentLength);
+                    else publishProgress((float)total / (float)contentLength);
+                }
             }
             Util.close(out, body);
+            publishProgress(1f);
             return new Result(order.url, response.code(), null, f, mediaType != null ? mediaType.toString() : null, contentLength, order.listener);
         } catch (UnknownHostException e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
@@ -162,6 +176,7 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
             } else {
                 msg = order.url + " " + this.errorUnknownHost;
             }
+            publishProgress(1f);
             return new Result(order.url, HttpURLConnection.HTTP_BAD_REQUEST, msg, f, null, 0L, order.listener);
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
@@ -169,9 +184,11 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
             Util.deleteFile(f);
             String msg = e.getMessage();
             if (TextUtils.isEmpty(msg)) msg = e.toString();
+            publishProgress(1f);
             return new Result(order.url, 500, msg, f, null, 0L, order.listener);
         }
     }
+
 
     /** {@inheritDoc} */
     @NonNull
@@ -182,8 +199,40 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
 
     /** {@inheritDoc} */
     @Override
+    protected void onProgressUpdate(Float... values) {
+        if (this.listener == null || values == null || values.length == 0) return;
+        DownloaderListener l = this.listener.get();
+        if (l == null) return;
+        //Log.i(TAG, "onProgressUpdate(" + values[0] + ")");
+        l.downloadProgressed(values[0]);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void shutdown() {
         this.client = null;
     }
 
+    /**
+     * A GZIPInputStream that keeps track of the number of bytes read.
+     */
+    private static class CountingGZIPInputStream extends GZIPInputStream {
+
+        private long total;
+
+        CountingGZIPInputStream(InputStream in) throws IOException {
+            super(in, 1024);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        protected void fill() throws IOException {
+            super.fill();
+            this.total += len;
+        }
+
+        private long getTotal() {
+            return total;
+        }
+    }
 }
