@@ -1,8 +1,10 @@
 package de.freehamburger;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.usage.UsageStatsManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -15,6 +17,7 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
@@ -25,6 +28,8 @@ import android.preference.SwitchPreference;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RawRes;
+import android.support.annotation.RequiresApi;
+import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NavUtils;
@@ -54,6 +59,7 @@ import java.util.Date;
 import java.util.List;
 
 import de.freehamburger.supp.AppCompatPreferenceActivity;
+import de.freehamburger.supp.PopupManager;
 import de.freehamburger.util.ButtonPreference;
 import de.freehamburger.util.DisablingValueListPreference;
 import de.freehamburger.util.Log;
@@ -707,6 +713,40 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
         private int min;
         private int maxNightInterval;
 
+        /**
+         * Display a warning regarding app standby buckets.<br>
+         * See <a href="https://developer.android.com/topic/performance/power/power-details.html">docs</a>.
+         */
+        @SuppressLint("SwitchIntDef")
+        @RequiresApi(Build.VERSION_CODES.P)
+        private void checkBucket() {
+            Activity a = getActivity();
+            UsageStatsManager usm = (UsageStatsManager)a.getSystemService(Context.USAGE_STATS_SERVICE);
+            if (usm == null) return;
+            int bucket = usm.getAppStandbyBucket();
+            // bucket will be 5 if the app is whitelisted, 10 if the app is active
+            View v = getView();
+            View anchor = v != null ? Util.findTextView(v.findViewById(android.R.id.list), getString(R.string.pref_hint_poll_interval)) : null;
+            if (anchor == null) anchor = a.getWindow().getDecorView();
+            @StringRes int msg;
+            switch (bucket) {
+                case UsageStatsManager.STANDBY_BUCKET_WORKING_SET:
+                    msg = R.string.msg_standby_bucket_workingset;
+                    break;
+                case UsageStatsManager.STANDBY_BUCKET_FREQUENT:
+                    msg = R.string.msg_standby_bucket_frequent;
+                    break;
+                case UsageStatsManager.STANDBY_BUCKET_RARE:
+                    msg = R.string.msg_standby_bucket_rare;
+                    break;
+                default:
+                    msg = 0;
+            }
+            if (msg != 0) {
+                new PopupManager().showPopup(anchor, getString(msg), 4_000L);
+            }
+        }
+
         /** {@inheritDoc} */
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -826,6 +866,15 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
                 return true;
             }
             return super.onOptionsItemSelected(item);
+        }
+
+        @Override
+        public void onResume() {
+            super.onResume();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                    && PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(App.PREF_POLL, false)) {
+                new Handler().postDelayed(this::checkBucket, 3_000L);
+            }
         }
 
     }
