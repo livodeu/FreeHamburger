@@ -34,7 +34,6 @@
         android:id="@+id/textViewDate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_toStartOf="@+id/textViewTitle"
         android:layout_below="@+id/textViewTopline"
         android:ellipsize="end"
         android:fontFamily="sans-serif-condensed"
@@ -43,7 +42,7 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         android:textColor="@android:color/black"
         tools:ignore="RtlSymmetry"
-        tools:text="12.34.5678 12:34 xxxxxxxxxxxxxx"/>
+        tools:text="12.34.5678 12:34"/>
 
     <ImageView
         android:id="@+id/imageView"

@@ -37,7 +37,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
-        android:layout_toStartOf="@+id/textViewTitle"
         android:layout_below="@+id/textViewTopline"
         android:ellipsize="end"
         android:fontFamily="sans-serif-condensed"
@@ -47,7 +46,7 @@
         android:textSize="@dimen/text_size_list_news_date"
         android:textColor="@android:color/black"
         tools:ignore="RtlSymmetry"
-        tools:text="12.34.5678 12:34 PM"/>
+        tools:text="12.34.5678 12:34"/>
 
     <ImageView
         android:id="@+id/imageView"
