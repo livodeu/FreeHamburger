@@ -150,6 +150,7 @@
         <item quantity="one">%1$d day ago</item>
         <item quantity="other">%1$d days ago</item>
     </plurals>
+    <string name="label_website_errors">Web site errors</string>
     <string name="label_yes">Yes</string>
 
     <string name="msg_filters_removed">All filters have been removed.</string>
@@ -173,6 +174,7 @@
     <string name="msg_standby_bucket_workingset">This app is not used very often. Background activities may be delayed by up to 2 hrs!</string>
     <string name="msg_text_copied">The text has been copied to the clipboard.</string>
     <string name="msg_volume_mute">Audio is muted.</string>
+    <string name="msg_website_errors">The website contains errors.</string>
 
     <string name="pref_default_proxy_type" translatable="false">DIRECT</string>
 

@@ -26,8 +26,11 @@ import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresPermission;
+import android.support.annotation.UiThread;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
 
 import com.squareup.picasso.Request;
 
@@ -59,19 +62,13 @@ import okhttp3.TlsVersion;
 public class App extends Application implements Application.ActivityLifecycleCallbacks, SharedPreferences.OnSharedPreferenceChangeListener {
 
     public final static String URL_PREFIX = "https://www.tagesschau.de/api2/";
-    /** teletext url without page number (must be appended) */
-    final static String URL_TELETEXT_WO_PAGE = "https://www.ard-text.de/mobil/";
-    /** teletext url */
-    final static String URL_TELETEXT = URL_TELETEXT_WO_PAGE + "100";
-    /** teletext host */
-    final static String URI_TELETEXT_HOST = Uri.parse(URL_TELETEXT).getHost();
-    //public final static String DATENSCHUTZERKLAERUNG = "datenschutzerklaerung100.json";
     /** the user agent to be used in the http requests */
     public static final String USER_AGENT;
     /** the directory that shared files are copied to (in the {@link #getCacheDir() cache dir}) */
     public static final String EXPORTS_DIR = "exports";
     /** the name of the file that imported fonts will be stored in (in the {@link #getFilesDir() files dir}) */
     public static final String FONT_FILE = "font.ttf";
+    //public final static String DATENSCHUTZERKLAERUNG = "datenschutzerklaerung100.json";
     /** the data will be re-loaded if the data in the local file is older than this */
     public static final long LOCAL_FILE_MAXAGE = 15 * 60_000L;
     /** String: maximum 'disk' cache size in MB */
@@ -87,8 +84,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final int DEFAULT_MEM_CACHE_MAX_SIZE_MB = Integer.parseInt(DEFAULT_MEM_CACHE_MAX_SIZE);
     /** int: 0 automatic; 1 dark; 2 light; see {@link BackgroundSelection} */
     public static final String PREF_BACKGROUND = "pref_background";
-    static final int BACKGROUND_AUTO = 0;
-    static final int BACKGROUND_DARK = 1;
     public static final int BACKGROUND_LIGHT = 2;
     public static final String PREF_LOAD_OVER_MOBILE = "pref_load_over_mobile";
     public static final boolean DEFAULT_LOAD_OVER_MOBILE = true;
@@ -140,6 +135,14 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** ColorSpace to use when decoding bitmaps (apparently not [yet] supported by Picasso, see {@link com.squareup.picasso.RequestHandler#createBitmapOptions(Request)}) */
     public static final String PREF_COLORSPACE = "pref_colorspace";
     public static final TimeZone TIMEZONE = TimeZone.getTimeZone("Europe/Berlin");
+    /** teletext url without page number (must be appended) */
+    final static String URL_TELETEXT_WO_PAGE = "https://www.ard-text.de/mobil/";
+    /** teletext url */
+    final static String URL_TELETEXT = URL_TELETEXT_WO_PAGE + "100";
+    /** teletext host */
+    final static String URI_TELETEXT_HOST = Uri.parse(URL_TELETEXT).getHost();
+    static final int BACKGROUND_AUTO = 0;
+    static final int BACKGROUND_DARK = 1;
     static final String EXTRA_CRASH = "crash";
     /** back button behaviour: pressing back stops the app (respectively the Android default behaviour) */
     static final int USE_BACK_FINISH = 0;
@@ -165,7 +168,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
      and look into the enclosed json file
       */
     static {
-        String[] VERSIONS = new String[] {"2018080901", "2018102216", "2019011010", "2019032813", "2019040312", "2019071716"};
+        //                                                                                          2.5.1           2.5.2       2.5.3
+        String[] VERSIONS = new String[] {"2018080901", "2018102216", "2019011010", "2019032813", "2019040312", "2019071716", "2019080809"};
         String[] OSS = new String[] {"6.0.1", "7.0.1", "7.1.0", "7.1.1", "7.1.2", "8.0.0", "8.1.0", "9.0.0", "10.0.0"};
         USER_AGENT = "Tagesschau/de.tagesschau (" + VERSIONS[(int)(Math.random() * VERSIONS.length)] + ", Android: " + OSS[(int)(Math.random() * OSS.length)] + ")";
     }
@@ -174,11 +178,15 @@ public class App extends Application implements Application.ActivityLifecycleCal
     private final ScheduleChecker scheduleChecker = new ScheduleChecker();
     @Nullable
     private NotificationChannel notificationChannel;
+    @Nullable
     private NotificationChannel notificationChannelHiPri;
     @Nullable
     private Activity currentActivity;
     @Nullable
     private OkHttpClient client;
+    /** inflated View to be used by {@link WebViewActivity} */
+    @Nullable
+    private ViewGroup inflatedViewForWebViewActivity;
 
     /**
      * Creates an OkHttpClient instance.
@@ -186,6 +194,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
      * @param cacheDir cache directory
      * @param maxSize the maximum number of bytes the cache should use to store
      * @return OkHttpClient
+     * @throws NullPointerException if {@code ctx} is {@code null}
      * @throws IllegalArgumentException if {@code maxSize} is &lt;= 0
      */
     @NonNull
@@ -277,10 +286,52 @@ public class App extends Application implements Application.ActivityLifecycleCal
         return false;
     }
 
+    private void closeClient() {
+        try {
+            if (this.client != null) {
+                final OkHttpClient cc = this.client;
+                this.client = null;
+                Util.close(cc.cache());
+                cc.dispatcher()
+                        .executorService()
+                        .shutdown();
+                // connectionPool().evictAll() might throw android.os.NetworkOnMainThreadException (@ okhttp3.internal.Util.closeQuietly(Util.java:155))
+                new Thread() {
+                    @Override
+                    public void run() {
+                        cc.connectionPool().evictAll();
+                    }
+                }.start();
+            }
+        } catch (Throwable t) {
+            if (BuildConfig.DEBUG) Log.e(TAG, t.toString(), t);
+        }
+    }
+
+    /**
+     * Creates the inflated content view for {@link WebViewActivity} and {@link TeletextActivity}.
+     * Instead of invoking {@link Activity#setContentView(int)}, which takes quite a long time,
+     * the pre-inflated View can simply be added to the Activity's {@link android.R.id#content content view}.<br>
+     * The startup time of those Activities is reduced considerably.
+     * @param onlyIfNull if {@code true}, the View is inflated only if it did not exist
+     */
+    @SuppressLint("InflateParams")
+    @UiThread
+    void createInflatedViewForWebViewActivity(boolean onlyIfNull) {
+        if (onlyIfNull && this.inflatedViewForWebViewActivity != null) return;
+        try {
+            // setTheme() is necessary in order to be able to use <this> as context for the inflater
+            setTheme(R.style.AppTheme_NoActionBar);
+            this.inflatedViewForWebViewActivity = (ViewGroup) LayoutInflater.from(this).inflate(R.layout.activity_web_view, null);
+        } catch (Exception e) {
+            if (BuildConfig.DEBUG) Log.e(TAG, "While preparing WebView: " + e.toString(), e);
+        }
+    }
+
     @Nullable
     @VisibleForTesting
     public Activity getCurrentActivity() {
-        return currentActivity;
+        return this.currentActivity;
     }
 
     /**
@@ -291,9 +342,15 @@ public class App extends Application implements Application.ActivityLifecycleCal
         return Util.getOccupiedSpace(Util.listFiles(getCacheDir()));
     }
 
+    @Nullable
+    ViewGroup getInflatedViewForWebViewActivity() {
+        return this.inflatedViewForWebViewActivity;
+    }
+
     /**
      * @param source Source
      * @return the local file that the json data is stored in (does not necessarily exist)
+     * @throws NullPointerException if {@code source} is {@code null}
      */
     @NonNull
     public File getLocalFile(@NonNull Source source) {
@@ -346,18 +403,23 @@ public class App extends Application implements Application.ActivityLifecycleCal
     }
 
     /**
-     * @return NotificationChannel
+     * @return NotificationChannel for standard notifications
      */
     @Nullable
     NotificationChannel getNotificationChannel() {
         return this.notificationChannel;
     }
 
+    /**
+     * @return NotificationChannel for important notifications
+     */
+    @Nullable
     NotificationChannel getNotificationChannelHiPri() {
         return this.notificationChannelHiPri;
     }
 
     /**
+     * Returns the OkHttpClient. Creates it if it did not exist.
      * @return OkHttpClient
      */
     @NonNull
@@ -421,9 +483,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         this.currentActivity = activity;
         if (activity instanceof MainActivity) {
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            if (nm != null) {
-                nm.cancel(UpdateJobService.NOTIFICATION_ID);
-            }
+            if (nm != null) nm.cancel(UpdateJobService.NOTIFICATION_ID);
         }
     }
 
@@ -483,12 +543,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 if (e instanceof IllegalArgumentException && e.toString().contains("Software rendering doesn't support hardware bitmaps")) {
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(App.this);
                     SharedPreferences.Editor ed = prefs.edit();
-                    ed.putBoolean(PREF_USE_HARDWARE_BMPS, PREF_USE_HARDWARE_BMPS_DEFAULT);
+                    ed.putBoolean(PREF_USE_HARDWARE_BMPS, false);
                     ed.commit();
                 }
                 if (BuildConfig.DEBUG) {
                     boolean isCurrentThread = Thread.currentThread().equals(t);
-                    Log.wtf(TAG, "*** Uncaught Exception in "  + (isCurrentThread ? "current thread: " : "another thread: ") + e.toString(), e);
+                    Log.wtf(TAG, "*** Uncaught Exception in "  + (isCurrentThread ? "current thread: " : "another thread: ") + e.toString() + "\nhttps://xkcd.com/2200/", e);
                     return;
                 }
 
@@ -511,6 +571,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
             }
         });
 
+        // from O on, a NotificationChannel is required
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             if (nm != null) {
@@ -575,33 +636,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
          }
     }
 
-    private void closeClient() {
-        try {
-            if (this.client != null) {
-                final OkHttpClient cc = this.client;
-                this.client = null;
-                Util.close(cc.cache());
-                cc.dispatcher()
-                        .executorService()
-                        .shutdown();
-                // connectionPool().evictAll() might throw android.os.NetworkOnMainThreadException (@ okhttp3.internal.Util.closeQuietly(Util.java:155))
-                new Thread() {
-                    @Override
-                    public void run() {
-                        cc.connectionPool().evictAll();
-                    }
-                }.start();
-            }
-        } catch (Throwable t) {
-            if (BuildConfig.DEBUG) Log.e(TAG, t.toString(), t);
-        }
-    }
-
     /** {@inheritDoc} */
     @Override
     public void onTrimMemory(int level) {
         if (level > android.content.ComponentCallbacks2.TRIM_MEMORY_MODERATE) {
             closeClient();
+            this.inflatedViewForWebViewActivity = null;
         }
         super.onTrimMemory(level);
     }
@@ -612,7 +652,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @RequiresPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED)
     @AnyThread
     private void scheduleStart() {
-        //TODO takes quite long (350 ms on SnapDragon 630)
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
         if (js == null) {
@@ -720,7 +759,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
         @Override
         public void run() {
             if (isBackgroundJobScheduled() == 0L) {
-                if (BuildConfig.DEBUG) Log.w(TAG + '-' + ScheduleChecker.class.getSimpleName(), "Periodic job was not scheduled! Doing that now.");
                 scheduleStart();
             }
         }

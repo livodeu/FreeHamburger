@@ -214,7 +214,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      * Removes the temporary search filter.
      */
     private void clearSearch() {
-        if (BuildConfig.DEBUG) Log.i(TAG, "clearSearch()");
         this.searchFilter = null;
         if (this.newsAdapter != null) this.newsAdapter.clearTemporaryFilters();
         this.clockView.setTint(Color.TRANSPARENT);
@@ -224,20 +223,32 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
-            //if (BuildConfig.DEBUG) Log.i(TAG, "dispatchKeyEvent(" + KeyEvent.keyCodeToString(event.getKeyCode()) + ")");
+            int cc;
+            LinearLayoutManager lm;
             switch (event.getKeyCode()) {
                 case KeyEvent.KEYCODE_MOVE_HOME:
                     this.recyclerView.scrollToPosition(0);
                     break;
                 case KeyEvent.KEYCODE_MOVE_END:
-                    RecyclerView.LayoutManager lm = this.recyclerView.getLayoutManager();
-                    if (lm != null) this.recyclerView.scrollToPosition(lm.getChildCount() - 1);
+                    cc = this.newsAdapter.getItemCount();
+                    if (cc > 0) this.recyclerView.scrollToPosition(cc - 1);
                     break;
                 case KeyEvent.KEYCODE_DPAD_DOWN:
-                    this.recyclerView.scrollBy(0, 20);
+                case KeyEvent.KEYCODE_PAGE_DOWN:
+                    lm = (LinearLayoutManager)this.recyclerView.getLayoutManager();
+                    if (lm != null) {
+                        cc = this.newsAdapter.getItemCount();
+                        int last = lm.findLastCompletelyVisibleItemPosition();
+                        if (last < cc - 1) this.recyclerView.scrollToPosition(last + 1);
+                    }
                     break;
                 case KeyEvent.KEYCODE_DPAD_UP:
-                    this.recyclerView.scrollBy(0, -20);
+                case KeyEvent.KEYCODE_PAGE_UP:
+                    lm = (LinearLayoutManager)this.recyclerView.getLayoutManager();
+                    if (lm != null) {
+                        int first = lm.findFirstCompletelyVisibleItemPosition();
+                        if (first > 0) this.recyclerView.scrollToPosition(first - 1);
+                    }
                     break;
             }
         }
@@ -849,7 +860,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             this.listPositionToRestore = savedInstanceState.getInt(STATE_LIST_POS, -1);
             this.newsForQuickView = (News)savedInstanceState.getSerializable(STATE_QUIKVIEW);
         }
-        //TODO super.onCreate() takes quite long (ca. 660 ms)
         super.onCreate(savedInstanceState);
 
         setVolumeControlStream(App.STREAM_TYPE);
@@ -1084,19 +1094,19 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
             this.infoDialog.show();
         }
-        // the following commands are for debug only
+        // --- the following commands are for debug only ---
         if (id == R.id.action_show_updates) {
             List<Long> tss = UpdateJobService.getAllRequests(this);
             int n = tss.size();
             if (n < 1) return true;
             if (n > 150) tss = tss.subList(n - 150, n);
-            final DateFormat df = DateFormat.getDateTimeInstance();
+            final DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
             final StringBuilder sb = new StringBuilder(512);
             int i = 1;
             long latest = tss.get(0);
             sb.append(i++).append(": ").append(df.format(new Date(latest))).append('\n');
             for (Long ts : tss) {
-                sb.append(i++).append(": ").append(df.format(new Date(ts))).append(" (").append(Math.round((ts - latest) / 60000f)).append(" Min.)\n");
+                sb.append(i++).append(": ").append(df.format(new Date(ts))).append(" (").append(Math.round((ts - latest) / 60000f)).append(" ')\n");
                 latest = ts;
             }
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -1470,7 +1480,10 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             if (lm != null) lm.scrollToPosition(this.listPositionToRestore);
             this.listPositionToRestore = -1;
         }
-        registerReceiver(connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+        registerReceiver(this.connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+
+        // this prepares the contents for WebViewActivity resp. TeletextActivity - these should start much faster (in the order of 30 ms vs. 350 ms)
+        this.handler.postDelayed(() -> ((App)getApplicationContext()).createInflatedViewForWebViewActivity(true), 2_000L);
     }
 
     /** {@inheritDoc} */
@@ -1500,7 +1513,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             super.onSaveInstanceState(outState);
             return;
         }
-        //if (BuildConfig.DEBUG) Log.i(TAG, "onSaveInstanceState(): Remembering list pos: " + top);
         outState.putInt(STATE_LIST_POS, top);
         //
         super.onSaveInstanceState(outState);

@@ -3,6 +3,7 @@ package de.freehamburger;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
@@ -20,9 +21,10 @@ import android.support.annotation.WorkerThread;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
 import android.webkit.MimeTypeMap;
@@ -35,12 +37,15 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -58,10 +63,9 @@ public class WebViewActivity extends AppCompatActivity {
     private static final String EXTRA_NEWS = "extra_news";
     private static final String TAG = "WebViewActivity";
     private static final String CHARSET = "UTF-8";
-    private static final String HTTP_404 = "<!DOCTYPE html><html lang=\"en\"><head><title>404 Not found.</title></head><body></body></html>";
-    private static final String HTTP_400_MAILTO = "<!DOCTYPE html><html lang=\"en\"><head><title>400 Bad Request.</title></head><body><h1>Mail links are not supported.</h1></body></html>";
-    private static final byte[] HTTP_404_BYTES = HTTP_404.getBytes(Charset.forName(CHARSET));
-    private static final byte[] HTTP_400_BYTES_MAILTO = HTTP_400_MAILTO.getBytes(Charset.forName(CHARSET));
+    private static final byte[] HTTP_404_BYTES = "<!DOCTYPE html><html lang=\"en\"><head><title>404 Not found.</title></head><body></body></html>".getBytes(Charset.forName(CHARSET));
+    private static final byte[] HTTP_400_BYTES_MAILTO = "<!DOCTYPE html><html lang=\"en\"><head><title>400 Bad Request.</title></head><body><h1>Mail links are not supported.</h1></body></html>".getBytes(Charset.forName(CHARSET));
+    private static final int MAX_WEBSITE_ERRORS_TO_DISPLAY = 30;
     /** these are a big no-no (well, favicon isn't really, but we don't need it) */
     private static final String[] BADWORDS = new String[] {"analytics", "cpix", "favicon", "sitestat", "tracker", "tracking", "webtrekk", "xtcore"};
     WebView webView;
@@ -109,19 +113,27 @@ public class WebViewActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_web_view);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
-        boolean loadMobile = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE);
+        // if we can use a View that has been previously inflated, this method takes much less time
+        ViewGroup preInflatedView = ((App)getApplicationContext()).getInflatedViewForWebViewActivity();
+        if (preInflatedView != null) {
+            ViewGroup content = findViewById(android.R.id.content);
+            content.addView(preInflatedView);
+        } else {
+            getDelegate().setContentView(R.layout.activity_web_view);
+        }
+
+        setSupportActionBar(findViewById(R.id.toolbar));
 
         this.webView = findViewById(R.id.webView);
         this.webView.setWebViewClient(new HamburgerWebViewClient());
         this.webView.setWebChromeClient(new HamburgerWebChromeClient(this));
+        this.webView.clearHistory();
 
         final WebSettings ws = this.webView.getSettings();
         ws.setUserAgentString(App.USER_AGENT);
-        if (!loadMobile && Util.isNetworkMobile(this)) {
+        if (!PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE)
+                && Util.isNetworkMobile(this)) {
             ws.setBlockNetworkLoads(true);
         }
         ws.setJavaScriptEnabled(true);
@@ -163,8 +175,19 @@ public class WebViewActivity extends AppCompatActivity {
 
     /** {@inheritDoc} */
     @Override
+    public void onDetachedFromWindow() {
+        // prepare a new instance of the content view for the next time this Acticity is launched
+        ((App)getApplicationContext()).createInflatedViewForWebViewActivity(false);
+        //
+        ViewGroup content = findViewById(android.R.id.content);
+        content.removeAllViews();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     protected void onResume() {
         super.onResume();
+        this.webView.clearHistory();
         if (!Util.isNetworkAvailable(this)) {
             Toast.makeText(getApplicationContext(), R.string.error_no_network, Toast.LENGTH_SHORT).show();
             finish();
@@ -278,6 +301,7 @@ public class WebViewActivity extends AppCompatActivity {
         /** {@inheritDoc} */
         @Override
         public void onPageFinished(WebView view, String url) {
+            if ("about:blank".equals(url)) return;
             Uri uri = Uri.parse(url);
             String scheme = uri.getScheme();
             boolean allowedScheme = (scheme == null || "http".equals(scheme) || "https".equals(scheme));
@@ -374,12 +398,17 @@ public class WebViewActivity extends AppCompatActivity {
      * A WebChromeClient implementation.
      */
     private static class HamburgerWebChromeClient extends WebChromeClient {
+        private final AppCompatActivity activity;
         @Nullable private final Handler handler;
         @Nullable private final ProgressBar progressBar;
         @Nullable private final ViewHider viewHider;
+        private final List<String> errors = new ArrayList<>();
+        @Nullable private String urlForErrors;
+        @Nullable private Snackbar sb;
 
         private HamburgerWebChromeClient(@NonNull AppCompatActivity activity) {
             super();
+            this.activity = activity;
             this.progressBar = activity.findViewById(R.id.webProgress);
             if (this.progressBar != null) {
                 this.handler = new Handler();
@@ -420,6 +449,42 @@ public class WebViewActivity extends AppCompatActivity {
                     case WARNING: Log.w(getClass().getSimpleName(), consoleMessage.sourceId() + (line > 0 ? " - Line " + line : "") + ": " + consoleMessage.message()); break;
                     case ERROR: Log.e(getClass().getSimpleName(), consoleMessage.sourceId() + (line > 0 ? " - Line " + line : "") + ": " + consoleMessage.message()); break;
                     default: return true;
+                }
+            }
+            // collect errors
+            if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+                if (this.urlForErrors == null) {
+                    this.urlForErrors = consoleMessage.sourceId();
+                } else if (!this.urlForErrors.equalsIgnoreCase(consoleMessage.sourceId())) {
+                    this.errors.clear();
+                    this.urlForErrors = consoleMessage.sourceId();
+                }
+                if (!this.errors.contains(consoleMessage.message())) this.errors.add(consoleMessage.message());
+                if (this.sb == null || !this.sb.isShown()) {
+                    Snackbar sb = Snackbar.make(this.activity.findViewById(R.id.coordinator_layout), R.string.msg_website_errors, Snackbar.LENGTH_INDEFINITE);
+                    Util.setSnackbarFont(sb, Util.CONDENSED, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? -1 : 12));
+                    sb.setAction("↗", v -> {
+                        final int n = HamburgerWebChromeClient.this.errors.size();
+                        StringBuilder msg = new StringBuilder(Math.min(2048, n * 256));
+                        for (int count = 0; count < n; count++) {
+                            String error = HamburgerWebChromeClient.this.errors.get(count);
+                            msg.append(count + 1).append(". ").append(error).append('\n');
+                            if (count == MAX_WEBSITE_ERRORS_TO_DISPLAY && count < n - 1) {msg.append("…"); break;}
+                        }
+                        LayoutInflater i = LayoutInflater.from(HamburgerWebChromeClient.this.activity);
+                        @SuppressLint("InflateParams")
+                        View view = i.inflate(R.layout.multi_text_view, null);
+                        TextView tv = view.findViewById(R.id.textView);
+                        tv.setTypeface(Util.CONDENSED);
+                        tv.setTextSize(14f);
+                        tv.setText(msg);
+                        AlertDialog.Builder b = new AlertDialog.Builder(HamburgerWebChromeClient.this.activity)
+                                .setTitle(R.string.label_website_errors)
+                                .setView(view)
+                                .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
+                        b.show();
+                    });
+                    sb.show();
                 }
             }
             return true;

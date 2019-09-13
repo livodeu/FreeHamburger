@@ -210,6 +210,8 @@
     <string name="msg_standby_bucket_frequent">Die App wird nicht oft genutzt. Hintergrundabfragen können um bis zu 8 h verzögert sein!</string>
     <string name="msg_standby_bucket_rare">Die App wird selten genutzt. Hintergrundabfragen können um bis zu 24 h verzögert sein!</string>
     <string name="msg_standby_bucket_workingset">Die App wird nicht sehr oft genutzt. Hintergrundabfragen können um bis zu 2 h verzögert sein!</string>
+    <string name="label_website_errors">Webseitenfehler</string>
+    <string name="msg_website_errors">Diese Webseite enthält Fehler.</string>
 
     <string name="url_wikipedia_http_streaming">https://de.m.wikipedia.org/wiki/HTTP-Streaming</string>
 
