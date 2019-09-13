@@ -721,6 +721,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
         @RequiresApi(Build.VERSION_CODES.P)
         private void checkBucket() {
             Activity a = getActivity();
+            if (a == null) return;
             UsageStatsManager usm = (UsageStatsManager)a.getSystemService(Context.USAGE_STATS_SERVICE);
             if (usm == null) return;
             int bucket = usm.getAppStandbyBucket();
