@@ -235,20 +235,56 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     break;
                 case KeyEvent.KEYCODE_DPAD_DOWN:
                 case KeyEvent.KEYCODE_PAGE_DOWN:
-                    lm = (LinearLayoutManager)this.recyclerView.getLayoutManager();
-                    if (lm != null) {
-                        cc = this.newsAdapter.getItemCount();
-                        int last = lm.findLastCompletelyVisibleItemPosition();
-                        if (last < cc - 1) this.recyclerView.scrollToPosition(last + 1);
+                    if (this.drawerLayout.isDrawerOpen(Gravity.END)) {
+                        NavigationView navigationView = findViewById(R.id.navigationView);
+                        Menu menu = navigationView.getMenu();
+                        int n = menu.size();
+                        for (int i = 0; i < n - 1; i++) {
+                            MenuItem item = menu.getItem(i);
+                            if (item.isChecked()) {
+                                MenuItem next = menu.getItem(i + 1);
+                                Source src = this.sourceForMenuItem.get(next.getItemId());
+                                changeSource(src, true, false);
+                                break;
+                            }
+                        }
+                    } else {
+                        lm = (LinearLayoutManager) this.recyclerView.getLayoutManager();
+                        if (lm != null) {
+                            cc = this.newsAdapter.getItemCount();
+                            int last = lm.findLastCompletelyVisibleItemPosition();
+                            if (last < cc - 1) this.recyclerView.scrollToPosition(last + 1);
+                        }
                     }
                     break;
                 case KeyEvent.KEYCODE_DPAD_UP:
                 case KeyEvent.KEYCODE_PAGE_UP:
-                    lm = (LinearLayoutManager)this.recyclerView.getLayoutManager();
-                    if (lm != null) {
-                        int first = lm.findFirstCompletelyVisibleItemPosition();
-                        if (first > 0) this.recyclerView.scrollToPosition(first - 1);
+                    if (this.drawerLayout.isDrawerOpen(Gravity.END)) {
+                        NavigationView navigationView = findViewById(R.id.navigationView);
+                        Menu menu = navigationView.getMenu();
+                        int n = menu.size();
+                        for (int i = 1; i < n; i++) {
+                            MenuItem item = menu.getItem(i);
+                            if (item.isChecked()) {
+                                MenuItem prev = menu.getItem(i - 1);
+                                Source src = this.sourceForMenuItem.get(prev.getItemId());
+                                changeSource(src, true, false);
+                                break;
+                            }
+                        }
+                    } else {
+                        lm = (LinearLayoutManager) this.recyclerView.getLayoutManager();
+                        if (lm != null) {
+                            int first = lm.findFirstCompletelyVisibleItemPosition();
+                            if (first > 0) this.recyclerView.scrollToPosition(first - 1);
+                        }
                     }
+                    break;
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                    this.drawerLayout.openDrawer(Gravity.END);
+                    break;
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                    this.drawerLayout.closeDrawer(Gravity.END);
                     break;
             }
         }
@@ -895,7 +931,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     // get selected menu item
                     int id = menuItem.getItemId();
                     // when item is tapped, close drawer (after a brief pause to let the user see the new selection)
-                    MainActivity.this.handler.postDelayed(() -> MainActivity.this.drawerLayout.closeDrawer(Gravity.END, true), 500L);
+                    MainActivity.this.handler.postDelayed(() -> MainActivity.this.drawerLayout.closeDrawer(Gravity.END, true), 300L);
                     // select source that matches the menu item
                     changeSource(MainActivity.this.sourceForMenuItem.get(id), true, false);
                     return true;
