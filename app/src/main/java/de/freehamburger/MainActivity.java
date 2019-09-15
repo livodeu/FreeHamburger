@@ -162,7 +162,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private DrawerLayout drawerLayout;
     private ClockView clockView;
     private Filter searchFilter = null;
-    private int listPositionToRestore = -1;
+    @IntRange(from = -1) private int listPositionToRestore = RecyclerView.NO_POSITION;
     @NonNull private Source currentSource = Source.HOME;
     private Snackbar snackbarMaybeQuit;
     private Intro intro;
@@ -281,9 +281,15 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     }
                     break;
                 case KeyEvent.KEYCODE_DPAD_LEFT:
+                    // if multi-column layout, left key is used to navigate in the grid
+                    if (this.recyclerView.getLayoutManager() instanceof GridLayoutManager) break;
+                    //
                     this.drawerLayout.openDrawer(Gravity.END);
                     break;
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
+                    // if multi-column layout, right key is used to navigate in the grid
+                    if (this.recyclerView.getLayoutManager() instanceof GridLayoutManager) break;
+                    //
                     this.drawerLayout.closeDrawer(Gravity.END);
                     break;
             }
@@ -369,17 +375,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
         if (Intent.ACTION_SEARCH.equals(action)) {
             String query = intent.getStringExtra(SearchManager.QUERY);
-            if (BuildConfig.DEBUG) {
-                Bundle extras = intent.getExtras();
-                if (extras != null) {
-                    Set<String> keys = extras.keySet();
-                    for (String key : keys) {
-                        Object value = extras.get(key);
-                        if (value != null) Log.i(TAG, "'" + key + "'='" + value + "' (" + value.getClass() + ")");
-                        else Log.i(TAG, "'" + key + "'= null");
-                    }
-                }
-            }
+            if (query == null) return;
             int sep = query.lastIndexOf('#');
             String queryString = sep > 0 ? query.substring(0, sep) : query;
             @Nullable Source source = null;
@@ -893,7 +889,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     }
                 }
             }
-            this.listPositionToRestore = savedInstanceState.getInt(STATE_LIST_POS, -1);
+            this.listPositionToRestore = savedInstanceState.getInt(STATE_LIST_POS, RecyclerView.NO_POSITION);
             this.newsForQuickView = (News)savedInstanceState.getSerializable(STATE_QUIKVIEW);
         }
         super.onCreate(savedInstanceState);
@@ -1367,7 +1363,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
             // let's remember the Source that we are loading now - in case the user changes it while we are loading...
             private final Source sourceToSetOnSuccess = MainActivity.this.currentSource;
-            private final int c = getResources().getColor(R.color.colorPrimary);
+            private final int c = Util.getColor(MainActivity.this, R.color.colorPrimary);
 
             /** {@inheritDoc} */
             @Override
@@ -1510,12 +1506,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             ed.putBoolean(App.PREF_PLAY_INTRO, false);
             ed.apply();
         }
-        if (this.listPositionToRestore >= 0) {
-            if (BuildConfig.DEBUG) Log.i(TAG, "Restoring list position " + this.listPositionToRestore);
-            RecyclerView.LayoutManager lm = this.recyclerView.getLayoutManager();
-            if (lm != null) lm.scrollToPosition(this.listPositionToRestore);
-            this.listPositionToRestore = -1;
-        }
         registerReceiver(this.connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
         // this prepares the contents for WebViewActivity resp. TeletextActivity - these should start much faster (in the order of 30 ms vs. 350 ms)
@@ -1591,7 +1581,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (file == null) return;
         BlobParser blobParser = new BlobParser(this, new BlobParser.BlobParserListener() {
 
-            private final int c = getResources().getColor(R.color.colorPrimary);
+            private final int c = Util.getColor(MainActivity.this, R.color.colorPrimary);
 
             @Override
             public void blobParsed(@Nullable Blob blob, boolean ok, @Nullable Throwable oops) {
@@ -1600,7 +1590,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     if (BuildConfig.DEBUG) Log.e(TAG, "Parsing failed: " + oops);
                     Snackbar sb = Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_INDEFINITE);
                     sb.setAction("↻", v -> handler.postDelayed(MainActivity.this::onRefresh, 500L));
-                    sb.setActionTextColor(getResources().getColor(R.color.colorPrimaryLight));
+                    sb.setActionTextColor(Util.getColor(MainActivity.this, R.color.colorPrimaryLight));
                     Util.setSnackbarActionFont(sb, Typeface.DEFAULT_BOLD, 26f);
                     sb.show();
                     MainActivity.this.swipeRefreshLayout.setRefreshing(false);
@@ -1669,9 +1659,9 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 }
 
                 if (MainActivity.this.listPositionToRestore >= 0) {
-                    RecyclerView.LayoutManager lm = recyclerView.getLayoutManager();
+                    RecyclerView.LayoutManager lm = MainActivity.this.recyclerView.getLayoutManager();
                     if (lm != null) lm.scrollToPosition(MainActivity.this.listPositionToRestore);
-                    MainActivity.this.listPositionToRestore = -1;
+                    MainActivity.this.listPositionToRestore = RecyclerView.NO_POSITION;
                 }
 
                 app.trimCacheIfNeeded();
