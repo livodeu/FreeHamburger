@@ -142,24 +142,28 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
             }
             out = new BufferedOutputStream(new FileOutputStream(f));
             final InputStream in;
-            String contentEncoding = response.header("Content-Encoding");
-            final boolean gzip = "gzip".equals(contentEncoding);
+            final boolean gzip = "gzip".equals(response.header("Content-Encoding"));
             if (gzip) {
                 in = new CountingGZIPInputStream(body.byteStream());
             } else {
                 in = body.byteStream();
             }
 
-            long total = 0L;
+            long totalBytes = 0L;
+            long latestTotal = 0L;
+            // call publishProgress() only if progress has increased by at least 1 %
+            final long minAmountForProgressReporting = contentLength / 100L;
+            //
             for (byte[] buffer = new byte[READ_BUFFER]; ; ) {
                 int read = in.read(buffer);
                 if (read <= 0) break;
                 out.write(buffer, 0, read);
-                if (!gzip) total += read;
-                if (contentLength > 0L) {
-                    if (gzip) publishProgress((float)(((CountingGZIPInputStream)in).getTotal()) / (float)contentLength);
-                    else publishProgress((float)total / (float)contentLength);
-                }
+                if (contentLength <= 0L) continue;
+                // publish progress
+                if (!gzip) totalBytes += read;
+                long total = gzip ? ((CountingGZIPInputStream)in).getTotal() : totalBytes;
+                if (total - latestTotal > minAmountForProgressReporting) publishProgress((float)total / (float)contentLength);
+                latestTotal = total;
             }
             Util.close(out, body);
             publishProgress(1f);
@@ -203,7 +207,6 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
         if (this.listener == null || values == null || values.length == 0) return;
         DownloaderListener l = this.listener.get();
         if (l == null) return;
-        //Log.i(TAG, "onProgressUpdate(" + values[0] + ")");
         l.downloadProgressed(values[0]);
     }
 
