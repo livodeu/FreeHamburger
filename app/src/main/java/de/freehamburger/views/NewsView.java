@@ -247,6 +247,7 @@ public class NewsView extends RelativeLayout {
              }
         }
 
+
         // as the last step, load the image
         if (this.imageView == null) return;
         TeaserImage image = news.getTeaserImage();
@@ -254,23 +255,31 @@ public class NewsView extends RelativeLayout {
             // it is perfectly normal to have no TeaserImage
             this.imageView.setImageDrawable(null);
             this.imageView.setTag(null);
-            this.imageView.setVisibility(View.GONE);
+            // make sure the textViewDate is as wide as the imageView would be
+            int imageWidth = getResources().getDimensionPixelSize(R.dimen.image_width_normal);
+            int sbit = getResources().getDimensionPixelSize(R.dimen.space_between_image_and_text);
+            this.textViewDate.setMinWidth(imageWidth + sbit);
             // let textViewTitle start to the end of textViewDate instead of imageView
             if (this.textViewTitle != null) {
                 RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewTitle.getLayoutParams();
                 lp.removeRule(RelativeLayout.END_OF);
                 lp.addRule(RelativeLayout.END_OF, R.id.textViewDate);
             }
-            // let textViewFirstSentence start to the end of textViewDate instead of imageView
+            // let textViewFirstSentence start below textViewDate or textViewTitle instead of on the end of textViewDate
             if (this.textViewFirstSentence != null) {
                 RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
                 lp.removeRule(RelativeLayout.END_OF);
-                lp.addRule(RelativeLayout.END_OF, R.id.textViewDate);
+                lp.addRule(RelativeLayout.ALIGN_PARENT_START);
+                lp.addRule(RelativeLayout.BELOW, this.textViewTitle != null && this.textViewTitle.getVisibility() == View.VISIBLE && this.textViewTitle.getText().length() > 0 ? R.id.textViewTitle : R.id.textViewDate);
+                // adopt the top margin from the imageView
+                lp.topMargin = this.imageView.getLayoutParams() instanceof MarginLayoutParams ? ((MarginLayoutParams)this.imageView.getLayoutParams()).topMargin : 0;
             }
             return;
         }
         // restore imageView, in case it had been removed previously
         this.imageView.setVisibility(View.VISIBLE);
+        // restore min. width of textViewDate (which is normally not set)
+        this.textViewDate.setMinWidth(0);
         // restore layout parameters of textViewTitle
         if (this.textViewTitle != null) {
             RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewTitle.getLayoutParams();
@@ -281,7 +290,11 @@ public class NewsView extends RelativeLayout {
         if (this.textViewFirstSentence != null) {
             RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
             lp.removeRule(RelativeLayout.END_OF);
+            lp.removeRule(RelativeLayout.ALIGN_PARENT_START);
+            lp.addRule(RelativeLayout.BELOW, R.id.textViewTitle);
             lp.addRule(RelativeLayout.END_OF, R.id.imageView);
+            // normally, no top margin
+            lp.topMargin = 0;
         }
         //
         int imageViewMaxWidth;
