@@ -169,7 +169,7 @@
     <string name="error_tts_fail_not_downloaded">Sprachausgabe fehlgeschlagen! Daten noch nicht geladen.</string>
 
     <string name="intro_1">Wählen Sie eine Kategorie in der rechten „Schublade”.</string>
-    <string name="intro_2">Suchen Sie, wählen Sie Regionen, filtern Sie und ändern Sie Einstellungen durch Antippen der Uhr.</string>
+    <string name="intro_2">Suchen Sie und ändern Sie Einstellungen wie bevorzugte Regionen oder Filter durch Antippen der Uhr.</string>
     <string name="intro_3">Bewegen Sie die Liste, um die Artikel zu sehen.</string>
     <string name="intro_4">Tippen Sie einen Artikel an, um Details zu sehen.</string>
     <string name="intro_5">Hoffentlich finden Sie die App nützlich!</string>
