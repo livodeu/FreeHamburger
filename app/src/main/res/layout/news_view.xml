@@ -64,7 +64,6 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="@dimen/space_between_image_and_text"
         android:layout_marginBottom="8dp"
-        android:background="@drawable/bg_image"
         android:scaleType="fitCenter"
         tools:ignore="RtlSymmetry"
         tools:visibility="visible"
