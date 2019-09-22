@@ -222,6 +222,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      * @param dest ImageView
      * @param imageWidth expected width of the image
      * @param imageHeight expected height of the image
+     * @throws NullPointerException if {@code url} is {@code null}
      */
     @RequiresPermission(Manifest.permission.INTERNET)
     public void loadImageIntoImageView(@NonNull String url, @Nullable final ImageView dest, int imageWidth, int imageHeight) {
@@ -232,7 +233,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
             url = "https" + url.substring(4);
         }
         if (imageWidth > 0 && imageHeight > 0) {
-            PaintDrawable pd = new PaintDrawable(getResources().getColor(R.color.colorPrimaryTrans));
+            PaintDrawable pd = new PaintDrawable(android.graphics.Color.TRANSPARENT);
             pd.setIntrinsicWidth(imageWidth);
             pd.setIntrinsicHeight(imageHeight);
             this.handler.post(new PictureLoader(this, url, dest, null, pd, (float)imageWidth / (float)imageHeight));
@@ -415,7 +416,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
                 HamburgerService service = this.refService.get();
                 if (service == null || service.cannotDownload()) return;
                 RequestCreator rc = service.picasso.load(this.url);
-                if (this.placeholder != null) rc.placeholder(this.placeholder); //else rc.noPlaceholder();
+                if (this.placeholder != null) rc.placeholder(this.placeholder); else rc.noPlaceholder();
                 rc
                         .networkPolicy(NetworkPolicy.NO_CACHE)
                         .resize(this.width, this.height)
@@ -471,7 +472,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
 
                 // first try the cache (NetworkPolicy.OFFLINE)
                 RequestCreator rc = service.picasso.load(this.url);
-                if (this.placeholder != null) rc.placeholder(this.placeholder); //else rc.noPlaceholder();
+                if (this.placeholder != null) rc.placeholder(this.placeholder); else rc.noPlaceholder();
                 rc
                         .networkPolicy(NetworkPolicy.OFFLINE)
                         .resize(this.width, this.height)
