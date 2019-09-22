@@ -58,8 +58,8 @@
     <string name="hint_search">Search</string>
     <string name="hint_search_reset">Press ◀ to reset.</string>
 
-    <string name="intro_1">Select categories in the right-hand drawer.</string>
-    <string name="intro_2">Search, apply filters, change settings here.</string>
+    <string name="intro_1">Select a category in the right-hand drawer.</string>
+    <string name="intro_2">Search, apply filters and change other settings here.</string>
     <string name="intro_3">Scroll through the list to see the articles.</string>
     <string name="intro_4">Tap an article to see details.</string>
     <string name="intro_5">Enjoy the app!</string>
