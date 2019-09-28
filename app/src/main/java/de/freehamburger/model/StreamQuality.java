@@ -5,12 +5,9 @@ import android.support.annotation.IntRange;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 
-import java.util.Arrays;
 import java.util.Map;
 
-import de.freehamburger.BuildConfig;
 import de.freehamburger.R;
-import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
 
 /**
@@ -63,7 +60,7 @@ public enum StreamQuality {
             else if (screenWidth >= StreamQuality.H264L.getWidth()) pref = mobile ? PREF_M : PREF_L;
             else if (screenWidth >= StreamQuality.H264M.getWidth()) pref = mobile ? PREF_S : PREF_M;
             else pref = PREF_S;
-            if (BuildConfig.DEBUG) Log.i(StreamQuality.class.getSimpleName(), "We'd like stream quality preference " + Arrays.toString(pref) + " because screen width is " + screenWidth + " px, mobile network: " + mobile);
+            //if (BuildConfig.DEBUG) Log.i(StreamQuality.class.getSimpleName(), "We'd like stream quality preference " + Arrays.toString(pref) + " because screen width is " + screenWidth + " px, mobile network: " + mobile);
         } else {
             pref = PREF_S;
         }
@@ -83,11 +80,20 @@ public enum StreamQuality {
         return null;
     }
 
+    /**
+     * Constructor.
+     * @param label string resource to use as label
+     * @param width video width
+     */
     StreamQuality(@StringRes int label, int width) {
         this.label = label;
         this.width = width;
     }
 
+    /**
+     * Returns the string resource id of the label.
+     * @return string resource id of the label
+     */
     @StringRes
     public int getLabel() {
         return label;
