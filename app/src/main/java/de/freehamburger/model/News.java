@@ -85,6 +85,7 @@ public final class News implements Comparable<News>, Serializable {
      * Fixes the given News objects.<br>
      * This currently includes the correction of wrong (" ") quotation marks.
      * @param someNews Collection of News
+     * @throws NullPointerException if {@code someNews} is {@code null}
      */
     static void correct(@NonNull final Collection<News> someNews) {
         for (News news : someNews) {
@@ -96,6 +97,7 @@ public final class News implements Comparable<News>, Serializable {
      * Fixes the given News object.<br>
      * This currently includes the correction of wrong (" ") quotation marks.
      * @param news News
+     * @throws NullPointerException if {@code news} is {@code null}
      */
     public static void correct(@NonNull final News news) {
         if (news.corrected) return;
@@ -106,6 +108,13 @@ public final class News implements Comparable<News>, Serializable {
         news.corrected = true;
     }
 
+    /**
+     * Parses the data read from the given JsonReader and fills the given News object.
+     * @param reader JsonReader
+     * @param news News
+     * @throws IOException if an I/O error occurs
+     * @throws NullPointerException if either parameter is {@code null}
+     */
     private static void loop(@NonNull final JsonReader reader, @NonNull final News news) throws IOException {
         String name = null;
         final Set<TeaserImage> images = new HashSet<>(1);
@@ -166,7 +175,7 @@ public final class News implements Comparable<News>, Serializable {
                             news.streams.put(StreamQuality.valueOf(q), url);
                         }
                     } catch (Exception e) {
-                        if (BuildConfig.DEBUG) Log.w(TAG, "While parsing 'streams':" + e.toString());
+                        if (BuildConfig.DEBUG) Log.w(TAG, "While parsing 'streams': " + e.toString());
                     }
                 }
                 reader.endObject();
@@ -211,7 +220,7 @@ public final class News implements Comparable<News>, Serializable {
 
         // if there is no 'teaserImage' but the 'images' set is not empty, pick one of those and set it as 'teaserImage'
         if (news.teaserImage == null && !images.isEmpty()) {
-            if (BuildConfig.DEBUG) Log.i(TAG, "Using element of 'images' as 'teaserImage' in '" + news.getTitle() + "'");
+            //if (BuildConfig.DEBUG) Log.i(TAG, "Using element of 'images' as 'teaserImage' in '" + news.getTitle() + "'");
             news.teaserImage = images.iterator().next();
         }
     }
