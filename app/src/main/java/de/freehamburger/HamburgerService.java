@@ -93,7 +93,6 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      * Builds the Picasso instance.
      */
     private void buildPicasso() {
-        if (BuildConfig.DEBUG) Log.i(TAG, "Building Picasso.");
         // first, cleanup if there are old things around
         if (this.loaderExecutor != null) {
             this.loaderExecutor.shutdown();
