@@ -1,12 +1,10 @@
 package de.freehamburger.util;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -17,7 +15,10 @@ import de.freehamburger.BuildConfig;
  */
 public class Sun {
 
-    private static final String TAG = "Sun";
+    /** height of horizon in rad */
+    private static final double H = -.0145;
+    private static final double SIN_H = Math.sin(H);
+
     private final double sunriseGMT;
     private final double sunsetGMT;
 
@@ -28,7 +29,7 @@ public class Sun {
      * @param c Calendar (optional, only its {@link Calendar#DAY_OF_YEAR DAY_OF_YEAR} field and its {@link TimeZone} are used)
      * @return Sun
      */
-    public static Sun sunriseAndSunset(@Nullable Calendar c) {
+    public static Sun sunriseAndSunset(@NonNull Calendar c) {
         final String country = Locale.getDefault().getCountry();
         final double lat, lon;
         switch (country) {
@@ -95,31 +96,27 @@ public class Sun {
     /**
      * Calculates sunrise and sunset for the given day.<br>
      * based on the formula found <a href="https://lexikon.astronomie.info/zeitgleichung/">here</a>
-     * @param c Calendar (optional, only its {@link Calendar#DAY_OF_YEAR DAY_OF_YEAR} field and its {@link TimeZone} are used)
+     * @param c Calendar
      * @param lat latitude
      * @param lon longitude
      * @return Sun
      */
     @NonNull
-    public static Sun sunriseAndSunset(@Nullable Calendar c, double lat, double lon) {
-        if (c == null) c = new GregorianCalendar();
-        double latRad = lat * Math.PI / 180.;
-        int t = c.get(Calendar.DAY_OF_YEAR);
-        double declSun = .409526325277017 * Math.sin(.0169060504029192 * (t - 80.0856919827619));
-        double h = -.0145;
-        double delta = 12. * Math.acos((Math.sin(h) - Math.sin(latRad) * Math.sin(declSun)) / (Math.cos(latRad) * Math.cos(declSun))) / Math.PI;
-        double sunriseWoz = 12. - delta;
-        double sunsetWoz = 12. + delta;
-        double wozmoz = -.170869921174742 * Math.sin(.0336997028793971 * t + .465419984181394) - .129890681040717 * Math.sin(.0178674832556871 * t - .167936777524864);
-        double sunriseMoz = sunriseWoz - wozmoz;
-        double sunsetMoz = sunsetWoz - wozmoz;
-        double sunriseGMT = sunriseMoz - (lon / 15.);
-        double sunsetGMT = sunsetMoz - (lon / 15.);
+    public static Sun sunriseAndSunset(@NonNull final Calendar c, final double lat, final double lon) {
+        final double latRad = lat * Math.PI / 180.;
+        final int t = c.get(Calendar.DAY_OF_YEAR);
+        final double declSun = .409526325277017 * Math.sin(.0169060504029192 * (t - 80.0856919827619));
+        final double delta = 12. * Math.acos((SIN_H - Math.sin(latRad) * Math.sin(declSun)) / (Math.cos(latRad) * Math.cos(declSun))) / Math.PI;
+        final double sunriseWoz = 12. - delta;
+        final double sunsetWoz = 12. + delta;
+        final double wozmoz = -.170869921174742 * Math.sin(.0336997028793971 * t + .465419984181394) - .129890681040717 * Math.sin(.0178674832556871 * t - .167936777524864);
+        final double sunriseMoz = sunriseWoz - wozmoz;
+        final double sunsetMoz = sunsetWoz - wozmoz;
+        final double sunriseGMT = sunriseMoz - (lon / 15.);
+        final double sunsetGMT = sunsetMoz - (lon / 15.);
 
-        TimeZone tz = c.getTimeZone();
-        int offset = tz.getOffset(c.getTimeInMillis());
-        //double sunriseLocal = sunriseGMT + offset;
-        //double sunsetLocal = sunsetGMT + offset;
+        final int offset = c.getTimeZone().getOffset(c.getTimeInMillis());
+        // local sunrise is: sunriseGMT + offset, local sunset is: sunsetGMT + offset;
 
         Sun sun = new Sun(sunriseGMT, sunsetGMT);
 
@@ -133,7 +130,7 @@ public class Sun {
                     + nf.format(offset / 3_600_000.)
                     + " h)"
                     ;
-            android.util.Log.i(TAG, msg);
+            android.util.Log.i(Sun.class.getSimpleName(), msg);
         }
 
         return sun;
@@ -149,14 +146,6 @@ public class Sun {
         this.sunriseGMT = sunriseGMT;
         this.sunsetGMT = sunsetGMT;
     }
-
-    /*public double getSunriseGMT() {
-        return sunriseGMT;
-    }
-
-    public double getSunsetGMT() {
-        return sunsetGMT;
-    }*/
 
     /**
      * @param c Calendar
