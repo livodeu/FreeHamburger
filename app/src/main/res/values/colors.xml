@@ -16,6 +16,7 @@
     <color name="colorContentQuotation">#ff064a91</color>
     <color name="colorContentBox">#ff064a91</color>
     <color name="colorDirtyWhite">#ededed</color>
+    <color name="colorIntro">#77ff0000</color>
 
     <!-- background color for news -->
     <color name="colorBgNews">#5c26a6f0</color>

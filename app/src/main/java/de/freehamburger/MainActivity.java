@@ -722,6 +722,9 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /** {@inheritDoc} */
     @Override
     public void onBackPressed() {
+        if (this.intro != null && this.intro.isPlaying()) {
+            return;
+        }
         // if a search filter had been applied, accept the back button as command to remove it
         if (this.newsAdapter != null && this.newsAdapter.hasTemporaryFilter()) {
             clearSearch();
@@ -1210,6 +1213,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         //
         if (isStory && content != null) {
             intent = new Intent(this, NewsActivity.class);
+            intent.putExtra(NewsActivity.EXTRA_NEWS, news);
         } else if (isStory && !TextUtils.isEmpty(urlToDetailsJson)) {
             loadDetails(news);
             intent = null;
@@ -1220,6 +1224,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 intent = null;
             } else {
                 intent = new Intent(this, WebViewActivity.class);
+                intent.putExtra(WebViewActivity.EXTRA_NEWS, news);
             }
         } else if (isVideo) {
             if (!Util.isNetworkAvailable(this)) {
@@ -1230,20 +1235,22 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     boolean loadVideos = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_LOAD_VIDEOS_OVER_MOBILE, App.DEFAULT_LOAD_VIDEOS_OVER_MOBILE);
                     if (!loadVideos) {
                         intent = null;
-                        Snackbar.make(coordinatorLayout, R.string.pref_title_pref_load_videos_over_mobile_off, Snackbar.LENGTH_SHORT).show();
+                        Snackbar.make(this.coordinatorLayout, R.string.pref_title_pref_load_videos_over_mobile_off, Snackbar.LENGTH_SHORT).show();
                     } else {
                         intent = new Intent(this, VideoActivity.class);
+                        intent.putExtra(VideoActivity.EXTRA_NEWS, news);
                     }
                 } else {
                     intent = new Intent(this, VideoActivity.class);
+                    intent.putExtra(VideoActivity.EXTRA_NEWS, news);
                 }
             }
         } else {
             intent = new Intent(this, NewsActivity.class);
+            intent.putExtra(NewsActivity.EXTRA_NEWS, news);
         }
         //
         if (intent != null) {
-            intent.putExtra(NewsActivity.EXTRA_NEWS, news);
             startActivity(intent, ActivityOptionsCompat.makeScaleUpAnimation(v, (int) x, (int) y, v.getWidth(), v.getHeight()).toBundle());
             clearSearch();
         }
@@ -1292,7 +1299,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /** {@inheritDoc} */
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        boolean network = Util.isNetworkAvailable(this);
+       boolean network = Util.isNetworkAvailable(this);
         MenuItem itemTeletext = menu.findItem(R.id.action_teletext);
         itemTeletext.setVisible(network);
         // pinned shortcuts are available only from Oreo on and only in some launchers (https://developer.android.com/guide/topics/ui/shortcuts/creating-shortcuts#pinned)
@@ -1331,6 +1338,15 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      * @param showMsgOnNetworkFailure if {@code true} show a message if there is no network connection
      */
     private void onRefresh(boolean showMsgOnNetworkFailure) {
+        if (this.currentSource.isLocked()) {
+            if (BuildConfig.DEBUG) Log.e(TAG, "Cannot refresh - " + currentSource + " is locked!");
+            this.swipeRefreshLayout.setRefreshing(false);
+            return;
+        }
+        if (this.intro != null && this.intro.isPlaying()) {
+            this.swipeRefreshLayout.setRefreshing(false);
+            return;
+        }
         App app = (App) getApplicationContext();
         // check whether loading is possible
         if (!Util.isNetworkAvailable(app)) {
@@ -1440,7 +1456,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
              */
             boolean fileIsQuiteNew = System.currentTimeMillis() - app.getMostRecentUpdate(this.currentSource) < App.LOCAL_FILE_MAXAGE;
             if (cacheOnly || fileIsQuiteNew || !networkAvailable) {
-                parseLocalFileAsync(localFile);
+            parseLocalFileAsync(localFile);
                 if (!cacheOnly && !networkAvailable) {
                     showNoNetworkSnackbar();
                 }
@@ -1455,8 +1471,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
         // if there is no local file or if it is too old, download the resource
         this.swipeRefreshLayout.setRefreshing(true);
-        onRefresh();
-    }
+            onRefresh();
+        }
 
     /** {@inheritDoc} */
     @Override
@@ -1497,14 +1513,15 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     @Override
     protected void onResume() {
         super.onResume();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean hasTemporaryFilter = this.newsAdapter.setFilters(TextFilter.createTextFiltersFromPreferences(this));
         this.clockView.setTint(hasTemporaryFilter ? Util.getColor(this, R.color.colorFilter) : Color.TRANSPARENT);
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         if (prefs.getBoolean(App.PREF_PLAY_INTRO, true)) {
-            playIntro();
-            SharedPreferences.Editor ed = prefs.edit();
-            ed.putBoolean(App.PREF_PLAY_INTRO, false);
-            ed.apply();
+            if (playIntro()) {
+                SharedPreferences.Editor ed = prefs.edit();
+                ed.putBoolean(App.PREF_PLAY_INTRO, false);
+                ed.apply();
+            }
         }
         registerReceiver(this.connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
@@ -1559,15 +1576,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             boolean wrongSource = this.currentSource != this.newsAdapter.getSource();
             boolean missingImages = NewsRecyclerAdapter.hasMissingImages(this);
             if (adapterDataIsOld || adapterIsEmpty || wrongSource || missingImages) {
-                if (BuildConfig.DEBUG) {
-                    if (adapterDataIsOld) Log.i(TAG, "Refreshing because adapter data is old");
-                    if (adapterIsEmpty) Log.i(TAG, "Refreshing because adapter is empty");
-                    if (wrongSource) Log.i(TAG, "Refreshing because current source (" + currentSource + ") is other than adapter source (" + newsAdapter.getSource() + ")");
-                    if (missingImages) Log.i(TAG, "Refreshing because adapter does not have all images");
-                }
                 onRefreshUseCache(false);
-            } else if (BuildConfig.DEBUG) {
-                Log.i(TAG, "No need to refresh - adapter contains " + newsAdapter.getItemCount()  + " " + newsAdapter.getSource() + " items from " + DateFormat.getTimeInstance().format(new Date(newsAdapter.getUpdated())));
             }
         }
     }
@@ -1577,7 +1586,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      * Does not do anything if the file does not exist.
      * @param file File to parse
      */
-    private void parseLocalFileAsync(@Nullable File file) {
+    private synchronized void parseLocalFileAsync(@Nullable File file) {
         if (file == null) return;
         BlobParser blobParser = new BlobParser(this, new BlobParser.BlobParserListener() {
 
@@ -1587,7 +1596,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             public void blobParsed(@Nullable Blob blob, boolean ok, @Nullable Throwable oops) {
 
                 if (!ok || blob == null || oops != null) {
-                    if (BuildConfig.DEBUG) Log.e(TAG, "Parsing failed: " + oops);
+                    if (BuildConfig.DEBUG) Log.e(TAG, "Parsing failed: " + oops, oops);
                     Snackbar sb = Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_INDEFINITE);
                     sb.setAction("↻", v -> handler.postDelayed(MainActivity.this::onRefresh, 500L));
                     sb.setActionTextColor(Util.getColor(MainActivity.this, R.color.colorPrimaryLight));
@@ -1616,8 +1625,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 boolean hasTemporaryFilter = MainActivity.this.newsAdapter.hasTemporaryFilter();
                 MainActivity.this.clockView.setTime(blobDate != null ? blobDate.getTime() : file.lastModified());
                 MainActivity.this.clockView.setTint(hasTemporaryFilter ? Util.getColor(MainActivity.this, R.color.colorFilter) : 0);
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
                 if (hasTemporaryFilter) {
-                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
                     boolean hintResetSearchShown = prefs.getBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, false);
                     if (!hintResetSearchShown) {
                         String orig = getString(R.string.hint_search_reset);
@@ -1628,7 +1637,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                             int i = orig.indexOf('◀');
                             ss.setSpan(is, i, i + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                         }
-                        MainActivity.this.popupManager.showPopup(clockView, ss, 5_000L);
+                        MainActivity.this.popupManager.showPopup(MainActivity.this.clockView, ss, 5_000L);
                         SharedPreferences.Editor ed = prefs.edit();
                         ed.putBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, true);
                         ed.apply();
@@ -1661,6 +1670,10 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 if (MainActivity.this.listPositionToRestore >= 0) {
                     RecyclerView.LayoutManager lm = MainActivity.this.recyclerView.getLayoutManager();
                     if (lm != null) lm.scrollToPosition(MainActivity.this.listPositionToRestore);
+                    if (MainActivity.this.listPositionToRestore == 0) {
+                        // if we scroll to the top, display the title
+                        ((AppBarLayout)findViewById(R.id.appbar_layout)).setExpanded(true);
+                    }
                     MainActivity.this.listPositionToRestore = RecyclerView.NO_POSITION;
                 }
 
@@ -1679,14 +1692,14 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
     /**
      * Plays the introduction sequence.
+     * @return {@code true} if it has been started
      */
-    private void playIntro() {
-        final int tint = 0x77ff0000;
-        if (this.intro != null && this.intro.isPlaying()) return;
+    private boolean playIntro() {
+        if (this.intro != null && this.intro.isPlaying()) return false;
         if (!Util.isNetworkAvailable(this)) {
             // display a hint to the user if (s)he starts the app for the first time and there is no network connection
-            Snackbar sb = Snackbar.make(coordinatorLayout, R.string.error_no_network_ext, Snackbar.LENGTH_INDEFINITE);
-            Util.setSnackbarFont(sb, Util.CONDENSED, 12f);
+            Snackbar sb = Snackbar.make(this.coordinatorLayout, R.string.error_no_network_ext, Snackbar.LENGTH_INDEFINITE);
+            Util.setSnackbarFont(sb, Util.CONDENSED, 13f);
             Intent settingsIntent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
             if (getPackageManager().resolveActivity(settingsIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
                 // the unicode wrench symbol 🔧 (0x1f527)
@@ -1702,10 +1715,15 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 sb.setActionTextColor(Color.RED);
             }
             sb.show();
+            return false;
         }
+        // do not play Intro if adapter is empty because there isn't anything to show
+        if (this.newsAdapter.getItemCount() == 0) return false;
+        //
+        final int tint = Util.getColor(this, R.color.colorIntro);
         this.intro = new Intro(this);
         // show plane and open drawer
-        Intro.Step step1 = new Intro.Step(5_000) {
+        Intro.Step step1 = new Intro.Step(500L) {
             @Override
             public void run() {
                 if (MainActivity.this.isFinishing()) return;
@@ -1713,12 +1731,13 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 View plane = findViewById(R.id.plane);
                 plane.setVisibility(View.VISIBLE);
                 MainActivity.this.drawerLayout.openDrawer(Gravity.END);
-                Toast.makeText(MainActivity.this, R.string.intro_1, Toast.LENGTH_LONG).show();
+                // the popup delay should be as long as the duration from step1b to step2
+                MainActivity.this.popupManager.showPopup(MainActivity.this.drawerLayout, getString(R.string.intro_1), 4_500L, false);
             }
         };
         this.intro.addStep(step1);
         // colorise drawer reddish
-        Intro.Step step1b = new Intro.Step(1_000) {
+        Intro.Step step1b = new Intro.Step(1_000L) {
             @Override
             public void run() {
                 android.support.design.widget.NavigationView navigationView = findViewById(R.id.navigationView);
@@ -1727,7 +1746,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         };
         this.intro.addStep(step1b);
         // reset drawer color
-        Intro.Step step1c = new Intro.Step(1_000) {
+        Intro.Step step1c = new Intro.Step(1_000L) {
             @Override
             public void run() {
                 android.support.design.widget.NavigationView navigationView = findViewById(R.id.navigationView);
@@ -1736,26 +1755,27 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         };
         this.intro.addStep(step1c);
         // close drawer
-        Intro.Step step2 = new Intro.Step(5_000) {
+        Intro.Step step2 = new Intro.Step(2_500L) {
             @Override
             public void run() {
                 findViewById(R.id.navigationView).setBackgroundTintList(null);
-                drawerLayout.closeDrawer(Gravity.END);
+                MainActivity.this.drawerLayout.closeDrawer(Gravity.END);
             }
         };
         this.intro.addStep(step2);
-        // colorise clock and tap it
-        Intro.Step step3 = new Intro.Step(1_000) {
+        // colorise clock and tap it / open its menu
+        Intro.Step step3 = new Intro.Step(1_000L) {
             @Override
             public void run() {
-                clockView.setTint(tint);
-                clockView.performClick();
-                Toast.makeText(MainActivity.this, R.string.intro_2, Toast.LENGTH_LONG).show();
+                MainActivity.this.clockView.setTint(tint);
+                MainActivity.this.clockView.performClick();
+                // the popup delay should be as long as the duration of step3
+                MainActivity.this.popupManager.showPopup(MainActivity.this.coordinatorLayout, getString(R.string.intro_2), 4_500L, false);
             }
         };
         this.intro.addStep(step3);
         // reset clock color and close options menu
-        Intro.Step step4 = new Intro.Step(6_000) {
+        Intro.Step step4 = new Intro.Step(4_500L) {
             @Override
             public void run() {
                 MainActivity.this.clockView.setTint(Color.TRANSPARENT);
@@ -1765,17 +1785,18 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         this.intro.addStep(step4);
         final Point ds = Util.getDisplaySize(this);
         // scroll down
-        Intro.Step step5 = new Intro.Step(1_000) {
+        Intro.Step step5 = new Intro.Step(1_000L) {
             @Override
             public void run() {
                 MainActivity.this.recyclerView.smoothScrollBy(0, ds.y >> 1);
-                Toast.makeText(MainActivity.this, R.string.intro_3, Toast.LENGTH_LONG).show();
+                // the popup delay should be as long as the duration of step6 to step7
+                MainActivity.this.popupManager.showPopup(MainActivity.this.recyclerView, getString(R.string.intro_3), 3_000L, false);
                 MainActivity.this.recyclerView.smoothScrollBy(0, ds.y >> 1);
             }
         };
         this.intro.addStep(step5);
         // scroll up
-        Intro.Step step6 = new Intro.Step(1_000) {
+        Intro.Step step6 = new Intro.Step(1_000L) {
             @Override
             public void run() {
                 MainActivity.this.recyclerView.smoothScrollToPosition(0);
@@ -1783,15 +1804,16 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         };
         this.intro.addStep(step6);
         //
-        Intro.Step step7 = new Intro.Step(2_000) {
+        Intro.Step step7 = new Intro.Step(1_800L) {
             @Override
             public void run() {
-                Toast.makeText(MainActivity.this, R.string.intro_4, Toast.LENGTH_LONG).show();
+                // the popup delay should be as long as the duration of step7b to step7c
+                MainActivity.this.popupManager.showPopup(MainActivity.this.recyclerView, getString(R.string.intro_4), 3_000L, false);
             }
         };
         this.intro.addStep(step7);
         //
-        Intro.Step step7b = new Intro.Step(1_000) {
+        Intro.Step step7b = new Intro.Step(1_000L) {
             @Override
             public void run() {
                 RecyclerView.ViewHolder vh = MainActivity.this.recyclerView.findViewHolderForAdapterPosition(0);
@@ -1807,7 +1829,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         };
         this.intro.addStep(step7b);
         //
-        Intro.Step step7c = new Intro.Step(2_000) {
+        Intro.Step step7c = new Intro.Step(2_000L) {
             @Override
             public void run() {
                 RecyclerView.ViewHolder vh = MainActivity.this.recyclerView.findViewHolderForAdapterPosition(0);
@@ -1822,17 +1844,19 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         };
         this.intro.addStep(step7c);
         //  hide plane
-        Intro.Step lastStep = new Intro.Step(4_000) {
+        Intro.Step lastStep = new Intro.Step(1_000L) {
             @Override
             public void run() {
                 View plane = findViewById(R.id.plane);
                 plane.setVisibility(View.GONE);
-                Toast.makeText(MainActivity.this, R.string.intro_5, Toast.LENGTH_LONG).show();
+                MainActivity.this.popupManager.showPopup(MainActivity.this.coordinatorLayout, getString(R.string.intro_5), 3_000L, true);
             }
         };
         this.intro.addStep(lastStep);
         //
         this.handler.post(this.intro);
+        //
+        return true;
     }
 
     /**
