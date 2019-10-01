@@ -1,10 +1,12 @@
 package de.freehamburger.model;
 
+import android.os.Build;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringDef;
 import android.support.annotation.VisibleForTesting;
+import android.text.Html;
 import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.JsonToken;
@@ -109,6 +111,27 @@ public final class News implements Comparable<News>, Serializable {
     }
 
     /**
+     * Removes HTML elements from a String.
+     * @param input input text possibly containing HTML elements
+     * @return text without HTML elements
+     */
+    @Nullable
+    private static String fixHtml(@Nullable final String input) {
+        if (input == null) return null;
+        if (input.length() == 0) return "";
+        String output;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            output = Html.fromHtml(input, Html.FROM_HTML_MODE_COMPACT, null, null).toString();
+        } else {
+            output = Html.fromHtml(input).toString();
+        }
+        if (BuildConfig.DEBUG) {
+            if (!output.equals(input)) Log.i(TAG, "fixHtml(\"" + input + "\") -> \"" + output + "\"");
+        }
+        return output;
+    }
+
+    /**
      * Parses the data read from the given JsonReader and fills the given News object.
      * @param reader JsonReader
      * @param news News
@@ -131,15 +154,15 @@ public final class News implements Comparable<News>, Serializable {
                 continue;
             }
             if ("title".equals(name)) {
-                news.title = reader.nextString();
+                news.title = fixHtml(reader.nextString());
             } else if ("topline".equals(name)) {
-                news.topline = reader.nextString();
+                news.topline = fixHtml(reader.nextString());
             } else if ("firstSentence".equals(name)) {
-                news.firstSentence = reader.nextString();
+                news.firstSentence = fixHtml(reader.nextString());
             } else if ("shareURL".equals(name)) {
                 news.shareUrl = reader.nextString();
             } else if ("shorttext".equals(name)) {
-                news.shorttext = reader.nextString();
+                news.shorttext = fixHtml(reader.nextString());
             } else if ("externalId".equals(name)) {
                 news.externalId = reader.nextString();
             } else if ("content".equals(name)) {
