@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.freehamburger.App;
-import de.freehamburger.HamburgerActivity;
 import de.freehamburger.R;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.TextFilter;
@@ -27,7 +26,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
     private final List<Filter> filters = new ArrayList<>(4);
     @NonNull private final Context context;
-    @App.BackgroundSelection private final int background;
+    @App.BackgroundSelection private int background;
     @Nullable private Filter focusMe;
 
     /**
@@ -37,7 +36,6 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     public FilterAdapter(@NonNull Context ctx) {
         super();
         this.context = ctx;
-        this.background = HamburgerActivity.resolveBackground(ctx, null);
     }
 
     /**
@@ -84,21 +82,19 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         filterView.setFilter(filter);
         filterView.setListener(new FilterView.Listener() {
             @Override
-            public void textChanged(Editable s) {
-                int pos = holder.getAdapterPosition();
-                Filter filter = filters.get(pos);
-                if (!(filter instanceof TextFilter)) return;
-                ((TextFilter)filter).setPhrase(s);
-                Context ctx = holder.itemView.getContext();
-                if (ctx instanceof Activity) ((Activity)ctx).invalidateOptionsMenu();
-              }
-
-            @Override
             public void anywhere() {
                 int pos = holder.getAdapterPosition();
                 Filter filter = FilterAdapter.this.filters.get(pos);
                 if (!(filter instanceof TextFilter)) return;
                 ((TextFilter)filter).setAtStartAndAtAend(false, false);
+            }
+
+            @Override
+            public void atEnd() {
+                int pos = holder.getAdapterPosition();
+                Filter filter = FilterAdapter.this.filters.get(pos);
+                if (!(filter instanceof TextFilter)) return;
+                ((TextFilter)filter).setAtStartAndAtAend(false, true);
             }
 
             @Override
@@ -110,12 +106,14 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
             }
 
             @Override
-            public void atEnd() {
+            public void textChanged(Editable s) {
                 int pos = holder.getAdapterPosition();
-                Filter filter = FilterAdapter.this.filters.get(pos);
+                Filter filter = filters.get(pos);
                 if (!(filter instanceof TextFilter)) return;
-                ((TextFilter)filter).setAtStartAndAtAend(false, true);
-            }
+                ((TextFilter)filter).setPhrase(s);
+                Context ctx = holder.itemView.getContext();
+                if (ctx instanceof Activity) ((Activity)ctx).invalidateOptionsMenu();
+              }
         });
         if (filter.equals(this.focusMe)) {
             filterView.focusEditText();
@@ -135,6 +133,10 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         if (position < 0 || position >= this.filters.size()) return;
         this.filters.remove(position);
         notifyItemRemoved(position);
+    }
+
+    public void setBackground(@App.BackgroundSelection int background) {
+        this.background = background;
     }
 
     public void setFilters(@Nullable List<Filter> filters) {
@@ -162,7 +164,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         /** {@inheritDoc} */
         @Override
         public void onClick(View v) {
-            ((FilterView)itemView).focusEditText();
+            ((FilterView)this.itemView).focusEditText();
         }
     }
 

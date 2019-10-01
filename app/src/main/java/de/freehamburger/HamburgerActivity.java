@@ -43,26 +43,40 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @NonNull final Handler handler = new Handler();
     HamburgerService service;
     CoordinatorLayout coordinatorLayout;
+    @App.BackgroundSelection private int background;
 
     /**
-     * Selects a theme according to the preferences.
+     * Selects and applies a theme according to the preferences.<br>
+     * Returns the selected background, too ({@link App#BACKGROUND_LIGHT light} or {@link App#BACKGROUND_DARK dark}),
+     * so that information can be used to style Views.
      * @param activity AppCompatActivity
      * @param prefs SharedPreferences
      * @param again true / false
-     * @return App.BACKGROUND_LIGHT or App.BACKGROUND_DARK
+     * @return {@link App#BACKGROUND_LIGHT} or {@link App#BACKGROUND_DARK}
+     * @throws NullPointerException if {@code activity} is {@code null}
      */
     @App.BackgroundSelection
-    static int pickTheme(@NonNull final AppCompatActivity activity, @Nullable SharedPreferences prefs, boolean again) {
+    static int applyTheme(@NonNull final AppCompatActivity activity, @Nullable SharedPreferences prefs, boolean again) {
+        // determine whether a light or a dark background is applicable
         @App.BackgroundSelection int background = resolveBackground(activity, prefs);
+        // select theme based on the background
         if (background == App.BACKGROUND_DARK) {
-            pickTheme(activity, false, again);
+            applyTheme(activity, false, again);
         } else {
-            pickTheme(activity, true, again);
+            applyTheme(activity, true, again);
         }
+        //
         return background;
     }
 
-    private static void pickTheme(@NonNull AppCompatActivity activity, boolean lightBackground, boolean again) {
+    /**
+     * Applies a theme to the given activity.
+     * @param activity  AppCompatActivity
+     * @param lightBackground true / false
+     * @param again true / false
+     * @throws NullPointerException if {@code activity} is {@code null}
+     */
+    private static void applyTheme(@NonNull AppCompatActivity activity, boolean lightBackground, boolean again) {
         @StyleRes int resid;
         if (activity instanceof HamburgerActivity) {
             HamburgerActivity ha = (HamburgerActivity) activity;
@@ -79,21 +93,33 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
             }
         }
         if (again) {
-            activity.getTheme()
-                    .applyStyle(resid, true);
+            activity.getTheme().applyStyle(resid, true);
         } else {
             activity.setTheme(resid);
         }
     }
 
     /**
-     * Determines the theme to use. If it's on auto, the sun position is used to determined whether a light or dark theme is used.
+     * Determines the theme to use.<br>
+     * <ul>
+     * <li>
+     * If the {@link App#PREF_BACKGROUND background preference} is set to {@link App#BACKGROUND_AUTO auto},
+     * the sun position is used to determined whether a light or dark theme is used.
+     * If the user has given permission to access the device location, the location is used to determine sunrise and sunset;
+     * otherwise the location will be estimated.
+     * After sunset, a dark background is applied, before sunset a light background is applied.
+     * </li>
+     * <li>
+     * If the preference is set to {@link App#BACKGROUND_LIGHT light} or {@link App#BACKGROUND_DARK dark}, a light resp. dark background is set.
+     * </li>
+     * </ul>
      * @param ctx Context
      * @param prefs SharedPreferences (optional)
      * @return {@link App#BACKGROUND_LIGHT} or {@link App#BACKGROUND_DARK}
      * @throws NullPointerException if {@code ctx} is {@code null}
      */
-    public static int resolveBackground(@NonNull Context ctx, @Nullable SharedPreferences prefs) {
+    @App.BackgroundSelection
+    private static int resolveBackground(@NonNull Context ctx, @Nullable SharedPreferences prefs) {
         if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         @App.BackgroundSelection int background = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
         if (background == App.BACKGROUND_AUTO) {
@@ -118,23 +144,9 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         return background;
     }
 
-    /**
-     * Displays a Snackbar that says "No network.".
-     */
-    void showNoNetworkSnackbar() {
-        Snackbar sb;
-        Intent settingsIntent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
-        if (getPackageManager().resolveActivity(settingsIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-            sb = Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_LONG);
-            // the unicode wrench symbol 🔧 (0x1f527)
-            sb.setAction("\uD83D\uDD27", v -> {
-                sb.dismiss();
-                startActivity(settingsIntent);
-            });
-        } else {
-            sb = Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT);
-        }
-        sb.show();
+    @App.BackgroundSelection
+    public int getBackground() {
+        return this.background;
     }
 
     @Nullable
@@ -159,7 +171,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         super.onCreate(savedInstanceState);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.registerOnSharedPreferenceChangeListener(this);
-        pickTheme(this, prefs, false);
+        this.background = applyTheme(this, prefs, false);
         setContentView(getMainLayout());
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) setSupportActionBar(toolbar);
@@ -221,8 +233,27 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
         if (App.PREF_BACKGROUND.equals(key)) {
-            pickTheme(this, prefs, true);
+            this.background = applyTheme(this, prefs, true);
         }
+    }
+
+    /**
+     * Displays a Snackbar that says "No network.".
+     */
+    void showNoNetworkSnackbar() {
+        Snackbar sb;
+        Intent settingsIntent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+        if (getPackageManager().resolveActivity(settingsIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+            sb = Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_LONG);
+            // the unicode wrench symbol 🔧 (0x1f527)
+            sb.setAction("\uD83D\uDD27", v -> {
+                sb.dismiss();
+                startActivity(settingsIntent);
+            });
+        } else {
+            sb = Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT);
+        }
+        sb.show();
     }
 
 }
