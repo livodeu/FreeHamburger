@@ -2,6 +2,7 @@ package de.freehamburger.model;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.support.annotation.AnyThread;
 import android.support.annotation.FloatRange;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
@@ -50,8 +51,23 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
     @Nullable
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     public Blob doInBackground(@Size(1) File[] files) {
+        if (files == null) return null;
         Context ctx = this.refctx.get();
         if (ctx == null) return null;
+        Source src = Source.getSourceFromFile(files[0]);
+        if (src == null) return null;
+        if (src.isLocked()) {
+            try {
+                Thread.sleep(250L);
+            } catch (InterruptedException ignored) {
+                return null;
+            }
+            if (src.isLocked()) {
+                if (BuildConfig.DEBUG) Log.e(getClass().getSimpleName(), "Cannot parse " + files[0] + " because " + src + " is locked!");
+                return null;
+            }
+        }
+        src.setLocked(true);
         Blob blob = null;
         JsonReader reader = null;
         ProgressReporter reporter = null;
@@ -70,6 +86,7 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
         } finally {
             Util.close(reader);
         }
+        src.setLocked(false);
         return blob;
     }
 
@@ -125,34 +142,52 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
      */
     private static class CountingFileInputStream extends FileInputStream {
 
+        private final Object sync = new Object();
         private long read;
 
         private CountingFileInputStream(@NonNull File file) throws FileNotFoundException {
             super(file);
         }
 
+        @AnyThread
         private long getRead() {
-            return this.read;
+            long r;
+            synchronized (this.sync) {
+                r = this.read;
+            }
+            return r;
         }
 
         @Override
         public int read(@NonNull byte[] b) throws IOException {
             int r = super.read(b);
-            if (r != -1) this.read += r;
+            if (r != -1) {
+                synchronized (this.sync) {
+                    this.read += r;
+                }
+            }
             return r;
         }
 
         @Override
         public int read(@NonNull byte[] b, int off, int len) throws IOException {
             int r = super.read(b, off, len);
-            if (r != -1) this.read += r;
+            if (r != -1) {
+                synchronized (this.sync) {
+                    this.read += r;
+                }
+            }
             return r;
         }
 
         @Override
         public int read() throws IOException {
             int r = super.read();
-            if (r != -1) this.read++;
+            if (r != -1) {
+                synchronized (this.sync) {
+                    this.read++;
+                }
+            }
             return r;
         }
     }
@@ -163,16 +198,22 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
     private class ProgressReporter extends Thread {
 
         private final long length;
-        private final CountingFileInputStream in;
+        @NonNull private final CountingFileInputStream in;
         private volatile boolean stop;
 
-        private ProgressReporter(long length, CountingFileInputStream in) {
+        /**
+         * Constructor.
+         * @param length file size
+         * @param in input stream
+         */
+        private ProgressReporter(long length, @NonNull CountingFileInputStream in) {
             super();
             this.length = length;
             this.in = in;
             setPriority(Thread.NORM_PRIORITY - 1);
         }
 
+        /** {@inheritDoc} */
         @Override
         public void run() {
             if (this.length > 0L) {

@@ -8,8 +8,11 @@ import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 
 import java.io.File;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
@@ -34,6 +37,7 @@ public enum Source {
 
     public static final String FILE_SUFFIX = ".source";
 
+    private final Object lock = new Object();
     @StringRes
     private final int label;
     private final String url;
@@ -41,6 +45,8 @@ public enum Source {
     @DrawableRes
     private final int icon;
     @Nullable private final String action;
+    /** synchronises access from different threads */
+    private volatile Reference<Thread> lockHolder;
 
     /**
      * Returns the parameter char sequence for {@link #REGIONAL}, based on the user's preferences.
@@ -166,7 +172,31 @@ public enum Source {
         return url;
     }
 
+    /**
+     * Returns the locked state of this Source.
+     * @return {@code true} / {@code false}
+     */
+    public boolean isLocked() {
+        boolean locked;
+        synchronized (lock) {
+            locked = lockHolder != null && lockHolder.get() != null;
+        }
+        return locked;
+    }
+
     public boolean needsParams() {
         return needsParams;
+    }
+
+    /**
+     * Locks or unlocks this Source.<br>
+     * Used to synchronise access as parsing is (and should be) done on a different thread.<br>
+     * See invocation of {@link android.os.AsyncTask#executeOnExecutor(Executor, Object[]) BlobParser}.
+     * @param locked {@code true} / {@code false}
+     */
+    public void setLocked(boolean locked) {
+        synchronized (lock) {
+            this.lockHolder = locked ? new WeakReference<>(Thread.currentThread()) : null;
+        }
     }
 }
