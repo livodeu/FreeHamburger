@@ -8,8 +8,9 @@
     <string name="action_add_filter">Add</string>
     <string name="action_clear_cache">Clear cache</string>
     <string name="action_delete_log" translatable="false">Delete log</string>
-    <string name="action_details">More…</string>
     <string name="action_filter">Filter</string>
+    <string name="action_filters_disabled">Inactive</string>
+    <string name="action_filters_enabled">Active</string>
     <string name="action_finish">Leave app</string>
     <string name="action_font_delete">Delete imported font</string>
     <string name="action_font_use">Use font</string>
@@ -153,6 +154,8 @@
     <string name="label_website_errors">Web site errors</string>
     <string name="label_yes">Yes</string>
 
+    <string name="msg_filters_disabled">Filters are now disabled.</string>
+    <string name="msg_filters_enabled">Filters are now enabled.</string>
     <string name="msg_filters_removed">All filters have been removed.</string>
     <plurals name="msg_filters_stored">
         <item quantity="one">Stored %1$d filter.</item>

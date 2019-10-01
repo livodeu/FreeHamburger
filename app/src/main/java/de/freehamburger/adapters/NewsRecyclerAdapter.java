@@ -2,8 +2,10 @@ package de.freehamburger.adapters;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.annotation.IntRange;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
@@ -29,7 +31,6 @@ import java.util.Set;
 
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
-import de.freehamburger.HamburgerActivity;
 import de.freehamburger.HamburgerService;
 import de.freehamburger.NewsAdapterActivity;
 import de.freehamburger.R;
@@ -44,7 +45,7 @@ import de.freehamburger.views.NewsViewNoContentNoTitle;
 /**
  * The adapter for the RecyclerView that contains the news list in the {@link de.freehamburger.MainActivity main activity}.
  */
-public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapter.ViewHolder> {
+public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapter.ViewHolder> implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = "NewsRecyclerAdapter";
     @NonNull private final List<News> newsList = new ArrayList<>(32);
@@ -58,6 +59,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     /** a ViewHolder instance for each view type */
     private final SparseArray<ViewHolder> viewholderCache = new SparseArray<>(3);
     private final Preloader preloader = new Preloader();
+    private boolean filtersEnabled;
     private Thread viewholderCreator;
     private int contextMenuIndex = -1;
     @Nullable private Typeface typeface;
@@ -145,7 +147,8 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     public NewsRecyclerAdapter(@NonNull NewsAdapterActivity activity, @Nullable Typeface typeface) {
         super();
         this.activity = activity;
-        this.background = HamburgerActivity.resolveBackground(activity, null);
+        this.background = activity.getBackground();
+        this.filtersEnabled = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_FILTERS_APPLY, true);
         setHasStableIds(true);
         setTypeface(typeface);
     }
@@ -284,7 +287,13 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
      * @return {@code true} if a filter has been set
      */
     private boolean isFiltered() {
-        return !this.filters.isEmpty();
+        return this.filtersEnabled && !this.filters.isEmpty();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        PreferenceManager.getDefaultSharedPreferences(this.activity).registerOnSharedPreferenceChangeListener(this);
     }
 
     /** {@inheritDoc} */
@@ -343,6 +352,26 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         }
         //
         return vh;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        PreferenceManager.getDefaultSharedPreferences(this.activity).unregisterOnSharedPreferenceChangeListener(this);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+        if (App.PREF_FILTERS_APPLY.equals(key)) {
+            this.filtersEnabled = prefs.getBoolean(key, true);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onViewRecycled(@NonNull ViewHolder holder) {
+        ((NewsView)holder.itemView).setNews(null, null);
     }
 
     /**

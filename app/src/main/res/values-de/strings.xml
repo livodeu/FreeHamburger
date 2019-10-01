@@ -3,8 +3,11 @@
     <string name="action_quit">App beenden?</string>
     <string name="action_add_filter">Neu</string>
     <string name="action_info">Info</string>
-    <string name="action_details">Mehr…</string>
     <string name="action_teletext">Videotext</string>
+    <string name="action_filters_disabled">Inaktiv</string>
+    <string name="action_filters_enabled">Aktiv</string>
+    <string name="msg_filters_disabled">Filter sind jetzt deaktiviert.</string>
+    <string name="msg_filters_enabled">Filter sind jetzt aktiviert.</string>
     <string name="action_teletext_short">VT</string>
     <string name="action_shortcut_create">Verknüpfung erstellen</string>
     <string name="error_shortcut_fail">Die Verknüpfung konnte nicht erstellt werden!</string>

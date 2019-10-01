@@ -81,6 +81,14 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
         if (ab != null) ab.setDisplayHomeAsUpEnabled(true);
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.filter_menu, menu);
+        menu.setQwertyMode(true);
+        return true;
+    }
+
     /**
      * The clear/delete button has been clicked.
      * @param button the 'clear/delete' button next to the filter phrase
@@ -100,6 +108,29 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
         FilterAdapter filterAdapter = (FilterAdapter)this.recyclerView.getAdapter();
         if (filterAdapter != null) filterAdapter.removeFilter(pos);
         invalidateOptionsMenu();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_add_filter) {
+            if (!addFilter()) {
+                Snackbar.make(this.coordinatorLayout, R.string.error_filter_not_added, Snackbar.LENGTH_SHORT).show();
+            }
+            return true;
+        }
+        if (id == R.id.action_enable_filters) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            boolean wasEnabled = prefs.getBoolean(App.PREF_FILTERS_APPLY, true);
+            boolean nowEnabled = !wasEnabled;
+            SharedPreferences.Editor ed = prefs.edit();
+            ed.putBoolean(App.PREF_FILTERS_APPLY, nowEnabled);
+            ed.apply();
+            invalidateOptionsMenu();
+            Snackbar.make(this.coordinatorLayout, nowEnabled ? R.string.msg_filters_enabled : R.string.msg_filters_disabled, Snackbar.LENGTH_SHORT).show();
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     /** {@inheritDoc} */
@@ -124,6 +155,7 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
                 }
             }
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            boolean enabled = prefs.getBoolean(App.PREF_FILTERS_APPLY, true);
             SharedPreferences.Editor ed = prefs.edit();
             int n = preferredFilters.size();
             if (n == 0) {
@@ -132,21 +164,17 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
                 ed.putStringSet(App.PREF_FILTERS, preferredFilters);
             }
             ed.apply();
-            if (n == 0) {
-                if (this.filterCountOnResume > 0) Toast.makeText(getApplicationContext(), getString(R.string.msg_filters_removed), Toast.LENGTH_SHORT).show();
+            if (!enabled) {
+                Toast.makeText(getApplicationContext(), R.string.msg_filters_disabled, Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(getApplicationContext(), getResources().getQuantityString(R.plurals.msg_filters_stored, n, n), Toast.LENGTH_SHORT).show();
+                if (n == 0) {
+                    if (this.filterCountOnResume > 0) Toast.makeText(getApplicationContext(), getString(R.string.msg_filters_removed), Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getApplicationContext(), getResources().getQuantityString(R.plurals.msg_filters_stored, n, n), Toast.LENGTH_SHORT).show();
+                }
             }
         }
         super.onPause();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.filter_menu, menu);
-        menu.setQwertyMode(true);
-        return true;
     }
 
     /** {@inheritDoc} */
@@ -155,29 +183,26 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
         FilterAdapter adapter = (FilterAdapter)this.recyclerView.getAdapter();
         MenuItem menuItemAdd = menu.findItem(R.id.action_add_filter);
         menuItemAdd.setVisible(adapter != null && !adapter.hasFilterWithNoText());
+        MenuItem menuItemEnable = menu.findItem(R.id.action_enable_filters);
+        boolean filtersEnabled = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_FILTERS_APPLY, true);
+        menuItemEnable.setChecked(filtersEnabled);
+        menuItemEnable.setTitle(filtersEnabled ? R.string.action_filters_enabled : R.string.action_filters_disabled);
+        menuItemEnable.setIcon(filtersEnabled ? R.drawable.ic_check_green_24dp : R.drawable.ic_do_not_disturb_alt_red_24dp);
         return super.onPrepareOptionsMenu(menu);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_add_filter) {
-            if (!addFilter()) {
-                Snackbar.make(this.coordinatorLayout, R.string.error_filter_not_added, Snackbar.LENGTH_SHORT).show();
-            }
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     /** {@inheritDoc} */
     @Override
     protected void onResume() {
         super.onResume();
-        @App.BackgroundSelection int background = HamburgerActivity.pickTheme(this, null, false);
+        @App.BackgroundSelection int background = HamburgerActivity.applyTheme(this, null, false);
         this.coordinatorLayout.setBackgroundResource(background == App.BACKGROUND_LIGHT ? R.drawable.bg_news_light :R.drawable.bg_news);
         RecyclerView.Adapter adapter = this.recyclerView.getAdapter();
-        this.filterCountOnResume = adapter != null ? adapter.getItemCount() : 0;
+        if (adapter != null) {
+            if (adapter instanceof FilterAdapter) ((FilterAdapter) adapter).setBackground(background);
+            this.filterCountOnResume = adapter.getItemCount();
+        } else {
+            this.filterCountOnResume = 0;
+        }
     }
 }

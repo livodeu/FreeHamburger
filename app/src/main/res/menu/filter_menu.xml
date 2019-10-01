@@ -7,4 +7,11 @@
         android:icon="@drawable/ic_add_ededed_24dp"
         android:title="@string/action_add_filter"
         app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/action_enable_filters"
+        android:alphabeticShortcut="e"
+        android:icon="@drawable/ic_check_green_24dp"
+        android:title="@string/action_filters_enabled"
+        android:checkable="true"
+        app:showAsAction="ifRoom"/>
 </menu>
