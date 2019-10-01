@@ -60,7 +60,7 @@ public class WebViewActivity extends AppCompatActivity {
     /** boolean; if true, the ActionBar will not show the home arrow which would lead to MainActivity */
     public static final String EXTRA_NO_HOME_AS_UP = "extra_no_home_as_up";
     /** the News whose {@link News#getDetailsWeb() detailsWeb} attribute provides the url to display */
-    private static final String EXTRA_NEWS = "extra_news";
+    static final String EXTRA_NEWS = "extra_news";
     private static final String TAG = "WebViewActivity";
     private static final String CHARSET = "UTF-8";
     private static final byte[] HTTP_404_BYTES = "<!DOCTYPE html><html lang=\"en\"><head><title>404 Not found.</title></head><body></body></html>".getBytes(Charset.forName(CHARSET));

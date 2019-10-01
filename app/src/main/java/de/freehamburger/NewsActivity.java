@@ -1047,7 +1047,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                         reader = null;
                         // it is probably not necessary here to call News.correct()
                         Intent intent = new Intent(NewsActivity.this, VideoActivity.class);
-                        intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
+                        intent.putExtra(VideoActivity.EXTRA_NEWS, parsed);
                         startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(NewsActivity.this, R.anim.fadein, R.anim.fadeout).toBundle());
                     } catch (Exception e) {
                         Util.close(reader);

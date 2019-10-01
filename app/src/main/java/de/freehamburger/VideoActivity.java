@@ -33,7 +33,7 @@ import de.freehamburger.util.Util;
  * Plays a video.
  */
 public class VideoActivity extends AppCompatActivity {
-    private static final String EXTRA_NEWS = "extra_news";
+    static final String EXTRA_NEWS = "extra_news";
     private static final String TAG = "VideoActivity";
     /** the number of milliseconds to wait after user interaction before hiding the system UI */
     private static final long AUTO_HIDE_DELAY_MILLIS = 3_000L;
