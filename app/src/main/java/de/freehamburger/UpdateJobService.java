@@ -27,6 +27,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.annotation.RequiresPermission;
+import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.widget.RemoteViews;
 
@@ -69,6 +70,16 @@ import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
  */
 public class UpdateJobService extends JobService implements Downloader.DownloaderListener, BlobParser.BlobParserListener {
 
+    /** the time when the job was scheduled */
+    @VisibleForTesting
+    public static final String EXTRA_TIMESTAMP = "ts";
+    /** int: {@link #JOB_SCHEDULE_DAY} or {@link #JOB_SCHEDULE_NIGHT} */
+    @VisibleForTesting
+    public static final String EXTRA_NIGHT = "night";
+    @VisibleForTesting
+    public static final int JOB_SCHEDULE_DAY = 0;
+    @VisibleForTesting
+    public static final int JOB_SCHEDULE_NIGHT = 1;
     /** Job id for the periodic job */
     static final int JOB_ID = "Hamburger".hashCode();
     /** Notification id */
@@ -91,16 +102,14 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private static final String PREF_NOTIFICATION_EXTENDED = "pref_notification_extended";
     /** String set: logs timestamps of all requests */
     private static final String PREF_STAT_ALL = "pref_stat_all";
-    /** the time when the job was scheduled */
-    private static final String EXTRA_TIMESTAMP = "ts";
     /** self-imposed minimum interval of 5 minutes regardless {@link JobInfo#getMinPeriodMillis() what Android says} */
     private static final int HARD_MINIMUM_INTERVAL_MINUTES = 5;
-    /** int: {@link #JOB_SCHEDULE_DAY} or {@link #JOB_SCHEDULE_NIGHT} */
-    private static final String EXTRA_NIGHT = "night";
-    private static final int JOB_SCHEDULE_DAY = 0;
-    private static final int JOB_SCHEDULE_NIGHT = 1;
     private static final String TAG = "UpdateJobService";
     private static final BitmapFactory.Options BITMAPFACTORY_OPTIONS = new BitmapFactory.Options();
+    /** estimated byte count for one retrieval (average recorded over several months) */
+    private static final long ESTIMATED_NETWORK_BYTES = 72_000L;
+    /** to be added to values stored in {@link #PREF_STAT_ALL}<br><em>(DEBUG versions only!)</em> */
+    private static final long ADD_TO_PREF_STAT_ALL_VALUE = 1_500_000_000_000L;
     /** String: contains the {@link News#getExternalId() id} of the News that was shown as a Notification most recently */
     private static final String PREF_LATEST_NEWS_ID = "pref_background_latest_news_id";
     private static int nextid = 1;
@@ -140,7 +149,12 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 if (minutesToNightEnd < 0) minutesToNightEnd = 1440 + minutesToNightEnd;
                 if (intervalInMinutes > minutesToNightEnd) {
                     intervalInMinutes = Math.round(minutesToNightEnd + 1); // +1 is to make sure that we end in day
-                    if (BuildConfig.DEBUG) Log.i(TAG, "Interval capped to " + intervalInMinutes + " minutes because night ends at " + nightEnd + " o'clock");
+                    if (intervalInMinutes < minimumIntervalInMinutes) {
+                        intervalInMinutes = minimumIntervalInMinutes;
+                        if (BuildConfig.DEBUG) Log.w(TAG, "Could not cap interval to " + intervalInMinutes + " min. for night end because it'd be below " + minimumIntervalInMinutes);
+                    } else {
+                        if (BuildConfig.DEBUG) Log.w(TAG, "Interval capped to " + intervalInMinutes + " minutes because night ends at " + nightEnd + " o'clock");
+                    }
                 }
             } else {
                 float nightStart = getNightStart(); // 23f
@@ -148,7 +162,12 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 if (minutesToNightStart < 0) minutesToNightStart = 1440 + minutesToNightStart;
                 if (intervalInMinutes > minutesToNightStart) {
                     intervalInMinutes = Math.round(minutesToNightStart + 1); // +1 is to make sure that we end in night
-                    if (BuildConfig.DEBUG) Log.i(TAG, "Interval capped to " + intervalInMinutes + " minutes because night begins at " + nightStart + " o'clock");
+                    if (intervalInMinutes < minimumIntervalInMinutes) {
+                        intervalInMinutes = minimumIntervalInMinutes;
+                        if (BuildConfig.DEBUG) Log.w(TAG, "Could not cap interval to " + intervalInMinutes + " min. for night start because it'd be below " + minimumIntervalInMinutes);
+                    } else {
+                        if (BuildConfig.DEBUG) Log.w(TAG, "Interval capped to " + intervalInMinutes + " minutes because night begins at " + nightStart + " o'clock");
+                    }
                 }
             }
         } catch (Exception e) {
@@ -159,6 +178,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
+     * <em>For DEBUG versions only!</em>
      * @param ctx Context
      * @return List of timestamps
      * @throws NullPointerException if {@code ctx} is {@code null}
@@ -170,7 +190,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         if (allRequests.isEmpty()) return new ArrayList<>();
         final List<Long> ar = new ArrayList<>(allRequests.size());
         for (String r : allRequests) {
-            ar.add(Long.parseLong(r) + 1_500_000_000_000L);
+            ar.add(Long.parseLong(r) + ADD_TO_PREF_STAT_ALL_VALUE);
         }
         Collections.sort(ar);
         return ar;
@@ -234,9 +254,72 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * Tells whether it is colder than outside.
      * @return {@code true} in the range of 23:00:00 to 05:59:59
      */
-    private static boolean hasNightFallenOverBerlin() {
+    @VisibleForTesting
+    public static boolean hasNightFallenOverBerlin() {
         float hour = getCurrentTimeInHours();
         return hour >= getNightStart() || hour < getNightEnd();
+    }
+
+    /**
+     * Creates a PendingIntent designed to open the given News in MainActivity.
+     * @param app App
+     * @param news News
+     * @return PendingIntent
+     * @throws NullPointerException if either parameter is {@code null}
+     */
+    @NonNull
+    private static PendingIntent makeIntentForMainActivity(@NonNull App app, @NonNull News news) {
+        Intent mainIntent = new Intent(app, MainActivity.class);
+        mainIntent.setAction(ACTION_NOTIFICATION);
+        mainIntent.putExtra(EXTRA_FROM_NOTIFICATION, news.getExternalId());
+        return PendingIntent.getActivity(app, 0, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    /**
+     * Creates a PendingIntent designed to open the given News in NewsActivity.
+     * @param app App
+     * @param news News
+     * @return PendingIntent
+     * @throws NullPointerException if either parameter is {@code null}
+     */
+    @NonNull
+    private static PendingIntent makeIntentForNewsActivity(@NonNull App app, @NonNull News news) {
+        Intent viewDetailsIntent = new Intent(app, NewsActivity.class);
+        viewDetailsIntent.setAction(Intent.ACTION_VIEW);
+        viewDetailsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        Bundle extras = new Bundle(2);
+        extras.putString(EXTRA_FROM_NOTIFICATION, news.getExternalId());
+        extras.putSerializable(NewsActivity.EXTRA_NEWS, news);
+        viewDetailsIntent.putExtras(extras);
+        return PendingIntent.getActivity(app, 0, viewDetailsIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    /**
+     * Creates a PendingIntent designed to open the given News in VideoActivity.
+     * @param app App
+     * @param news News
+     * @return PendingIntent
+     * @throws NullPointerException if either parameter is {@code null}
+     */
+    @NonNull
+    private static PendingIntent makeIntentForVideoActivity(@NonNull App app, @NonNull News news) {
+        Intent viewVideoIntent = new Intent(app, VideoActivity.class);
+        viewVideoIntent.putExtra(VideoActivity.EXTRA_NEWS, news);
+        return PendingIntent.getActivity(app, 0, viewVideoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    /**
+     * Creates a PendingIntent designed to open the given News in WebViewActivity.
+     * @param app App
+     * @param news News
+     * @return PendingIntent
+     * @throws NullPointerException if either parameter is {@code null}
+     */
+    @NonNull
+    private static PendingIntent makeIntentForWebViewActivity(@NonNull App app, @NonNull News news) {
+        Intent viewWebIntent = new Intent(app, WebViewActivity.class);
+        viewWebIntent.putExtra(WebViewActivity.EXTRA_NEWS, news);
+        return PendingIntent.getActivity(app, 0, viewWebIntent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     /**
@@ -249,24 +332,56 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     @NonNull
     @RequiresPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED)
     static JobInfo makeJobInfo(@NonNull Context ctx) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        final boolean loadOverMobile = prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE);
-        final boolean pollOverMobile = prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, false);
         final boolean night = hasNightFallenOverBerlin();
-        final long intervalMs = calcInterval(prefs, night);
+        final long intervalMs = calcInterval(PreferenceManager.getDefaultSharedPreferences(ctx), night);
         final JobInfo.Builder jib = new JobInfo.Builder(JOB_ID, new ComponentName(ctx, UpdateJobService.class))
                 .setPeriodic(intervalMs)
-                .setRequiredNetworkType(loadOverMobile && pollOverMobile ? JobInfo.NETWORK_TYPE_ANY : JobInfo.NETWORK_TYPE_UNMETERED)
+                // JobInfo.NETWORK_TYPE_UNMETERED is not a reliable equivalent for Wifi => decision whether to actually poll is deferred to onStartJob()
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                 .setBackoffCriteria(120_000L, JobInfo.BACKOFF_POLICY_LINEAR)
                 .setPersisted(true);    // <- this one needs RECEIVE_BOOT_COMPLETED permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            jib.setEstimatedNetworkBytes(75_000L, 250L);
+            jib.setEstimatedNetworkBytes(ESTIMATED_NETWORK_BYTES, 250L);
         }
         PersistableBundle extras = new PersistableBundle(2);
         extras.putLong(EXTRA_TIMESTAMP, System.currentTimeMillis());
         extras.putInt(EXTRA_NIGHT, night ? JOB_SCHEDULE_NIGHT : JOB_SCHEDULE_DAY);
         jib.setExtras(extras);
         return jib.build();
+    }
+
+    /**
+     * Determines whether the job needs to be rescheduled because it was scheduled during daytime and now it is night-time or vice versa.
+     * @param params JobParameters
+     * @return {@code true} if the job needs to be rescheduled
+     * @throws NullPointerException if {@code params} is {@code null}
+     */
+    @VisibleForTesting()
+    public static boolean needsReScheduling(@NonNull Context ctx, @NonNull JobParameters params) {
+        final boolean jobWasScheduledForNight = params.getExtras().getInt(EXTRA_NIGHT, JOB_SCHEDULE_DAY) == JOB_SCHEDULE_NIGHT;
+        final boolean isNight = hasNightFallenOverBerlin();
+        boolean yes = (isNight != jobWasScheduledForNight);
+        if (!yes) {
+            // the simple comparison above does not consider the case that it's now just before the day-night or night-day switch
+            // like, for example, at 5:54 => this is still night so we might apply a 420 minutes interval => next update near 13:00!
+            final float nowInHours = getCurrentTimeInHours();
+            int intervalInMinutes = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(ctx).getString(jobWasScheduledForNight ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, String.valueOf(getMinimumIntervalInMinutes())));
+            float intervalInHours = intervalInMinutes / 60f;
+            float nightStart = getNightStart();
+            float nightEnd = getNightEnd();
+            if (nowInHours < nightStart && nowInHours + intervalInHours >= nightStart + 10) {
+                // 22:55 + 15 minutes = 23:10
+                yes = true;
+                if (BuildConfig.DEBUG) Log.i(TAG, "Job needs rescheduling: (night=" + isNight + "; scheduled for night=" + jobWasScheduledForNight + ") - night will begin in " + (60 * (nightStart - nowInHours)) + " min.");
+            } else if (nowInHours < nightEnd && nowInHours + intervalInHours >= nightEnd + 10) {
+                // e.g. 5:55 + 420 minutes = 12:55
+                yes = true;
+                if (BuildConfig.DEBUG) Log.i(TAG, "Job needs rescheduling: (night=" + isNight + "; scheduled for night=" + jobWasScheduledForNight + ") - day will begin in " + (60 * (nightEnd - nowInHours)) + " min.");
+            }
+        } else if (BuildConfig.DEBUG) {
+            Log.i(TAG, "Job needs rescheduling: (night=" + isNight + "; scheduled for night=" + jobWasScheduledForNight + ")");
+        }
+        return yes;
     }
 
     /**
@@ -296,9 +411,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     @Override
     public void blobParsed(@Nullable Blob blob, boolean ok, Throwable oops) {
         if (!ok || blob == null || oops != null) {
-            if (BuildConfig.DEBUG && oops != null) {
-                Log.e(TAG + id, "Parsing failed: " + oops.toString());
-            }
+            if (BuildConfig.DEBUG && oops != null) Log.e(TAG + id, "Parsing failed: " + oops.toString());
+
             done();
             return;
         }
@@ -440,6 +554,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             done();
             return;
         }
+        // update statistics
         long now = System.currentTimeMillis();
         App app = (App) getApplicationContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
@@ -452,12 +567,13 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         if (result.contentLength <= 0L) {
             if (BuildConfig.DEBUG) Log.e(TAG + id, "No content length received!");
             editor.putBoolean(PREF_STAT_ESTIMATED, true);
-            editor.putLong(PREF_STAT_RECEIVED, receivedSoFar + 75_000L);
+            editor.putLong(PREF_STAT_RECEIVED, receivedSoFar + ESTIMATED_NETWORK_BYTES);
         } else {
             editor.putLong(PREF_STAT_RECEIVED, receivedSoFar + result.contentLength);
         }
         editor.apply();
         app.setMostRecentUpdate(SOURCE, now, false);
+        //
         if (this.stopJobReceived) {
             // Job stopped before parser could run
             done();
@@ -485,7 +601,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             builder.setStyle(new Notification.DecoratedCustomViewStyle());
             return true;
         } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
+            if (BuildConfig.DEBUG) Log.e(TAG + id, e.toString(), e);
         }
         return false;
     }
@@ -512,89 +628,54 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
-     * Determines whether the job needs to be rescheduled because it was scheduled during daytime and now it is nighttime or vice versa.
-     * @param params JobParameters
-     * @return {@code true} if the job needs to be rescheduled
-     */
-    private boolean needsReScheduling(@NonNull JobParameters params) {
-        final boolean jobWasScheduledForNight = params.getExtras().getInt(EXTRA_NIGHT, JOB_SCHEDULE_DAY) == JOB_SCHEDULE_NIGHT;
-        final boolean isNight = hasNightFallenOverBerlin();
-        boolean yes = (isNight != jobWasScheduledForNight);
-        if (!yes) {
-            // the simple comparison above does not consider the case that it's now just before the day-night or night-day switch
-            // like, for example, at 5:54 => this is still night so we might apply a 420 minutes interval => next update near 13:00!
-            final float nowInHours = getCurrentTimeInHours();
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            int intervalInMinutes = Integer.parseInt(prefs.getString(jobWasScheduledForNight ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, String.valueOf(getMinimumIntervalInMinutes())));
-            float intervalInHours = intervalInMinutes / 60f;
-            float nightStart = getNightStart(); // = 23
-            float nightEnd = getNightEnd();     // = 6
-            if (nowInHours < nightStart && nowInHours + intervalInHours >= nightStart + 10) {
-                // 22:55 + 15 minutes = 23:10
-                yes = true;
-                if (BuildConfig.DEBUG) {
-                    Log.i(TAG + id, "Job needs rescheduling: true (night=" + isNight + "; scheduled for night=" + jobWasScheduledForNight + ") - night will begin in " + (60 * (nightStart - nowInHours)) + " min.");
-                }
-            } else if (nowInHours < nightEnd && nowInHours + intervalInHours >= nightEnd + 10) {
-                // e.g. 5:55 + 420 minutes = 12:55
-                yes = true;
-                if (BuildConfig.DEBUG) {
-                    Log.i(TAG + id, "Job needs rescheduling: true (night=" + isNight + "; scheduled for night=" + jobWasScheduledForNight + ") - day will begin in " + (60 * (nightEnd - nowInHours)) + " min.");
-                }
-            } else {
-                if (BuildConfig.DEBUG) {
-                    Log.i(TAG + id, "Job needs rescheduling: false (night=" + isNight + "; scheduled for night=" + jobWasScheduledForNight + ")");
-                }
-            }
-        } else if (BuildConfig.DEBUG) {
-            Log.i(TAG + id, "Job needs rescheduling: true (night=" + isNight + "; scheduled for night=" + jobWasScheduledForNight + ")");
-        }
-        return yes;
-    }
-
-    /**
      * Displays the given News in a Notification.
      * @param news News
      * @param largeIcon optional picture
      */
     private void notify(@NonNull final News news, @Nullable Bitmap largeIcon) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "notify(\"" + news.getTitle() + "\", " + (largeIcon != null ? "icon" : "<null>") + ")");
         App app = (App) getApplicationContext();
         NotificationManager nm = (NotificationManager) app.getSystemService(NOTIFICATION_SERVICE);
         if (nm == null) return;
         // show extended notification?
         boolean extended = PreferenceManager.getDefaultSharedPreferences(app).getBoolean(PREF_NOTIFICATION_EXTENDED, false);
         //
-        Intent mainIntent = new Intent(app, MainActivity.class);
-        mainIntent.setAction(ACTION_NOTIFICATION);
-        mainIntent.putExtra(EXTRA_FROM_NOTIFICATION, news.getExternalId());
-        PendingIntent pendingIntentMain = PendingIntent.getActivity(app, 0, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        //
         long when = news.getDate() != null ? news.getDate()
                 .getTime() : 0L;
         String title, content, bigtext;
-        String titleSrc, contentSrc, bigtextSrc;
-        title = news.getTopline(); titleSrc = "topline";
+        title = news.getTopline();
         if (TextUtils.isEmpty(title)) {
-            title = news.getTitle(); titleSrc = "title";
-            content = news.getFirstSentence(); contentSrc = "firstSentence";
-            bigtext = null; bigtextSrc = "<null>";
+            title = news.getTitle();
+            content = news.getFirstSentence();
+            bigtext = null;
         } else {
-            content = news.getTitle(); contentSrc = "title";
-            bigtext = news.getFirstSentence(); bigtextSrc = "firstSentence";
+            content = news.getTitle();
+            bigtext = news.getFirstSentence();
             if (TextUtils.isEmpty(content)) {
-                content = news.getFirstSentence(); contentSrc = "firstSentence";
-                bigtext = news.getShorttext(); bigtextSrc = "shorttext";
+                content = news.getFirstSentence();
+                bigtext = news.getShorttext();
             }
         }
         if (TextUtils.isEmpty(content)) {
-            content = news.getShorttext(); contentSrc = "shortText";
-            bigtext = null; bigtextSrc = "<null>";
+            content = news.getShorttext();
+            bigtext = null;
         }
-        if (BuildConfig.DEBUG) {
-            Log.i(TAG, "Notification title from news." + titleSrc + ", content from news." + contentSrc + ", bigtext from news." + bigtextSrc);
+
+        PendingIntent contentIntent;
+        String type = news.getType();
+        if (type == null) type = "";
+        switch (type) {
+            case News.NEWS_TYPE_STORY:
+                contentIntent = makeIntentForNewsActivity(app, news);
+                break;
+            case News.NEWS_TYPE_VIDEO:
+                contentIntent = makeIntentForVideoActivity(app, news);
+                break;
+            case News.NEWS_TYPE_WEBVIEW:
+                contentIntent = makeIntentForWebViewActivity(app, news);
+                break;
+            default:
+                contentIntent = makeIntentForMainActivity(app, news);
         }
-        //
         final Notification.Builder builder = new Notification.Builder(app)
                 .setDefaults(Notification.DEFAULT_SOUND)
                 .setSmallIcon(R.drawable.ic_notification)
@@ -603,7 +684,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 .setContentText(content)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setCategory(Notification.CATEGORY_MESSAGE)
-                .setContentIntent(pendingIntentMain)
+                .setContentIntent(contentIntent)
                 .setAutoCancel(true) // this affects only tapping the content; after intents originating from notification actions the notification is not dismissed
                 .setOngoing(false);
 
@@ -634,17 +715,9 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             builder.setWhen(when).setShowWhen(true);
         }
 
-        if (News.NEWS_TYPE_STORY.equals(news.getType())) {
-            final Intent viewDetailsIntent = new Intent(app, NewsActivity.class);
-            viewDetailsIntent.setAction(Intent.ACTION_VIEW);
-            viewDetailsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            Bundle extras = new Bundle(2);
-            extras.putString(EXTRA_FROM_NOTIFICATION, news.getExternalId());
-            extras.putSerializable(NewsActivity.EXTRA_NEWS, news);
-            viewDetailsIntent.putExtras(extras);
-            PendingIntent viewDetailsPendingIntent = PendingIntent.getActivity(app, 0, viewDetailsIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            builder.addAction(new Notification.Action(R.drawable.ic_details_ededed_24dp, getString(R.string.action_details), viewDetailsPendingIntent));
-        }
+        /*if (News.NEWS_TYPE_STORY.equals(news.getType())) {
+            builder.addAction(new Notification.Action(R.drawable.ic_details_ededed_24dp, getString(R.string.action_details), makeIntentForNewsActivity(app, news)));
+        }*/
 
         NotificationChannel nc = null;
         if (news.isBreakingNews()) {
@@ -686,7 +759,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 BITMAPFACTORY_OPTIONS.inPreferredColorSpace = ColorSpace.get(ColorSpace.Named.valueOf(cs));
             }
         } catch (Throwable t) {
-            if (BuildConfig.DEBUG) Log.e(TAG, t.toString(), t);
+            if (BuildConfig.DEBUG) Log.e(TAG + id, t.toString(), t);
         }
     }
 
@@ -703,20 +776,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     public boolean onStartJob(JobParameters params) {
         this.params = params;
         App app = (App) getApplicationContext();
-        /*if (BuildConfig.DEBUG) {
-            notify(News.test(), BitmapFactory.decodeResource(getResources(), R.drawable.test));
-        }*/
-
-        /*
-24.11.18 04:07 I/UpdateJobService1454: Hamburger update, job scheduled at 24.11.2018 04:07:06
-24.11.18 04:07 I/UpdateJobService1454: Job needs rescheduling: true (night=true; scheduled for night=true) - day will begin in 112.9 min.
-24.11.18 04:07 I/UpdateJobService: Interval capped to 114 minutes because night ends at 6.0 o'clock
-24.11.18 04:07 I/UpdateJobService1454: Job has been rescheduled to run every 114 minutes.
-24.11.18 04:07 W/UpdateJobService1454: onStopJob(): reason for stopping the job is: cancelled
-...
-24.11.18 04:07 I/UpdateJobService1454: Download: HTTP 304 Not Modified
-24.11.18 04:07 I/UpdateJobService1454: Job finished.
-         */
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
         if (!prefs.getBoolean(App.PREF_POLL, false)) {
             done();
@@ -724,6 +783,12 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         }
         if (params.getJobId() == JOB_ID && app.hasCurrentActivity()) {
             // app is currently active; nothing to do here for now
+            done();
+            return false;
+        }
+        final boolean loadOverMobile = prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE);
+        final boolean pollOverMobile = prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, false);
+        if ((!loadOverMobile || !pollOverMobile) && Util.isNetworkMobile(app)) {
             done();
             return false;
         }
@@ -736,13 +801,17 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             String when = DateFormat.getDateTimeInstance().format(new Date(this.scheduledAt));
             Log.i(TAG + id, "Hamburger update, job scheduled at " + when);
             Set<String> allRequests = prefs.getStringSet(PREF_STAT_ALL, new HashSet<>());
-            allRequests.add(String.valueOf(System.currentTimeMillis() - 1_500_000_000_000L));
+            allRequests.add(String.valueOf(System.currentTimeMillis() - ADD_TO_PREF_STAT_ALL_VALUE));
             SharedPreferences.Editor ed = prefs.edit();
             ed.putStringSet(PREF_STAT_ALL, allRequests);
             ed.apply();
         }
-        if (needsReScheduling(params)) {
+        if (needsReScheduling(this, params)) {
             reschedule();
+        }
+        if (SOURCE.isLocked()) {
+            done();
+            return false;
         }
         loadFile(SOURCE.getUrl(), app.getLocalFile(SOURCE), this);
         return true;
@@ -791,12 +860,11 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     private void reschedule() {
-        JobScheduler js = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+        JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
         if (js == null) return;
         JobInfo ji = makeJobInfo(this);
         if (js.schedule(ji) == JobScheduler.RESULT_SUCCESS) {
-            if (BuildConfig.DEBUG)
-                Log.i(TAG + id, "Job has been rescheduled to run every " + (ji.getIntervalMillis() / 60_000L) + " minutes.");
+            if (BuildConfig.DEBUG) Log.i(TAG + id, "Job has been rescheduled to run every " + (ji.getIntervalMillis() / 60_000L) + " minutes.");
         } else {
             if (BuildConfig.DEBUG) Log.e(TAG + id, "Failed to reschedule job!");
         }
