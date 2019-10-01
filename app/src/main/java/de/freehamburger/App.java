@@ -111,6 +111,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** String set */
     public static final String PREF_FILTERS = "pref_filters";
     /** boolean */
+    public static final String PREF_FILTERS_APPLY = "pref_filters_apply";
+    /** boolean */
     public static final String PREF_PLAY_INTRO = "pref_play_intro";
     /** boolean */
     public static final String PREF_POLL = "pref_poll";
