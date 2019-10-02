@@ -1,7 +1,7 @@
 package de.freehamburger.util;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;

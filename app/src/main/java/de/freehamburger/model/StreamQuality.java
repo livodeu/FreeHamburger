@@ -1,9 +1,9 @@
 package de.freehamburger.model;
 
 import android.content.Context;
-import android.support.annotation.IntRange;
-import android.support.annotation.Nullable;
-import android.support.annotation.StringRes;
+import androidx.annotation.IntRange;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 
 import java.util.Map;
 

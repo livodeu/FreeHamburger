@@ -31,26 +31,6 @@ import android.os.IBinder;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.support.annotation.FloatRange;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresPermission;
-import android.support.annotation.VisibleForTesting;
-import android.support.design.widget.AppBarLayout;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityOptionsCompat;
-import android.support.v4.content.FileProvider;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -62,7 +42,6 @@ import android.util.JsonReader;
 import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.ContextMenu;
-import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -76,6 +55,11 @@ import android.widget.ListAdapter;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -94,6 +78,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
+import androidx.annotation.VisibleForTesting;
+import androidx.appcompat.app.AlertDialog;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.core.content.FileProvider;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.StaggeredGridLayoutManager;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import de.freehamburger.adapters.NewsRecyclerAdapter;
 import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
@@ -235,7 +236,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     break;
                 case KeyEvent.KEYCODE_DPAD_DOWN:
                 case KeyEvent.KEYCODE_PAGE_DOWN:
-                    if (this.drawerLayout.isDrawerOpen(Gravity.END)) {
+                    if (this.drawerLayout.isDrawerOpen(GravityCompat.END)) {
                         NavigationView navigationView = findViewById(R.id.navigationView);
                         Menu menu = navigationView.getMenu();
                         int n = menu.size();
@@ -259,7 +260,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     break;
                 case KeyEvent.KEYCODE_DPAD_UP:
                 case KeyEvent.KEYCODE_PAGE_UP:
-                    if (this.drawerLayout.isDrawerOpen(Gravity.END)) {
+                    if (this.drawerLayout.isDrawerOpen(GravityCompat.END)) {
                         NavigationView navigationView = findViewById(R.id.navigationView);
                         Menu menu = navigationView.getMenu();
                         int n = menu.size();
@@ -284,13 +285,13 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     // if multi-column layout, left key is used to navigate in the grid
                     if (this.recyclerView.getLayoutManager() instanceof GridLayoutManager) break;
                     //
-                    this.drawerLayout.openDrawer(Gravity.END);
+                    this.drawerLayout.openDrawer(GravityCompat.END);
                     break;
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
                     // if multi-column layout, right key is used to navigate in the grid
                     if (this.recyclerView.getLayoutManager() instanceof GridLayoutManager) break;
                     //
-                    this.drawerLayout.closeDrawer(Gravity.END);
+                    this.drawerLayout.closeDrawer(GravityCompat.END);
                     break;
             }
         }
@@ -619,7 +620,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         boolean ask = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_ASK_BEFORE_FINISH, App.PREF_ASK_BEFORE_FINISH_DEFAULT);
         if (ask) {
             // close drawer because otherwise the snackbar action is not visible
-            this.drawerLayout.closeDrawer(Gravity.END, true);
+            this.drawerLayout.closeDrawer(GravityCompat.END, true);
             // ask user whether (s)he had enough
             this.snackbarMaybeQuit = Snackbar.make(this.coordinatorLayout, R.string.action_quit, 5_000);
             this.snackbarMaybeQuit.setAction(R.string.label_yes, v -> finish());
@@ -930,7 +931,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     // get selected menu item
                     int id = menuItem.getItemId();
                     // when item is tapped, close drawer (after a brief pause to let the user see the new selection)
-                    MainActivity.this.handler.postDelayed(() -> MainActivity.this.drawerLayout.closeDrawer(Gravity.END, true), 300L);
+                    MainActivity.this.handler.postDelayed(() -> MainActivity.this.drawerLayout.closeDrawer(GravityCompat.END, true), 300L);
                     // select source that matches the menu item
                     changeSource(MainActivity.this.sourceForMenuItem.get(id), true, false);
                     return true;
@@ -1196,6 +1197,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /** {@inheritDoc} */
     @Override
     protected void onNewIntent(Intent intent) {
+        //TODO check effects of super.onNewIntent(intent); which was suggested by lint after migrating to androidx
+        super.onNewIntent(intent);
         handleIntent(intent);
     }
 
@@ -1730,7 +1733,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 MainActivity.this.recyclerView.scrollToPosition(0);
                 View plane = findViewById(R.id.plane);
                 plane.setVisibility(View.VISIBLE);
-                MainActivity.this.drawerLayout.openDrawer(Gravity.END);
+                MainActivity.this.drawerLayout.openDrawer(GravityCompat.END);
                 // the popup delay should be as long as the duration from step1b to step2
                 MainActivity.this.popupManager.showPopup(MainActivity.this.drawerLayout, getString(R.string.intro_1), 4_500L, false);
             }
@@ -1740,7 +1743,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         Intro.Step step1b = new Intro.Step(1_000L) {
             @Override
             public void run() {
-                android.support.design.widget.NavigationView navigationView = findViewById(R.id.navigationView);
+                NavigationView navigationView = findViewById(R.id.navigationView);
                 navigationView.setBackgroundTintList(ColorStateList.valueOf(tint));
             }
         };
@@ -1749,7 +1752,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         Intro.Step step1c = new Intro.Step(1_000L) {
             @Override
             public void run() {
-                android.support.design.widget.NavigationView navigationView = findViewById(R.id.navigationView);
+                NavigationView navigationView = findViewById(R.id.navigationView);
                 navigationView.setBackgroundTintList(null);
             }
         };
@@ -1759,7 +1762,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             @Override
             public void run() {
                 findViewById(R.id.navigationView).setBackgroundTintList(null);
-                MainActivity.this.drawerLayout.closeDrawer(Gravity.END);
+                MainActivity.this.drawerLayout.closeDrawer(GravityCompat.END);
             }
         };
         this.intro.addStep(step2);

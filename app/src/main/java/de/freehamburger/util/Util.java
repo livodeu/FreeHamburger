@@ -27,21 +27,21 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
-import android.support.annotation.AnyThread;
-import android.support.annotation.ColorInt;
-import android.support.annotation.ColorRes;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RawRes;
-import android.support.annotation.RequiresApi;
-import android.support.annotation.RequiresPermission;
-import android.support.annotation.VisibleForTesting;
-import android.support.design.widget.Snackbar;
-import android.support.v4.content.FileProvider;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.RecyclerView;
+import androidx.annotation.AnyThread;
+import androidx.annotation.ColorInt;
+import androidx.annotation.ColorRes;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RawRes;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.RequiresPermission;
+import androidx.annotation.VisibleForTesting;
+import com.google.android.material.snackbar.Snackbar;
+import androidx.core.content.FileProvider;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.text.Html;
@@ -418,8 +418,8 @@ public class Util {
      */
     public static void fadeSnackbar(@NonNull final Snackbar sb, @IntRange(from = 0) final long duration) {
         final Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) sb.getView();
-        final TextView textView = snackLayout.findViewById(android.support.design.R.id.snackbar_text);
-        final Button action = snackLayout.findViewById(android.support.design.R.id.snackbar_action);
+        final TextView textView = snackLayout.findViewById(com.google.android.material.R.id.snackbar_text);
+        final Button action = snackLayout.findViewById(com.google.android.material.R.id.snackbar_action);
         final int textColor = textView.getCurrentTextColor();
         final int textColorEnd = Color.argb(0, Color.red(textColor), Color.green(textColor), Color.blue(textColor));
         final int buttonTextColor = action.getCurrentTextColor();
@@ -1211,7 +1211,7 @@ public class Util {
     public static void setSnackbarActionFont(@Nullable Snackbar s, @Nullable Typeface font, float textSize) {
         if (s == null) return;
         Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) s.getView();
-        TextView textView = snackLayout.findViewById(android.support.design.R.id.snackbar_action);
+        TextView textView = snackLayout.findViewById(com.google.android.material.R.id.snackbar_action);
         if (textView == null) {
             return;
         }
@@ -1233,7 +1233,7 @@ public class Util {
     public static void setSnackbarFont(@Nullable Snackbar s, @Nullable Typeface font, float textSize) {
         if (s == null) return;
         Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) s.getView();
-        TextView textView = snackLayout.findViewById(android.support.design.R.id.snackbar_text);
+        TextView textView = snackLayout.findViewById(com.google.android.material.R.id.snackbar_text);
         if (textView == null) {
             return;
         }

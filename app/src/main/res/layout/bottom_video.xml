@@ -10,7 +10,7 @@
     app:behavior_hideable="true"
     app:behavior_peekHeight="25dp"
     app:layout_anchorGravity="bottom|center_horizontal"
-    app:layout_behavior="android.support.design.widget.BottomSheetBehavior"
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
     tools:ignore="Overdraw">
 
     <TextView

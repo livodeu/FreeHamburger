@@ -2,7 +2,7 @@ package de.freehamburger.util;
 
 import android.content.Context;
 import android.preference.EditTextPreference;
-import android.support.annotation.StringRes;
+import androidx.annotation.StringRes;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 

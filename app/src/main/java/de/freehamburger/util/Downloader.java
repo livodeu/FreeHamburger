@@ -2,14 +2,14 @@ package de.freehamburger.util;
 
 import android.Manifest;
 import android.os.AsyncTask;
-import android.support.annotation.FloatRange;
-import android.support.annotation.IntRange;
-import android.support.annotation.MainThread;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresPermission;
-import android.support.annotation.RestrictTo;
-import android.support.annotation.Size;
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntRange;
+import androidx.annotation.MainThread;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
+import androidx.annotation.RestrictTo;
+import androidx.annotation.Size;
 
 import java.io.File;
 

@@ -17,10 +17,10 @@ import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
-import android.support.annotation.AnyThread;
-import android.support.annotation.IntRange;
-import android.support.annotation.MainThread;
-import android.support.annotation.NonNull;
+import androidx.annotation.AnyThread;
+import androidx.annotation.IntRange;
+import androidx.annotation.MainThread;
+import androidx.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 

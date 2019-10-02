@@ -20,14 +20,14 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.annotation.AnyThread;
-import android.support.annotation.IntDef;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresPermission;
-import android.support.annotation.UiThread;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.AnyThread;
+import androidx.annotation.IntDef;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
+import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
@@ -262,7 +262,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     }
 
     /**
-     * Returns the {@link android.support.v4.content.FileProvider FileProvider}.
+     * Returns the {@link androidx.core.content.FileProvider FileProvider}.
      * @return file provider as defined in AndroidManifest.xml
      */
     @NonNull

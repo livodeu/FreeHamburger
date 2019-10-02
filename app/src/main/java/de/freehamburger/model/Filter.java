@@ -1,6 +1,6 @@
 package de.freehamburger.model;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /**
  *

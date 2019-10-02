@@ -16,7 +16,7 @@ android {
         buildConfigField("long", "BUILD_TIME", String.valueOf(System.currentTimeMillis()) + "L")
         resValue "string", "app_search_auth", applicationId + '.SearchContentProvider'
         testApplicationId "de.freehamburger.test"
-        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         testInstrumentationRunnerArguments disableAnalytics: 'true'
     }
 
@@ -69,13 +69,10 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support:support-v4:28.0.0'
-    implementation 'com.android.support:design:28.0.0'
-    implementation 'com.android.support:recyclerview-v7:28.0.0'
-    implementation 'com.android.support:exifinterface:28.0.0'           // WTF: without this there is an error in "implementation 'com.android.support:appcompat-v7:28.0.0'"
-    //noinspection GradleDependency
-    implementation 'com.squareup.okhttp3:okhttp:3.14.2'                 // also working: 4.0.0 3.14.1 3.12.1 3.11.0
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.recyclerview:recyclerview:1.0.0'
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.2.0'                  // also working: 4.0.0 3.14.2 3.14.1 3.12.1 3.11.0
     implementation 'com.squareup.picasso:picasso:2.71828'
     //noinspection GradleDependency
     implementation 'com.google.android.exoplayer:exoplayer-core:2.9.6'  // also working: 2.9.[5..1]; not working: 2.10.0
@@ -84,6 +81,6 @@ dependencies {
     //noinspection GradleDependency
     implementation 'com.google.android.exoplayer:exoplayer-hls:2.9.6'   // also working: 2.9.[5..0]; not working: 2.10.0
 
-    androidTestImplementation 'com.android.support:support-annotations:28.0.0'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'androidx.annotation:annotation:1.1.0'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
 }
