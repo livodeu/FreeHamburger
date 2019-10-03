@@ -81,6 +81,6 @@ dependencies {
     //noinspection GradleDependency
     implementation 'com.google.android.exoplayer:exoplayer-hls:2.9.6'   // also working: 2.9.[5..0]; not working: 2.10.0
 
-    androidTestImplementation 'androidx.annotation:annotation:1.1.0'
+    androidTestImplementation 'androidx.test:core:1.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
 }
