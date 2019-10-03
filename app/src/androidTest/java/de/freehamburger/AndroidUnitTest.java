@@ -13,8 +13,6 @@ import android.content.pm.ShortcutManager;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
-import androidx.annotation.Nullable;
-import androidx.test.filters.SmallTest;
 import android.text.TextUtils;
 import android.util.JsonReader;
 import android.view.View;
@@ -34,6 +32,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import androidx.annotation.Nullable;
+import androidx.test.filters.SmallTest;
 import de.freehamburger.adapters.NewsRecyclerAdapter;
 import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
@@ -47,7 +47,6 @@ import de.freehamburger.util.Util;
 import de.freehamburger.views.NewsView;
 import okhttp3.OkHttpClient;
 
-import static androidx.test.platform.app.InstrumentationRegistry.getTargetContext;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
@@ -62,7 +61,6 @@ import static org.junit.Assert.assertNull;
 @SmallTest
 public class AndroidUnitTest {
 
-    private static final String TAG = "AndroidUnitTest";
     private static final String FILENAME = "homepage.json";
     private static final Source SOURCE = Source.HOME;
     /** the preferred region to assume for the test */
@@ -115,7 +113,7 @@ public class AndroidUnitTest {
 
     @Before
     public void init() {
-        ctx = getTargetContext();
+        ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext();
         assertNotNull(ctx);
         // save preferred regions
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
@@ -234,7 +232,6 @@ public class AndroidUnitTest {
         assertNotNull("News list is null", list);
         assertTrue("News list is empty", list.size() > 0);
 
-        Context ctx = getTargetContext();
         NewsView nv;
         for (News news : list) {
             assertNotNull(news);
@@ -292,7 +289,6 @@ public class AndroidUnitTest {
     @Test
     public void testNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Context ctx = getTargetContext();
             App app = (App)ctx.getApplicationContext();
             assertNotNull(app.getNotificationChannel());
             assertNotNull(app.getNotificationChannelHiPri());
@@ -304,7 +300,6 @@ public class AndroidUnitTest {
      */
     @Test
     public void testOkHttp() {
-        Context ctx = getTargetContext();
         App app = (App)ctx.getApplicationContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         String proxyServer = prefs.getString(App.PREF_PROXY_SERVER, null);
@@ -342,7 +337,7 @@ public class AndroidUnitTest {
         BlobParser bp = new BlobParser(ctx, null);
         Blob blob = bp.doInBackground(new File[] {file});
         assertNotNull("BlobParser returned null", blob);
-        SearchHelper.Inserter inserter = SearchHelper.createSearchSuggestions(getTargetContext(), SOURCE, blob.getAllNews(), true);
+        SearchHelper.Inserter inserter = SearchHelper.createSearchSuggestions(ctx, SOURCE, blob.getAllNews(), true);
         assertNotNull(inserter);
         try {
             inserter.join();
@@ -425,7 +420,6 @@ public class AndroidUnitTest {
      */
     @Test
     public void testUpdateService() {
-        Context ctx = getTargetContext();
         JobInfo jobInfo = UpdateJobService.makeJobInfo(ctx);
         assertNotNull(jobInfo);
         JobScheduler js = (JobScheduler)ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE);
