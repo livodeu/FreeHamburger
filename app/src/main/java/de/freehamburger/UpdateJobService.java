@@ -20,14 +20,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.preference.PreferenceManager;
-import androidx.annotation.FloatRange;
-import androidx.annotation.IntRange;
-import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.annotation.RequiresPermission;
-import androidx.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.widget.RemoteViews;
 
@@ -46,6 +38,14 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntRange;
+import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.RequiresPermission;
+import androidx.annotation.VisibleForTesting;
 import de.freehamburger.adapters.NewsRecyclerAdapter;
 import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
@@ -76,6 +76,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     /** int: {@link #JOB_SCHEDULE_DAY} or {@link #JOB_SCHEDULE_NIGHT} */
     @VisibleForTesting
     public static final String EXTRA_NIGHT = "night";
+    public static final String EXTRA_ONE_OFF = "once";
     @VisibleForTesting
     public static final int JOB_SCHEDULE_DAY = 0;
     @VisibleForTesting
@@ -84,8 +85,10 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     static final int JOB_ID = "Hamburger".hashCode();
     /** Notification id */
     static final int NOTIFICATION_ID = 123;
+    static final String ACTION_CLEAR_NOTIFICATION = "de.freehamburger.action.clear_notification";
+    private static final String ACTION_DISABLE_POLLING = "de.freehamburger.action.disable_polling";
     /** the Intent action passed to {@link MainActivity} when the Notification is tapped */
-    static final String ACTION_NOTIFICATION = "de.freehamburger.action_notification";
+    static final String ACTION_NOTIFICATION = "de.freehamburger.action.notification";
     /** long: timestamp when statistics collection started */
     static final String PREF_STAT_START = "pref_background_stat_start";
     /** long: number of bytes received since {@link #PREF_STAT_START} */
@@ -107,7 +110,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private static final String TAG = "UpdateJobService";
     private static final BitmapFactory.Options BITMAPFACTORY_OPTIONS = new BitmapFactory.Options();
     /** estimated byte count for one retrieval (average recorded over several months) */
-    private static final long ESTIMATED_NETWORK_BYTES = 72_000L;
+    static final long ESTIMATED_NETWORK_BYTES = 72_000L;
     /** to be added to values stored in {@link #PREF_STAT_ALL}<br><em>(DEBUG versions only!)</em> */
     private static final long ADD_TO_PREF_STAT_ALL_VALUE = 1_500_000_000_000L;
     /** String: contains the {@link News#getExternalId() id} of the News that was shown as a Notification most recently */
@@ -260,18 +263,23 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         return hour >= getNightStart() || hour < getNightEnd();
     }
 
+    @NonNull
+    static PendingIntent makeIntentToDisable(@NonNull App app) {
+        return PendingIntent.getService(app, 1, new Intent(ACTION_DISABLE_POLLING, null, app, UpdateJobService.class), PendingIntent.FLAG_ONE_SHOT);
+    }
+
     /**
      * Creates a PendingIntent designed to open the given News in MainActivity.
      * @param app App
      * @param news News
      * @return PendingIntent
-     * @throws NullPointerException if either parameter is {@code null}
+     * @throws NullPointerException if app is {@code null}
      */
     @NonNull
-    private static PendingIntent makeIntentForMainActivity(@NonNull App app, @NonNull News news) {
+    static PendingIntent makeIntentForMainActivity(@NonNull App app, @Nullable News news) {
         Intent mainIntent = new Intent(app, MainActivity.class);
         mainIntent.setAction(ACTION_NOTIFICATION);
-        mainIntent.putExtra(EXTRA_FROM_NOTIFICATION, news.getExternalId());
+        if (news != null) mainIntent.putExtra(EXTRA_FROM_NOTIFICATION, news.getExternalId());
         return PendingIntent.getActivity(app, 0, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
@@ -346,6 +354,23 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         PersistableBundle extras = new PersistableBundle(2);
         extras.putLong(EXTRA_TIMESTAMP, System.currentTimeMillis());
         extras.putInt(EXTRA_NIGHT, night ? JOB_SCHEDULE_NIGHT : JOB_SCHEDULE_DAY);
+        jib.setExtras(extras);
+        return jib.build();
+    }
+
+    @NonNull
+    static JobInfo makeOneOffJobInfo(@NonNull Context ctx) {
+        final JobInfo.Builder jib = new JobInfo.Builder(JOB_ID, new ComponentName(ctx, UpdateJobService.class))
+                // JobInfo.NETWORK_TYPE_UNMETERED is not a reliable equivalent for Wifi => decision whether to actually poll is deferred to onStartJob()
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setOverrideDeadline(10_000L);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            jib.setEstimatedNetworkBytes(ESTIMATED_NETWORK_BYTES, 250L);
+        }
+        PersistableBundle extras = new PersistableBundle(3);
+        extras.putLong(EXTRA_TIMESTAMP, System.currentTimeMillis());
+        extras.putInt(EXTRA_NIGHT, hasNightFallenOverBerlin() ? JOB_SCHEDULE_NIGHT : JOB_SCHEDULE_DAY);
+        extras.putInt(EXTRA_ONE_OFF, 1);
         jib.setExtras(extras);
         return jib.build();
     }
@@ -773,6 +798,28 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
 
     /** {@inheritDoc} */
     @Override
+    public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
+        if (intent != null) {
+            if (ACTION_CLEAR_NOTIFICATION.equals(intent.getAction())) {
+                removeNotification();
+                stopSelf(startId);
+                return START_REDELIVER_INTENT;
+            }
+            if (ACTION_DISABLE_POLLING.equals(intent.getAction())) {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                SharedPreferences.Editor ed = prefs.edit();
+                ed.putBoolean(App.PREF_POLL, false);
+                ed.apply();
+                removeNotification();
+                stopSelf(startId);
+                return START_REDELIVER_INTENT;
+            }
+        }
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public boolean onStartJob(JobParameters params) {
         this.params = params;
         App app = (App) getApplicationContext();
@@ -793,18 +840,28 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             return false;
         }
         //
-        long ts = params.getExtras().getLong(EXTRA_TIMESTAMP, 0L);
-        if (ts > 0L) this.scheduledAt = ts;
-        if (this.scheduledAt == 0L) this.scheduledAt = System.currentTimeMillis();
+        boolean oneOff = params.getExtras().getInt(EXTRA_ONE_OFF, 0) != 0;
+        if (!oneOff) {
+            long ts = params.getExtras().getLong(EXTRA_TIMESTAMP, 0L);
+            if (ts > 0L) this.scheduledAt = ts;
+            if (this.scheduledAt == 0L) {
+                if (BuildConfig.DEBUG) Log.w(TAG + id, "This job had got no timestamp!");
+                this.scheduledAt = System.currentTimeMillis();
+            }
+        }
         //
         if (BuildConfig.DEBUG) {
-            String when = DateFormat.getDateTimeInstance().format(new Date(this.scheduledAt));
-            Log.i(TAG + id, "Hamburger update, job scheduled at " + when);
-            Set<String> allRequests = prefs.getStringSet(PREF_STAT_ALL, new HashSet<>());
-            allRequests.add(String.valueOf(System.currentTimeMillis() - ADD_TO_PREF_STAT_ALL_VALUE));
-            SharedPreferences.Editor ed = prefs.edit();
-            ed.putStringSet(PREF_STAT_ALL, allRequests);
-            ed.apply();
+            if (oneOff) {
+                Log.i(TAG + id, "Hamburger update by one-off job");
+            } else {
+                String when = DateFormat.getDateTimeInstance().format(new Date(this.scheduledAt));
+                Log.i(TAG + id, "Hamburger update, job originally scheduled at " + when);
+                Set<String> allRequests = prefs.getStringSet(PREF_STAT_ALL, new HashSet<>());
+                allRequests.add(String.valueOf(System.currentTimeMillis() - ADD_TO_PREF_STAT_ALL_VALUE));
+                SharedPreferences.Editor ed = prefs.edit();
+                ed.putStringSet(PREF_STAT_ALL, allRequests);
+                ed.apply();
+            }
         }
         if (needsReScheduling(this, params)) {
             reschedule();
@@ -857,6 +914,12 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     @Override
     public void parsingProgressed(float progress) {
         // not interesting
+    }
+
+    void removeNotification() {
+        NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        if (nm == null) return;
+        nm.cancel(NOTIFICATION_ID);
     }
 
     private void reschedule() {

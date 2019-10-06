@@ -442,7 +442,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /**
      * @return the interval in ms if there is a scheduled job with the id {@link UpdateJobService#JOB_ID}; 0 otherwise
      */
-    @VisibleForTesting
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    @IntRange(from = 0)
     public long isBackgroundJobScheduled() {
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
         if (js == null) return 0L;
@@ -653,7 +654,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
      */
     @RequiresPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED)
     @AnyThread
-    private void scheduleStart() {
+    void scheduleStart() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
         if (js == null) {
@@ -681,7 +682,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     }
 
     /**
-     * Cancels automatic background updates.
+     * Cancels the background update if it is currently scheduled. Also removes the notification.
      */
     private void scheduleStop() {
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
@@ -691,7 +692,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
             int id = job.getId();
             if (id == UpdateJobService.JOB_ID) {
                 js.cancel(id);
-                if (BuildConfig.DEBUG) Log.i(TAG, "Schedule for periodic job cancelled.");
+                if (BuildConfig.DEBUG) Log.i(TAG, "Schedule for periodic job with interval of " + job.getIntervalMillis() + " ms cancelled.");
                 break;
             }
         }

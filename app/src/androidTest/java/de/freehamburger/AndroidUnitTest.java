@@ -2,6 +2,7 @@ package de.freehamburger;
 
 import android.app.Activity;
 import android.app.DownloadManager;
+import android.app.NotificationManager;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.ContentValues;
@@ -13,6 +14,7 @@ import android.content.pm.ShortcutManager;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
 import android.util.JsonReader;
 import android.view.View;
@@ -61,12 +63,12 @@ import static org.junit.Assert.assertNull;
 @SmallTest
 public class AndroidUnitTest {
 
-    private static final String FILENAME = "homepage.json";
     private static final Source SOURCE = Source.HOME;
+    private static final String FILENAME = SOURCE.name() + Source.FILE_SUFFIX;
     /** the preferred region to assume for the test */
     private static final Region PREFERRED_REGION = Region.BW;
     /** assuming the download does not take more than 3 seconds */
-    private static final long DOWNLOAD_TIMEOUT = 3_000L;
+    private static final long DOWNLOAD_TIMEOUT = 6_000L;
     /** max age of the downloaded json data before we download again */
     private static final long FILE_MAX_AGE = 3_600_000L;
     private Context ctx;
@@ -95,14 +97,12 @@ public class AndroidUnitTest {
      * Downloads the json data for {@link Source#HOME} and stores it in {@link #FILENAME}.
      */
     private void downloadHomepage() {
-        File externalFilesDir = ctx.getExternalFilesDir(null);
-        file = new File(externalFilesDir, FILENAME);
+        File files = ctx.getFilesDir();
+        file = new File(files, FILENAME);
         if (file.isFile() && file.length() > 0L && file.lastModified() - System.currentTimeMillis() < FILE_MAX_AGE) return;
         assertTrue("No network", Util.isNetworkAvailable(ctx));
         DownloadManager.Request r = new DownloadManager.Request(Uri.parse(SOURCE.getUrl()));
         r.setVisibleInDownloadsUi(true);
-        r.setAllowedOverMetered(false);
-        r.setAllowedOverRoaming(false);
         r.setMimeType("application/json");
         r.setDestinationInExternalFilesDir(ctx, null, FILENAME);
         r.setDescription("Hamburger Test");
@@ -142,7 +142,7 @@ public class AndroidUnitTest {
             } catch (Exception e) {
                 fail(e.toString());
             }
-            assertTrue(FILENAME + " does not exist (yet)", file.isFile());
+            assertTrue(file.getAbsolutePath() + " does not exist (yet)", file.isFile());
             assertTrue(FILENAME + " is empty", file.length() > 0L);
         }
         assertTrue(FILENAME + " cannot be read", file.canRead());
@@ -172,6 +172,34 @@ public class AndroidUnitTest {
                 assertTrue("News with top line '" + PREFERRED_REGION.toString() + "' is not regional", news.isRegional());
             }
         }
+    }
+
+    /**
+     * Tests {@link BootReceiver}.
+     */
+    @Test
+    public void testBootReceiver() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        boolean pollWasEnabled = prefs.getBoolean(App.PREF_POLL, false);
+        if (!pollWasEnabled) {
+            SharedPreferences.Editor ed = prefs.edit();
+            ed.putBoolean(App.PREF_POLL, true);
+            ed.apply();
+        }
+        BootReceiver br = new BootReceiver();
+        br.onReceive(ctx, new Intent(Intent.ACTION_BOOT_COMPLETED));
+        NotificationManager nm = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        assertNotNull(nm);
+        StatusBarNotification[] n = nm.getActiveNotifications();
+        assertTrue(n.length > 0);
+        // a little time to have a look at the notification
+        try {
+            Thread.sleep(5_000L);
+        } catch (Exception ignored) {
+        }
+        SharedPreferences.Editor ed = prefs.edit();
+        ed.putBoolean(App.PREF_POLL, pollWasEnabled);
+        ed.apply();
     }
 
     /**
@@ -409,7 +437,9 @@ public class AndroidUnitTest {
         try {
             TtfInfo tti = TtfInfo.getTtfInfo(file);
             assertNotNull(tti);
-            assertEquals("Roboto", tti.getFontFullName());
+            String fontName = tti.getFontFullName();
+            assertNotNull(fontName);
+            assertTrue(fontName.contains("Roboto"));
         } catch (IOException e) {
             fail(e.getMessage());
         }

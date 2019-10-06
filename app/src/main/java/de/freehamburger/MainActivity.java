@@ -2,6 +2,7 @@ package de.freehamburger;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
+import android.app.NotificationManager;
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
@@ -130,8 +131,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private static final String STATE_LIST_POS = "de.freehamburger.state.list.pos";
     /** contains a News object if the {@link #quickView} should be restored */
     private static final String STATE_QUIKVIEW = "de.freehamburger.state.quikview";
-    private static final String ACTION_IMPORT_FONT = "de.freehamburger.action_font_import";
-    private static final String ACTION_DELETE_FONT = "de.freehamburger.action_font_delete";
+    private static final String ACTION_IMPORT_FONT = "de.freehamburger.action.font_import";
+    private static final String ACTION_DELETE_FONT = "de.freehamburger.action.font_delete";
     /** used when the user has picked a font file to import */
     private static final int REQUEST_CODE_FONT_IMPORT = 815;
 
@@ -347,6 +348,10 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             this.currentSource = UpdateJobService.SOURCE;
             this.listPositionToRestore = 0;
             updateTitle();
+            NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+            if (nm != null) {
+                nm.cancel(UpdateJobService.NOTIFICATION_ID);
+            }
             return;
         }
 
