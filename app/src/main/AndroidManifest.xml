@@ -29,8 +29,8 @@
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="false"
         android:appCategory="news"
+        android:allowAudioPlaybackCapture="false"
         tools:ignore="UnusedAttribute">
-        <!--TODO add android:allowAudioPlaybackCapture="false" when migrating to API 29 (Q) -->
 
         <meta-data
             android:name="android.webkit.WebView.MetricsOptOut"
