@@ -461,19 +461,19 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     /** {@inheritDoc} */
     @Override
-    public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+    public void onActivityCreated(@NonNull Activity activity, Bundle savedInstanceState) {
         /* no-op */
     }
 
     /** {@inheritDoc} */
     @Override
-    public void onActivityDestroyed(Activity activity) {
+    public void onActivityDestroyed(@NonNull Activity activity) {
         /* no-op */
     }
 
     /** {@inheritDoc} */
     @Override
-    public void onActivityPaused(Activity activity) {
+    public void onActivityPaused(@NonNull Activity activity) {
         if (activity != this.currentActivity) return;
         this.currentActivity = null;
         this.handler.postDelayed(this.scheduleChecker, 1_000L);
@@ -481,7 +481,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     /** {@inheritDoc} */
     @Override
-    public void onActivityResumed(Activity activity) {
+    public void onActivityResumed(@NonNull Activity activity) {
         this.handler.removeCallbacks(this.scheduleChecker);
         this.currentActivity = activity;
         if (activity instanceof MainActivity) {
@@ -492,19 +492,19 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     /** {@inheritDoc} */
     @Override
-    public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+    public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
         /* no-op */
     }
 
     /** {@inheritDoc} */
     @Override
-    public void onActivityStarted(Activity activity) {
+    public void onActivityStarted(@NonNull Activity activity) {
         /* no-op */
     }
 
     /** {@inheritDoc} */
     @Override
-    public void onActivityStopped(Activity activity) {
+    public void onActivityStopped(@NonNull Activity activity) {
         /* no-op */
     }
 
@@ -542,7 +542,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
             /** {@inheritDoc} */
             @SuppressLint("ApplySharedPref")
             @Override
-            public void uncaughtException(Thread t, Throwable e) {
+            public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
                 if (e instanceof IllegalArgumentException && e.toString().contains("Software rendering doesn't support hardware bitmaps")) {
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(App.this);
                     SharedPreferences.Editor ed = prefs.edit();

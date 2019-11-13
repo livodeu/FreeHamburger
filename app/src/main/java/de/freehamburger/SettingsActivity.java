@@ -135,13 +135,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     }
 
     /**
-     * Constructor.
-     */
-    public SettingsActivity() {
-        super();
-    }
-
-    /**
      * @param fragmentName fragment class name
      * @return true / false
      */
@@ -366,10 +359,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class DataPreferenceFragment extends PreferenceFragment {
         private SharedPreferences prefs;
-        private SwitchPreference prefLoadOverMobile;
         private SwitchPreference prefLoadVideosOverMobile;
-        private Preference prefProxyType;
-        private EditTextPreference prefProxyServer;
 
         /** {@inheritDoc} */
         @Override
@@ -380,9 +370,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             SettingsActivity activity = (SettingsActivity)getActivity();
             this.prefs = PreferenceManager.getDefaultSharedPreferences(activity);
 
-            this.prefLoadOverMobile = (SwitchPreference)findPreference(App.PREF_LOAD_OVER_MOBILE);
+            SwitchPreference prefLoadOverMobile = (SwitchPreference) findPreference(App.PREF_LOAD_OVER_MOBILE);
             this.prefLoadVideosOverMobile = (SwitchPreference)findPreference(App.PREF_LOAD_VIDEOS_OVER_MOBILE);
-            this.prefLoadOverMobile.setOnPreferenceChangeListener((preference, newValue) -> {
+            prefLoadOverMobile.setOnPreferenceChangeListener((preference, newValue) -> {
                 if (Boolean.FALSE.equals(newValue)) {
                     SharedPreferences.Editor ed = prefs.edit();
                     ed.putBoolean(App.PREF_LOAD_VIDEOS_OVER_MOBILE, false);
@@ -393,8 +383,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
                 return true;
             });
 
-            this.prefProxyType = findPreference(App.PREF_PROXY_TYPE);
-            this.prefProxyType.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            Preference prefProxyType = findPreference(App.PREF_PROXY_TYPE);
+            prefProxyType.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 
                 final String[] labels = getResources().getStringArray(R.array.entries_list_proxytypes);
                 final String[] values = getResources().getStringArray(R.array.entryvalues_list_proxytypes);
@@ -417,13 +407,13 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
                     return true;
                 }
             });
-            this.prefProxyType.getOnPreferenceChangeListener().onPreferenceChange(this.prefProxyType, prefs.getString(App.PREF_PROXY_TYPE, getString(R.string.pref_default_proxy_type)));
+            prefProxyType.getOnPreferenceChangeListener().onPreferenceChange(prefProxyType, prefs.getString(App.PREF_PROXY_TYPE, getString(R.string.pref_default_proxy_type)));
 
             DisablingValueListPreference pref_proxy_type = (DisablingValueListPreference) findPreference("pref_proxy_type");
             pref_proxy_type.setSelectionToDisableDependents("DIRECT");
 
-            this.prefProxyServer = (EditTextPreference) findPreference(App.PREF_PROXY_SERVER);
-            this.prefProxyServer.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            EditTextPreference prefProxyServer = (EditTextPreference) findPreference(App.PREF_PROXY_SERVER);
+            prefProxyServer.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 /** {@inheritDoc} */
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -436,7 +426,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
                     return true;
                 }
             });
-            this.prefProxyServer.getOnPreferenceChangeListener().onPreferenceChange(this.prefProxyServer, prefs.getString(App.PREF_PROXY_SERVER, null));
+            prefProxyServer.getOnPreferenceChangeListener().onPreferenceChange(prefProxyServer, prefs.getString(App.PREF_PROXY_SERVER, null));
         }
 
         /** {@inheritDoc} */
@@ -462,11 +452,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class AppearancePreferenceFragment extends PreferenceFragment {
 
-        private ButtonPreference prefBackground;
-        private Preference prefCorrectQuotationMarks;
-        private Preference prefImportFont;
-        private Preference prefDeleteFont;
-
         /** {@inheritDoc} */
         @Override
         public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -475,10 +460,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             setHasOptionsMenu(true);
             SettingsActivity activity = (SettingsActivity)getActivity();
 
-            this.prefBackground = (ButtonPreference) findPreference(App.PREF_BACKGROUND);
-            this.prefCorrectQuotationMarks = findPreference(App.PREF_CORRECT_WRONG_QUOTATION_MARKS);
-            this.prefImportFont = findPreference("pref_import_font");
-            this.prefDeleteFont = findPreference("pref_delete_font");
+            ButtonPreference prefBackground = (ButtonPreference) findPreference(App.PREF_BACKGROUND);
+            Preference prefCorrectQuotationMarks = findPreference(App.PREF_CORRECT_WRONG_QUOTATION_MARKS);
+            Preference prefImportFont = findPreference("pref_import_font");
+            Preference prefDeleteFont = findPreference("pref_delete_font");
 
             File fontFile = new File(getActivity().getFilesDir(), App.FONT_FILE);
             boolean fontExists = fontFile.isFile();
@@ -486,20 +471,20 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
                 try {
                     TtfInfo ttfInfo = TtfInfo.getTtfInfo(fontFile);
                     String fontName = ttfInfo.getFontFullName();
-                    this.prefImportFont.setSummary(getString(R.string.pref_summary_font_import_replace, fontName));
-                    this.prefDeleteFont.setSummary(getString(R.string.label_quoted, fontName));
+                    prefImportFont.setSummary(getString(R.string.pref_summary_font_import_replace, fontName));
+                    prefDeleteFont.setSummary(getString(R.string.label_quoted, fontName));
                 } catch (IOException e) {
                     fontExists = false;
-                    this.prefImportFont.setSummary(null);
-                    this.prefDeleteFont.setSummary(R.string.msg_font_none);
+                    prefImportFont.setSummary(null);
+                    prefDeleteFont.setSummary(R.string.msg_font_none);
                 }
             } else {
-                this.prefImportFont.setSummary(null);
-                this.prefDeleteFont.setSummary(R.string.msg_font_none);
+                prefImportFont.setSummary(null);
+                prefDeleteFont.setSummary(R.string.msg_font_none);
             }
-            this.prefDeleteFont.setEnabled(fontExists);
+            prefDeleteFont.setEnabled(fontExists);
 
-            this.prefBackground.setOnPreferenceChangeListener((preference, newValue) -> {
+            prefBackground.setOnPreferenceChangeListener((preference, newValue) -> {
                 if (Integer.valueOf(App.BACKGROUND_AUTO).equals(newValue)) {
                     boolean granted = ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
                     if (!granted) {
@@ -525,7 +510,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
 
             int iconSize = getResources().getDimensionPixelSize(R.dimen.pref_icon_size);
             // 0x1f918 -> https://en.wikibooks.org/wiki/Unicode/Character_reference/1F000-1FFFF
-            this.prefCorrectQuotationMarks.setIcon(new BitmapDrawable(activity.getResources(),
+            prefCorrectQuotationMarks.setIcon(new BitmapDrawable(activity.getResources(),
                     Util.makeCharBitmap("\uD83E\uDD18", 0f, iconSize, iconSize, Color.BLACK, Color.TRANSPARENT,
                             new PorterDuffColorFilter(getResources().getColor(R.color.colorDirtyWhite), PorterDuff.Mode.SRC_ATOP))));
         }
@@ -554,7 +539,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     public static class StoragePreferenceFragment extends PreferenceFragment {
 
         private SharedPreferences prefs;
-        private Preference prefClearCache;
         private EditTextPreference prefMaxCacheSize;
 
         /** {@inheritDoc} */
@@ -567,7 +551,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             this.prefs = PreferenceManager.getDefaultSharedPreferences(activity);
 
             this.prefMaxCacheSize = (EditTextPreference)findPreference(App.PREF_CACHE_MAX_SIZE);
-            this.prefClearCache = findPreference("pref_clear_cache");
+            Preference prefClearCache = findPreference("pref_clear_cache");
 
             this.prefMaxCacheSize.setDefaultValue(App.DEFAULT_CACHE_MAX_SIZE);
             this.prefMaxCacheSize.setOnPreferenceChangeListener((preference, o) -> {
@@ -591,7 +575,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             });
             this.prefMaxCacheSize.getOnPreferenceChangeListener().onPreferenceChange(this.prefMaxCacheSize, prefs.getString(App.PREF_CACHE_MAX_SIZE, App.DEFAULT_CACHE_MAX_SIZE));
 
-            this.prefClearCache.setOnPreferenceClickListener(preference -> {
+            prefClearCache.setOnPreferenceClickListener(preference -> {
                 Util.deleteOldestCacheFiles(getActivity(), 0L);
                 preference.setEnabled(false);
                 prefMaxCacheSize.getOnPreferenceChangeListener().onPreferenceChange(prefMaxCacheSize, prefs.getString(App.PREF_CACHE_MAX_SIZE, App.DEFAULT_CACHE_MAX_SIZE));
@@ -620,8 +604,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class GeneralPreferenceFragment extends PreferenceFragment {
 
-        private SharedPreferences prefs;
-        private EditTextPreference prefMaxMemCacheSize;
         private String originalMaxMemCacheSize;
         private boolean memCacheSizeModified;
 
@@ -632,13 +614,13 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             addPreferencesFromResource(R.xml.pref_general);
             setHasOptionsMenu(true);
             SettingsActivity activity = (SettingsActivity)getActivity();
-            this.prefs = PreferenceManager.getDefaultSharedPreferences(activity);
-            this.originalMaxMemCacheSize = this.prefs.getString(App.PREF_MEM_CACHE_MAX_SIZE, App.DEFAULT_MEM_CACHE_MAX_SIZE);
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
+            this.originalMaxMemCacheSize = prefs.getString(App.PREF_MEM_CACHE_MAX_SIZE, App.DEFAULT_MEM_CACHE_MAX_SIZE);
 
-            this.prefMaxMemCacheSize = (EditTextPreference)findPreference(App.PREF_MEM_CACHE_MAX_SIZE);
+            EditTextPreference prefMaxMemCacheSize = (EditTextPreference) findPreference(App.PREF_MEM_CACHE_MAX_SIZE);
 
-            this.prefMaxMemCacheSize.setDefaultValue(App.DEFAULT_MEM_CACHE_MAX_SIZE);
-            this.prefMaxMemCacheSize.setOnPreferenceChangeListener((preference, o) -> {
+            prefMaxMemCacheSize.setDefaultValue(App.DEFAULT_MEM_CACHE_MAX_SIZE);
+            prefMaxMemCacheSize.setOnPreferenceChangeListener((preference, o) -> {
                 int maxCacheSize;
                 try {
                     maxCacheSize = Integer.parseInt(o.toString().trim()) << 20;
@@ -665,7 +647,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
                 }
                 return true;
             });
-            this.prefMaxMemCacheSize.getOnPreferenceChangeListener().onPreferenceChange(this.prefMaxMemCacheSize, this.originalMaxMemCacheSize);
+            prefMaxMemCacheSize.getOnPreferenceChangeListener().onPreferenceChange(prefMaxMemCacheSize, this.originalMaxMemCacheSize);
         }
 
         @Override
@@ -704,10 +686,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class PollingPreferenceFragment extends PreferenceFragment {
 
-        private SwitchPreference prefPoll;
-        private SwitchPreference prefPollOverMobile;
-        private SummarizingEditTextPreference prefPollInterval;
-        private SummarizingEditTextPreference prefPollIntervalNight;
         private Preference prefPollStats;
         /** minimum polling interval in minutes */
         private int min;
@@ -760,26 +738,26 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             this.min = UpdateJobService.getMinimumIntervalInMinutes();
             this.maxNightInterval = Math.round(UpdateJobService.getNightDuration() * 60f);
 
-            this.prefPoll = (SwitchPreference) findPreference(App.PREF_POLL);
+            SwitchPreference prefPoll = (SwitchPreference) findPreference(App.PREF_POLL);
             long failedBefore = prefs.getLong(App.PREF_POLL_FAILED, 0L);
             if (failedBefore != 0L) {
                 String date = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(new Date(failedBefore));
-                this.prefPoll.setSummaryOn(getString(R.string.pref_title_poll_on) + '\n' + getString(R.string.error_poll_failed, date));
-                this.prefPoll.setSummaryOff(getString(R.string.pref_title_poll_off) + '\n' + getString(R.string.error_poll_failed, date));
+                prefPoll.setSummaryOn(getString(R.string.pref_title_poll_on) + '\n' + getString(R.string.error_poll_failed, date));
+                prefPoll.setSummaryOff(getString(R.string.pref_title_poll_off) + '\n' + getString(R.string.error_poll_failed, date));
             }
 
-            this.prefPollOverMobile = (SwitchPreference)findPreference(App.PREF_POLL_OVER_MOBILE);
+            SwitchPreference prefPollOverMobile = (SwitchPreference) findPreference(App.PREF_POLL_OVER_MOBILE);
             if (prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, false)) {
-                this.prefPollOverMobile.setEnabled(true);
+                prefPollOverMobile.setEnabled(true);
             } else {
-                this.prefPollOverMobile.setChecked(false);
-                this.prefPollOverMobile.setSummary(R.string.pref_title_pref_load_over_mobile_off);
-                this.prefPollOverMobile.setEnabled(false);
+                prefPollOverMobile.setChecked(false);
+                prefPollOverMobile.setSummary(R.string.pref_title_pref_load_over_mobile_off);
+                prefPollOverMobile.setEnabled(false);
             }
 
-            this.prefPollInterval = (SummarizingEditTextPreference) findPreference(App.PREF_POLL_INTERVAL);
-            this.prefPollInterval.setStringRes(R.string.label_every_minutes);
-            this.prefPollInterval.setOnPreferenceChangeListener((preference, o) -> {
+            SummarizingEditTextPreference prefPollInterval = (SummarizingEditTextPreference) findPreference(App.PREF_POLL_INTERVAL);
+            prefPollInterval.setStringRes(R.string.label_every_minutes);
+            prefPollInterval.setOnPreferenceChangeListener((preference, o) -> {
                 int interval;
                 try {
                     interval = Integer.parseInt(o.toString().trim());
@@ -795,9 +773,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
                 return interval >= PollingPreferenceFragment.this.min;
             });
 
-            this.prefPollIntervalNight = (SummarizingEditTextPreference) findPreference(App.PREF_POLL_INTERVAL_NIGHT);
-            this.prefPollIntervalNight.setStringRes(R.string.label_every_minutes);
-            this.prefPollIntervalNight.setOnPreferenceChangeListener((preference, o) -> {
+            SummarizingEditTextPreference prefPollIntervalNight = (SummarizingEditTextPreference) findPreference(App.PREF_POLL_INTERVAL_NIGHT);
+            prefPollIntervalNight.setStringRes(R.string.label_every_minutes);
+            prefPollIntervalNight.setOnPreferenceChangeListener((preference, o) -> {
                 int interval;
                 try {
                     interval = Integer.parseInt(o.toString().trim());

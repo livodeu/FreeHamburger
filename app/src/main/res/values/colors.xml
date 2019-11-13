@@ -3,7 +3,6 @@
     <color name="colorPrimaryDark">#0f70aa</color>
     <color name="colorPrimaryDarkSemiTrans">#770f70aa</color>
     <color name="colorPrimary">#1288cc</color>
-    <color name="colorPrimaryTrans">#5c26a6f0</color>
     <color name="colorPrimarySemiTrans">#771288cc</color>
     <color name="colorPrimaryLight">#1599e6</color>
     <color name="colorPrimaryLightSemiTrans">#aa1599e6</color>
@@ -13,8 +12,6 @@
     <color name="colorFilter">#55ffdd00</color>
     <color name="colorContent">#000000</color>
     <color name="colorBottomSheetBackground">#ee0f70aa</color>
-    <color name="colorContentQuotation">#ff064a91</color>
-    <color name="colorContentBox">#ff064a91</color>
     <color name="colorDirtyWhite">#ededed</color>
     <color name="colorIntro">#77ff0000</color>
 

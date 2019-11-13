@@ -1266,7 +1266,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
     /** {@inheritDoc} */
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (this.intro != null && this.intro.isPlaying()) return false;
         return onMenuItemSelected(item);
     }
