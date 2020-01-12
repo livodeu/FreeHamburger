@@ -8,6 +8,8 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.graphics.Color;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
@@ -99,6 +101,15 @@ public class WebViewActivity extends AppCompatActivity {
         dm.enqueue(r);
     }
 
+    /**
+     * Returns a {@link PageFinishedListener PageFinishedListener} which gets notified when a page has been loaded. Defaults to null.
+     * @return PageFinishedListener
+     */
+    @Nullable
+    PageFinishedListener getPageFinishedListener() {
+        return null;
+    }
+
     /** {@inheritDoc} */
     @Override
     public void onBackPressed() {
@@ -126,7 +137,9 @@ public class WebViewActivity extends AppCompatActivity {
         setSupportActionBar(findViewById(R.id.toolbar));
 
         this.webView = findViewById(R.id.webView);
-        this.webView.setWebViewClient(new HamburgerWebViewClient());
+        boolean nightMode = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        this.webView.setBackgroundColor(nightMode ? Color.BLACK : Color.WHITE);
+        this.webView.setWebViewClient(new HamburgerWebViewClient(this));
         this.webView.setWebChromeClient(new HamburgerWebChromeClient(this));
         this.webView.clearHistory();
 
@@ -221,6 +234,16 @@ public class WebViewActivity extends AppCompatActivity {
         super.onTrimMemory(level);
     }
 
+    interface PageFinishedListener {
+
+        /**
+         * A page has finished loading.
+         * See {@link WebViewClient#onPageFinished(WebView, String)}.
+         * @param url url
+         */
+        void pageFinished(String url);
+    }
+
     /**
      * Sets a View's visibility to {@link View#INVISIBLE INVISIBLE}.
      */
@@ -250,6 +273,7 @@ public class WebViewActivity extends AppCompatActivity {
         };
 
         private final Handler handler = new Handler();
+        private final WebViewActivity activity;
 
         /**
          * Checks whether the given resource should be downloaded.
@@ -298,10 +322,17 @@ public class WebViewActivity extends AppCompatActivity {
             return false;
         }
 
+        private HamburgerWebViewClient(@NonNull WebViewActivity activity) {
+            super();
+            this.activity = activity;
+        }
+
         /** {@inheritDoc} */
         @Override
         public void onPageFinished(WebView view, String url) {
             if ("about:blank".equals(url)) return;
+            PageFinishedListener pageFinishedListener = this.activity.getPageFinishedListener();
+            if (pageFinishedListener != null) pageFinishedListener.pageFinished(url);
             Uri uri = Uri.parse(url);
             String scheme = uri.getScheme();
             boolean allowedScheme = (scheme == null || "http".equals(scheme) || "https".equals(scheme));
@@ -427,6 +458,7 @@ public class WebViewActivity extends AppCompatActivity {
          * @param duration duration in ms
          */
         private void fade(@NonNull View v, boolean in, @NonNull Handler handler, int duration) {
+            if (this.viewHider == null) return;
             ObjectAnimator oa;
             if (in) {
                 handler.removeCallbacks(this.viewHider);

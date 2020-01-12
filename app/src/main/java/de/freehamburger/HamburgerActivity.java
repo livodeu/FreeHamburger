@@ -1,36 +1,30 @@
 package de.freehamburger;
 
-import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.location.Location;
-import android.location.LocationManager;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.util.Log;
+import android.widget.Toast;
+
+import com.google.android.material.snackbar.Snackbar;
+
 import androidx.annotation.CallSuper;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StyleRes;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import com.google.android.material.snackbar.Snackbar;
-import androidx.core.app.ActivityCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import android.util.Log;
-import android.widget.Toast;
-
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-
-import de.freehamburger.util.Sun;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 /**
  * Base for {@link MainActivity} and {@link NewsActivity}.
@@ -58,12 +52,23 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @App.BackgroundSelection
     static int applyTheme(@NonNull final AppCompatActivity activity, @Nullable SharedPreferences prefs, boolean again) {
         // determine whether a light or a dark background is applicable
-        @App.BackgroundSelection int background = resolveBackground(activity, prefs);
+        if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(activity);
+        @App.BackgroundSelection int background  = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
         // select theme based on the background
         if (background == App.BACKGROUND_DARK) {
             applyTheme(activity, false, again);
-        } else {
+        } else if (background == App.BACKGROUND_LIGHT) {
             applyTheme(activity, true, again);
+        } else {
+            boolean nightMode;
+            if (BuildConfig.DEBUG) {
+                int n = activity.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+                nightMode = (n == 32);
+                Log.i(TAG, "Night mode: " + (n == 32 ? "yes" : (n == 16 ? "no" : "undefined")));
+            } else {
+                nightMode = (activity.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+            }
+            applyTheme(activity, !nightMode, again);
         }
         //
         return background;
@@ -77,6 +82,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
      * @throws NullPointerException if {@code activity} is {@code null}
      */
     private static void applyTheme(@NonNull AppCompatActivity activity, boolean lightBackground, boolean again) {
+        if (BuildConfig.DEBUG) Log.i(TAG, "applyTheme(" + activity.getClass().getSimpleName() + ", " + lightBackground + ", " + again + ")");
         @StyleRes int resid;
         if (activity instanceof HamburgerActivity) {
             HamburgerActivity ha = (HamburgerActivity) activity;
@@ -99,7 +105,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         }
     }
 
-    /**
+    /*
      * Determines the theme to use.<br>
      * <ul>
      * <li>
@@ -117,8 +123,9 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
      * @param prefs SharedPreferences (optional)
      * @return {@link App#BACKGROUND_LIGHT} or {@link App#BACKGROUND_DARK}
      * @throws NullPointerException if {@code ctx} is {@code null}
-     */
+     *
     @App.BackgroundSelection
+    @Deprecated
     private static int resolveBackground(@NonNull Context ctx, @Nullable SharedPreferences prefs) {
         if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         @App.BackgroundSelection int background = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
@@ -142,7 +149,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
             background = sun.isDay(now) ? App.BACKGROUND_LIGHT : App.BACKGROUND_DARK;
         }
         return background;
-    }
+    }*/
 
     @App.BackgroundSelection
     public int getBackground() {

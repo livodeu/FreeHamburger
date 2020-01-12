@@ -3,6 +3,7 @@ package de.freehamburger.adapters;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -302,7 +303,13 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         this.handler.removeCallbacks(this.preloader);
         NewsView newsView = (NewsView) holder.itemView;
-        newsView.setBackgroundResource(this.background == App.BACKGROUND_LIGHT ? R.drawable.bg_news_light : R.drawable.bg_news);
+        switch (this.background) {
+            case App.BACKGROUND_DARK: newsView.setBackgroundResource(R.drawable.bg_news); break;
+            case App.BACKGROUND_LIGHT: newsView.setBackgroundResource(R.drawable.bg_news_light); break;
+            case App.BACKGROUND_AUTO:
+                boolean nightMode = (this.activity.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+                newsView.setBackgroundResource(nightMode ? R.drawable.bg_news : R.drawable.bg_news_light);
+        }
         applyTypeface(newsView);
         HamburgerService service = this.activity.getHamburgerService();
         if (isFiltered()) {
@@ -365,6 +372,8 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
         if (App.PREF_FILTERS_APPLY.equals(key)) {
             this.filtersEnabled = prefs.getBoolean(key, true);
+        } else if (App.PREF_BACKGROUND.equals(key)) {
+            notifyDataSetChanged();
         }
     }
 

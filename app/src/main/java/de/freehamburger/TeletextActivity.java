@@ -4,22 +4,30 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ShortcutInfo;
 import android.content.pm.ShortcutManager;
+import android.content.res.Configuration;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-import com.google.android.material.snackbar.Snackbar;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 /**
  * Special version of WebViewActivity for teletext display that can create pinned shortcuts to a teletext page (from API 26 on).
  */
 public class TeletextActivity extends WebViewActivity {
+
+    private final PageFinishedListener pfl = (url) -> {
+        boolean nightMode = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        setDarkMode(nightMode);
+    };
 
     /**
      * Determines whether the given pinned shortcut already exists.
@@ -36,6 +44,12 @@ public class TeletextActivity extends WebViewActivity {
             }
         }
         return false;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    PageFinishedListener getPageFinishedListener() {
+        return this.pfl;
     }
 
     /** {@inheritDoc} */
@@ -103,6 +117,17 @@ public class TeletextActivity extends WebViewActivity {
             }
         }
         return super.onPrepareOptionsMenu(menu);
+    }
+
+    /**
+     * Enables/disables dark mode.<br>
+     * Relies on the javascript code found in
+     * <a href="https://www.ard-text.de/mobil/">https://www.ard-text.de/mobil/</a>.
+     * @param dark true / false
+     */
+    private void setDarkMode(boolean dark) {
+        String cmd = "document.body.className = '" + (dark ? "dark" : "light") + "';";
+        this.webView.evaluateJavascript(cmd, null);
     }
 
 }

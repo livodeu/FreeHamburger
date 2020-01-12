@@ -48,6 +48,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import androidx.appcompat.app.AppCompatDelegate;
 import de.freehamburger.model.Source;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.Log;
@@ -84,7 +85,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final int DEFAULT_MEM_CACHE_MAX_SIZE_MB = Integer.parseInt(DEFAULT_MEM_CACHE_MAX_SIZE);
     /** int: 0 automatic; 1 dark; 2 light; see {@link BackgroundSelection} */
     public static final String PREF_BACKGROUND = "pref_background";
-    public static final int BACKGROUND_LIGHT = 2;
     public static final String PREF_LOAD_OVER_MOBILE = "pref_load_over_mobile";
     public static final boolean DEFAULT_LOAD_OVER_MOBILE = true;
     public static final String PREF_LOAD_VIDEOS_OVER_MOBILE = "pref_load_videos_over_mobile";
@@ -143,8 +143,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     final static String URL_TELETEXT = URL_TELETEXT_WO_PAGE + "100";
     /** teletext host */
     final static String URI_TELETEXT_HOST = Uri.parse(URL_TELETEXT).getHost();
-    static final int BACKGROUND_AUTO = 0;
-    static final int BACKGROUND_DARK = 1;
+    public static final int BACKGROUND_AUTO = 0;
+    public static final int BACKGROUND_DARK = 1;
+    public static final int BACKGROUND_LIGHT = 2;
     static final String EXTRA_CRASH = "crash";
     /** back button behaviour: pressing back stops the app (respectively the Android default behaviour) */
     static final int USE_BACK_FINISH = 0;
@@ -603,6 +604,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
         registerActivityLifecycleCallbacks(this);
 
         PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
+
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
 
         FileDeleter.run();
 
