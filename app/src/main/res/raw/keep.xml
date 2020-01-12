@@ -2,5 +2,5 @@
 <!-- see https://developer.android.com/studio/build/shrink-code.html#keep-resources -->
 <resources xmlns:tools="http://schemas.android.com/tools"
     tools:discard="@raw/*.json"
-    tools:keep="@raw/*.txt,@raw*.htm"
+    tools:keep="@raw/*.txt,@raw*.htm,@mipmap/*.png"
     tools:shrinkMode="strict"/>
