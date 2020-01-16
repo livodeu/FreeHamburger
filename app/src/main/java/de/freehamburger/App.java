@@ -523,7 +523,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) getSystemService(USER_SERVICE);
 
         if (BuildConfig.DEBUG) {
-            de.freehamburger.util.Log.init(this);
             com.google.android.exoplayer2.util.Log.setLogLevel(com.google.android.exoplayer2.util.Log.LOG_LEVEL_WARNING);
             com.google.android.exoplayer2.util.Log.setLogStackTraces(true);
         } else {

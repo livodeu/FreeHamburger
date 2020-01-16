@@ -1,9 +1,6 @@
 package de.freehamburger.util;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -19,6 +16,8 @@ import java.util.ArrayDeque;
 import java.util.Date;
 import java.util.Deque;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import de.freehamburger.BuildConfig;
 
 /**
@@ -35,7 +34,11 @@ public class Log {
     private static final Deque<String> QUEUE = new ArrayDeque<>(96);
     private static final Object QUEUE_LOCK = new Object();
     public static final Object FILE_LOCK = new Object();
-    private static File file;
+    private static File file = new File(System.getProperty("java.io.tmpdir"), FILENAME);
+
+    static {
+        init();
+    }
 
     public static boolean deleteFile() {
         boolean deleted;
@@ -71,9 +74,21 @@ public class Log {
         write('I', tag, msg);
     }
 
-    public static void init(@NonNull Context context) {
+    private static void init() {
         if (!BuildConfig.DEBUG) return;
-        file = new File(context.getFilesDir(), FILENAME);
+        /*
+        java.io.tmpdir: /data/user/0/de.freehamburger.debug/cache
+        context.getFilesDir(): /data/user/0/de.freehamburger.debug/files
+         */
+        String tmpdir = System.getProperty("java.io.tmpdir");
+        if (tmpdir == null) {
+            android.util.Log.wtf("Log", "java.io.tmpdir is null!");
+            return;
+        }
+        File filesDir = new File(new File(tmpdir).getParentFile(), "files");
+        if (filesDir.isDirectory()) {
+            file = new File(filesDir, FILENAME);
+        }
         new Writer().start();
     }
 
@@ -155,12 +170,6 @@ public class Log {
      * @param msg log message
      */
     private static void write(char level, @NonNull String tag, String msg) {
-        if (file == null) {
-            java.util.Properties p = System.getProperties();
-            p.list(System.out);
-            file = new File(System.getProperty("java.io.tmpdir"), FILENAME);
-            if (BuildConfig.DEBUG) android.util.Log.e(Log.class.getSimpleName(), "init() not called! Log file is in the cache directory now!");
-        }
         int l = msg != null ? msg.length() : 0;
         if (l == 0) return;
         StringBuilder msgb = new StringBuilder(l + tag.length() + 20)   // +20 is sufficient for dates formatted for Locale.GERMAN
@@ -198,12 +207,12 @@ public class Log {
             OutputStream out = null;
             synchronized (QUEUE_LOCK) {
                 if (QUEUE.isEmpty()) return;
-                //if (BuildConfig.DEBUG) android.util.Log.i("Log", "Log queue size: " + QUEUE.size());
                 synchronized (FILE_LOCK) {
-                    try {
+                     try {
                         out = new BufferedOutputStream(new FileOutputStream(file, true));
                         do {
-                            out.write(QUEUE.pollLast().getBytes(CHARSET));
+                            String s = QUEUE.pollLast();
+                            if (s != null) out.write(s.getBytes(CHARSET));
                         } while (!QUEUE.isEmpty());
                     } catch (IOException e) {
                         if (BuildConfig.DEBUG) android.util.Log.e(Log.class.getSimpleName(), e.toString(), e);
