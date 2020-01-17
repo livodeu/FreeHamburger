@@ -65,18 +65,18 @@ public class BootReceiver extends BroadcastReceiver {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             builder.addAction(new Notification.Action.Builder(
-                    Icon.createWithResource(app, R.drawable.ic_notification),
-                    app.getString(R.string.action_open_app),
-                    UpdateJobService.makeIntentForMainActivity(app, null))
-                    .build());
-            builder.addAction(new Notification.Action.Builder(
                     Icon.createWithResource(app, R.drawable.ic_do_not_disturb_alt_ededed_24dp),
                     app.getString(R.string.action_background_disable),
                     UpdateJobService.makeIntentToDisable(app))
                     .build());
+            builder.addAction(new Notification.Action.Builder(
+                    Icon.createWithResource(app, R.drawable.ic_notification),
+                    app.getString(R.string.action_open_app),
+                    UpdateJobService.makeIntentForMainActivity(app, null))
+                    .build());
         } else {
-            builder.addAction(new Notification.Action(R.drawable.ic_notification, app.getString(R.string.action_open_app), UpdateJobService.makeIntentForMainActivity(app, null)));
             builder.addAction(new Notification.Action(R.drawable.ic_do_not_disturb_alt_ededed_24dp, app.getString(R.string.action_background_disable), UpdateJobService.makeIntentToDisable(app)));
+            builder.addAction(new Notification.Action(R.drawable.ic_notification, app.getString(R.string.action_open_app), UpdateJobService.makeIntentForMainActivity(app, null)));
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

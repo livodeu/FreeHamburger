@@ -158,6 +158,7 @@
 
     <string name="msg_background_active">Background queries are scheduled to occur every %1$s minutes.</string>
     <string name="msg_background_active_short">Background queries occur every %1$s min.</string>
+    <string name="msg_background_inactive">Background queries are disabled.</string>
     <string name="msg_filters_disabled">Filters are now disabled.</string>
     <string name="msg_filters_enabled">Filters are now enabled.</string>
     <string name="msg_filters_removed">All filters have been removed.</string>

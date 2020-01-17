@@ -22,6 +22,7 @@ import android.os.PersistableBundle;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -811,6 +812,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 ed.putBoolean(App.PREF_POLL, false);
                 ed.apply();
                 removeNotification();
+                Toast.makeText(getApplicationContext(), R.string.msg_background_inactive, Toast.LENGTH_LONG).show();
                 stopSelf(startId);
                 return START_REDELIVER_INTENT;
             }
