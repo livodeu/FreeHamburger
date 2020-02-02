@@ -24,6 +24,7 @@
     <string name="pref_title_ask_before_finish">Vor dem Beenden</string>
     <string name="pref_title_ask_before_finish_off">nichts tun.</string>
     <string name="pref_title_ask_before_finish_on">nach Bestätigung fragen.</string>
+    <string name="pref_title_font_zoom">Schriftvergrößerung</string>
     <string name="action_import_font">Schrift importieren</string>
     <string name="error_proxy_connection_failed">Der als Proxy eingestellte Host %1$s nimmt keine Verbindung an Port %2$s an!</string>
     <string name="label_license">Lizenz</string>
@@ -138,7 +139,6 @@
     <string name="hint_paused">Das Video ist pausiert.</string>
     <string name="hint_permission_location">Zugriff auf den Standort erlauben?</string>
     <string name="pref_title_play_intro">Einführung zeigen</string>
-    <string name="hint_intro_will_be_played">Die Einführung wird beim nächsten Start angezeigt.</string>
     <string name="pref_title_open_links_internally">Interne Verknüpfungen</string>
     <string name="pref_title_open_links_internally_off">werden im Browser geöffnet</string>
     <string name="pref_title_open_links_internally_on">werden in der App geöffnet</string>
@@ -173,8 +173,11 @@
     <string name="action_view_picture">Bild ansehen</string>
     <string name="label_service">Dies ist der Hintergrunddienst für Hamburger, der für das Laden der Nachrichten verantwortlich ist.</string>
     <string name="error_tts_fail">Sprachausgabe fehlgeschlagen!</string>
-    <string name="error_tts_fail_network">Sprachausgabe fehlgeschlagen wegen Netzproblemen!</string>
-    <string name="error_tts_fail_not_downloaded">Sprachausgabe fehlgeschlagen! Daten noch nicht geladen.</string>
+    <string name="error_tts_fail_network">Sprachausgabe fehlgeschlagen wegen Netzproblemen.</string>
+    <string name="error_tts_fail_not_downloaded">Sprachausgabe fehlgeschlagen: Daten noch nicht geladen.</string>
+    <string name="error_tts_fail_output">Sprachausgabe fehlgeschlagen: Probleme mit dem Ausgabegerät.</string>
+    <string name="error_tts_fail_service">Sprachausgabe fehlgeschlagen: Fehlfunktion im TTS-Dienst.</string>
+    <string name="error_tts_fail_synthesis">Sprachausgabe fehlgeschlagen: Der Text konnte nicht in Sprache umgesetzt werden.</string>
 
     <string name="intro_1">Wählen Sie eine Kategorie in der rechten „Schublade”.</string>
     <string name="intro_2">Suchen Sie und ändern Sie Einstellungen wie bevorzugte Regionen oder Filter durch Antippen der Uhr.</string>
@@ -220,6 +223,12 @@
     <string name="msg_standby_bucket_workingset">Die App wird nicht sehr oft genutzt. Hintergrundabfragen können um bis zu 2 h verzögert sein!</string>
     <string name="label_website_errors">Webseitenfehler</string>
     <string name="msg_website_errors">Diese Webseite enthält Fehler.</string>
+    <string name="pref_title_pref_topline_marquee">Laufschrift in Titelzeile</string>
+    <string name="pref_title_pref_topline_marquee_on">wird ggf. verwendet</string>
+    <string name="pref_title_pref_topline_marquee_off">wird nicht verwendet</string>
+
+    <string name="hint_intro_will_be_played">Die Einführung wird beim nächsten Start angezeigt.</string>
+    <string name="hint_intro_will_not_be_played">Die Einführung wird beim nächsten Start nicht angezeigt.</string>
 
     <string name="url_wikipedia_http_streaming">https://de.m.wikipedia.org/wiki/HTTP-Streaming</string>
 

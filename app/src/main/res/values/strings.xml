@@ -54,6 +54,7 @@
     <string name="hint_filter_button_clear">Click to clear the phrase</string>
     <string name="hint_filter_button_delete">Click to delete the filter</string>
     <string name="hint_intro_will_be_played">The introduction will be shown during the next start.</string>
+    <string name="hint_intro_will_not_be_played">The introduction will not be shown during the next start.</string>
     <string name="hint_menu_search">This menu item invokes the search function</string>
     <string name="hint_paused">The video is paused.</string>
     <string name="hint_permission_location">Permit access to device location.</string>
@@ -91,6 +92,9 @@
     <string name="error_tts_fail">Speaking failed!</string>
     <string name="error_tts_fail_network">Speaking failed due to network problems!</string>
     <string name="error_tts_fail_not_downloaded">Speaking failed! Voice not downloaded yet.</string>
+    <string name="error_tts_fail_output">Speaking failed due to problems with the output device!</string>
+    <string name="error_tts_fail_service">Speaking failed because there was a malfunction in the text-to-speech service.</string>
+    <string name="error_tts_fail_synthesis">Speaking failed because the text-to-speech engine could not pronounce it.</string>
     <string name="error_unknown_host">has not been found</string>
     <string name="error_video">Video playback error</string>
 
@@ -204,6 +208,7 @@
     <string name="pref_title_ask_before_finish_off">do nothing.</string>
     <string name="pref_title_ask_before_finish_on">ask user for confirmation.</string>
     <string name="pref_title_background">Background</string>
+    <string name="pref_title_font_zoom">Text magnification</string>
     <string name="pref_title_poll">Poll</string>
     <string name="pref_title_poll_on">Active.</string>
     <string name="pref_title_poll_off">Inactive.</string>
@@ -230,6 +235,9 @@
     <string name="pref_title_time_mode">Time mode</string>
     <string name="pref_title_time_mode_on">Relative</string>
     <string name="pref_title_time_mode_off">Absolute</string>
+    <string name="pref_title_pref_topline_marquee">Top line marquee</string>
+    <string name="pref_title_pref_topline_marquee_on">may be used</string>
+    <string name="pref_title_pref_topline_marquee_off">will not be used</string>
     <string name="pref_title_use_back">The back button</string>
     <string name="pref_title_warn_mute">If audio is muted,</string>
     <string name="pref_title_warn_mute_on">show a warning</string>
