@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="max_lines_textview_firstsentence">10</integer>
+    <integer name="max_lines_textview_title">3</integer>
+    <integer name="max_magnification_text">200</integer>
+    <integer name="min_magnification_text">50</integer>
+</resources>

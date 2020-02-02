@@ -14,6 +14,7 @@
     <color name="colorBottomSheetBackground">#ee0f70aa</color>
     <color name="colorDirtyWhite">#ededed</color>
     <color name="colorIntro">#77ff0000</color>
+    <color name="colorToplineShadow">#33064a91</color>
 
     <!-- background color for news -->
     <color name="colorBgNews">#5c26a6f0</color>
