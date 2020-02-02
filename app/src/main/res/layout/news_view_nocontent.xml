@@ -7,15 +7,14 @@
     android:layout_height="match_parent"
     android:foreground="?android:attr/selectableItemBackground"
     android:background="@drawable/bg_news"
-    android:elevation="8dp"
-    android:padding="8dp"
+    android:elevation="@dimen/news_elevation"
+    android:padding="@dimen/news_padding"
     android:clipToPadding="false"
     android:clipChildren="false"
     android:focusable="true"
     android:focusableInTouchMode="false"
+    tools:ignore="UnusedAttribute"
     >
-
-    <!-- in der Original-App ist die Reihenfolge: topline, title, firstSentence -->
 
     <TextView
         android:id="@+id/textViewTopline"
@@ -23,8 +22,9 @@
         android:layout_height="wrap_content"
         android:elegantTextHeight="true"
         android:ellipsize="end"
-        android:maxLines="1"
-        android:shadowColor="#33064a91"
+        android:singleLine="true"
+        android:focusable="true"
+        android:shadowColor="@color/colorToplineShadow"
         android:shadowDx="@dimen/topline_shadow_size" android:shadowDy="@dimen/topline_shadow_size" android:shadowRadius="@dimen/topline_shadow_size"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         android:textColor="@android:color/black"

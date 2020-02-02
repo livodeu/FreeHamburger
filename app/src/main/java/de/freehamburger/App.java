@@ -95,6 +95,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** String: DIRECT, HTTP or SOCKS */
     public static final String PREF_PROXY_TYPE = "pref_proxy_type";
     public static final String PREF_REGIONS = "pref_regions";
+    /** int: number of times the topline marquee animation is repeated (see also <a href="https://developer.android.com/reference/android/widget/TextView.html?hl=en#attr_android:marqueeRepeatLimit">here</a>) */
+    public static final String PREF_TOPLINE_MARQUEE = "pref_topline_marquee";
     /** boolean: controls whether time is displayed in a absolute way ("12.34.56 12:34") (false) or in a relative way ("10 minutes ago") (true) */
     public static final String PREF_TIME_MODE_RELATIVE = "pref_time_mode";
     public static final boolean PREF_TIME_MODE_RELATIVE_DEFAULT = true;
@@ -112,6 +114,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_FILTERS = "pref_filters";
     /** boolean */
     public static final String PREF_FILTERS_APPLY = "pref_filters_apply";
+    /** int: percentage value (range between @integer/min_magnification_text and @integer/max_magnification_text) */
+    public static final String PREF_FONT_ZOOM = "pref_font_zoom";
+    public static final int PREF_FONT_ZOOM_DEFAULT = 100;
     /** boolean */
     public static final String PREF_PLAY_INTRO = "pref_play_intro";
     /** boolean */

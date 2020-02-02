@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
@@ -15,6 +15,20 @@
         <item name="android:windowBackgroundFallback">@color/colorPrimaryLight</item>
         <item name="listMenuViewStyle">@style/AppTheme.ListMenuViewStyle</item>
         <item name="android:contextPopupMenuStyle">@style/ContextMenu</item>
+        <item name="color_bg_news">@color/colorBgNews</item>
+        <item name="color_bg_news_focused">@color/colorBgNewsFocused</item>
+    </style>
+
+    <style name="AppTheme.Black">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+
+    <style name="AppTheme.Launcher" parent="AppTheme">
+        <item name="colorPrimary">@android:color/transparent</item>
+        <item name="colorPrimaryDark">@android:color/transparent</item>
+        <item name="colorAccent">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@drawable/color_primary_to_grey_gradient</item>
     </style>
 
     <style name="ContextMenu" parent="AppTheme">

@@ -458,16 +458,17 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         // check whether it is a ttf file
         if (data.toString().toLowerCase(java.util.Locale.US).endsWith(".ttf")) {
             // it is a ttf file -> import it, and then proceed normally
-            importTtf(data, true);
-            if (this.newsAdapter != null) this.newsAdapter.setTypeface(Util.loadFont(this));
+            Typeface tf = importTtf(data, true);
+            if (this.newsAdapter != null) this.newsAdapter.setTypeface(tf);
             return;
         } else if ("content".equals(intent.getScheme()) && "*/*".equals(intent.getType())) {
             // some stoopid doodle siftware has passed meaningless nonsense to this app
             // (data like "content://com.android.providers.downloads.documents/document/476", type="*/*")
             // let's try to find out whether it is a ttf file
-            if (importTtf(data, false)) {
+            Typeface tf = importTtf(data, false);
+            if (tf != null) {
                 // apparently if was indeed a ttf file -> proceed normally
-                if (this.newsAdapter != null) this.newsAdapter.setTypeface(Util.loadFont(this));
+                if (this.newsAdapter != null) this.newsAdapter.setTypeface(tf);
                 return;
             }
         }
@@ -491,11 +492,12 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      * Upon success, a {@link Snackbar} will be displayed.
      * @param uri Uri to read from
      * @param showMsgUponFail {@code true} to display a Snackbar upon failure
-     * @return true / false
+     * @return Typeface
      */
-    private boolean importTtf(@RequiresPermission @NonNull Uri uri, final boolean showMsgUponFail) {
+    @Nullable
+    private Typeface importTtf(@RequiresPermission @NonNull Uri uri, final boolean showMsgUponFail) {
         InputStream in = null;
-        boolean ok = true;
+        Typeface tf = null;
         //
         try {
             in = getContentResolver().openInputStream(uri);
@@ -503,7 +505,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 if (showMsgUponFail) {
                     Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
                 }
-                return false;
+                return null;
             }
             // copy data to a temporary file
             File tempFile = File.createTempFile("tempfont", ".ttf");
@@ -520,7 +522,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
                 }
                 Util.deleteFile(tempFile);
-                return false;
+                return null;
             }
             // rename temp file to the font file
             File fontFile = new File(getFilesDir(), App.FONT_FILE);
@@ -530,11 +532,10 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
                 }
                 Util.deleteFile(tempFile);
-                return false;
+                return null;
             }
-            Typeface tf = Util.loadFont(this);
+            tf = Util.loadFont(this);
             if (tf != null) {
-                this.newsAdapter.setTypeface(tf);
                 Snackbar sb;
                 if (!TextUtils.isEmpty(fontName)) {
                     sb = Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_font_import_done_ext, fontName), Snackbar.LENGTH_LONG);
@@ -559,11 +560,10 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
                 }
             }
-            ok = false;
         } finally {
             Util.close(in);
         }
-        return ok;
+        return tf;
     }
 
     /**
@@ -637,18 +637,19 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
     /** {@inheritDoc} */
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (resultCode != RESULT_OK || data == null) return;
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent intent) {
+        if (resultCode != RESULT_OK || intent == null) return;
         if (requestCode == REQUEST_CODE_FONT_IMPORT) {
-            Uri fontUri = data.getData();
+            Uri fontUri = intent.getData();
             if (fontUri != null) {
-                if (importTtf(fontUri, true)) {
-                    if (this.newsAdapter != null) this.newsAdapter.setTypeface(Util.loadFont(this));
+                Typeface tf = importTtf(fontUri, true);
+                if (tf != null) {
+                    if (this.newsAdapter != null) this.newsAdapter.setTypeface(tf);
                 }
             }
             return;
         }
-        super.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, intent);
     }
 
     /**
@@ -901,6 +902,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             this.listPositionToRestore = savedInstanceState.getInt(STATE_LIST_POS, RecyclerView.NO_POSITION);
             this.newsForQuickView = (News)savedInstanceState.getSerializable(STATE_QUIKVIEW);
         }
+        setTheme(R.style.AppTheme);
         super.onCreate(savedInstanceState);
 
         setVolumeControlStream(App.STREAM_TYPE);

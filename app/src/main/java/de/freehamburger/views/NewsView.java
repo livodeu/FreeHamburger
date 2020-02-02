@@ -1,9 +1,9 @@
 package de.freehamburger.views;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.preference.PreferenceManager;
 import androidx.annotation.CallSuper;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
@@ -21,6 +21,7 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
 
+import androidx.preference.PreferenceManager;
 import de.freehamburger.App;
 import de.freehamburger.R;
 import de.freehamburger.model.News;
@@ -121,6 +122,24 @@ public class NewsView extends RelativeLayout {
         return R.layout.news_view;
     }
 
+    public TextView getTextViewDate() {
+        return textViewDate;
+    }
+
+    @Nullable
+    public TextView getTextViewFirstSentence() {
+        return textViewFirstSentence;
+    }
+
+    @Nullable
+    public TextView getTextViewTitle() {
+        return textViewTitle;
+    }
+
+    public TextView getTextViewTopline() {
+        return textViewTopline;
+    }
+
     /**
      * Initialisation.
      * @param ctx Context
@@ -154,6 +173,9 @@ public class NewsView extends RelativeLayout {
             return;
         }
         Context ctx = getContext();
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+
         // the original order is: topline, title, firstSentence
 
         /*
@@ -195,8 +217,14 @@ public class NewsView extends RelativeLayout {
         boolean titleReplacesTopline = !hasTopline;
         if (!hasTopline) newsTopline = news.getTitle();
         if (newsTopline != null) newsTopline = newsTopline.trim();
-        this.textViewTopline.setTypeface(Util.getTypefaceForTextView(this.textViewTopline, newsTopline));
-        this.textViewTopline.setText(newsTopline);
+       this.textViewTopline.setText(newsTopline);
+        if (prefs.getBoolean(App.PREF_TOPLINE_MARQUEE, false)) {
+            this.textViewTopline.setEllipsize(TextUtils.TruncateAt.MARQUEE);
+            this.textViewTopline.setMarqueeRepeatLimit(-1);
+            this.textViewTopline.setSelected(true);
+        } else {
+            this.textViewTopline.setEllipsize(TextUtils.TruncateAt.END);
+        }
         if (news.isBreakingNews()) {
             this.textViewTopline.setTextColor(getResources().getColor(R.color.colorBreakingNews));
         } else if (REGION_LABELS.contains(newsTopline)) {
@@ -229,7 +257,7 @@ public class NewsView extends RelativeLayout {
         // date
         Date date = news.getDate();
         if (date != null) {
-            boolean timeMode = PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
+            boolean timeMode = prefs.getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
             this.textViewDate.setText(timeMode ? getRelativeTime(ctx, date, null) : DF.format(date));
         } else {
             this.textViewDate.setText(null);

@@ -1,4 +1,4 @@
-package de.freehamburger.util;
+package de.freehamburger.prefs;
 
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
@@ -11,15 +11,8 @@ import android.media.SoundPool;
 import android.os.Handler;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.preference.Preference;
-import androidx.annotation.ColorInt;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RawRes;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Button;
 import android.widget.TextView;
@@ -27,6 +20,14 @@ import android.widget.TextView;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RawRes;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceViewHolder;
+import de.freehamburger.BuildConfig;
 import de.freehamburger.R;
 
 /**
@@ -111,7 +112,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
         }
     }
 
-    /** {@inheritDoc} */
+    /*
     @Override
     public View getView(View convertView, ViewGroup parent) {
         if (convertView == null) {
@@ -123,19 +124,39 @@ public class ButtonPreference extends Preference implements View.OnClickListener
         }
         onBindView(convertView);
         return convertView;
-    }
+    }*/
 
     /** {@inheritDoc} */
     @Override
-    protected void onBindView(View linearLayout) {
-        super.onBindView(linearLayout);
-        if (this.states.length > 0) {
-            this.button.setEnabled(true);
-            setSummary(this.states[this.selectedIndex]);
-        } else {
-            this.button.setEnabled(false);
-            setSummary("");
+    public void onBindViewHolder(PreferenceViewHolder holder) {
+        super.onBindViewHolder(holder);
+
+        this.button = (Button)holder.findViewById(R.id.button);
+        if (this.colors != null) {
+            this.button.setTextColor(this.colors[this.selectedIndex]);
         }
+        this.button.setOnClickListener(this);
+
+        // super hides the widget_frame
+        View wf = holder.findViewById(android.R.id.widget_frame);
+        if (wf != null) wf.setVisibility(View.VISIBLE);
+        else if (BuildConfig.DEBUG) android.util.Log.e(getClass().getSimpleName(), "android.R.id.widget_frame not found!");
+
+        rotate(true);
+
+        /*try {
+            if (this.states.length > 0) {
+                this.button.setEnabled(true);
+                setSummary(this.states[this.selectedIndex]);
+            } else {
+                this.button.setEnabled(false);
+                setSummary("");
+            }
+        } catch (IllegalStateException e) {
+            if (BuildConfig.DEBUG) android.util.Log.e(getClass().getSimpleName(), e.toString());
+            this.handler.postDelayed(new SummarySetter(), 300L);
+        }*/
+        this.handler.postDelayed(new SummarySetter(), 200L);
     }
 
     /** {@inheritDoc} */
@@ -157,6 +178,12 @@ public class ButtonPreference extends Preference implements View.OnClickListener
 
     /** {@inheritDoc} */
     @Override
+    protected Object onGetDefaultValue(TypedArray a, int index) {
+        return a.getInt(index, 0);
+    }
+
+    /*
+    @Override
     protected View onCreateView(ViewGroup parent) {
         this.layout = super.onCreateView(parent);
         // super hides the widget_frame
@@ -170,13 +197,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
         this.button.setOnClickListener(this);
         rotate(true);
         return layout;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    protected Object onGetDefaultValue(TypedArray a, int index) {
-        return a.getInt(index, 0);
-    }
+    }*/
 
     /** {@inheritDoc} */
     @Override
@@ -288,12 +309,12 @@ public class ButtonPreference extends Preference implements View.OnClickListener
      */
     private static class SavedState extends BaseSavedState {
         @SuppressWarnings("unused")
-        public static final Creator<SavedState> CREATOR = new Creator<SavedState>() {
-            public SavedState createFromParcel(Parcel in) {
-                return new SavedState(in);
+        public static final Creator<SavedState> CREATOR = new Creator<ButtonPreference.SavedState>() {
+            public ButtonPreference.SavedState createFromParcel(Parcel in) {
+                return new ButtonPreference.SavedState(in);
             }
-            public SavedState[] newArray(int size) {
-                return new SavedState[size];
+            public ButtonPreference.SavedState[] newArray(int size) {
+                return new ButtonPreference.SavedState[size];
             }
         };
         private int selectedIndex;
@@ -320,6 +341,19 @@ public class ButtonPreference extends Preference implements View.OnClickListener
         public void writeToParcel(Parcel dest, int flags) {
             super.writeToParcel(dest, flags);
             dest.writeInt(this.selectedIndex);
+        }
+    }
+
+    private class SummarySetter implements Runnable {
+        @Override
+        public void run() {
+            if (ButtonPreference.this.states.length > 0) {
+                ButtonPreference.this.button.setEnabled(true);
+                setSummary(ButtonPreference.this.states[ButtonPreference.this.selectedIndex]);
+            } else {
+                ButtonPreference.this.button.setEnabled(false);
+                setSummary("");
+            }
         }
     }
 }

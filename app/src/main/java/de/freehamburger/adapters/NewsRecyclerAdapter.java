@@ -4,9 +4,12 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+
+import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
@@ -16,6 +19,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.recyclerview.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.SparseArray;
+import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -54,7 +58,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     @NonNull private final NewsAdapterActivity activity;
     @NonNull private final List<Filter> filters = new ArrayList<>(4);
     private final Handler handler = new Handler();
-    @App.BackgroundSelection private final int background;
+    @App.BackgroundSelection private int background;
     /** a NewsView instance for each view type; used to preload News items via {@link #preloader} */
     private final SparseArray<NewsView> dummyNewsViews = new SparseArray<>(3);
     /** a ViewHolder instance for each view type */
@@ -64,8 +68,6 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     private Thread viewholderCreator;
     private int contextMenuIndex = -1;
     @Nullable private Typeface typeface;
-    /** original Typeface used in {@link R.id#textViewFirstSentence} before a user-supplied typeface was applied */
-    @Nullable private Typeface originalTypefaceTextViewFirstSentence;
     private long updated = 0L;
     private Source source;
 
@@ -179,19 +181,22 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     }
 
     /**
-     * Applies the {@link #typeface Typeface} to {@link NewsView#textViewFirstSentence}.
-     * @param v (News-)View
+     * Applies the {@link #typeface Typeface} to the given TextViews.
+     * @param tvs TextViews (may contain null elements)
      */
-    private void applyTypeface(@NonNull View v) {
-        TextView textViewFirstSentence = v.findViewById(R.id.textViewFirstSentence);
-        if (textViewFirstSentence == null) return;
+    private void applyTypeface(@NonNull final TextView... tvs) {
         if (this.typeface != null) {
-            if (this.originalTypefaceTextViewFirstSentence == null) {
-                this.originalTypefaceTextViewFirstSentence = textViewFirstSentence.getTypeface();
+            for (TextView tv : tvs) {
+                if (tv == null) continue;
+                if (tv.getTag(R.id.original_typeface) == null) tv.setTag(R.id.original_typeface, tv.getTypeface());
+                tv.setTypeface(this.typeface);
             }
-            textViewFirstSentence.setTypeface(this.typeface);
         } else {
-            textViewFirstSentence.setTypeface(this.originalTypefaceTextViewFirstSentence);
+            for (TextView tv : tvs) {
+                if (tv == null) continue;
+                Typeface typeface = (Typeface)tv.getTag(R.id.original_typeface);
+                if (typeface != null) tv.setTypeface(typeface);
+            }
         }
     }
 
@@ -302,7 +307,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     @UiThread
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         this.handler.removeCallbacks(this.preloader);
-        NewsView newsView = (NewsView) holder.itemView;
+        final NewsView newsView = (NewsView) holder.itemView;
         switch (this.background) {
             case App.BACKGROUND_DARK: newsView.setBackgroundResource(R.drawable.bg_news); break;
             case App.BACKGROUND_LIGHT: newsView.setBackgroundResource(R.drawable.bg_news_light); break;
@@ -310,7 +315,24 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
                 boolean nightMode = (this.activity.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
                 newsView.setBackgroundResource(nightMode ? R.drawable.bg_news : R.drawable.bg_news_light);
         }
-        applyTypeface(newsView);
+
+        final Resources res = this.activity.getResources();
+
+        // apply the desired typeface magnification
+        @FloatRange(from = 0.5, to = 2.0)
+        final float zoom = PreferenceManager.getDefaultSharedPreferences(this.activity).getInt(App.PREF_FONT_ZOOM, App.PREF_FONT_ZOOM_DEFAULT) / 100f;
+        TextView tvtl = newsView.getTextViewTopline();
+        TextView tvda = newsView.getTextViewDate();
+        TextView tvti = newsView.getTextViewTitle();
+        TextView tvfs = newsView.getTextViewFirstSentence();
+        if (tvtl != null) tvtl.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_topline) * zoom);
+        if (tvda != null) tvda.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_date) * zoom);
+        if (tvti != null) tvti.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_title) * zoom);
+        if (tvfs != null) tvfs.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_firstsentence) * zoom);
+
+        // apply the user-defined typeface to the NewsView
+        applyTypeface(tvtl, tvda, tvti, tvfs);
+
         HamburgerService service = this.activity.getHamburgerService();
         if (isFiltered()) {
             newsView.setNews(this.filteredNews.get(position), service);
@@ -320,14 +342,15 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         // if the position is not at the end, load image at the next position into the cache (by applying the next News item to a dummy NewsView)
         if (position < getItemCount() - 1) {
             this.preloader.setPosition(position + 1);
-            this.handler.postDelayed(this.preloader, 1_500L);
+            this.handler.postDelayed(this.preloader, 500L);
         }
     }
 
     /** {@inheritDoc}
      *  Returns a {@link ViewHolder} for the given view type.<br>
      *  Attempts to get one from the {@link #viewholderCache cache}; if that fails, creates a new one.<br>
-     *  Finally creates another ViewHolder of the same type and puts in the cache (to be used during the next invocation of this method).
+     *  Finally creates another ViewHolder of the same type and puts in the cache (to be used during the next invocation of this method).<br>
+     *  On a low-end (SD410) device, this method takes usually less than a ms if the ViewHolder can be retrieved from the cache and about 10 ms if not.
      */
     @NonNull
     @Override
@@ -349,8 +372,9 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             this.viewholderCreator = new Thread() {
                 @Override
                 public void run() {
+                    ViewHolder newOne = new ViewHolder(instantiateView(NewsRecyclerAdapter.this.activity, viewType));
                     synchronized (NewsRecyclerAdapter.this.viewholderCache) {
-                        NewsRecyclerAdapter.this.viewholderCache.put(viewType, new ViewHolder(instantiateView(activity, viewType)));
+                        NewsRecyclerAdapter.this.viewholderCache.put(viewType, newOne);
                     }
                 }
             };
@@ -373,6 +397,12 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         if (App.PREF_FILTERS_APPLY.equals(key)) {
             this.filtersEnabled = prefs.getBoolean(key, true);
         } else if (App.PREF_BACKGROUND.equals(key)) {
+            // The activity receives the same info (HamburgerActivity.onSharedPreferenceChanged()) and sets its background accordingly; give it a moment to do so
+            this.handler.postDelayed(() -> {
+                NewsRecyclerAdapter.this.background = NewsRecyclerAdapter.this.activity.getBackground();
+                notifyDataSetChanged();
+            }, 500L);
+        } else if (App.PREF_FONT_ZOOM.equals(key)) {
             notifyDataSetChanged();
         }
     }
@@ -446,6 +476,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
      * @param typeface Typeface
      */
     public void setTypeface(@Nullable Typeface typeface) {
+        if (BuildConfig.DEBUG) Log.i(TAG, "setTypeface(" + typeface + ") - from " + new Throwable().getStackTrace()[1]);
         boolean changed = (typeface != null && !typeface.equals(this.typeface)) || (typeface == null && this.typeface != null);
         this.typeface = typeface;
         if (changed) notifyDataSetChanged();
@@ -557,7 +588,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             int position = getAdapterPosition();
             try {
                 News news = adapter.isFiltered() ? adapter.filteredNews.get(position) : adapter.newsList.get(position);
-                if (news != null) newsAdapterController.onNewsClicked(news, v, xPosOfEventActionUp, yPosOfEventActionUp);
+                if (news != null) newsAdapterController.onNewsClicked(news, v, this.xPosOfEventActionUp, this.yPosOfEventActionUp);
             } catch (IndexOutOfBoundsException e) {
                 if (BuildConfig.DEBUG) Log.e(TAG, "Click on " + v + " @ position " + position + " -> " + e.toString());
             }

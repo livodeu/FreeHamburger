@@ -1,10 +1,11 @@
-package de.freehamburger.util;
+package de.freehamburger.prefs;
 
 import android.content.Context;
-import android.preference.EditTextPreference;
-import androidx.annotation.StringRes;
+import androidx.preference.EditTextPreference;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+
+import androidx.annotation.StringRes;
 
 /**
  * An extension of EditTextPreference

@@ -39,10 +39,10 @@ android {
         debug {
             applicationIdSuffix ".debug"
             versionNameSuffix "-debug"
-            manifestPlaceholders = [name: "@string/app_name_debug", icon:"@mipmap/ic_launcher_debug", roundicon: "@mipmap/ic_launcher_round_debug"]
+            manifestPlaceholders = [name: "@string/app_name_debug", icon: "@mipmap/ic_launcher_debug", roundicon: "@mipmap/ic_launcher_round_debug"]
             resValue "string", "app_search_auth", defaultConfig.applicationId + applicationIdSuffix + '.SearchContentProvider'
-            minifyEnabled true
-            shrinkResources true
+            //minifyEnabled true
+            //shrinkResources true
             crunchPngs true
             aaptOptions {
                 cruncherEnabled true
@@ -50,7 +50,7 @@ android {
             testCoverageEnabled = true
         }
         release {
-            manifestPlaceholders = [name: "@string/app_name", icon:"@mipmap/ic_launcher", roundicon: "@mipmap/ic_launcher_round"]
+            manifestPlaceholders = [name: "@string/app_name", icon: "@mipmap/ic_launcher", roundicon: "@mipmap/ic_launcher_round"]
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -72,16 +72,20 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
+    implementation 'androidx.preference:preference:1.1.0'
     implementation 'com.google.android.material:material:1.0.0'
     implementation 'com.squareup.okhttp3:okhttp:4.3.1'
     // also working: 4.0.0 3.14.2 3.14.1 3.12.1 3.11.0
     implementation 'com.squareup.picasso:picasso:2.71828'
     //noinspection GradleDependency
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.9.6'  // also working: 2.9.[5..1]; not working: 2.10.0
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.9.6'
+    // also working: 2.9.[5..1]; not working: 2.10.0
     //noinspection GradleDependency
-    implementation 'com.google.android.exoplayer:exoplayer-ui:2.9.6'    // also working: 2.9.[5..0]; not working: 2.10.0
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.9.6'
+    // also working: 2.9.[5..0]; not working: 2.10.0
     //noinspection GradleDependency
-    implementation 'com.google.android.exoplayer:exoplayer-hls:2.9.6'   // also working: 2.9.[5..0]; not working: 2.10.0
+    implementation 'com.google.android.exoplayer:exoplayer-hls:2.9.6'
+    // also working: 2.9.[5..0]; not working: 2.10.0
 
     androidTestImplementation 'androidx.test:core:1.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'

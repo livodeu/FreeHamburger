@@ -2,7 +2,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     >
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:defaultValue="true"
         android:key="pref_load_over_mobile"
         android:icon="@drawable/ic_network_cell_ededed_24dp"
@@ -10,7 +10,7 @@
         android:summaryOn="@string/pref_title_pref_load_over_mobile_on"
         android:summaryOff="@string/pref_title_pref_load_over_mobile_off"/>
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="pref_load_videos_over_mobile"
         android:dependency="pref_load_over_mobile"
@@ -19,7 +19,7 @@
         android:summaryOn="@string/pref_title_pref_load_videos_over_mobile_on"
         android:summaryOff="@string/pref_title_pref_load_videos_over_mobile_off"/>
 
-    <de.freehamburger.util.DisablingValueListPreference
+    <de.freehamburger.prefs.DisablingValueListPreference
         android:defaultValue="@string/pref_default_proxy_type"
         android:entries="@array/entries_list_proxytypes"
         android:entryValues="@array/entryvalues_list_proxytypes"
@@ -30,7 +30,7 @@
         android:dialogIcon="@drawable/ic_http_ededed_24dp"
         android:negativeButtonText="@null"/>
 
-    <de.freehamburger.util.SummarizingEditTextPreference
+    <de.freehamburger.prefs.SummarizingEditTextPreference
         android:key="pref_proxy_server"
         android:summary="@string/pref_summary_proxy_server"
         android:title="@string/pref_title_proxy_server"

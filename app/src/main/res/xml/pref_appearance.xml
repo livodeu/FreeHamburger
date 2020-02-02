@@ -2,7 +2,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <de.freehamburger.util.ButtonPreference
+    <de.freehamburger.prefs.ButtonPreference
         android:icon="@drawable/ic_wb_sunny_ededed_24dp"
         android:title="@string/pref_title_background"
         android:key="pref_background"
@@ -10,7 +10,7 @@
         app:colors="@array/colors_list_background"
         />
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="pref_time_mode"
         android:title="@string/pref_title_time_mode"
@@ -19,7 +19,7 @@
         android:summaryOff="@string/pref_title_time_mode_off"
         />
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="pref_correct_quotation_marks"
         android:title="@string/pref_title_quotationmarks_fix"
@@ -27,11 +27,28 @@
         android:summaryOff="@string/pref_title_quotationmarks_fix_off"
     />
 
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="pref_topline_marquee"
+        android:title="@string/pref_title_pref_topline_marquee"
+        android:icon="@drawable/ic_compare_arrows_ededed_24dp"
+        android:summaryOn="@string/pref_title_pref_topline_marquee_on"
+        android:summaryOff="@string/pref_title_pref_topline_marquee_off"
+        />
+
+    <SeekBarPreference
+        android:key="pref_font_zoom"
+        android:max="@integer/max_magnification_text"
+        android:title="@string/pref_title_font_zoom"
+        android:icon="@drawable/ic_search_ededed_24dp"
+        app:min="@integer/min_magnification_text"
+        app:showSeekBarValue="false" />
+
     <Preference
         android:key="pref_import_font"
         android:title="@string/action_import_font"
         android:icon="@drawable/ic_text_format_ededed_24dp">
-        <intent android:action="de.freehamburger.action_font_import" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
+        <intent android:action="de.freehamburger.action.font_import" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
     </Preference>
 
     <Preference
@@ -39,6 +56,6 @@
         android:title="@string/action_font_delete"
         android:icon="@drawable/ic_delete_forever_ededed_24dp"
         android:enabled="false">
-        <intent android:action="de.freehamburger.action_font_delete" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
+        <intent android:action="de.freehamburger.action.font_delete" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
     </Preference>
 </PreferenceScreen>

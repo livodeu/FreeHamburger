@@ -1,7 +1,7 @@
-package de.freehamburger.util;
+package de.freehamburger.prefs;
 
 import android.content.Context;
-import android.preference.ListPreference;
+import androidx.preference.ListPreference;
 import android.util.AttributeSet;
 
 /**
@@ -41,7 +41,7 @@ public class DisablingValueListPreference extends ListPreference {
     /** {@inheritDoc} */
     @Override
     public boolean shouldDisableDependents() {
-         if (this.selectionToDisableDependents != null) {
+        if (this.selectionToDisableDependents != null) {
             if (this.selectionToDisableDependents.equals(getValue())) return true;
         }
         return super.shouldDisableDependents();

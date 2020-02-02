@@ -19,25 +19,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.preference.EditTextPreference;
-import android.preference.Preference;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceFragment;
-import android.preference.PreferenceManager;
-import android.preference.SwitchPreference;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RawRes;
-import androidx.annotation.RequiresApi;
-import androidx.annotation.StringRes;
-import com.google.android.material.snackbar.Snackbar;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NavUtils;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AlertDialog;
+import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,34 +35,51 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
-import de.freehamburger.supp.AppCompatPreferenceActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RawRes;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.preference.EditTextPreference;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
+import androidx.preference.SeekBarPreference;
+import androidx.preference.SwitchPreferenceCompat;
+import de.freehamburger.prefs.ButtonPreference;
+import de.freehamburger.prefs.DisablingValueListPreference;
+import de.freehamburger.prefs.SummarizingEditTextPreference;
 import de.freehamburger.supp.PopupManager;
-import de.freehamburger.util.ButtonPreference;
-import de.freehamburger.util.DisablingValueListPreference;
 import de.freehamburger.util.Log;
-import de.freehamburger.util.SummarizingEditTextPreference;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
 
 /**
  *
  */
-public class SettingsActivity extends AppCompatPreferenceActivity implements ServiceConnection {
+public class SettingsActivity extends AppCompatActivity implements ServiceConnection, PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
 
+    private static final String TAG = "SettingsActivity";
     private static final String EXTRA_STORAGE_ACTIVITY = "de.freehamburger.extra.storage.activity";
     @Nullable
     private HamburgerService service;
-    private List<PreferenceActivity.Header> headers;
-    private Header currentHeader;
+    private CoordinatorLayout coordinatorLayout;
     /** {@code true} if the user has clicked "Manage Storage" in the system settings for this app - identified by:<ol><li>{@link Intent} action is {@link Intent#ACTION_VIEW ACTION_VIEW},</li><li>Intent data is {@code null}</li></ol> */
     private boolean isManageStorageActivity;
     private Snackbar snackbar;
@@ -134,20 +137,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
         return ad;
     }
 
-    /**
-     * @param fragmentName fragment class name
-     * @return true / false
-     */
-    protected boolean isValidFragment(final String fragmentName) {
-        return GeneralPreferenceFragment.class.getName().equals(fragmentName)
-                || AppearancePreferenceFragment.class.getName().equals(fragmentName)
-                || StoragePreferenceFragment.class.getName().equals(fragmentName)
-                || DataPreferenceFragment.class.getName().equals(fragmentName)
-                || PollingPreferenceFragment.class.getName().equals(fragmentName)
-                || OtherPreferenceFragment.class.getName().equals(fragmentName)
-                ;
-    }
-
     /** {@inheritDoc} */
     @Override
     public void onBackPressed() {
@@ -155,10 +144,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
             this.snackbar.dismiss();
             this.snackbar = null;
         }
-        if (getFragmentManager().getBackStackEntryCount() == 0 && getIntent().getStringExtra(EXTRA_SHOW_FRAGMENT) == null) {
+        /*if (getFragmentManager().getBackStackEntryCount() == 0 && getIntent().getStringExtra(EXTRA_SHOW_FRAGMENT) == null) {
             this.currentHeader = null;
             invalidateOptionsMenu();
-        }
+        }*/
         if (this.isManageStorageActivity) {
             // this leads back to the system settings
             finishAffinity();
@@ -169,24 +158,21 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
 
     /** {@inheritDoc} */
     @Override
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public void onBuildHeaders(final List<PreferenceActivity.Header> target) {
-        final List<PreferenceActivity.Header> temp = new ArrayList<>();
-        loadHeadersFromResource(R.xml.pref_headers, temp);
-        target.addAll(temp);
-        this.headers = target;
-    }
-
-    /** {@inheritDoc} */
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             this.isManageStorageActivity = extras.getBoolean(EXTRA_STORAGE_ACTIVITY);
         }
+        setTheme(R.style.AppTheme);
         super.onCreate(savedInstanceState);
-        setTheme(R.style.AppTheme_NoActionBar);
-        setupActionBar();
+        setContentView(R.layout.settings_activity);
+        this.coordinatorLayout = findViewById(R.id.coordinator_layout);
+
+        if (!this.isManageStorageActivity) {
+            ActionBar actionBar = getSupportActionBar();
+            if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
         // setup the WebView that might be used to display the help (it will be reused every time because constructing that thing takes quite some time)
         this.webViewForHelp = new WebView(this);
         WebSettings ws = this.webViewForHelp.getSettings();
@@ -196,33 +182,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
         this.webViewForHelp.setNetworkAvailable(false);
         this.webViewForHelp.setBackgroundColor(getResources().getColor(R.color.colorPrimarySemiTrans));
         this.webViewForHelp.setWebChromeClient(new NonLoggingWebChromeClient());
-    }
 
-    /** {@inheritDoc} */
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.settings_menu, menu);
-        menu.setQwertyMode(true);
-        return true;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public boolean onIsMultiPane() {
-        return Util.isXLargeTablet(this);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public boolean onMenuItemSelected(int featureId, MenuItem item) {
-        int id = item.getItemId();
-        if (id == android.R.id.home) {
-            if (!super.onMenuItemSelected(featureId, item)) {
-                NavUtils.navigateUpFromSameTask(this);
-            }
-            return true;
-        }
-        return super.onMenuItemSelected(featureId, item);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.settings, new RootPreferenceFragment())
+                .commit();
     }
 
     /** {@inheritDoc} */
@@ -244,34 +208,41 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
 
     /** {@inheritDoc} */
     @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        MenuItem menuItemHelp = menu.findItem(R.id.action_help);
-        // no help for overview and 'Other' settings
-        menuItemHelp.setVisible(this.currentHeader != null && this.currentHeader.titleRes != R.string.pref_header_other);
-        return super.onPrepareOptionsMenu(menu);
+    public boolean onPreferenceStartFragment(PreferenceFragmentCompat caller, Preference pref) {
+        // Instantiate the new Fragment
+        Bundle args = pref.getExtras();
+        FragmentManager fm = getSupportFragmentManager();
+        Fragment fragment = fm.getFragmentFactory().instantiate(
+                getClassLoader(),
+                pref.getFragment());
+        fragment.setArguments(args);
+        fragment.setTargetFragment(caller, 0);
+        // Replace the existing Fragment with the new Fragment
+        fm.beginTransaction()
+                .replace(R.id.settings, fragment)
+                .addToBackStack(null)
+                .commit();
+        return true;
     }
 
     /** {@inheritDoc} */
     @Override
     protected void onResume() {
         super.onResume();
-        if (Intent.ACTION_VIEW.equals(getIntent().getAction()) && getIntent().getData() == null) {
+        Intent intent = getIntent();
+        if (Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() == null) {
             // button "manage storage" has been clicked (Action is VIEW, data is null)
             this.isManageStorageActivity = true;
-            // get the fragment and switch to it
-            if (this.headers != null) {
-                for (PreferenceActivity.Header h : this.headers) {
-                    if (h.titleRes == R.string.pref_header_storage) {
-                        if (!onIsMultiPane()) {
-                            // onHeaderClick calls startActivity(h.intent)
-                            onHeaderClick(h, -1);
-                        } else {
-                            switchToHeader(h);
-                        }
-                        break;
-                    }
-                }
-            }
+            // hide the back arrow in the action bar because we don't want to navigate within the app (only exit)
+            ActionBar actionBar = getSupportActionBar();
+            if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(false);
+            // create a StoragePreferenceFragment and switch to it
+            FragmentManager fm = getSupportFragmentManager();
+            Fragment fragment = fm.getFragmentFactory().instantiate(getClassLoader(), StoragePreferenceFragment.class.getName());
+            fm.beginTransaction()
+                    .replace(R.id.settings, fragment)
+                    .addToBackStack(null)
+                    .commit();
         }
         if (this.service == null) {
             bindService(new Intent(this, HamburgerService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
@@ -289,18 +260,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     @Override
     public void onServiceDisconnected(ComponentName name) {
         this.service = null;
-    }
-
-    /**
-     * Set up the {@link android.app.ActionBar}, if the API is available.
-     */
-    private void setupActionBar() {
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            // Show the Up button in the action bar.
-            if (!this.isManageStorageActivity) actionBar.setDisplayHomeAsUpEnabled(true);
-            else actionBar.setHomeButtonEnabled(false);
-        }
     }
 
     /** {@inheritDoc} */
@@ -332,22 +291,17 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
         super.startActivity(intent);
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public void switchToHeader(Header header) {
-        this.currentHeader = header;
-        super.switchToHeader(header);
-    }
+    //******************************************************************************************************************
 
     /**
-     * WebChromeClient that swallows console messages (in release versions).
+     * WebChromeClient that suppresses console messages (in release versions).
      */
     private static class NonLoggingWebChromeClient extends WebChromeClient {
         @Override
         public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
             if (BuildConfig.DEBUG) {
                 String src = consoleMessage.sourceId();
-                Log.i(SettingsActivity.class.getSimpleName(), (!TextUtils.isEmpty(src) ? src + ": " : "") + consoleMessage.message());
+                Log.i(TAG, (!TextUtils.isEmpty(src) ? src + ": " : "") + consoleMessage.message());
             }
             return true;
         }
@@ -357,176 +311,129 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     //******************************************************************************************************************
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class DataPreferenceFragment extends PreferenceFragment {
-        private SharedPreferences prefs;
-        private SwitchPreference prefLoadVideosOverMobile;
+    public static class RootPreferenceFragment extends PreferenceFragmentCompat {
 
         /** {@inheritDoc} */
         @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_data);
-            setHasOptionsMenu(true);
-            SettingsActivity activity = (SettingsActivity)getActivity();
-            this.prefs = PreferenceManager.getDefaultSharedPreferences(activity);
-
-            SwitchPreference prefLoadOverMobile = (SwitchPreference) findPreference(App.PREF_LOAD_OVER_MOBILE);
-            this.prefLoadVideosOverMobile = (SwitchPreference)findPreference(App.PREF_LOAD_VIDEOS_OVER_MOBILE);
-            prefLoadOverMobile.setOnPreferenceChangeListener((preference, newValue) -> {
-                if (Boolean.FALSE.equals(newValue)) {
-                    SharedPreferences.Editor ed = prefs.edit();
-                    ed.putBoolean(App.PREF_LOAD_VIDEOS_OVER_MOBILE, false);
-                    ed.putBoolean(App.PREF_POLL_OVER_MOBILE, false);
-                    ed.apply();
-                    prefLoadVideosOverMobile.setChecked(false);
-                }
-                return true;
-            });
-
-            Preference prefProxyType = findPreference(App.PREF_PROXY_TYPE);
-            prefProxyType.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-
-                final String[] labels = getResources().getStringArray(R.array.entries_list_proxytypes);
-                final String[] values = getResources().getStringArray(R.array.entryvalues_list_proxytypes);
-
-                /** {@inheritDoc} */
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    if (newValue != null) {
-                        final String type = newValue.toString();
-                        boolean match = false;
-                        for (int i = 0; i < values.length; i++) {
-                            if (values[i].equals(type)) {
-                                match = true;
-                                preference.setSummary(labels[i]);
-                                break;
-                            }
-                        }
-                        if (!match) preference.setSummary(type);
-                    }
-                    return true;
-                }
-            });
-            prefProxyType.getOnPreferenceChangeListener().onPreferenceChange(prefProxyType, prefs.getString(App.PREF_PROXY_TYPE, getString(R.string.pref_default_proxy_type)));
-
-            DisablingValueListPreference pref_proxy_type = (DisablingValueListPreference) findPreference("pref_proxy_type");
-            pref_proxy_type.setSelectionToDisableDependents("DIRECT");
-
-            EditTextPreference prefProxyServer = (EditTextPreference) findPreference(App.PREF_PROXY_SERVER);
-            prefProxyServer.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                /** {@inheritDoc} */
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object newValue) {
-                    if (newValue == null) {
-                        preference.setSummary(R.string.pref_summary_proxy_server);
-                    } else {
-                        String s = newValue.toString().trim();
-                        preference.setSummary(s.length() > 0 ? s : getString(R.string.pref_summary_proxy_server));
-                    }
-                    return true;
-                }
-            });
-            prefProxyServer.getOnPreferenceChangeListener().onPreferenceChange(prefProxyServer, prefs.getString(App.PREF_PROXY_SERVER, null));
-        }
-
-        /** {@inheritDoc} */
-        @Override
-        public boolean onOptionsItemSelected(MenuItem item) {
-            int id = item.getItemId();
-            if (id == android.R.id.home) {
-                if (!Util.isXLargeTablet(getActivity())) {
-                    startActivity(new Intent(getActivity(), SettingsActivity.class));
-                    return true;
-                }
-            } else if (id == R.id.action_help) {
-                SettingsActivity sa = (SettingsActivity)getActivity();
-                sa.helpDialog = showHelp(sa, R.raw.help_settings_data_de, sa.webViewForHelp);
-                return true;
-            }
-            return super.onOptionsItemSelected(item);
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            setPreferencesFromResource(R.xml.root_preferences, rootKey);
+            setHasOptionsMenu(false);
         }
     }
 
     //******************************************************************************************************************
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class AppearancePreferenceFragment extends PreferenceFragment {
+    public static class AppearancePreferenceFragment extends PreferenceFragmentCompat {
+        private final Handler handler = new Handler();
 
         /** {@inheritDoc} */
         @Override
-        public void onCreate(@Nullable Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_appearance);
+        public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+            menuInflater.inflate(R.menu.settings_menu, menu);
+            menu.setQwertyMode(true);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey) {
+            setPreferencesFromResource(R.xml.pref_appearance, rootKey);
             setHasOptionsMenu(true);
             SettingsActivity activity = (SettingsActivity)getActivity();
+            if (activity == null) return;
 
-            ButtonPreference prefBackground = (ButtonPreference) findPreference(App.PREF_BACKGROUND);
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
+
+            ButtonPreference prefBackground = findPreference(App.PREF_BACKGROUND);
             Preference prefCorrectQuotationMarks = findPreference(App.PREF_CORRECT_WRONG_QUOTATION_MARKS);
             Preference prefImportFont = findPreference("pref_import_font");
             Preference prefDeleteFont = findPreference("pref_delete_font");
+            SeekBarPreference prefFontZoom = findPreference(App.PREF_FONT_ZOOM);
 
-            File fontFile = new File(getActivity().getFilesDir(), App.FONT_FILE);
-            boolean fontExists = fontFile.isFile();
-            if (fontExists) {
-                try {
-                    TtfInfo ttfInfo = TtfInfo.getTtfInfo(fontFile);
-                    String fontName = ttfInfo.getFontFullName();
-                    prefImportFont.setSummary(getString(R.string.pref_summary_font_import_replace, fontName));
-                    prefDeleteFont.setSummary(getString(R.string.label_quoted, fontName));
-                } catch (IOException e) {
-                    fontExists = false;
+            if (prefImportFont != null && prefDeleteFont != null) {
+                File fontFile = new File(activity.getFilesDir(), App.FONT_FILE);
+                boolean fontExists = fontFile.isFile();
+                if (fontExists) {
+                    try {
+                        TtfInfo ttfInfo = TtfInfo.getTtfInfo(fontFile);
+                        String fontName = ttfInfo.getFontFullName();
+                        prefImportFont.setSummary(getString(R.string.pref_summary_font_import_replace, fontName));
+                        prefDeleteFont.setSummary(getString(R.string.label_quoted, fontName));
+                    } catch (IOException e) {
+                        fontExists = false;
+                        prefImportFont.setSummary(null);
+                        prefDeleteFont.setSummary(R.string.msg_font_none);
+                    }
+                } else {
                     prefImportFont.setSummary(null);
                     prefDeleteFont.setSummary(R.string.msg_font_none);
                 }
-            } else {
-                prefImportFont.setSummary(null);
-                prefDeleteFont.setSummary(R.string.msg_font_none);
+                prefDeleteFont.setEnabled(fontExists);
             }
-            prefDeleteFont.setEnabled(fontExists);
 
-            prefBackground.setOnPreferenceChangeListener((preference, newValue) -> {
-                if (Integer.valueOf(App.BACKGROUND_AUTO).equals(newValue)) {
-                    boolean granted = ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-                    if (!granted) {
-                        boolean askMe = ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION);
-                        if (askMe) {
-                            View v = getView();
-                            if (v == null) v = getActivity().getWindow().getDecorView();
-                            activity.snackbar = Snackbar.make(v, R.string.hint_permission_location, 15_000);
-                            activity.snackbar.setAction(R.string.label_yes, v1 -> ActivityCompat.requestPermissions(activity, new String[] {
-                                    Manifest.permission.ACCESS_FINE_LOCATION
-                            }, 456));
-                            activity.snackbar.setActionTextColor(getResources().getColor(android.R.color.holo_green_light));
-                            activity.snackbar.show();
+            if (prefFontZoom != null) {
+                prefFontZoom.setSeekBarIncrement(25);
+                prefFontZoom.setOnPreferenceChangeListener((preference, newValue) -> {
+                    preference.setSummary(newValue + "%");
+                    int v = (Integer)newValue;
+                    int r = v % 5;
+                    if (r != 0) {
+                        final int adjusted = r < 3 ? v - r : v + 5 - r;
+                        this.handler.postDelayed(() -> {
+                            SharedPreferences.Editor ed = prefFontZoom.getSharedPreferences().edit();
+                            ed.putInt(App.PREF_FONT_ZOOM, adjusted);
+                            ed.apply();
+                            prefFontZoom.callChangeListener(adjusted);
+                        }, 150L);
+                        return true;
+                    }
+                    return true;
+                });
+                prefFontZoom.callChangeListener(prefs.getInt(App.PREF_FONT_ZOOM, App.PREF_FONT_ZOOM_DEFAULT));
+            }
+
+            if (prefBackground != null) {
+                prefBackground.setOnPreferenceChangeListener((preference, newValue) -> {
+                    if (Integer.valueOf(App.BACKGROUND_AUTO).equals(newValue)) {
+                        boolean granted = ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+                        if (!granted) {
+                            boolean askMe = ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION);
+                            if (askMe) {
+                                View v = getView();
+                                if (v == null) v = getActivity().getWindow().getDecorView();
+                                activity.snackbar = Snackbar.make(v, R.string.hint_permission_location, 15_000);
+                                activity.snackbar.setAction(R.string.label_yes, v1 -> ActivityCompat.requestPermissions(activity, new String[] {
+                                        Manifest.permission.ACCESS_FINE_LOCATION
+                                }, 456));
+                                activity.snackbar.setActionTextColor(getResources().getColor(android.R.color.holo_green_light));
+                                activity.snackbar.show();
+                            }
+                        }
+                    } else {
+                        if (activity.snackbar != null && activity.snackbar.isShown()) {
+                            activity.snackbar.dismiss();
                         }
                     }
-                } else {
-                    if (activity.snackbar != null && activity.snackbar.isShown()) {
-                        activity.snackbar.dismiss();
-                    }
-                }
-                return true;
-            });
+                    return true;
+                });
+            }
 
-            int iconSize = getResources().getDimensionPixelSize(R.dimen.pref_icon_size);
-            // 0x1f918 -> https://en.wikibooks.org/wiki/Unicode/Character_reference/1F000-1FFFF
-            prefCorrectQuotationMarks.setIcon(new BitmapDrawable(activity.getResources(),
-                    Util.makeCharBitmap("\uD83E\uDD18", 0f, iconSize, iconSize, Color.BLACK, Color.TRANSPARENT,
-                            new PorterDuffColorFilter(getResources().getColor(R.color.colorDirtyWhite), PorterDuff.Mode.SRC_ATOP))));
+            if (prefCorrectQuotationMarks != null) {
+                int iconSize = getResources().getDimensionPixelSize(R.dimen.pref_icon_size);
+                // 0x1f918 -> https://en.wikibooks.org/wiki/Unicode/Character_reference/1F000-1FFFF
+                prefCorrectQuotationMarks.setIcon(new BitmapDrawable(activity.getResources(),
+                        Util.makeCharBitmap("\uD83E\uDD18", 0f, iconSize, iconSize, Color.BLACK, Color.TRANSPARENT,
+                                new PorterDuffColorFilter(getResources().getColor(R.color.colorDirtyWhite), PorterDuff.Mode.SRC_ATOP))));
+            }
         }
 
         /** {@inheritDoc} */
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {
             int id = item.getItemId();
-            if (id == android.R.id.home) {
-                if (!Util.isXLargeTablet(getActivity())) {
-                    startActivity(new Intent(getActivity(), SettingsActivity.class));
-                    return true;
-                }
-            } else if (id == R.id.action_help) {
+            if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                sa.helpDialog = showHelp(sa, R.raw.help_settings_appearance_de, sa.webViewForHelp);
+                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_appearance_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -536,24 +443,32 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     //******************************************************************************************************************
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class StoragePreferenceFragment extends PreferenceFragment {
+    public static class StoragePreferenceFragment extends PreferenceFragmentCompat {
 
         private SharedPreferences prefs;
         private EditTextPreference prefMaxCacheSize;
 
         /** {@inheritDoc} */
         @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_storage);
+        public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+            menuInflater.inflate(R.menu.settings_menu, menu);
+            menu.setQwertyMode(true);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey) {
+            setPreferencesFromResource(R.xml.pref_storage, rootKey);
             setHasOptionsMenu(true);
             SettingsActivity activity = (SettingsActivity)getActivity();
+            if (activity == null) return;
             this.prefs = PreferenceManager.getDefaultSharedPreferences(activity);
 
-            this.prefMaxCacheSize = (EditTextPreference)findPreference(App.PREF_CACHE_MAX_SIZE);
+            this.prefMaxCacheSize = findPreference(App.PREF_CACHE_MAX_SIZE);
             Preference prefClearCache = findPreference("pref_clear_cache");
 
             this.prefMaxCacheSize.setDefaultValue(App.DEFAULT_CACHE_MAX_SIZE);
+            this.prefMaxCacheSize.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
             this.prefMaxCacheSize.setOnPreferenceChangeListener((preference, o) -> {
                 App app = (App)getActivity().getApplicationContext();
                 long maxCacheSize;
@@ -573,26 +488,24 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
                 }
                 return true;
             });
-            this.prefMaxCacheSize.getOnPreferenceChangeListener().onPreferenceChange(this.prefMaxCacheSize, prefs.getString(App.PREF_CACHE_MAX_SIZE, App.DEFAULT_CACHE_MAX_SIZE));
+            this.prefMaxCacheSize.getOnPreferenceChangeListener().onPreferenceChange(this.prefMaxCacheSize, this.prefs.getString(App.PREF_CACHE_MAX_SIZE, App.DEFAULT_CACHE_MAX_SIZE));
 
-            prefClearCache.setOnPreferenceClickListener(preference -> {
-                Util.deleteOldestCacheFiles(getActivity(), 0L);
-                preference.setEnabled(false);
-                prefMaxCacheSize.getOnPreferenceChangeListener().onPreferenceChange(prefMaxCacheSize, prefs.getString(App.PREF_CACHE_MAX_SIZE, App.DEFAULT_CACHE_MAX_SIZE));
-                return true;
-            });
+            if (prefClearCache != null) {
+                prefClearCache.setOnPreferenceClickListener(preference -> {
+                    Util.deleteOldestCacheFiles(getActivity(), 0L);
+                    preference.setEnabled(false);
+                    prefMaxCacheSize.getOnPreferenceChangeListener().onPreferenceChange(prefMaxCacheSize, this.prefs.getString(App.PREF_CACHE_MAX_SIZE, App.DEFAULT_CACHE_MAX_SIZE));
+                    return true;
+                });
+            }
         }
 
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {
             int id = item.getItemId();
-            if (id == android.R.id.home) {
-                startActivity(new Intent(getActivity(), SettingsActivity.class));
-                return true;
-            }
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                sa.helpDialog = showHelp(sa, R.raw.help_settings_storage_de, sa.webViewForHelp);
+                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_storage_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -602,64 +515,71 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     //******************************************************************************************************************
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class GeneralPreferenceFragment extends PreferenceFragment {
+    public static class GeneralPreferenceFragment extends PreferenceFragmentCompat {
 
         private String originalMaxMemCacheSize;
         private boolean memCacheSizeModified;
 
         /** {@inheritDoc} */
         @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_general);
+        public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+            menuInflater.inflate(R.menu.settings_menu, menu);
+            menu.setQwertyMode(true);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            setPreferencesFromResource(R.xml.pref_general, rootKey);
             setHasOptionsMenu(true);
             SettingsActivity activity = (SettingsActivity)getActivity();
+            if (activity == null) return;
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
             this.originalMaxMemCacheSize = prefs.getString(App.PREF_MEM_CACHE_MAX_SIZE, App.DEFAULT_MEM_CACHE_MAX_SIZE);
 
-            EditTextPreference prefMaxMemCacheSize = (EditTextPreference) findPreference(App.PREF_MEM_CACHE_MAX_SIZE);
+            EditTextPreference prefMaxMemCacheSize = findPreference(App.PREF_MEM_CACHE_MAX_SIZE);
 
-            prefMaxMemCacheSize.setDefaultValue(App.DEFAULT_MEM_CACHE_MAX_SIZE);
-            prefMaxMemCacheSize.setOnPreferenceChangeListener((preference, o) -> {
-                int maxCacheSize;
-                try {
-                    maxCacheSize = Integer.parseInt(o.toString().trim()) << 20;
-                } catch (NumberFormatException nfe) {
-                    Toast.makeText(getActivity(), R.string.error_invalid_not_a_number, Toast.LENGTH_SHORT).show();
-                    return false;
-                } catch (Exception ignored) {
-                    maxCacheSize = App.DEFAULT_MEM_CACHE_MAX_SIZE_MB << 20;
-                }
-                if (maxCacheSize < 1_048_576 || maxCacheSize > (100 << 20)) {
-                    return false;
-                }
-
-                if (activity.service != null) {
-                    int current = activity.service.getMemoryCacheSize();
-                    if (current < 1_048_576) {
-                        preference.setSummary(getString(R.string.label_current_cache_size_kb, current >> 10, maxCacheSize >> 20));
-                    } else {
-                        preference.setSummary(getString(R.string.label_current_cache_size, current >> 20, maxCacheSize >> 20));
+            if (prefMaxMemCacheSize != null) {
+                prefMaxMemCacheSize.setDefaultValue(App.DEFAULT_MEM_CACHE_MAX_SIZE);
+                prefMaxMemCacheSize.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+                prefMaxMemCacheSize.setOnPreferenceChangeListener((preference, o) -> {
+                    int maxCacheSize;
+                    try {
+                        maxCacheSize = Integer.parseInt(o.toString().trim()) << 20;
+                    } catch (NumberFormatException nfe) {
+                        Toast.makeText(getActivity(), R.string.error_invalid_not_a_number, Toast.LENGTH_SHORT).show();
+                        return false;
+                    } catch (Exception ignored) {
+                        maxCacheSize = App.DEFAULT_MEM_CACHE_MAX_SIZE_MB << 20;
                     }
-                }
-                if (!originalMaxMemCacheSize.equals(o.toString().trim())) {
-                    memCacheSizeModified = true;
-                }
-                return true;
-            });
-            prefMaxMemCacheSize.getOnPreferenceChangeListener().onPreferenceChange(prefMaxMemCacheSize, this.originalMaxMemCacheSize);
+                    if (maxCacheSize < 1_048_576 || maxCacheSize > (100 << 20)) {
+                        return false;
+                    }
+
+                    if (activity.service != null) {
+                        int current = activity.service.getMemoryCacheSize();
+                        if (current < 1_048_576) {
+                            preference.setSummary(getString(R.string.label_current_cache_size_kb, current >> 10, maxCacheSize >> 20));
+                        } else {
+                            preference.setSummary(getString(R.string.label_current_cache_size, current >> 20, maxCacheSize >> 20));
+                        }
+                    }
+                    if (!originalMaxMemCacheSize.equals(o.toString().trim())) {
+                        memCacheSizeModified = true;
+                    }
+                    return true;
+                });
+                prefMaxMemCacheSize.getOnPreferenceChangeListener().onPreferenceChange(prefMaxMemCacheSize, this.originalMaxMemCacheSize);
+            }
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {
             int id = item.getItemId();
-            if (id == android.R.id.home) {
-                startActivity(new Intent(getActivity(), SettingsActivity.class));
-                return true;
-            }
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                sa.helpDialog = showHelp(sa, R.raw.help_settings_general_de, sa.webViewForHelp);
+                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_general_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -670,7 +590,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
         public void onPause() {
             if (this.memCacheSizeModified) {
                 SettingsActivity activity = (SettingsActivity) getActivity();
-                if (activity.service != null) {
+                if (activity != null && activity.service != null) {
                     this.memCacheSizeModified = false;
                     activity.service.createMemoryCache();
                 }
@@ -684,7 +604,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     //******************************************************************************************************************
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class PollingPreferenceFragment extends PreferenceFragment {
+    public static class PollingPreferenceFragment extends PreferenceFragmentCompat {
 
         private Preference prefPollStats;
         /** minimum polling interval in minutes */
@@ -728,120 +648,137 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
 
         /** {@inheritDoc} */
         @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_polling);
+        public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+            menuInflater.inflate(R.menu.settings_menu, menu);
+            menu.setQwertyMode(true);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            setPreferencesFromResource(R.xml.pref_polling, rootKey);
             setHasOptionsMenu(true);
 
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            SettingsActivity activity = (SettingsActivity)getActivity();
+            if (activity == null) return;
+
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
 
             this.min = UpdateJobService.getMinimumIntervalInMinutes();
             this.maxNightInterval = Math.round(UpdateJobService.getNightDuration() * 60f);
 
-            SwitchPreference prefPoll = (SwitchPreference) findPreference(App.PREF_POLL);
-            long failedBefore = prefs.getLong(App.PREF_POLL_FAILED, 0L);
-            if (failedBefore != 0L) {
-                String date = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(new Date(failedBefore));
-                prefPoll.setSummaryOn(getString(R.string.pref_title_poll_on) + '\n' + getString(R.string.error_poll_failed, date));
-                prefPoll.setSummaryOff(getString(R.string.pref_title_poll_off) + '\n' + getString(R.string.error_poll_failed, date));
+            SwitchPreferenceCompat prefPoll = findPreference(App.PREF_POLL);
+            if (prefPoll != null) {
+                long failedBefore = prefs.getLong(App.PREF_POLL_FAILED, 0L);
+                if (failedBefore != 0L) {
+                    String date = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(new Date(failedBefore));
+                    prefPoll.setSummaryOn(getString(R.string.pref_title_poll_on) + '\n' + getString(R.string.error_poll_failed, date));
+                    prefPoll.setSummaryOff(getString(R.string.pref_title_poll_off) + '\n' + getString(R.string.error_poll_failed, date));
+                }
             }
 
-            SwitchPreference prefPollOverMobile = (SwitchPreference) findPreference(App.PREF_POLL_OVER_MOBILE);
-            if (prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, false)) {
-                prefPollOverMobile.setEnabled(true);
-            } else {
-                prefPollOverMobile.setChecked(false);
-                prefPollOverMobile.setSummary(R.string.pref_title_pref_load_over_mobile_off);
-                prefPollOverMobile.setEnabled(false);
+            SwitchPreferenceCompat prefPollOverMobile = findPreference(App.PREF_POLL_OVER_MOBILE);
+            if (prefPollOverMobile != null) {
+                if (prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, false)) {
+                    prefPollOverMobile.setEnabled(true);
+                } else {
+                    prefPollOverMobile.setChecked(false);
+                    prefPollOverMobile.setSummary(R.string.pref_title_pref_load_over_mobile_off);
+                    prefPollOverMobile.setEnabled(false);
+                }
             }
 
-            SummarizingEditTextPreference prefPollInterval = (SummarizingEditTextPreference) findPreference(App.PREF_POLL_INTERVAL);
-            prefPollInterval.setStringRes(R.string.label_every_minutes);
-            prefPollInterval.setOnPreferenceChangeListener((preference, o) -> {
-                int interval;
-                try {
-                    interval = Integer.parseInt(o.toString().trim());
-                } catch (NumberFormatException nfe) {
-                    Toast.makeText(getActivity(), R.string.error_invalid_not_a_number, Toast.LENGTH_SHORT).show();
-                    return false;
-                } catch (Exception ignored) {
-                    return false;
-                }
-                if (interval < PollingPreferenceFragment.this.min) {
-                    Toast.makeText(getActivity(), getResources().getString(R.string.error_poll_minimum_interval, min), Toast.LENGTH_LONG).show();
-                }
-                return interval >= PollingPreferenceFragment.this.min;
-            });
+            SummarizingEditTextPreference prefPollInterval = findPreference(App.PREF_POLL_INTERVAL);
+            if (prefPollInterval != null) {
+                prefPollInterval.setStringRes(R.string.label_every_minutes);
+                prefPollInterval.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+                prefPollInterval.setOnPreferenceChangeListener((preference, o) -> {
+                    int interval;
+                    try {
+                        interval = Integer.parseInt(o.toString().trim());
+                    } catch (NumberFormatException nfe) {
+                        Toast.makeText(getActivity(), R.string.error_invalid_not_a_number, Toast.LENGTH_SHORT).show();
+                        return false;
+                    } catch (Exception ignored) {
+                        return false;
+                    }
+                    if (interval < SettingsActivity.PollingPreferenceFragment.this.min) {
+                        Toast.makeText(getActivity(), getResources().getString(R.string.error_poll_minimum_interval, min), Toast.LENGTH_LONG).show();
+                    }
+                    return interval >= SettingsActivity.PollingPreferenceFragment.this.min;
+                });
+            }
 
-            SummarizingEditTextPreference prefPollIntervalNight = (SummarizingEditTextPreference) findPreference(App.PREF_POLL_INTERVAL_NIGHT);
-            prefPollIntervalNight.setStringRes(R.string.label_every_minutes);
-            prefPollIntervalNight.setOnPreferenceChangeListener((preference, o) -> {
-                int interval;
-                try {
-                    interval = Integer.parseInt(o.toString().trim());
-                } catch (NumberFormatException nfe) {
-                    Toast.makeText(getActivity(), R.string.error_invalid_not_a_number, Toast.LENGTH_SHORT).show();
-                    return false;
-                } catch (Exception ignored) {
-                    return false;
-                }
-                if (interval < PollingPreferenceFragment.this.min) {
-                    Toast.makeText(getActivity(), getResources().getString(R.string.error_poll_minimum_interval, PollingPreferenceFragment.this.min), Toast.LENGTH_LONG).show();
-                } else if (interval > PollingPreferenceFragment.this.maxNightInterval) {
-                    Toast.makeText(getActivity(), getResources().getString(R.string.error_poll_maximum_interval, PollingPreferenceFragment.this.maxNightInterval), Toast.LENGTH_LONG).show();
-                }
-                return interval >= PollingPreferenceFragment.this.min && interval <= PollingPreferenceFragment.this.maxNightInterval;
-            });
+            SummarizingEditTextPreference prefPollIntervalNight = findPreference(App.PREF_POLL_INTERVAL_NIGHT);
+            if (prefPollIntervalNight != null) {
+                prefPollIntervalNight.setStringRes(R.string.label_every_minutes);
+                prefPollIntervalNight.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+                prefPollIntervalNight.setOnPreferenceChangeListener((preference, o) -> {
+                    int interval;
+                    try {
+                        interval = Integer.parseInt(o.toString().trim());
+                    } catch (NumberFormatException nfe) {
+                        Toast.makeText(getActivity(), R.string.error_invalid_not_a_number, Toast.LENGTH_SHORT).show();
+                        return false;
+                    } catch (Exception ignored) {
+                        return false;
+                    }
+                    if (interval < SettingsActivity.PollingPreferenceFragment.this.min) {
+                        Toast.makeText(getActivity(), getResources().getString(R.string.error_poll_minimum_interval, SettingsActivity.PollingPreferenceFragment.this.min), Toast.LENGTH_LONG).show();
+                    } else if (interval > SettingsActivity.PollingPreferenceFragment.this.maxNightInterval) {
+                        Toast.makeText(getActivity(), getResources()
+                                .getString(R.string.error_poll_maximum_interval, SettingsActivity.PollingPreferenceFragment.this.maxNightInterval), Toast.LENGTH_LONG).show();
+                    }
+                    return interval >= SettingsActivity.PollingPreferenceFragment.this.min && interval <= SettingsActivity.PollingPreferenceFragment.this.maxNightInterval;
+                });
+            }
 
             long statStart = prefs.getLong(UpdateJobService.PREF_STAT_START, 0L);
             int jobsSoFar = prefs.getInt(UpdateJobService.PREF_STAT_COUNT, 0);
             long receivedSoFar = prefs.getLong(UpdateJobService.PREF_STAT_RECEIVED, 0L);
             boolean estimation = prefs.getBoolean(UpdateJobService.PREF_STAT_ESTIMATED, false);
-            SettingsActivity activity = (SettingsActivity)getActivity();
 
             this.prefPollStats = findPreference("pref_poll_stats");
-            if (statStart > 0L && receivedSoFar > 0L) {
-                // fall 2018: 70531 bytes/job based on 734 jobs
-                // summer 2019: 71841 bytes/job based on 12042 jobs
-                String ds;
-                if (System.currentTimeMillis() - statStart > 24 * 3_600_000L) {
-                    ds = DateFormat.getDateInstance(DateFormat.SHORT).format(new Date(statStart));
+            if (this.prefPollStats != null) {
+                if (statStart > 0L && receivedSoFar > 0L) {
+                    // fall 2018: 70531 bytes/job based on 734 jobs
+                    // summer 2019: 71841 bytes/job based on 12042 jobs
+                    String ds;
+                    if (System.currentTimeMillis() - statStart > 24 * 3_600_000L) {
+                        ds = DateFormat.getDateInstance(DateFormat.SHORT).format(new Date(statStart));
+                    } else {
+                        ds = DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date(statStart));
+                    }
+                    String amount = receivedSoFar > 1_500_000L ? Math.round(receivedSoFar / 1_000_000f) + " MB" : Math.round(receivedSoFar / 1_000f) + " kB";
+                    if (estimation) amount = getString(R.string.label_ca) + ' ' + amount;
+                    this.prefPollStats.setSummary(getResources().getQuantityString(R.plurals.label_poll_stats, jobsSoFar, NumberFormat.getIntegerInstance().format(jobsSoFar), amount, ds));
                 } else {
-                    ds = DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date(statStart));
+                    this.prefPollStats.setSummary(R.string.label_poll_stats_none);
+                    this.prefPollStats.setEnabled(false);
                 }
-                String amount = receivedSoFar > 1_500_000L ? Math.round(receivedSoFar / 1_000_000f) + " MB" : Math.round(receivedSoFar / 1_000f) + " kB";
-                if (estimation) amount = getString(R.string.label_ca) + ' ' + amount;
-                this.prefPollStats.setSummary(getResources().getQuantityString(R.plurals.label_poll_stats, jobsSoFar, NumberFormat.getIntegerInstance().format(jobsSoFar), amount, ds));
-            } else {
-                this.prefPollStats.setSummary(R.string.label_poll_stats_none);
-                this.prefPollStats.setEnabled(false);
-            }
-            this.prefPollStats.setOnPreferenceClickListener(preference -> {
-                View v = getView();
-                if (v == null) v = getActivity().getWindow().getDecorView();
-                activity.snackbar = Snackbar.make(v, R.string.label_reset_q, 5_000);
-                activity.snackbar.setAction(android.R.string.ok, v1 -> {
-                    UpdateJobService.resetStatistics(getActivity());
-                    PollingPreferenceFragment.this.prefPollStats.setSummary(R.string.label_poll_stats_none);
-                    PollingPreferenceFragment.this.prefPollStats.setEnabled(false);
+                this.prefPollStats.setOnPreferenceClickListener(preference -> {
+                    View v = getView();
+                    if (v == null) v = activity.getWindow().getDecorView();
+                    activity.snackbar = Snackbar.make(v, R.string.label_reset_q, 5_000);
+                    activity.snackbar.setAction(android.R.string.ok, v1 -> {
+                        UpdateJobService.resetStatistics(activity);
+                        SettingsActivity.PollingPreferenceFragment.this.prefPollStats.setSummary(R.string.label_poll_stats_none);
+                        SettingsActivity.PollingPreferenceFragment.this.prefPollStats.setEnabled(false);
+                    });
+                    activity.snackbar.setActionTextColor(getResources().getColor(R.color.colorAccent));
+                    activity.snackbar.show();
+                    Util.fadeSnackbar(activity.snackbar, 4_900L);
+                    return false;
                 });
-                activity.snackbar.setActionTextColor(getResources().getColor(R.color.colorAccent));
-                activity.snackbar.show();
-                Util.fadeSnackbar(activity.snackbar, 4_900L);
-                return false;
-            });
+            }
         }
 
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {
             int id = item.getItemId();
-            if (id == android.R.id.home) {
-                startActivity(new Intent(getActivity(), SettingsActivity.class));
-                return true;
-            }
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                sa.helpDialog = showHelp(sa, R.raw.help_settings_polling_de, sa.webViewForHelp);
+                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_polling_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -850,8 +787,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
         @Override
         public void onResume() {
             super.onResume();
+            Context ctx = getContext();
+            if (ctx == null) return;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-                    && PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(App.PREF_POLL, false)) {
+                    && PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_POLL, false)) {
                 new Handler().postDelayed(this::checkBucket, 3_000L);
             }
         }
@@ -861,30 +800,115 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Ser
     //******************************************************************************************************************
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class OtherPreferenceFragment extends PreferenceFragment {
+    public static class DataPreferenceFragment extends PreferenceFragmentCompat {
+        private SharedPreferences prefs;
+        private SwitchPreferenceCompat prefLoadVideosOverMobile;
+
+        /** {@inheritDoc} */
+        @Override
+        public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+            menuInflater.inflate(R.menu.settings_menu, menu);
+            menu.setQwertyMode(true);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void onCreatePreferences(Bundle savedInstanceState, String rootXml) {
+            setPreferencesFromResource(R.xml.pref_data, rootXml);
+            setHasOptionsMenu(true);
+            SettingsActivity activity = (SettingsActivity)getActivity();
+            if (activity == null) return;
+            this.prefs = PreferenceManager.getDefaultSharedPreferences(activity);
+
+            SwitchPreferenceCompat prefLoadOverMobile = findPreference(App.PREF_LOAD_OVER_MOBILE);
+            this.prefLoadVideosOverMobile = findPreference(App.PREF_LOAD_VIDEOS_OVER_MOBILE);
+
+            if (prefLoadOverMobile != null) {
+                prefLoadOverMobile.setOnPreferenceChangeListener((preference, newValue) -> {
+                    if (Boolean.FALSE.equals(newValue)) {
+                        SharedPreferences.Editor ed = prefs.edit();
+                        ed.putBoolean(App.PREF_LOAD_VIDEOS_OVER_MOBILE, false);
+                        ed.putBoolean(App.PREF_POLL_OVER_MOBILE, false);
+                        ed.apply();
+                        prefLoadVideosOverMobile.setChecked(false);
+                    }
+                    return true;
+                });
+            }
+
+            Preference prefProxyType = findPreference(App.PREF_PROXY_TYPE);
+            if (prefProxyType != null) {
+                prefProxyType.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+
+                    final String[] labels = getResources().getStringArray(R.array.entries_list_proxytypes);
+                    final String[] values = getResources().getStringArray(R.array.entryvalues_list_proxytypes);
+
+                    /** {@inheritDoc} */
+                    @Override
+                    public boolean onPreferenceChange(Preference preference, Object newValue) {
+                        if (newValue != null) {
+                            final String type = newValue.toString();
+                            boolean match = false;
+                            for (int i = 0; i < values.length; i++) {
+                                if (values[i].equals(type)) {
+                                    match = true;
+                                    preference.setSummary(labels[i]);
+                                    break;
+                                }
+                            }
+                            if (!match) preference.setSummary(type);
+                        }
+                        return true;
+                    }
+                });
+                prefProxyType.getOnPreferenceChangeListener().onPreferenceChange(prefProxyType, prefs.getString(App.PREF_PROXY_TYPE, getString(R.string.pref_default_proxy_type)));
+            }
+
+            DisablingValueListPreference pref_proxy_type = findPreference("pref_proxy_type");
+            if (pref_proxy_type != null) pref_proxy_type.setSelectionToDisableDependents("DIRECT");
+
+            EditTextPreference prefProxyServer = findPreference(App.PREF_PROXY_SERVER);
+            if (prefProxyServer != null) {
+                prefProxyServer.setOnPreferenceChangeListener((preference, newValue) -> {
+                    if (newValue == null) {
+                        preference.setSummary(R.string.pref_summary_proxy_server);
+                    } else {
+                        String s = newValue.toString().trim();
+                        preference.setSummary(s.length() > 0 ? s : getString(R.string.pref_summary_proxy_server));
+                    }
+                    return true;
+                });
+                prefProxyServer.getOnPreferenceChangeListener().onPreferenceChange(prefProxyServer, prefs.getString(App.PREF_PROXY_SERVER, null));
+            }
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public boolean onOptionsItemSelected(MenuItem item) {
+            int id = item.getItemId();
+            if (id == R.id.action_help) {
+                SettingsActivity sa = (SettingsActivity)getActivity();
+                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_data_de, sa.webViewForHelp);
+                return true;
+            }
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
+
+    //******************************************************************************************************************
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static class OtherPreferenceFragment extends PreferenceFragmentCompat {
 
         private boolean hintIntroShown;
 
         /** {@inheritDoc} */
         @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_other);
+        public void onCreatePreferences(Bundle savedInstanceState, String rootXml) {
+            setPreferencesFromResource(R.xml.pref_other, rootXml);
             setHasOptionsMenu(false);
-
-            SwitchPreference prefPlayIntro = (SwitchPreference) findPreference(App.PREF_PLAY_INTRO);
-            prefPlayIntro.setOnPreferenceChangeListener((preference, newValue) -> {
-                if (Boolean.TRUE.equals(newValue) && !this.hintIntroShown) {
-                    Activity a = getActivity();
-                    if (a != null) {
-                        Toast.makeText(a, R.string.hint_intro_will_be_played, Toast.LENGTH_SHORT)
-                                .show();
-                        this.hintIntroShown = true;
-                    }
-                }
-                return true;
-            });
-
         }
     }
+
 }

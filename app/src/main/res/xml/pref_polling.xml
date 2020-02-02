@@ -2,7 +2,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     >
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="pref_poll"
         android:icon="@drawable/ic_notifications_ededed_24dp"
@@ -11,21 +11,21 @@
         android:summaryOff="@string/pref_title_poll_off"
         />
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:defaultValue="true"
         android:key="pref_poll_breaking_only"
         android:dependency="pref_poll"
         android:icon="@drawable/ic_whatshot_ededed_24dp"
         android:title="@string/pref_title_poll_breaking_only"/>
 
-    <SwitchPreference
+    <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="pref_poll_over_mobile"
         android:dependency="pref_poll"
         android:icon="@drawable/ic_network_cell_ededed_24dp"
         android:title="@string/pref_title_poll_over_mobile"/>
 
-    <de.freehamburger.util.SummarizingEditTextPreference
+    <de.freehamburger.prefs.SummarizingEditTextPreference
         android:key="pref_poll_interval"
         android:title="@string/pref_hint_poll_interval"
         android:hint="@string/pref_hint_poll_interval"
@@ -36,7 +36,7 @@
         android:dialogIcon="@drawable/ic_schedule_ededed_24dp"
         />
 
-    <de.freehamburger.util.SummarizingEditTextPreference
+    <de.freehamburger.prefs.SummarizingEditTextPreference
         android:key="pref_poll_interval_night"
         android:title="@string/pref_hint_poll_interval_night"
         android:hint="@string/pref_hint_poll_interval_night"
