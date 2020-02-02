@@ -1195,17 +1195,11 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private void releasePlayers() {
         if (this.exoPlayerTopVideo != null) {
             this.exoPlayerTopVideo.removeListener(this.listenerTop);
-            //playbackPosition = exoPlayerTopVideo.getCurrentPosition();
-            //currentWindow = exoPlayerTopVideo.getCurrentWindowIndex();
-            //playWhenReady = exoPlayerTopVideo.getPlayWhenReady();
             this.exoPlayerTopVideo.release();
             this.exoPlayerTopVideo = null;
         }
         if (this.exoPlayerBottomVideo != null) {
             this.exoPlayerBottomVideo.removeListener(this.listenerBottom);
-            //playbackPosition = exoPlayerBottomVideo.getCurrentPosition();
-            //currentWindow = exoPlayerBottomVideo.getCurrentWindowIndex();
-            //playWhenReady = exoPlayerBottomVideo.getPlayWhenReady();
             this.exoPlayerBottomVideo.release();
             this.exoPlayerBottomVideo = null;
         }
@@ -1253,9 +1247,12 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 if (BuildConfig.DEBUG) Log.e(TAG, "Tts failed with error " + result);
                 @StringRes int msg;
                 switch (result) {
-                    case TextToSpeech.ERROR_NOT_INSTALLED_YET: msg = R.string.error_tts_fail_not_downloaded; break;
                     case TextToSpeech.ERROR_NETWORK:
                     case TextToSpeech.ERROR_NETWORK_TIMEOUT: msg = R.string.error_tts_fail_network; break;
+                    case TextToSpeech.ERROR_NOT_INSTALLED_YET: msg = R.string.error_tts_fail_not_downloaded; break;
+                    case TextToSpeech.ERROR_OUTPUT: msg = R.string.error_tts_fail_output; break;
+                    case TextToSpeech.ERROR_SERVICE: msg = R.string.error_tts_fail_service; break;
+                    case TextToSpeech.ERROR_SYNTHESIS: msg = R.string.error_tts_fail_synthesis; break;
                     default: msg = R.string.error_tts_fail;
                 }
                 Snackbar.make(this.coordinatorLayout, msg, Snackbar.LENGTH_LONG).show();
