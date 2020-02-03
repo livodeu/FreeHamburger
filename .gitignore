@@ -3,7 +3,6 @@
 build/
 *.iml
 local.properties
-gradle.properties
 captures/
 .externalNativeBuild
 keystore.properties
