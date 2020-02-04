@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="image_width_normal">160dp</dimen>
+    <integer name="num_columns">3</integer>
 </resources>

@@ -20,7 +20,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
-import android.graphics.PointF;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
@@ -1874,24 +1873,26 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      * With horizontal separator values of 7.5 and 6,
      * a 10-inch tablet in landscape mode should show 3 columns,
      * a 7-inch tablet in landscape mode should show 2 columns,
-     * all other devices/orientations should have 1 column.
+     * all other devices/orientations should have 1 column.<br>
+     * Screen sizes in dp:
+     * <ul>
+     * <li>10"-tablet avd is 1280 dp x 648 dp in landscape mode and 720 dp x 1208 dp in portrait mode</li>
+     * <li>7"-tablet avd is 1024 dp x 528 dp in landscape mode and 600 dp x 952 dp in portrait mode</li>
+     * <li>5.2" phone with 1920 px x 1080 px is 592 dp x 336 dp in landscape mode and 360 dp x 568 dp in portrait mode</li>
+     * </ul>
+     * The aforementioned values are reduced by ca. 50% in one dimension if the app runs in multi-window mode!
      */
     private void selectLayoutManager() {
         RecyclerView.LayoutManager old = this.recyclerView.getLayoutManager();
-        PointF ds = Util.getDisplayDim(this);
-        if (ds.x > 7.5f) {
-            if (old instanceof GridLayoutManager && ((GridLayoutManager)old).getSpanCount() == 3) return;
-            this.recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
-        } else if (ds.x > 6.0f) {
-            if (old instanceof GridLayoutManager && ((GridLayoutManager)old).getSpanCount() == 2) return;
-            this.recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
-        } else {
+        int numColumns = getResources().getInteger(R.integer.num_columns);
+        if (numColumns == 1) {
             if (old instanceof LinearLayoutManager) return;
             LinearLayoutManager llm = new LinearLayoutManager(this);
-            // https://medium.com/google-developers/recyclerview-prefetch-c2f269075710
-            llm.setInitialPrefetchItemCount(6);
             this.recyclerView.setLayoutManager(llm);
         }
+        if (old instanceof GridLayoutManager && ((GridLayoutManager)old).getSpanCount() == numColumns) return;
+        GridLayoutManager glm = new GridLayoutManager(this, numColumns);
+        this.recyclerView.setLayoutManager(glm);
     }
 
     /**
