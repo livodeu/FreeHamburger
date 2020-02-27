@@ -15,7 +15,7 @@
     tools:ignore="RtlSymmetry">
 
     <LinearLayout
-        android:id="@+android:id/icon_frame"
+        android:id="@+id/icon_frame"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -25,7 +25,7 @@
         android:paddingBottom="4dp"
         >
         <ImageView
-            android:id="@+android:id/icon"
+            android:id="@android:id/icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:adjustViewBounds="true"
@@ -46,7 +46,7 @@
         >
 
         <TextView
-            android:id="@+android:id/title"
+            android:id="@android:id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
