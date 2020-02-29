@@ -44,6 +44,7 @@ import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.Date;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RawRes;
@@ -310,6 +311,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
     //******************************************************************************************************************
 
+    @Keep
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class RootPreferenceFragment extends PreferenceFragmentCompat {
 
@@ -323,6 +325,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
     //******************************************************************************************************************
 
+    @Keep
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class AppearancePreferenceFragment extends PreferenceFragmentCompat {
         private final Handler handler = new Handler();
@@ -442,6 +445,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
     //******************************************************************************************************************
 
+    @Keep
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class StoragePreferenceFragment extends PreferenceFragmentCompat {
 
@@ -514,6 +518,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
     //******************************************************************************************************************
 
+    @Keep
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class GeneralPreferenceFragment extends PreferenceFragmentCompat {
 
@@ -603,6 +608,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
     //******************************************************************************************************************
 
+    @Keep
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class PollingPreferenceFragment extends PreferenceFragmentCompat {
 
@@ -799,6 +805,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
     //******************************************************************************************************************
 
+    @Keep
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class DataPreferenceFragment extends PreferenceFragmentCompat {
         private SharedPreferences prefs;
@@ -898,6 +905,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
     //******************************************************************************************************************
 
+    @Keep
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class OtherPreferenceFragment extends PreferenceFragmentCompat {
 
