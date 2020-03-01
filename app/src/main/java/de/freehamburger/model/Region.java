@@ -2,12 +2,12 @@ package de.freehamburger.model;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import android.view.Window;
+import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import androidx.preference.PreferenceManager;
 import de.freehamburger.App;
 import de.freehamburger.R;
 import de.freehamburger.adapters.RegionsAdapter;
@@ -127,6 +128,7 @@ public enum Region {
                     if (f.isFile()) {
                         Util.deleteFile(f);
                     }
+                    Toast.makeText(app, app.getResources().getQuantityString(R.plurals.msg_regions_selected, newRegionSet.size(), newRegionSet.size()), Toast.LENGTH_SHORT).show();
                 })
                 ;
         AlertDialog ad = builder.create();
@@ -134,7 +136,9 @@ public enum Region {
         if (w != null) {
             w.setBackgroundDrawableResource(R.drawable.bg_dialog);
         }
-        ad.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+        if (prefs.getBoolean(App.PREF_SWIPE_TO_DISMISS, false)) {
+            ad.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+        }
         ad.show();
         return ad;
     }

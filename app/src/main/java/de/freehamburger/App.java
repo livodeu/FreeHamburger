@@ -20,14 +20,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import androidx.annotation.AnyThread;
-import androidx.annotation.IntDef;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresPermission;
-import androidx.annotation.UiThread;
-import androidx.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
@@ -48,6 +40,14 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.AnyThread;
+import androidx.annotation.IntDef;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
+import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatDelegate;
 import de.freehamburger.model.Source;
 import de.freehamburger.util.FileDeleter;
@@ -117,6 +117,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** int: percentage value (range between @integer/min_magnification_text and @integer/max_magnification_text) */
     public static final String PREF_FONT_ZOOM = "pref_font_zoom";
     public static final int PREF_FONT_ZOOM_DEFAULT = 100;
+    /** boolean: allow to close dialogs by swiping (see {@link android.view.Window#FEATURE_SWIPE_TO_DISMISS}; seems not to work on tablets! */
+    public static final String PREF_SWIPE_TO_DISMISS = "pref_swipe_to_dismiss";
     /** boolean */
     public static final String PREF_PLAY_INTRO = "pref_play_intro";
     /** boolean */
@@ -548,6 +550,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
             @SuppressLint("ApplySharedPref")
             @Override
             public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
+
                 if (e instanceof IllegalArgumentException && e.toString().contains("Software rendering doesn't support hardware bitmaps")) {
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(App.this);
                     SharedPreferences.Editor ed = prefs.edit();

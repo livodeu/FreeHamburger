@@ -29,7 +29,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -90,6 +89,7 @@ import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -720,7 +720,9 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (dw != null) {
             dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
         }
-        ad.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+        if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_SWIPE_TO_DISMISS, false)) {
+            ad.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+        }
         ad.show();
         return true;
     }
@@ -845,7 +847,9 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 AlertDialog d = builder.create();
                 Window dw = d.getWindow();
                 if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
-                d.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+                if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_SWIPE_TO_DISMISS, false)) {
+                    d.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+                }
                 d.show();
             } else {
                 Util.sendUrl(this, streams.values().iterator().next(), news.getTitle());
@@ -1086,6 +1090,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return true;
         }
         if (id == R.id.action_info) {
+            final boolean swipeToDismiss = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_SWIPE_TO_DISMISS, false);
             final SpannableStringBuilder info = new SpannableStringBuilder().append('\n');
             SpannableString title = new SpannableString(getString(R.string.app_name));
             title.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1126,14 +1131,14 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                         this.infoDialog = lb.create();
                         Window dw = this.infoDialog.getWindow();
                         if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
-                        this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+                        if (swipeToDismiss) this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
                         this.infoDialog.show();
                     })
                     ;
             this.infoDialog = builder.create();
             Window dw = this.infoDialog.getWindow();
             if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
-            this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+            if (swipeToDismiss) this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
             this.infoDialog.show();
         }
         // --- the following commands are for debug only ---

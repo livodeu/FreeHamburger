@@ -59,6 +59,10 @@
     <string name="action_scroll_to_top">Nach oben</string>
     <string name="msg_not_found">Nicht gefunden: „%1$s”</string>
     <string name="msg_sorry">Entschuldigen Sie bitte die Unterbrechung!</string>
+    <plurals name="msg_regions_selected">
+        <item quantity="one">%1$d Region gewählt.</item>
+        <item quantity="other">%1$d Regionen gewählt.</item>
+    </plurals>
     <string name="pref_title_pref_load_over_mobile">Laden im Mobilnetz</string>
     <string name="pref_title_pref_load_over_mobile_on">Laden im Mobilnetz erlaubt</string>
     <string name="pref_title_pref_load_over_mobile_off">Laden im Mobilnetz verboten</string>

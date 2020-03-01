@@ -178,6 +178,10 @@
     <string name="msg_found">\"%1$s\" has been found %2$d times.</string>
     <string name="msg_not_found">Not found: \"%1$s\"</string>
     <string name="msg_not_modified">Not modified.</string>
+    <plurals name="msg_regions_selected">
+        <item quantity="one">%1$d region selected.</item>
+        <item quantity="other">%1$d regions selected.</item>
+    </plurals>
     <string name="msg_search_sugg_deleted_locale">Search suggestions have been cleared due to the recent change of locale!</string>
     <string name="msg_shortcut_exists">The shortcut already exists.</string>
     <string name="msg_sorry">Sorry for the interruption!</string>
