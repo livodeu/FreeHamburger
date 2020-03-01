@@ -80,7 +80,8 @@ public class FilterView extends RelativeLayout implements TextWatcher, CompoundB
             if (listener != null) listener.textChanged(s);
         }
         boolean phraseIsEmpty = TextUtils.isEmpty(s);
-        this.buttonDelete.setImageResource(phraseIsEmpty ? R.drawable.ic_delete_black_24dp : R.drawable.ic_clear_black_24dp);
+        // lint says: there is a ic_clear_black_24dp marked as private in com.google.android.material:material
+        this.buttonDelete.setImageResource(phraseIsEmpty ? R.drawable.ic_delete_black_24dp : R.drawable.ic_clear_blakk_24dp);
         this.buttonDelete.setContentDescription(phraseIsEmpty ? getContext().getString(R.string.hint_filter_button_delete) : getContext().getString(R.string.hint_filter_button_clear));
         if (s.toString().toLowerCase().hashCode() == 110640538 // 🎺.substring(0,5)
                 && !PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(PREF_1F601_SHOWN, false)) {
