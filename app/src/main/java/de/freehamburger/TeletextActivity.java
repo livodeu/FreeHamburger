@@ -16,17 +16,51 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.util.List;
 
+import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.preference.PreferenceManager;
 
 /**
  * Special version of WebViewActivity for teletext display that can create pinned shortcuts to a teletext page (from API 26 on).
  */
 public class TeletextActivity extends WebViewActivity {
 
+    /**
+     * Modifies the teletext page after it has been loaded by
+     * <ul>
+     * <li>applying dark mode,</li>
+     * <li>expanding the page horizontally,</li>
+     * <li>adjusting the font size</li>
+     * </ul>
+     */
     private final PageFinishedListener pfl = (url) -> {
-        boolean nightMode = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        Configuration c = getResources().getConfiguration();
+
+        // apply night mode
+        boolean nightMode = (c.uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
         setDarkMode(nightMode);
+
+        // expand the page horizontally
+        /*
+         examples of screen widths:
+         4.0" phone  960x 540px hdpi   densityDpi=240: vertically 360dp, horizontally 592dp
+         5.0" phone 1280x 720px xhdpi  densityDpi=320: vertically 360dp, horizontally 552dp (sic!)
+         5.2" phone 1920x1080px xxhdpi densityDpi=480: vertically 360dp, horizontally 592dp
+         7"  tablet 1024x 600px mdpi   densityDpi=160: vertically 600dp, horizontally 1024dp
+         10" tablet 1920x1080px hdpi   densityDpi=240: vertically 720dp, horizontally 1280dp
+         */
+        int displayWidth = c.screenWidthDp;
+
+        // apply the font zoom factor as set in the preferences
+        int zoom = PreferenceManager.getDefaultSharedPreferences(TeletextActivity.this).getInt(App.PREF_FONT_ZOOM, App.PREF_FONT_ZOOM_DEFAULT);
+        //
+        if (displayWidth > 0) {
+            if (zoom > 0 && zoom != App.PREF_FONT_ZOOM_DEFAULT) setPageWidthAndFontSize(displayWidth, zoom);
+            else setPageWidth(displayWidth);
+        } else if (zoom > 0 && zoom != App.PREF_FONT_ZOOM_DEFAULT) {
+            setFontSize(zoom);
+        }
     };
 
     /**
@@ -50,6 +84,14 @@ public class TeletextActivity extends WebViewActivity {
     @Override
     PageFinishedListener getPageFinishedListener() {
         return this.pfl;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // reload so that the page width can be set again - simply calling setPageWidth() here does not work
+        this.webView.reload();
     }
 
     /** {@inheritDoc} */
@@ -130,4 +172,32 @@ public class TeletextActivity extends WebViewActivity {
         this.webView.evaluateJavascript(cmd, null);
     }
 
+    /**
+     * Sets the font size in percent of the original size.
+     * @param fontSizePercent font size in percent
+     */
+    private void setFontSize(int fontSizePercent) {
+        String cmd = "var pagewrapper = document.body.getElementsByTagName('div')[0]; if (pagewrapper) pagewrapper.style.fontSize='" + fontSizePercent + "%'";
+        this.webView.evaluateJavascript(cmd, null);
+    }
+
+    /**
+     * Sets the page width. Expects the first &lt;div&gt; in the page to be the relevant one.<br>
+     * The &lt;div&gt;'s width was set to 425px by the <a href="https://www.ard-text.de/stylesheets/mobil/general.css">default css file</a>.
+     * @param pageWidthPx page width to set
+     */
+    private void setPageWidth(@IntRange(from = 1) int pageWidthPx) {
+        String cmd = "var pagewrapper = document.body.getElementsByTagName('div')[0]; if (pagewrapper) pagewrapper.style.width='" + pageWidthPx + "px'";
+        this.webView.evaluateJavascript(cmd, null);
+    }
+
+    /**
+     * Sets the page width and font size.
+     * @param pageWidthPx page width to set
+     * @param fontSizePercent font size in percent
+     */
+    private void setPageWidthAndFontSize(@IntRange(from = 1) int pageWidthPx, int fontSizePercent) {
+        String cmd = "var pagewrapper = document.body.getElementsByTagName('div')[0]; if (pagewrapper) { pagewrapper.style.width='" + pageWidthPx + "px';pagewrapper.style.fontSize='" + fontSizePercent + "%' }";
+        this.webView.evaluateJavascript(cmd, null);
+    }
 }
