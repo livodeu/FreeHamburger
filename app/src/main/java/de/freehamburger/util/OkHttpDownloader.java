@@ -123,6 +123,7 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
         Response response;
         ResponseBody body = null;
         OutputStream out = null;
+        InputStream in = null;
         try {
             response = this.client.newCall(request).execute();
             body = response.body();
@@ -141,7 +142,6 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
                 if (contentLength <= 0L) Log.e(TAG, "No Content-Length after request with headers:\n" + request.headers().toString());
             }
             out = new BufferedOutputStream(new FileOutputStream(f));
-            final InputStream in;
             final boolean gzip = "gzip".equals(response.header("Content-Encoding"));
             if (gzip) {
                 in = new CountingGZIPInputStream(body.byteStream());
@@ -165,12 +165,12 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
                 if (total - latestTotal > minAmountForProgressReporting) publishProgress((float)total / (float)contentLength);
                 latestTotal = total;
             }
-            Util.close(out, body);
+            Util.close(out, in, body);
             publishProgress(1f);
             return new Result(order.url, response.code(), null, f, mediaType != null ? mediaType.toString() : null, contentLength, order.listener);
         } catch (UnknownHostException e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
-            Util.close(body, out);
+            Util.close(in, body, out);
             Util.deleteFile(f);
             int doubleSlash = order.url.indexOf("//");
             int singleSlash = order.url.indexOf('/', doubleSlash + 2);
@@ -184,7 +184,7 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
             return new Result(order.url, HttpURLConnection.HTTP_BAD_REQUEST, msg, f, null, 0L, order.listener);
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
-            Util.close(body, out);
+            Util.close(in, body, out);
             Util.deleteFile(f);
             String msg = e.getMessage();
             if (TextUtils.isEmpty(msg)) msg = e.toString();
