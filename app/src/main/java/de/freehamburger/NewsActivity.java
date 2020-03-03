@@ -635,7 +635,12 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             }
             AudioAttributes aa = aab.build();
             NewsActivity.this.tts.setAudioAttributes(aa);
-            NewsActivity.this.tts.setLanguage(Locale.GERMAN);
+            if (BuildConfig.DEBUG) {
+                int l = NewsActivity.this.tts.setLanguage(Locale.GERMAN);
+                if (l != TextToSpeech.LANG_AVAILABLE) Log.w(TAG, "Result of setLanguage(Locale.GERMAN): " + l);
+            } else {
+                NewsActivity.this.tts.setLanguage(Locale.GERMAN);
+            }
             NewsActivity.this.tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override
                 public void onDone(String utteranceId) {
@@ -948,6 +953,17 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void finalize() throws Throwable {
+        if (this.exoPlayerTopVideo != null || this.exoPlayerBottomVideo != null || this.exoPlayerAudio != null) {
+            if (BuildConfig.DEBUG) Log.w(TAG, "Releasing players in finalize()!");
+            releasePlayers();
+        }
+        if (BuildConfig.DEBUG) Log.i(TAG, "finalize() - nothing to release here.");
+        super.finalize();
     }
 
     /** {@inheritDoc} */

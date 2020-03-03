@@ -260,7 +260,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
             proxyServer = proxyServerAndPort.trim();
             proxyPort = DEFAULT_PROXY_PORT;
         }
-        SocketAddress sa = new InetSocketAddress(proxyServer, proxyPort);
+        // "new InetSocketAddress()" throws NetworkOnMainThreadException if on main thread
+        SocketAddress sa = InetSocketAddress.createUnresolved(proxyServer, proxyPort);
         try {
             return new Proxy(Proxy.Type.valueOf(type), sa);
         } catch (Exception e) {
