@@ -1,10 +1,6 @@
 package de.freehamburger.views;
 
 import android.content.Context;
-import android.preference.PreferenceManager;
-import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -15,7 +11,9 @@ import android.widget.TextView;
 
 import java.text.DateFormat;
 
-import de.freehamburger.App;
+import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import de.freehamburger.HamburgerActivity;
 import de.freehamburger.HamburgerService;
 import de.freehamburger.R;

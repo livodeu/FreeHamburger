@@ -11,14 +11,9 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.PaintDrawable;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresPermission;
 import android.text.Html;
 import android.widget.ImageView;
 
@@ -39,6 +34,10 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import androidx.annotation.MainThread;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
 import de.freehamburger.util.BitmapTarget;
 import de.freehamburger.util.Downloader;
 import de.freehamburger.util.Log;
