@@ -26,12 +26,15 @@ import android.view.ViewGroup;
 
 import com.squareup.picasso.Request;
 
+import org.conscrypt.Conscrypt;
+
 import java.io.File;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
+import java.security.Security;
 import java.text.DateFormat;
 import java.util.Collections;
 import java.util.HashSet;
@@ -220,7 +223,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         if (proxy != null) {
             builder.proxy(proxy);
         }
-        // In autumn of 2018, TLS V1.2 was used
+        // In autumn of 2018 as well as in spring of 2020, TLS V1.2 was used
         ConnectionSpec connectionSpec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
                 .tlsVersions(TlsVersion.TLS_1_2, TlsVersion.TLS_1_3)
                 .build();
@@ -535,6 +538,20 @@ public class App extends Application implements Application.ActivityLifecycleCal
         } else {
             com.google.android.exoplayer2.util.Log.setLogLevel(com.google.android.exoplayer2.util.Log.LOG_LEVEL_OFF);
             com.google.android.exoplayer2.util.Log.setLogStackTraces(false);
+        }
+
+        /*
+         Conscrypt enables TLS V1.3 for Android before 10 (API 29)
+         See
+         https://square.github.io/okhttp/security_providers/
+         and
+         https://developer.android.com/reference/javax/net/ssl/SSLSocket#default-configuration-for-different-android-versions
+         */
+        try {
+            // https://github.com/square/okhttp#requirements
+            Security.insertProviderAt(Conscrypt.newProvider(), 1);
+        } catch (Throwable t) {
+            if (BuildConfig.DEBUG) Log.e(TAG, t.toString());
         }
 
         // loading the permitted hosts asynchronously saves ca. 10 to 20 ms

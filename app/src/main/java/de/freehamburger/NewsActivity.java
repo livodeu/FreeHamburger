@@ -10,6 +10,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
@@ -119,6 +120,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private static final int RELATED_COLUMNS_TABLET_PORTRAIT = 3;
     /** number of columns for {@link #recyclerViewRelated} on tablets in landscape mode */
     private static final int RELATED_COLUMNS_TABLET_LANDSCAPE = 4;
+    /** pictures are scaled to this percentage of the available width */
+    private static final int SCALE_PICTURES_TO_PERCENT = 100;
     @NonNull
     private final AudioAttributes aa = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setLegacyStreamType(App.STREAM_TYPE).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();
     private final MediaSourceHelper mediaSourceHelper = new MediaSourceHelper();
@@ -307,7 +310,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         String newsVideo = StreamQuality.getStreamsUrl(this, this.news.getStreams());
         if (newsVideo != null) {
             if (this.exoPlayerTopVideo != null) {
-                MediaSource msTopVideo = this.mediaSourceHelper.buildMediaSource(Uri.parse(newsVideo));
+                MediaSource msTopVideo = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), Uri.parse(newsVideo));
                 this.exoPlayerTopVideo.prepare(msTopVideo, true, true);
                 ((SimpleExoPlayer) this.exoPlayerTopVideo).setVolume(0f);
                 this.exoPlayerTopVideo.setRepeatMode(Player.REPEAT_MODE_ALL);
@@ -364,7 +367,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     this.textViewBottomVideoPeek.setTypeface(Util.getTypefaceForTextView(this.textViewBottomVideoPeek, contentVideoTitle.toString()));
                     this.textViewBottomVideoPeek.setText(contentVideoTitle);
                     this.textViewBottomVideoViewOverlay.setText(contentVideoTitle);
-                    msBottomVideo = this.mediaSourceHelper.buildMediaSource(uris);
+                    msBottomVideo = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), uris);
                     if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.prepare(msBottomVideo, true, true);
                     this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
                 } else {
@@ -381,7 +384,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     this.textViewBottomVideoPeek.setTypeface(Util.getTypefaceForTextView(this.textViewBottomVideoPeek, contentVideoTitle));
                     this.textViewBottomVideoPeek.setText(contentVideoTitle);
                     this.textViewBottomVideoViewOverlay.setText(contentVideoTitle);
-                    msBottomVideo = this.mediaSourceHelper.buildMediaSource(Uri.parse(url));
+                    msBottomVideo = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), Uri.parse(url));
                     if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.prepare(msBottomVideo, true, true);
                     this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
                 } else {
@@ -453,7 +456,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     if (src == null) continue;
                     src = Util.makeHttps(src);
                     @SuppressWarnings("ObjectAllocationInLoop")
-                    SpannableImageTarget target = new SpannableImageTarget(this, spannable, imageSpan);
+                    SpannableImageTarget target = new SpannableImageTarget(this, spannable, imageSpan, SCALE_PICTURES_TO_PERCENT);
                     // store target in an (otherwise unused) instance variable to avoid garbage collection, because the service holds only a WeakReference on the target
                     this.spannableImageTargets.add(target);
                     //
@@ -621,13 +624,16 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             invalidateOptionsMenu();
             if (NewsActivity.this.tts == null) return;
             NewsActivity.this.ttsInitialised = true;
-            AudioAttributes aa = new AudioAttributes.Builder()
+            AudioAttributes.Builder aab = new AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
                     .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
-                    //TODO enable the following line when migrating to API 29 (Q) (see https://android-developers.googleblog.com/2019/07/capturing-audio-in-android-q.html)
-                    //.setAllowedCapturePolicy(ALLOW_CAPTURE_BY_NONE)
-                    .build();
+                    ;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // https://android-developers.googleblog.com/2019/07/capturing-audio-in-android-q.html
+                aab.setAllowedCapturePolicy(AudioAttributes.ALLOW_CAPTURE_BY_NONE);
+            }
+            AudioAttributes aa = aab.build();
             NewsActivity.this.tts.setAudioAttributes(aa);
             NewsActivity.this.tts.setLanguage(Locale.GERMAN);
             NewsActivity.this.tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
@@ -947,9 +953,15 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     /** {@inheritDoc} */
     @Override
     protected void onPause() {
-        if (this.exoPlayerTopVideo != null) this.exoPlayerTopVideo.stop();
-        if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.stop();
-        if (this.exoPlayerAudio != null) this.exoPlayerAudio.stop();
+        if (this.exoPlayerTopVideo != null) {
+            this.exoPlayerTopVideo.stop();
+        }
+        if (this.exoPlayerBottomVideo != null) {
+            this.exoPlayerBottomVideo.stop();
+        }
+        if (this.exoPlayerAudio != null) {
+            this.exoPlayerAudio.stop();
+        }
         // see https://codelabs.developers.google.com/codelabs/exoplayer-intro/#2
         if (Build.VERSION.SDK_INT <= 23) {
             releasePlayers();
@@ -1151,7 +1163,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             return;
         }
         am.setMode(AudioManager.MODE_NORMAL);
-        MediaSource msAudio = this.mediaSourceHelper.buildMediaSource(Uri.parse((String) src));
+        MediaSource msAudio = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), Uri.parse((String) src));
         this.exoPlayerAudio.prepare(msAudio, true, true);
         this.exoPlayerAudio.setPlayWhenReady(true);
         if (this.originalAudioVolume > 0) {
@@ -1328,6 +1340,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         private final String source;
         private Spannable spannable;
         private ImageSpan toReplace;
+        @IntRange(from = 1, to = 100)
         private final int percentWidth;
 
         /**
@@ -1335,17 +1348,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
          * @param activity NewsActivity
          * @param spannable Spannable
          * @param toReplace ImageSpan
-         */
-        SpannableImageTarget(@NonNull NewsActivity activity, @NonNull Spannable spannable, @NonNull ImageSpan toReplace) {
-            this(activity, spannable, toReplace, 100);
-        }
-
-        /**
-         * Constructor.
-         * @param activity NewsActivity
-         * @param spannable Spannable
-         * @param toReplace ImageSpan
-         * @param percentWidth width in percent
+         * @param percentWidth percentage of the available width
          */
         SpannableImageTarget(@NonNull NewsActivity activity, @NonNull Spannable spannable, @NonNull ImageSpan toReplace, @IntRange(from = 1, to = 100) int percentWidth) {
             super();
@@ -1371,11 +1374,14 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
             NewsActivity activity = this.refActivity.get();
             if (activity == null) return;
+
             int availableWidth = activity.textViewContent.getWidth() - activity.textViewContent.getPaddingStart() - activity.textViewContent.getPaddingEnd();
-            if (this.percentWidth == 100) availableWidth = Math.round(availableWidth);
-            else if (this.percentWidth > 0 && this.percentWidth < 100) availableWidth = Math.round(availableWidth * this.percentWidth / 100f);
-            float factor = (float) bitmap.getHeight() / (float) bitmap.getWidth();
-            bitmap = Bitmap.createScaledBitmap(bitmap, availableWidth, Math.round(availableWidth * factor), false);
+            if (this.percentWidth > 0 && this.percentWidth < 100) availableWidth = Math.round(availableWidth * this.percentWidth / 100f);
+            if (Math.abs(availableWidth - bitmap.getWidth()) > 20) { // let's tolerate +/- 20px
+                float factor = (float) bitmap.getHeight() / (float) bitmap.getWidth();
+                bitmap = Bitmap.createScaledBitmap(bitmap, availableWidth, Math.round(availableWidth * factor), false);
+            }
+
             int start = this.spannable.getSpanStart(this.toReplace);
             int end = this.spannable.getSpanEnd(this.toReplace);
             this.spannable.removeSpan(this.toReplace);

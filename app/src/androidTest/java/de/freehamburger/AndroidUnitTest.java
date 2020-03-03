@@ -13,7 +13,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ShortcutManager;
 import android.net.Uri;
 import android.os.Build;
-import android.preference.PreferenceManager;
+import android.security.NetworkSecurityPolicy;
 import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
 import android.util.JsonReader;
@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Set;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.preference.PreferenceManager;
 import androidx.test.filters.SmallTest;
 import de.freehamburger.adapters.NewsRecyclerAdapter;
 import de.freehamburger.model.Blob;
@@ -202,6 +204,15 @@ public class AndroidUnitTest {
         ed.apply();
     }
 
+    @Test
+    @RequiresApi(24)
+    public void testCleartextTraffic() {
+        if (Build.VERSION.SDK_INT < 24) return;
+        NetworkSecurityPolicy nsp = NetworkSecurityPolicy.getInstance();
+        assertFalse("Cleartext traffic to www.tagesschau.de is allowed", nsp.isCleartextTrafficPermitted("www.tagesschau.de"));
+        assertFalse("Cleartext traffic to www.google.com is allowed", nsp.isCleartextTrafficPermitted("www.google.com"));
+    }
+
     /**
      * Tests {@link App#isHostAllowed(String)}.
      */
@@ -225,13 +236,14 @@ public class AndroidUnitTest {
      */
     @Test
     public void testMediaSourceHelper() {
+        App app = (App)ctx.getApplicationContext();
         MediaSourceHelper msh = new MediaSourceHelper();
         Uri uri = Uri.parse("http://tagesschau-lh.akamaihd.net/i/tagesschau_3@66339/master.m3u8");
-        MediaSource ms = msh.buildMediaSource(uri);
+        MediaSource ms = msh.buildMediaSource(app.getOkHttpClient(), uri);
         assertNotNull(ms);
         assertTrue(ms instanceof HlsMediaSource);
         uri = Uri.parse("https://media.tagesschau.de/video/2019/0718/TV-20190718-0659-2401.webm.h264.mp4");
-        ms = msh.buildMediaSource(uri);
+        ms = msh.buildMediaSource(app.getOkHttpClient(), uri);
         assertNotNull(ms);
         assertTrue(ms instanceof ExtractorMediaSource);
     }

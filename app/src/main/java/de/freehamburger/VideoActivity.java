@@ -202,7 +202,7 @@ public class VideoActivity extends AppCompatActivity {
         if (newsVideo != null) {
             if (this.exoPlayerVideo != null) {
                 newsVideo = Util.makeHttps(newsVideo);
-                MediaSource ms = this.mediaSourceHelper.buildMediaSource(Uri.parse(newsVideo));
+                MediaSource ms = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), Uri.parse(newsVideo));
                 this.exoPlayerVideo.prepare(ms, true, true);
                 this.exoPlayerVideo.setPlayWhenReady(true);
             }

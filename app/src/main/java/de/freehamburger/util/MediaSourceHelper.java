@@ -1,17 +1,19 @@
 package de.freehamburger.util;
 
 import android.net.Uri;
-import androidx.annotation.NonNull;
 
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import okhttp3.Call;
 
 /**
  *
@@ -33,13 +35,15 @@ public class MediaSourceHelper {
 
     /**
      * For HLS streams like http://tagesschau-lh.akamaihd.net/i/tagesschau_3@66339/master.m3u8.
+     * @param cf Call.Factory (aka OkHttpClient)
      * @param uri Uri
      * @return MediaSource
      */
     @NonNull
-    private MediaSource buildHlsMediaSource(@NonNull Uri uri) {
+    private MediaSource buildHlsMediaSource(@NonNull Call.Factory cf, @NonNull Uri uri) {
         if (this.hms == null) {
-            DataSource.Factory dsf = new DefaultHttpDataSourceFactory(USER_AGENT);
+            // call of OkHttpDataSourceFactory constructor could be replaced by "new DefaultHttpDataSourceFactory(USER_AGENT);" if extension-okhttp were not used
+            DataSource.Factory dsf = new OkHttpDataSourceFactory(cf, USER_AGENT);
             this.hms = new HlsMediaSource.Factory(dsf);
         }
         return this.hms.createMediaSource(uri);
@@ -47,15 +51,17 @@ public class MediaSourceHelper {
 
     /**
      * Creates a MediaSource for one given Uri.
+     * @param cf Call.Factory (aka OkHttpClient)
      * @param uri Uri
      * @return MediaSource
      */
     @NonNull
-    public MediaSource buildMediaSource(@NonNull Uri uri) {
+    public MediaSource buildMediaSource(@NonNull Call.Factory cf, @NonNull Uri uri) {
         int contentType = com.google.android.exoplayer2.util.Util.inferContentType(uri);
-        if (contentType == C.TYPE_HLS) return buildHlsMediaSource(uri);
+        if (contentType == C.TYPE_HLS) return buildHlsMediaSource(cf, uri);
         if (this.ems == null) {
-            DataSource.Factory dsf = new DefaultHttpDataSourceFactory(USER_AGENT);
+            // call of OkHttpDataSourceFactory constructor could be replaced by "new DefaultHttpDataSourceFactory(USER_AGENT);" if extension-okhttp were not used
+            DataSource.Factory dsf = new OkHttpDataSourceFactory(cf, USER_AGENT);
             this.ems = new ExtractorMediaSource.Factory(dsf);
             this.ems.setExtractorsFactory(new Mp34ExtractorsFactory());
         }
@@ -64,20 +70,20 @@ public class MediaSourceHelper {
 
     /**
      * Creates a MediaSource for more than one Uri.
+     * @param cf Call.Factory (aka OkHttpClient)
      * @param uris List of Uris (must not contain {@code null} elements)
      * @return MediaSource
      */
     @NonNull
-    public MediaSource buildMediaSource(@NonNull final List<Uri> uris) {
+    public MediaSource buildMediaSource(@NonNull Call.Factory cf, @NonNull final List<Uri> uris) {
         if (uris.size() == 1) {
-            return buildMediaSource(uris.get(0));
+            return buildMediaSource(cf, uris.get(0));
         }
         final MediaSource[] array = new MediaSource[uris.size()];
         int i = 0;
         for (Uri uri : uris) {
-            array[i++] = buildMediaSource(uri);
+            array[i++] = buildMediaSource(cf, uri);
         }
         return new ConcatenatingMediaSource(array);
     }
-
 }
