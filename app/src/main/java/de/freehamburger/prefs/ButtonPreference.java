@@ -20,6 +20,7 @@ import android.widget.TextView;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
+import androidx.annotation.ArrayRes;
 import androidx.annotation.ColorInt;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
@@ -31,7 +32,13 @@ import de.freehamburger.BuildConfig;
 import de.freehamburger.R;
 
 /**
- * A preference that can represent multiple states.
+ * A preference that can represent multiple states.<br>
+ * These attributes are available:<br>
+ * <ul>
+ * <li>app:entries="@array/entries_list" (string-array, required)</li>
+ * <li>app:colors="@array/colors_list" (array of color values, optional)</li>
+ * <li>app:soundeffect="@raw/soundfile" (optional)</li>
+ * </ul>
  */
 public class ButtonPreference extends Preference implements View.OnClickListener {
 
@@ -97,6 +104,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
         CharSequence[] cs = a.getTextArray(R.styleable.ButtonPreference_entries);
         if (cs == null || cs.length == 0) throw new IllegalArgumentException("No entries!");
         this.states = cs;
+        @ArrayRes
         int colorsId = a.getResourceId(R.styleable.ButtonPreference_colors, 0);
         if (colorsId != 0) {
             this.colors = context.getResources().getIntArray(colorsId);
@@ -111,20 +119,6 @@ public class ButtonPreference extends Preference implements View.OnClickListener
             this.sound = this.soundPool.load(context.getApplicationContext(), soundEffectId, 1);
         }
     }
-
-    /*
-    @Override
-    public View getView(View convertView, ViewGroup parent) {
-        if (convertView == null) {
-            if (this.layout != null) {
-                convertView = this.layout;
-            } else {
-                convertView = onCreateView(parent);
-            }
-        }
-        onBindView(convertView);
-        return convertView;
-    }*/
 
     /** {@inheritDoc} */
     @Override
@@ -181,23 +175,6 @@ public class ButtonPreference extends Preference implements View.OnClickListener
     protected Object onGetDefaultValue(TypedArray a, int index) {
         return a.getInt(index, 0);
     }
-
-    /*
-    @Override
-    protected View onCreateView(ViewGroup parent) {
-        this.layout = super.onCreateView(parent);
-        // super hides the widget_frame
-        View wf = this.layout.findViewById(android.R.id.widget_frame);
-        if (wf != null) wf.setVisibility(View.VISIBLE);
-        //
-        this.button = this.layout.findViewById(R.id.button);
-        if (this.colors != null) {
-            this.button.setTextColor(this.colors[this.selectedIndex]);
-        }
-        this.button.setOnClickListener(this);
-        rotate(true);
-        return layout;
-    }*/
 
     /** {@inheritDoc} */
     @Override
