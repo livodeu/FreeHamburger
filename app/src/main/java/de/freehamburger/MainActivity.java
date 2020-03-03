@@ -1598,7 +1598,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /**
      * Parses the given json file and updates the {@link #newsAdapter adapter} afterwards.<br>
      * Does not do anything if the file does not exist.
-     * @param file File to parse (e.g. "…/files/HOME.source")
+     * @param file File to parse
      */
     private synchronized void parseLocalFileAsync(@Nullable File file) {
         if (file == null) return;

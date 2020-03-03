@@ -15,7 +15,7 @@
     <declare-styleable name="ButtonPreference">
         <attr name="entries"/>
         <attr name="soundeffect" format="reference"/>
-        <attr name="colors" format="color"/>
+        <attr name="colors"/>
     </declare-styleable>
 
 </resources>

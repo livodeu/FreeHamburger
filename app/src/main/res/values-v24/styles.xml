@@ -9,8 +9,8 @@
         <item name="android:navigationBarColor">@color/colorPrimary</item>
         <item name="android:fastScrollThumbDrawable">@android:drawable/btn_default</item>
         <item name="android:fastScrollOverlayPosition">atThumb</item>
-        <!--<item name="android:alertDialogTheme">@style/AppAlertDialogTheme</item>
-        <item name="alertDialogTheme">@style/AppAlertDialogTheme</item>-->
+        <item name="android:alertDialogTheme">@style/AppAlertDialogTheme</item>
+        <item name="alertDialogTheme">@style/AppAlertDialogTheme</item>
         <item name="android:windowBackground">@color/colorPrimaryLight</item>
         <item name="android:windowBackgroundFallback">@color/colorPrimaryLight</item>
         <item name="listMenuViewStyle">@style/AppTheme.ListMenuViewStyle</item>
