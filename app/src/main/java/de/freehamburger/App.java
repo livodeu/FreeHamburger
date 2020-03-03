@@ -141,9 +141,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** boolean -  See <a href="https://en.wikipedia.org/wiki/Quotation_mark#German">here</a> */
     public static final String PREF_CORRECT_WRONG_QUOTATION_MARKS = "pref_correct_quotation_marks";
     public static final boolean PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT = false;
-    /** boolean - use {@link android.graphics.Bitmap.Config#HARDWARE} for decoding bitmaps (only for Oreo and beyond) */
-    public static final String PREF_USE_HARDWARE_BMPS = "pres_use_hardware_bmps";
-    public static final boolean PREF_USE_HARDWARE_BMPS_DEFAULT = true;
     /** ColorSpace to use when decoding bitmaps (apparently not [yet] supported by Picasso, see {@link com.squareup.picasso.RequestHandler#createBitmapOptions(Request)}) */
     public static final String PREF_COLORSPACE = "pref_colorspace";
     public static final TimeZone TIMEZONE = TimeZone.getTimeZone("Europe/Berlin");
@@ -568,12 +565,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
             @Override
             public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
 
-                if (e instanceof IllegalArgumentException && e.toString().contains("Software rendering doesn't support hardware bitmaps")) {
-                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(App.this);
-                    SharedPreferences.Editor ed = prefs.edit();
-                    ed.putBoolean(PREF_USE_HARDWARE_BMPS, false);
-                    ed.commit();
-                }
                 if (BuildConfig.DEBUG) {
                     boolean isCurrentThread = Thread.currentThread().equals(t);
                     Log.wtf(TAG, "*** Uncaught Exception in "  + (isCurrentThread ? "current thread: " : "another thread: ") + e.toString() + "\nhttps://xkcd.com/2200/", e);

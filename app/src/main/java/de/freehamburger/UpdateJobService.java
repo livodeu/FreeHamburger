@@ -775,11 +775,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         this.filters.addAll(TextFilter.createTextFiltersFromPreferences(this));
         //
         try {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            BITMAPFACTORY_OPTIONS.inPreferredConfig = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                    && prefs
-                    .getBoolean(App.PREF_USE_HARDWARE_BMPS, App.PREF_USE_HARDWARE_BMPS_DEFAULT)
-                    ? Bitmap.Config.HARDWARE : Bitmap.Config.RGB_565;
+            BITMAPFACTORY_OPTIONS.inPreferredConfig = Bitmap.Config.RGB_565;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 String cs = PreferenceManager.getDefaultSharedPreferences(this).getString(App.PREF_COLORSPACE, ColorSpace.Named.SRGB.name());
                 BITMAPFACTORY_OPTIONS.inPreferredColorSpace = ColorSpace.get(ColorSpace.Named.valueOf(cs));

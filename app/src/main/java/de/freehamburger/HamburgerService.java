@@ -103,15 +103,11 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         //
         this.loaderExecutor = Executors.newCachedThreadPool();
         createMemoryCache();
-        // as the docs say that Bitmap.Config.HARDWARE "is optimal for cases, when the only operation with the bitmap is to draw it on a screen", we try to use it here
-        Bitmap.Config config = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                && PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_USE_HARDWARE_BMPS, App.PREF_USE_HARDWARE_BMPS_DEFAULT)
-                ? Bitmap.Config.HARDWARE : Bitmap.Config.RGB_565;
         // start Picasso
         this.picasso = new Picasso.Builder(this)
                 .memoryCache(this.memoryCache)
                 .downloader(new OkHttpDownloader(this))
-                .defaultBitmapConfig(config)
+                .defaultBitmapConfig(Bitmap.Config.RGB_565)
                 .loggingEnabled(BuildConfig.DEBUG)
                 .listener(this)
                 .executor(this.loaderExecutor)
