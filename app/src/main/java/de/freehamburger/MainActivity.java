@@ -1145,19 +1145,25 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (id == R.id.action_show_updates) {
             List<Long> tss = UpdateJobService.getAllRequests(this);
             int n = tss.size();
-            if (n < 1) return true;
-            if (n > 150) tss = tss.subList(n - 150, n);
+            if (n < 1) {
+                Toast.makeText(this, R.string.label_poll_stats_none, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            if (n > 150) tss = tss.subList(0, 150);
             final DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
-            final StringBuilder sb = new StringBuilder(512);
-            int i = 1;
+            final StringBuilder sb = new StringBuilder(tss.size() << 5);
             long latest = tss.get(0);
-            sb.append(i++).append(": ").append(df.format(new Date(latest))).append('\n');
-            for (Long ts : tss) {
-                sb.append(i++).append(": ").append(df.format(new Date(ts))).append(" (").append(Math.round((ts - latest) / 60000f)).append(" ')\n");
-                latest = ts;
+            if (n > 1) {
+                int i = 1;
+                for (Long ts : tss) {
+                    sb.append(i++).append(": ").append(df.format(new Date(ts))).append(" (").append(Math.round((latest - ts) / 60_000f)).append(" ')\n");
+                    latest = ts;
+                }
+            } else {
+                sb.append("1: ").append(df.format(new Date(latest))).append('\n');
             }
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Past background updates");
+            builder.setTitle(R.string.pref_title_background);
             builder.setMessage(sb);
             builder.setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
             builder.show();
@@ -1189,7 +1195,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 }
                 if (tempFile.length() != logFile.length()) Log.e(TAG, "Exported log file differs from actual log file!");
             }
-            Log.i(TAG, "Sharing log file \"" + tempFile + "\" of " + tempFile.length() + " bytes...");
             final Intent shareIntent = new Intent(Intent.ACTION_SEND);
             shareIntent.setType("text/plain");
             shareIntent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(this, App.getFileProvider(), tempFile));

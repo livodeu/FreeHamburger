@@ -189,14 +189,13 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      */
     @NonNull
     static List<Long> getAllRequests(@NonNull Context ctx) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        Set<String> allRequests = prefs.getStringSet(PREF_STAT_ALL, new HashSet<>());
-        if (allRequests.isEmpty()) return new ArrayList<>();
+        final Set<String> allRequests = PreferenceManager.getDefaultSharedPreferences(ctx).getStringSet(PREF_STAT_ALL, new HashSet<>(0));
+        if (allRequests.isEmpty()) return new ArrayList<>(0);
         final List<Long> ar = new ArrayList<>(allRequests.size());
         for (String r : allRequests) {
             ar.add(Long.parseLong(r) + ADD_TO_PREF_STAT_ALL_VALUE);
         }
-        Collections.sort(ar);
+        Collections.sort(ar, (o1, o2) -> o2.compareTo(o1));
         return ar;
     }
 
