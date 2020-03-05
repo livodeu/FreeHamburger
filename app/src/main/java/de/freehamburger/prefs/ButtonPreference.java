@@ -209,8 +209,8 @@ public class ButtonPreference extends Preference implements View.OnClickListener
 
     /** {@inheritDoc} */
     @Override
-    protected void onSetInitialValue(boolean restoreValue, @Nullable Object defaultValue) {
-        this.selectedIndex = restoreValue ? getPersistedInt(this.selectedIndex) : (defaultValue instanceof Integer ? (Integer)defaultValue : 0);
+    protected void onSetInitialValue(@Nullable Object defaultValue) {
+        this.selectedIndex = getPersistedInt(this.selectedIndex);
     }
 
     private void rotate(boolean quick) {

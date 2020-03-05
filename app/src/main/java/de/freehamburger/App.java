@@ -385,7 +385,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 maxCacheSize = DEFAULT_CACHE_MAX_SIZE_MB * 1_048_576L;
             }
         }
-        return maxCacheSize >= 1_048_576L ? maxCacheSize : 1_048_576L;
+        return Math.max(maxCacheSize, 1_048_576L);
     }
 
     /**

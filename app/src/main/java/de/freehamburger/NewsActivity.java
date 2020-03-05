@@ -830,7 +830,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
 
         this.bottomSheetBehavior = BottomSheetBehavior.from(bottomVideoBlock);
-        this.bottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+        this.bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
 
             private boolean speakingStoppedWhenBottomSheetSlidUp = false;
 

@@ -53,7 +53,6 @@ import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -80,7 +79,6 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
     private static final String EXTRA_STORAGE_ACTIVITY = "de.freehamburger.extra.storage.activity";
     @Nullable
     private HamburgerService service;
-    private CoordinatorLayout coordinatorLayout;
     /** {@code true} if the user has clicked "Manage Storage" in the system settings for this app - identified by:<ol><li>{@link Intent} action is {@link Intent#ACTION_VIEW ACTION_VIEW},</li><li>Intent data is {@code null}</li></ol> */
     private boolean isManageStorageActivity;
     private Snackbar snackbar;
@@ -167,7 +165,6 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         setTheme(R.style.AppTheme);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings_activity);
-        this.coordinatorLayout = findViewById(R.id.coordinator_layout);
 
         if (!this.isManageStorageActivity) {
             ActionBar actionBar = getSupportActionBar();
