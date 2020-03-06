@@ -26,7 +26,7 @@ public enum StreamQuality {
     H264XL(R.string.label_streamquality_xl, 1280),
     /** unknown dimensions */
     PODCASTVIDEOM_IAS(-1, -1),
-    /** unknown dimensions */
+    /** unknown dimensions;<br><em>NOTE: as of March 2020, these URLs do not work as they point to hls.tagesschau.de which only works with http: but NOT with https:!</em> */
     ADAPTIVESTREAMING(R.string.label_streamquality_adaptive, -1);
 
     /** StreamQuality array where XL is preferred; after that ordered by descending quality */
@@ -51,6 +51,7 @@ public enum StreamQuality {
     @Nullable
     public static String getStreamsUrl(@Nullable Context ctx, @Nullable final Map<StreamQuality, String> streams) {
         if (streams == null || streams.isEmpty()) return null;
+
         final StreamQuality[] pref;
         if (ctx != null) {
             final boolean mobile = Util.isNetworkMobile(ctx);
@@ -60,7 +61,6 @@ public enum StreamQuality {
             else if (screenWidth >= StreamQuality.H264L.getWidth()) pref = mobile ? PREF_M : PREF_L;
             else if (screenWidth >= StreamQuality.H264M.getWidth()) pref = mobile ? PREF_S : PREF_M;
             else pref = PREF_S;
-            //if (BuildConfig.DEBUG) Log.i(StreamQuality.class.getSimpleName(), "We'd like stream quality preference " + Arrays.toString(pref) + " because screen width is " + screenWidth + " px, mobile network: " + mobile);
         } else {
             pref = PREF_S;
         }
