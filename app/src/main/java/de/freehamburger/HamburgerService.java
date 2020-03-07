@@ -54,6 +54,8 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
 
     private static final String TAG = "HamburgerService";
 
+    static final boolean USE_FORKJOINPOOL = true;
+
     private final HamburgerServiceBinder binder = new HamburgerServiceBinder(this);
     private final Handler handler = new Handler();
     /** key: url, value: Picasso cache key (see {@link com.squareup.picasso.Utils}) */
@@ -94,6 +96,12 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      * Builds the Picasso instance.
      */
     private void buildPicasso() {
+
+        if (this.picasso != null) {
+            this.picasso.shutdown();
+            this.picasso = null;
+        }
+
         // first, cleanup if there are old things around
         if (this.loaderExecutor != null) {
             this.loaderExecutor.shutdown();
@@ -101,8 +109,15 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         if (this.memoryCache != null) {
             clearMemoryCache();
         }
-        //
-        this.loaderExecutor = Executors.newCachedThreadPool();
+
+        if (USE_FORKJOINPOOL) {
+            // https://web.archive.org/web/20110819180102/https://vanillajava.blogspot.com/2011/06/java-secrets-using-executorservice-to.html
+            // http://cs.oswego.edu/pipermail/concurrency-interest/2012-January/008987.html
+            this.loaderExecutor = new ForkJoinPool(Runtime.getRuntime().availableProcessors() << 1, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true);
+        } else {
+            this.loaderExecutor = Executors.newCachedThreadPool();
+        }
+
         createMemoryCache();
         // start Picasso
         this.picasso = new Picasso.Builder(this)
