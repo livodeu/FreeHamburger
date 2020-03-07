@@ -31,12 +31,10 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 /**
- * This class can be used by Picasso as well as by other classes.<br>
- * Picasso uses the methods defined by {@link com.squareup.picasso.Downloader}.<br>
- * Other classes use {@link #load(Order)}.<br>
+ * Use {@link #load(Order)}.<br>
  * As true for every {@link android.os.AsyncTask}, an instance can only be used once!
  */
-public class OkHttpDownloader extends Downloader implements com.squareup.picasso.Downloader {
+public class OkHttpDownloader extends Downloader {
 
     private static final String TAG = "OkHttpDownloader";
     /** read buffer size; during tests, the maximum number of bytes read was 7786, even with READ_BUFFER set to 16834 */
@@ -193,14 +191,6 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
         }
     }
 
-
-    /** {@inheritDoc} */
-    @NonNull
-    @Override
-    public Response load(@NonNull okhttp3.Request request) throws IOException {
-        return this.client.newCall(request).execute();
-    }
-
     /** {@inheritDoc} */
     @Override
     protected void onProgressUpdate(Float... values) {
@@ -210,11 +200,6 @@ public class OkHttpDownloader extends Downloader implements com.squareup.picasso
         l.downloadProgressed(values[0]);
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public void shutdown() {
-        this.client = null;
-    }
 
     /**
      * A GZIPInputStream that keeps track of the number of bytes read.

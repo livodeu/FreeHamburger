@@ -33,6 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
@@ -42,6 +43,7 @@ import de.freehamburger.util.BitmapTarget;
 import de.freehamburger.util.Downloader;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.OkHttpDownloader;
+import de.freehamburger.util.OkHttpDownloaderForPicasso;
 import de.freehamburger.util.Util;
 import de.freehamburger.views.NewsView;
 
@@ -105,7 +107,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         // start Picasso
         this.picasso = new Picasso.Builder(this)
                 .memoryCache(this.memoryCache)
-                .downloader(new OkHttpDownloader(this))
+                .downloader(new OkHttpDownloaderForPicasso(this))
                 .defaultBitmapConfig(Bitmap.Config.RGB_565)
                 .loggingEnabled(BuildConfig.DEBUG)
                 .listener(this)
@@ -193,7 +195,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     void loadFile(@NonNull String url, @NonNull File localFile, long mostRecentUpdate, @Nullable Downloader.DownloaderListener listener) {
         OkHttpDownloader fd = new OkHttpDownloader(this);
         try {
-            fd.executeOnExecutor(this.loaderExecutor, new Downloader.Order(url, localFile.getAbsolutePath(), mostRecentUpdate, false, listener));
+           fd.executeOnExecutor(this.loaderExecutor, new Downloader.Order(url, localFile.getAbsolutePath(), mostRecentUpdate, false, listener));
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, "loadFile(\"" + url + "\", ..., ...) failed: " + e.toString());
             if (listener != null) listener.downloaded(false, null);
