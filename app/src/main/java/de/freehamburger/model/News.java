@@ -125,9 +125,6 @@ public final class News implements Comparable<News>, Serializable {
         } else {
             output = Html.fromHtml(input).toString();
         }
-        if (BuildConfig.DEBUG) {
-            if (!output.equals(input)) Log.i(TAG, "fixHtml(\"" + input + "\") -> \"" + output + "\"");
-        }
         return output;
     }
 
