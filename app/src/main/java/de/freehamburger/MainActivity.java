@@ -934,18 +934,15 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         // check menuItem matching currentSource on initialisation
         updateMenu();
         // react to selections being made in the navigation menu
-        navigationView.setNavigationItemSelectedListener(
-                menuItem -> {
-                    // ignore if intro is playing
-                    if (MainActivity.this.intro != null && MainActivity.this.intro.isPlaying()) return true;
-                    // get selected menu item
-                    int id = menuItem.getItemId();
-                    // when item is tapped, close drawer (after a brief pause to let the user see the new selection)
-                    MainActivity.this.handler.postDelayed(() -> MainActivity.this.drawerLayout.closeDrawer(GravityCompat.END, true), 300L);
-                    // select source that matches the menu item
-                    changeSource(MainActivity.this.sourceForMenuItem.get(id), true, false);
-                    return true;
-                });
+        navigationView.setNavigationItemSelectedListener(menuItem -> {
+                 // ignore if intro is playing
+                if (this.intro != null && this.intro.isPlaying()) return true;
+                // when item is tapped, close drawer (after a brief pause to let the user see the new selection)
+                this.handler.postDelayed(() -> this.drawerLayout.closeDrawer(navigationView, true), 150L);
+                // select source that matches the menu item
+                changeSource(this.sourceForMenuItem.get(menuItem.getItemId()), true, false);
+                return true;
+            });
         // refresh via top-bottom swipe
         this.swipeRefreshLayout = findViewById(R.id.swiperefresh);
         if (this.swipeRefreshLayout != null) {
