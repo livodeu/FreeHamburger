@@ -111,6 +111,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** boolean */
     public static final String PREF_WARN_MUTE = "pref_warn_mute";
     public static final boolean PREF_WARN_MUTE_DEFAULT = true;
+    /** boolean: show errors in web pages */
+    public static final String PREF_SHOW_WEB_ERRORS = "pref_show_web_errors";
+    public static final boolean PREF_SHOW_WEB_ERRORS_DEFAULT = true;
     /** String: proxyserver:port */
     public static final String PREF_PROXY_SERVER = "pref_proxy_server";
     /** String set */

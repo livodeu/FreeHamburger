@@ -7,6 +7,7 @@ import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -16,13 +17,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
-import androidx.annotation.WorkerThread;
-import com.google.android.material.snackbar.Snackbar;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -42,6 +36,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import java.io.ByteArrayInputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.Charset;
@@ -51,6 +47,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import androidx.annotation.WorkerThread;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 import de.freehamburger.model.News;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
@@ -492,7 +494,8 @@ public class WebViewActivity extends AppCompatActivity {
                     this.urlForErrors = consoleMessage.sourceId();
                 }
                 if (!this.errors.contains(consoleMessage.message())) this.errors.add(consoleMessage.message());
-                if (this.sb == null || !this.sb.isShown()) {
+                boolean showErrors = PreferenceManager.getDefaultSharedPreferences(this.activity).getBoolean(App.PREF_SHOW_WEB_ERRORS, App.PREF_SHOW_WEB_ERRORS_DEFAULT);
+                if (showErrors && (this.sb == null || !this.sb.isShown())) {
                     Snackbar sb = Snackbar.make(this.activity.findViewById(R.id.coordinator_layout), R.string.msg_website_errors, Snackbar.LENGTH_INDEFINITE);
                     Util.setSnackbarFont(sb, Util.CONDENSED, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? -1 : 12));
                     sb.setAction("↗", v -> {
@@ -513,6 +516,12 @@ public class WebViewActivity extends AppCompatActivity {
                         AlertDialog.Builder b = new AlertDialog.Builder(HamburgerWebChromeClient.this.activity)
                                 .setTitle(R.string.label_website_errors)
                                 .setView(view)
+                                .setNeutralButton(R.string.action_show_weberrors_no, (dialog, which) -> {
+                                    SharedPreferences.Editor ed =  PreferenceManager.getDefaultSharedPreferences(HamburgerWebChromeClient.this.activity).edit();
+                                    ed.putBoolean(App.PREF_SHOW_WEB_ERRORS, false);
+                                    ed.apply();
+                                    dialog.dismiss();
+                                })
                                 .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
                         b.show();
                     });

@@ -8,6 +8,7 @@
     <string name="action_filters_disabled">Inaktiv</string>
     <string name="action_filters_enabled">Aktiv</string>
     <string name="action_open_app">App öffnen</string>
+    <string name="action_show_weberrors_no">Nicht wieder anzeigen</string>
     <string name="msg_background_active">Hintergrundabfragen sind aktiv und werden etwa alle %1$s Minuten ausgeführt.</string>
     <string name="msg_background_active_short">Hintergrundabfragen aktiv (alle %1$s Min.)</string>
     <string name="msg_background_inactive">Hintergrundabfragen sind deaktiviert.</string>

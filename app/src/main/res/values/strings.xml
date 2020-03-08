@@ -44,6 +44,7 @@
     <string name="action_share_video">Share video</string>
     <string name="action_shortcut_create">Create shortcut</string>
     <string name="action_show_updates" translatable="false">Show bg updates</string>
+    <string name="action_show_weberrors_no">Do not show again</string>
     <string name="action_teletext">Teletext</string>
     <string name="action_teletext_short">TT</string>
     <string name="action_quality_select">Select video quality</string>
