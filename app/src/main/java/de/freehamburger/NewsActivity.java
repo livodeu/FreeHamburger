@@ -840,6 +840,13 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         // determine number of Related columns; one every 2 inches, but not less than 2
         this.recyclerViewRelated.setLayoutManager(new GridLayoutManager(this, Math.max(2, (int)(Util.getDisplayDim(this).x / 2f))));
         this.recyclerViewRelated.setAdapter(new RelatedAdapter(this));
+        // fling actions to recyclerViewRelated will be dispatched to its grandparent ScrollView (without this, fling actions on recyclerViewRelated would stutter…)
+        this.recyclerViewRelated.setOnFlingListener(new RecyclerView.OnFlingListener() {
+            public boolean onFling(int velocityX, int velocityY) {
+                NewsActivity.this.recyclerViewRelated.dispatchNestedFling(velocityX, velocityY, false);
+                return true;
+            }
+        });
         LinearLayout bottomVideoBlock = findViewById(R.id.bottomVideoBlock);
         this.textViewBottomVideoPeek = findViewById(R.id.textViewBottomVideoPeek);
         this.bottomVideoView = findViewById(R.id.bottomVideoView);

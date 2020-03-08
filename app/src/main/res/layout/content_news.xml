@@ -21,7 +21,6 @@
         android:paddingEnd="@dimen/news_content_margin_topblock_end"
         android:animateLayoutChanges="false"
         android:clipChildren="true"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
         >
 
         <ImageView
@@ -135,10 +134,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@+id/textViewRelated"
-            android:layout_marginTop="16dp"
             android:layout_marginStart="0dp"
+            android:layout_marginTop="16dp"
             android:layout_marginEnd="4dp"
-            tools:listitem="@layout/related_view"/>
+            tools:listitem="@layout/related_view" />
 
         <View
             android:id="@+id/bottomMargin"
