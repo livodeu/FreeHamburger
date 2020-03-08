@@ -10,7 +10,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ShortcutInfo;
 import android.content.pm.ShortcutManager;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -556,7 +555,7 @@ public class Util {
      * Returns the display size in inches.
      * Examples:<ul>
      * <li>10 inch tablet / landscape:    8.00 x 4.50</li>
-     * <li>7 inch tablet / landscape:    6.40 x 3.75</li>
+     * <li>7 inch tablet / landscape:     6.40 x 3.75</li>
      * <li>5.2 inch phone / portrait:     2.52 x 4.53</li>
      * </ul>
      * @param ctx Context
@@ -817,14 +816,6 @@ public class Util {
     private static boolean isTest(@NonNull Context ctx) {
         // Contexts for unit tests are android.app.ContextImpl
         return BuildConfig.DEBUG && !ctx.getClass().getName().startsWith(Objects.requireNonNull(MainActivity.class.getPackage()).getName());
-    }
-
-    /**
-     * Helper method to determine if the device has an extra-large screen. Forexample, 10" tablets are extra-large.
-     * @throws NullPointerException if {@code ctx} is {@code null}
-     */
-    public static boolean isXLargeTablet(@NonNull Context ctx) {
-        return (ctx.getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_XLARGE;
     }
 
     /**

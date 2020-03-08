@@ -10,7 +10,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -114,16 +113,10 @@ import de.freehamburger.util.Util;
  */
 public class NewsActivity extends HamburgerActivity implements AudioManager.OnAudioFocusChangeListener, RelatedAdapter.OnRelatedClickListener, ServiceConnection {
 
-    /** boolean; if true, the ActionBar will not show the home arrow which would lead to MainActivity */
+    /** boolean; if true, the ActionBar will not show the home arrow which would lead the user to the MainActivity */
     private static final String EXTRA_NO_HOME_AS_UP = "extra_no_home_as_up";
     static final String EXTRA_NEWS = "extra_news";
     private static final String TAG = "NewsActivity";
-    /** number of columns for {@link #recyclerViewRelated} on phones */
-    private static final int RELATED_COLUMNS_PHONE = 2;
-    /** number of columns for {@link #recyclerViewRelated} on tablets in portrait mode */
-    private static final int RELATED_COLUMNS_TABLET_PORTRAIT = 3;
-    /** number of columns for {@link #recyclerViewRelated} on tablets in landscape mode */
-    private static final int RELATED_COLUMNS_TABLET_LANDSCAPE = 4;
     /** pictures are scaled to this percentage of the available width */
     private static final int SCALE_PICTURES_TO_PERCENT = 90;
     @NonNull
@@ -844,11 +837,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.textViewContent.setOnTouchListener(new TextViewImageSpanClickHandler());
         }
         this.recyclerViewRelated = findViewById(R.id.recyclerViewRelated);
-        if (Util.isXLargeTablet(this)) {
-            this.recyclerViewRelated.setLayoutManager(new GridLayoutManager(this, getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? RELATED_COLUMNS_TABLET_LANDSCAPE : RELATED_COLUMNS_TABLET_PORTRAIT));
-        } else {
-            this.recyclerViewRelated.setLayoutManager(new GridLayoutManager(this, RELATED_COLUMNS_PHONE));
-        }
+        // determine number of Related columns; one every 2 inches, but not less than 2
+        this.recyclerViewRelated.setLayoutManager(new GridLayoutManager(this, Math.max(2, (int)(Util.getDisplayDim(this).x / 2f))));
         this.recyclerViewRelated.setAdapter(new RelatedAdapter(this));
         LinearLayout bottomVideoBlock = findViewById(R.id.bottomVideoBlock);
         this.textViewBottomVideoPeek = findViewById(R.id.textViewBottomVideoPeek);
