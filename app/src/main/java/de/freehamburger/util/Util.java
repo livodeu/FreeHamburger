@@ -27,21 +27,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
-import androidx.annotation.AnyThread;
-import androidx.annotation.ColorInt;
-import androidx.annotation.ColorRes;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RawRes;
-import androidx.annotation.RequiresApi;
-import androidx.annotation.RequiresPermission;
-import androidx.annotation.VisibleForTesting;
-import com.google.android.material.snackbar.Snackbar;
-import androidx.core.content.FileProvider;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.RecyclerView;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.text.Html;
@@ -61,6 +46,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -87,6 +73,20 @@ import java.util.Set;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 
+import androidx.annotation.AnyThread;
+import androidx.annotation.ColorInt;
+import androidx.annotation.ColorRes;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RawRes;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.RequiresPermission;
+import androidx.annotation.VisibleForTesting;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.RecyclerView;
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.MainActivity;
@@ -522,6 +522,10 @@ public class Util {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             spanned = Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT, im, null);
         } else {
+            /*
+             Html.fromHtml in API 23 (Android 6.0) does not create BackgroundColorSpans!
+             It seems that API 24 introduces the "startCssStyle()" method.
+             */
             spanned = Html.fromHtml(html, im, null);
             // remove superfluous blank lines that have been introduced by Html.FROM_HTML_MODE_LEGACY
             spanned = replaceAll(spanned, "\n" + Content.REMOVE_NEW_LINE, "");
@@ -1065,6 +1069,7 @@ public class Util {
      * @throws NullPointerException if any parameter is {@code null}
      * @throws IllegalArgumentException if the arrays have different lengths
      */
+    @NonNull
     public static SpannableStringBuilder replaceAll(@NonNull final CharSequence template, @NonNull final CharSequence[] sources, @NonNull final CharSequence[] destinations) {
         if (sources.length != destinations.length) throw new IllegalArgumentException("Non-matching lengths");
         final int n = sources.length;

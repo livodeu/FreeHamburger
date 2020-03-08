@@ -12,6 +12,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -30,7 +33,9 @@ import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
+import android.text.style.BackgroundColorSpan;
 import android.text.style.ImageSpan;
+import android.text.style.LineBackgroundSpan;
 import android.text.style.URLSpan;
 import android.util.JsonReader;
 import android.view.KeyEvent;
@@ -120,7 +125,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     /** number of columns for {@link #recyclerViewRelated} on tablets in landscape mode */
     private static final int RELATED_COLUMNS_TABLET_LANDSCAPE = 4;
     /** pictures are scaled to this percentage of the available width */
-    private static final int SCALE_PICTURES_TO_PERCENT = 100;
+    private static final int SCALE_PICTURES_TO_PERCENT = 90;
     @NonNull
     private final AudioAttributes aa = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setLegacyStreamType(App.STREAM_TYPE).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();
     private final MediaSourceHelper mediaSourceHelper = new MediaSourceHelper();
@@ -188,8 +193,13 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         public void onPlayerError(ExoPlaybackException error) {
             String msg = Util.getExoPlaybackExceptionMessage(error);
             if (BuildConfig.DEBUG) Log.e(TAG, "Bottom video onPlayerError(): " + msg, error);
+            // if bottom sheet is collapsed, hide it completely
+            if (isBottomSheetCollapsed()) {
+                hideBottomSheet();
+                return;
+            }
+            if (isBottomSheetHidden()) return;
             // show error message, but only if bottom sheet is expanded
-            if (isBottomSheetCollapsedOrHidden()) return;
             String key = "Unable to connect to";
             boolean unableToConnect = msg.startsWith(key);
             SSLPeerUnverifiedException puve = Util.isPeerUnverified(error);
@@ -309,6 +319,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         String newsVideo = StreamQuality.getStreamsUrl(this, this.news.getStreams());
         if (newsVideo != null) {
             if (this.exoPlayerTopVideo != null) {
+                newsVideo = Util.makeHttps(newsVideo);
                 MediaSource msTopVideo = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), Uri.parse(newsVideo));
                 this.exoPlayerTopVideo.prepare(msTopVideo, true, true);
                 ((SimpleExoPlayer) this.exoPlayerTopVideo).setVolume(0f);
@@ -408,7 +419,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     fadeOut.setStartDelay(500L);
                     set.playSequentially(fadeIn, fadeOut);
                     set.start();
-                    handler.postDelayed(() -> muteWarning.setVisibility(View.GONE), 2_750L);
+                    this.handler.postDelayed(() -> muteWarning.setVisibility(View.GONE), 2_750L);
                 }
             }
         }
@@ -454,12 +465,24 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     String src = imageSpan.getSource();
                     if (src == null) continue;
                     src = Util.makeHttps(src);
-                    @SuppressWarnings("ObjectAllocationInLoop")
                     SpannableImageTarget target = new SpannableImageTarget(this, spannable, imageSpan, SCALE_PICTURES_TO_PERCENT);
                     // store target in an (otherwise unused) instance variable to avoid garbage collection, because the service holds only a WeakReference on the target
                     this.spannableImageTargets.add(target);
                     //
                     this.service.loadImage(src, target);
+                }
+            }
+
+            // convert BackgroundColorSpans to BackgroundSpans
+            // Note: there won't be any BackgroundColorSpans in API < 24 because Html.fromHtml() does not generate them
+            BackgroundColorSpan[] bs = spannable.getSpans(0, spannable.length(), BackgroundColorSpan.class);
+            if (bs != null) {
+                final int backgroundColor = getResources().getColor(R.color.colorBoxBackground);
+                for (BackgroundColorSpan b : bs) {
+                    int start = spannable.getSpanStart(b);
+                    int end = spannable.getSpanEnd(b);
+                    spannable.removeSpan(b);
+                    spannable.setSpan(new BackgroundSpan(backgroundColor), start, end, Spanned.SPAN_INCLUSIVE_INCLUSIVE);
                 }
             }
 
@@ -504,6 +527,13 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
      */
     private void collapseBottomSheet() {
         this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+    }
+
+    /**
+     * Hides the bottom video.
+     */
+    private void hideBottomSheet() {
+        this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
     }
 
     /** {@inheritDoc} */
@@ -677,6 +707,14 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
     private boolean isAudioPlaying() {
         return this.exoPlayerAudioPlayWhenReady && this.exoPlayerAudioState == Player.STATE_READY;
+    }
+
+    private boolean isBottomSheetCollapsed() {
+        return this.bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED;
+    }
+
+    private boolean isBottomSheetHidden() {
+        return this.bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_HIDDEN;
     }
 
     private boolean isBottomSheetCollapsedOrHidden() {
@@ -1449,6 +1487,43 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             ds.linkColor = this.linkColor;
             ds.setTextSkewX(-0.05f);
             super.updateDrawState(ds);
+        }
+    }
+
+    /**
+     * A replacement for {@link BackgroundColorSpan} which was created by {@link android.text.Html#fromHtml(String, int) Html#fromHtml()}
+     * but does not colorise the whole line (just the text).
+     */
+    private static class BackgroundSpan implements LineBackgroundSpan {
+
+        @ColorInt private final int color;
+        private final Rect r = new Rect();
+        private int recentLine = Integer.MIN_VALUE;
+
+        /**
+         * Constructor.
+         * @param color background color
+         */
+        private BackgroundSpan(@ColorInt int color) {
+            super();
+            this.color = color;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void drawBackground(@NonNull Canvas canvas, @NonNull Paint paint, int left, int right, int top, int baseline, int bottom, @NonNull CharSequence text, int start, int end, int lineNumber) {
+            final int originalColor = paint.getColor();
+            paint.setColor(this.color);
+            // apparently it is not possible to extend the background to the left or right because the canvas is clipped
+            if (Math.abs(lineNumber - this.recentLine) > 1) {
+                // for the 1st line, extend the background slightly to the top
+                paint.getTextBounds("X", 0, 1, r);
+                canvas.drawRect(left, top - r.height(), right, bottom, paint);
+            } else {
+                canvas.drawRect(left, top, right, bottom, paint);
+            }
+            paint.setColor(originalColor);
+            this.recentLine = lineNumber;
         }
     }
 

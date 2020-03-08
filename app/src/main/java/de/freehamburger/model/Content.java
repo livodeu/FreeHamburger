@@ -1,11 +1,6 @@
 package de.freehamburger.model;
 
 import android.os.Build;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.StringDef;
-import androidx.annotation.VisibleForTesting;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.TextUtils;
@@ -22,6 +17,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringDef;
+import androidx.annotation.VisibleForTesting;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.util.Util;
 
@@ -49,6 +49,7 @@ public class Content implements Serializable {
      * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()}<br>
      * h1 - h6 will be rendered bold with a text size factor defined in Html.HtmlToSpannedConverter.HEADING_SIZES
      */
+    @Deprecated
     private static final String TAG_BOX_TITLE = "h6";
     /**
      * The html tag that a box element text will be wrapped into ({@link #colorBox} will be applied, too)<br>
@@ -56,6 +57,12 @@ public class Content implements Serializable {
      * &lt;small&gt; will be rendered with a text size of 80% (see Html.HtmlToSpannedConverter.handleEndTag())
      */
     static final String TAG_BOX_TEXT = "small";
+    /**
+     * The html tag that a box element link will be wrapped into ({@link #colorBox} will be applied, too)<br>
+     * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()} <br>
+     * &lt;small&gt; will be rendered with a text size of 80% (see Html.HtmlToSpannedConverter.handleEndTag())
+     */
+    private static final String TAG_BOX_LINK = "small";
     /**
      * The html tag that a list title will be wrapped into.
      */
@@ -96,9 +103,22 @@ public class Content implements Serializable {
             ContentElement ce = ContentElement.parseContentElement(reader);
             ce.setOrder(order++);
             final String type = ce.getType();
-            // we currently ignore "webview"
-            if (ContentElement.TYPE_TEXT.equals(type)
-                    || ContentElement.TYPE_HEADLINE.equals(type)
+            // we currently ignore ContentElements of type "webview"
+            if (ContentElement.TYPE_TEXT.equals(type)) {
+                String value = ce.getValue();
+                /*
+                    At one point (2020-03-06), this was found:
+                    {
+                        "value": "!function(){\"use strict\";window.addEventListener(\"message\",function(a){if(void 0!==a.data[\"datawrapper-height\"])for(var e in a.data[\"datawrapper-height\"]){var t=document.getElementById(\"datawrapper-chart-\"+e)||document.querySelector(\"iframe[src*='\"+e+\"']\");t&&(t.style.height=a.data[\"datawrapper-height\"][e]+\"px\")}})}(); ",
+                        "type": "text"
+                    },
+
+                    BTW, the value's content was also displayed literally in the official app that day…
+                 */
+                if (value != null && !value.startsWith("!")) {
+                    content.elementList.add(ce);
+                }
+            } else if (ContentElement.TYPE_HEADLINE.equals(type)
                     || ContentElement.TYPE_QUOTATION.equals(type)
                     || ContentElement.TYPE_IMAGE_GALLERY.equals(type)
                     || ContentElement.TYPE_BOX.equals(type)
@@ -160,36 +180,38 @@ public class Content implements Serializable {
                 Box box = ce.getBox();
                 if (box != null) {
                     // add the box, followed by a <br>
-                    htmlTextBuilder.append("<").append(TAG_BOX).append('>');
+                    htmlTextBuilder.append("<").append(TAG_BOX).append(" style=\"background-color:lightgray\"").append('>');
                     String boxTitle = box.getTitle();
                     if (!TextUtils.isEmpty(boxTitle)) {
-                        // add the box title, not followed by a <br> because the TAG_BOX_TITLE should cause Html.fromHtml() to take care of that
-                        htmlTextBuilder
-                                .append('<').append(TAG_BOX_TITLE)
-                                .append("><font color=\"").append(colorBox).append("\">")
-                                .append(boxTitle)
-                                .append("</font></").append(TAG_BOX_TITLE).append('>');
-                        // Html.FROM_HTML_MODE_LEGACY (used in Android up to 6) will introduce 2 new line chars here (which is one too many)
-                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) htmlTextBuilder.append(REMOVE_NEW_LINE);
+                        // add the box title
+                        //FIXME apparently, a <h6> causes the background color not being applied because in Html.setSpanFromMark() 'where' equals 'len'…
+                        htmlTextBuilder.append("<font color=\"").append(colorBox).append("\">").append(boxTitle).append("</font>");
                     }
                     Box.Image boxImage = box.getImage();
                     if (boxImage != null && !TextUtils.isEmpty(boxImage.getUrl())) {
                         // add the box image, followed by a <br>
-                        htmlTextBuilder.append("<img src=\"").append(boxImage.getUrl()).append("\"/><br>");
+                        htmlTextBuilder.append("<br><img src=\"").append(boxImage.getUrl()).append("\"/><br>");
                     }
                     String boxText = box.getText();
                     if (!TextUtils.isEmpty(boxText)) {
-                        String imageCopyright = boxImage != null ? boxImage.getCopyright() : null;
                         htmlTextBuilder
                                 .append("<font color=\"").append(colorBox).append("\"><").append(TAG_BOX_TEXT).append('>')
                                 .append(boxText);
+                        String imageCopyright = boxImage != null ? boxImage.getCopyright() : null;
                         if (!TextUtils.isEmpty(imageCopyright)) {
                             htmlTextBuilder.append(" (&copy; ").append(imageCopyright).append(")");
                         }
                         // appending a <br> directly after boxText and before TAG_BOX_TEXT avoids a strange vertical gap before the last line
                         htmlTextBuilder.append("<br></").append(TAG_BOX_TEXT).append("></font>");
                     }
-                    htmlTextBuilder.append("</").append(TAG_BOX).append("><br>");
+                    String boxLink = box.getLink();
+                    if (!TextUtils.isEmpty(boxLink)) {
+                        htmlTextBuilder.append("<font color=\"").append(colorBox).append("\"><").append(TAG_BOX_LINK).append('>')
+                        // e.g.: "link": "<a href=\"https://www.tagesschau.de/api2/ausland/grossbritannien-eu-regeln-101.json\" type=\"intern\">mehr</a>",
+                        .append(boxLink).append("</").append(TAG_BOX_LINK).append("></font>");
+                    }
+                    htmlTextBuilder.append("</").append(TAG_BOX).append(">");
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) htmlTextBuilder.append("<br>");
                 }
             } else if (ContentElement.TYPE_IMAGE_GALLERY.equals(type)) {
                 Gallery gallery = ce.getGallery();
