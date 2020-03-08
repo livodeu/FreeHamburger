@@ -39,6 +39,8 @@ import android.widget.Toast;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.ByteArrayInputStream;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -431,7 +433,7 @@ public class WebViewActivity extends AppCompatActivity {
      * A WebChromeClient implementation.
      */
     private static class HamburgerWebChromeClient extends WebChromeClient {
-        private final AppCompatActivity activity;
+        private final Reference<AppCompatActivity> refactivity;
         @Nullable private final Handler handler;
         @Nullable private final ProgressBar progressBar;
         @Nullable private final ViewHider viewHider;
@@ -441,7 +443,7 @@ public class WebViewActivity extends AppCompatActivity {
 
         private HamburgerWebChromeClient(@NonNull AppCompatActivity activity) {
             super();
-            this.activity = activity;
+            this.refactivity = new WeakReference<>(activity);
             this.progressBar = activity.findViewById(R.id.webProgress);
             if (this.progressBar != null) {
                 this.handler = new Handler();
@@ -494,9 +496,11 @@ public class WebViewActivity extends AppCompatActivity {
                     this.urlForErrors = consoleMessage.sourceId();
                 }
                 if (!this.errors.contains(consoleMessage.message())) this.errors.add(consoleMessage.message());
-                boolean showErrors = PreferenceManager.getDefaultSharedPreferences(this.activity).getBoolean(App.PREF_SHOW_WEB_ERRORS, App.PREF_SHOW_WEB_ERRORS_DEFAULT);
+                AppCompatActivity activity = this.refactivity.get();
+                if (activity == null) return true;
+                boolean showErrors = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_SHOW_WEB_ERRORS, App.PREF_SHOW_WEB_ERRORS_DEFAULT);
                 if (showErrors && (this.sb == null || !this.sb.isShown())) {
-                    Snackbar sb = Snackbar.make(this.activity.findViewById(R.id.coordinator_layout), R.string.msg_website_errors, Snackbar.LENGTH_INDEFINITE);
+                    Snackbar sb = Snackbar.make(activity.findViewById(R.id.coordinator_layout), R.string.msg_website_errors, Snackbar.LENGTH_INDEFINITE);
                     Util.setSnackbarFont(sb, Util.CONDENSED, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? -1 : 12));
                     sb.setAction("↗", v -> {
                         final int n = HamburgerWebChromeClient.this.errors.size();
@@ -506,18 +510,18 @@ public class WebViewActivity extends AppCompatActivity {
                             msg.append(count + 1).append(". ").append(error).append('\n');
                             if (count == MAX_WEBSITE_ERRORS_TO_DISPLAY && count < n - 1) {msg.append("…"); break;}
                         }
-                        LayoutInflater i = LayoutInflater.from(HamburgerWebChromeClient.this.activity);
+                        LayoutInflater i = LayoutInflater.from(activity);
                         @SuppressLint("InflateParams")
                         View view = i.inflate(R.layout.multi_text_view, null);
                         TextView tv = view.findViewById(R.id.textView);
                         tv.setTypeface(Util.CONDENSED);
                         tv.setTextSize(14f);
                         tv.setText(msg);
-                        AlertDialog.Builder b = new AlertDialog.Builder(HamburgerWebChromeClient.this.activity)
+                        AlertDialog.Builder b = new AlertDialog.Builder(activity)
                                 .setTitle(R.string.label_website_errors)
                                 .setView(view)
                                 .setNeutralButton(R.string.action_show_weberrors_no, (dialog, which) -> {
-                                    SharedPreferences.Editor ed =  PreferenceManager.getDefaultSharedPreferences(HamburgerWebChromeClient.this.activity).edit();
+                                    SharedPreferences.Editor ed =  PreferenceManager.getDefaultSharedPreferences(activity).edit();
                                     ed.putBoolean(App.PREF_SHOW_WEB_ERRORS, false);
                                     ed.apply();
                                     dialog.dismiss();
