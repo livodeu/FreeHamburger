@@ -476,7 +476,6 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
      * @param typeface Typeface
      */
     public void setTypeface(@Nullable Typeface typeface) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "setTypeface(" + typeface + ") - from " + new Throwable().getStackTrace()[1]);
         boolean changed = (typeface != null && !typeface.equals(this.typeface)) || (typeface == null && this.typeface != null);
         this.typeface = typeface;
         if (changed) notifyDataSetChanged();
