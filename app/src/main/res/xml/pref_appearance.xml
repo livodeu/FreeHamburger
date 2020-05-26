@@ -10,6 +10,16 @@
         app:colors="@array/colors_list_background"
         />
 
+    <!-- FIXME the ListPreference dialog (androidx.preference.ListPreferenceDialogFragmentCompat) is reported to leak memory (at least in Android 9) -->
+    <androidx.preference.ListPreference
+        android:key="pref_orientation"
+        android:title="@string/pref_title_orientation_main"
+        android:icon="@drawable/ic_screen_rotation_ededed_24dp"
+        app:entries="@array/entries_list_orientation"
+        app:entryValues="@array/entryvalues_list_orientation"
+        app:useSimpleSummaryProvider="true"
+        />
+
     <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="pref_time_mode"

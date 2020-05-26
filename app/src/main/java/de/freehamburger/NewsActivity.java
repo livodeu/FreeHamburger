@@ -113,9 +113,9 @@ import de.freehamburger.util.Util;
  */
 public class NewsActivity extends HamburgerActivity implements AudioManager.OnAudioFocusChangeListener, RelatedAdapter.OnRelatedClickListener, ServiceConnection {
 
+    static final String EXTRA_NEWS = "extra_news";
     /** boolean; if true, the ActionBar will not show the home arrow which would lead the user to the MainActivity */
     private static final String EXTRA_NO_HOME_AS_UP = "extra_no_home_as_up";
-    static final String EXTRA_NEWS = "extra_news";
     private static final String TAG = "NewsActivity";
     /** pictures are scaled to this percentage of the available width */
     private static final int SCALE_PICTURES_TO_PERCENT = 90;
@@ -135,6 +135,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private TextView textViewContent;
     private RecyclerView recyclerViewRelated;
     private FloatingActionButton fab;
+    private AudioFocusRequest afr;
     private int maxAudioVolume = -1;
     private int originalAudioVolume = -1;
     private final Runnable preferredVolumeUpdater = () -> {
@@ -298,6 +299,19 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private TextToSpeech tts;
     private boolean ttsInitialised = false;
     private boolean ttsSpeaking = false;
+
+    private void abandonAudioFocus(@Nullable AudioManager am) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (this.afr == null) return;
+            if (am == null) am = (AudioManager)getSystemService(AUDIO_SERVICE);
+            if (am == null) return;
+            am.abandonAudioFocusRequest(this.afr);
+        } else {
+            if (am == null) am = (AudioManager)getSystemService(AUDIO_SERVICE);
+            if (am == null) return;
+            am.abandonAudioFocus(this);
+        }
+    }
 
     /**
      * Applies the {@link #news} to the views. No abuse. And no queues.
@@ -522,13 +536,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
     }
 
-    /**
-     * Hides the bottom video.
-     */
-    private void hideBottomSheet() {
-        this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
-    }
-
     /** {@inheritDoc} */
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
@@ -609,6 +616,13 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     }
 
     /**
+     * Hides the bottom video.
+     */
+    private void hideBottomSheet() {
+        this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+    }
+
+    /**
      * Initialises the ExoPlayers.
      */
     private void initPlayers() {
@@ -661,12 +675,14 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             NewsActivity.this.tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override
                 public void onDone(String utteranceId) {
+                    abandonAudioFocus(null);
                     NewsActivity.this.ttsSpeaking = false;
                     invalidateOptionsMenu();
                 }
 
                 @Override
                 public void onError(String utteranceId) {
+                    abandonAudioFocus(null);
                     if (BuildConfig.DEBUG) Log.i(TAG, "Error: " + utteranceId);
                     NewsActivity.this.ttsSpeaking = false;
                     invalidateOptionsMenu();
@@ -674,6 +690,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
                 @Override
                 public void onError(String utteranceId, int errorCode) {
+                    abandonAudioFocus(null);
                     if (BuildConfig.DEBUG) Log.i(TAG, "Error: " + utteranceId + ", error code: " + errorCode);
                     NewsActivity.this.ttsSpeaking = false;
                     invalidateOptionsMenu();
@@ -706,13 +723,13 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         return this.bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED;
     }
 
-    private boolean isBottomSheetHidden() {
-        return this.bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_HIDDEN;
-    }
-
     private boolean isBottomSheetCollapsedOrHidden() {
         int state = this.bottomSheetBehavior.getState();
         return state == BottomSheetBehavior.STATE_COLLAPSED || state == BottomSheetBehavior.STATE_HIDDEN;
+    }
+
+    private boolean isBottomSheetHidden() {
+        return this.bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_HIDDEN;
     }
 
     private boolean isBottomVideoPlaying() {
@@ -987,6 +1004,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     /** {@inheritDoc} */
     @Override
     protected void onPause() {
+        abandonAudioFocus(null);
         if (this.exoPlayerTopVideo != null) {
             this.exoPlayerTopVideo.stop();
         }
@@ -1168,29 +1186,29 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
      */
     public void playAudio(@Nullable View ignored) {
         if (this.exoPlayerAudio == null) return;
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (am == null) return;
+
         if (isAudioPlaying()) {
+            // audio has been playing -> pause
             this.exoPlayerAudio.setPlayWhenReady(false);
+            abandonAudioFocus(am);
             return;
         }
         if (isAudioPaused()) {
+            // audio has been paused -> resume
+            requestAudioFocus(am);
             this.exoPlayerAudio.setPlayWhenReady(true);
             return;
         }
+        // audio has neither been playing or paused
         Object src = this.buttonAudio.getTag();
         if (!(src instanceof String)) return;
-        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
-        if (am == null) return;
         if (!Util.isNetworkAvailable(this)) {
             showNoNetworkSnackbar();
             return;
         }
-        int requestResult;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            AudioFocusRequest afr = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK).setAudioAttributes(this.aa).setAcceptsDelayedFocusGain(false).setWillPauseWhenDucked(false).setOnAudioFocusChangeListener(this).build();
-            requestResult = am.requestAudioFocus(afr);
-        } else {
-            requestResult = am.requestAudioFocus(this, App.STREAM_TYPE, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
-        }
+        int requestResult = requestAudioFocus(am);
         if (requestResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             if (BuildConfig.DEBUG) Log.w(TAG, "Audio focus request denied.");
             Snackbar.make(this.coordinatorLayout, R.string.error_audio_focus_denied, Snackbar.LENGTH_SHORT).show();
@@ -1223,6 +1241,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         } else {
             ensureMinVolume(0.5f);
         }
+        requestAudioFocus(null);
         this.exoPlayerBottomVideo.setPlayWhenReady(true);
     }
 
@@ -1231,7 +1250,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
      */
     private void playTopVideo() {
         if (this.exoPlayerTopVideo == null) return;
-        if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.setPlayWhenReady(false);
+        if (this.exoPlayerBottomVideo != null) {
+            if (isBottomVideoPlaying()) abandonAudioFocus(null);
+            this.exoPlayerBottomVideo.setPlayWhenReady(false);
+        }
         this.exoPlayerTopVideo.setPlayWhenReady(true);
     }
 
@@ -1256,6 +1278,19 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
     }
 
+    private int requestAudioFocus(@Nullable AudioManager am) {
+        int requestResult = AudioManager.AUDIOFOCUS_REQUEST_FAILED;
+        if (am == null) am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (am == null) return requestResult;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (this.afr == null) this.afr = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK).setAudioAttributes(this.aa).setAcceptsDelayedFocusGain(false).setWillPauseWhenDucked(false).setOnAudioFocusChangeListener(this).build();
+            requestResult = am.requestAudioFocus(this.afr);
+        } else {
+            requestResult = am.requestAudioFocus(this, App.STREAM_TYPE, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+        }
+        return requestResult;
+    }
+
     /**
      * Sets the audio volume.
      * @param value [0..1]
@@ -1276,6 +1311,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             return;
         }
         if (this.ttsSpeaking) {
+            abandonAudioFocus(null);
             this.tts.stop();
             invalidateOptionsMenu();
             return;
@@ -1287,6 +1323,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         int max = TextToSpeech.getMaxSpeechInputLength();
         List<String> toSpeak = Util.splitString(txt.toString(), max - 1);
         int counter = 1;
+        final int audioRequestResult = requestAudioFocus(null);
         for (String partToSpeak : toSpeak) {
             int result = this.tts.speak(partToSpeak, counter == 1 ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, extras, this.news.getTitle() + '_' + counter);
             if (result != TextToSpeech.SUCCESS) {
@@ -1302,6 +1339,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     default: msg = R.string.error_tts_fail;
                 }
                 Snackbar.make(this.coordinatorLayout, msg, Snackbar.LENGTH_LONG).show();
+                if (audioRequestResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) abandonAudioFocus(null);
                 break;
             }
             counter++;
@@ -1372,10 +1410,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
         private final Reference<NewsActivity> refActivity;
         private final String source;
-        private Spannable spannable;
-        private ImageSpan toReplace;
         @IntRange(from = 1, to = 100)
         private final int percentWidth;
+        private Spannable spannable;
+        private ImageSpan toReplace;
 
         /**
          * Constructor.

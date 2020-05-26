@@ -129,6 +129,9 @@ public class WebViewActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        HamburgerActivity.applyOrientation(this, prefs);
+
         // if we can use a View that has been previously inflated, this method takes much less time
         ViewGroup preInflatedView = ((App)getApplicationContext()).getInflatedViewForWebViewActivity();
         if (preInflatedView != null) {
@@ -149,7 +152,7 @@ public class WebViewActivity extends AppCompatActivity {
 
         final WebSettings ws = this.webView.getSettings();
         ws.setUserAgentString(App.USER_AGENT);
-        if (!PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE)
+        if (!prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE)
                 && Util.isNetworkMobile(this)) {
             ws.setBlockNetworkLoads(true);
         }

@@ -13,6 +13,18 @@
         <item>SOCKS</item>
     </string-array>
 
+    <string-array name="entries_list_orientation">
+        <item>automatisch</item>
+        <item>Hochformat</item>
+        <item>Querformat</item>
+    </string-array>
+
+    <string-array name="entryvalues_list_orientation">
+        <item>AUTO</item>
+        <item>PORTRAIT</item>
+        <item>LANDSCAPE</item>
+    </string-array>
+
     <string-array name="entries_list_back_button">
         <item>beendet die App</item>
         <item>führt zur Übersicht</item>

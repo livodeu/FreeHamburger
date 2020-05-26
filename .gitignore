@@ -8,6 +8,7 @@ captures/
 keystore.properties
 .directory
 /app/src/main/gen/
+doc/
 #Private test cases
 /app/src/androidTest/java/de/freehamburger/*Private.java
 /app/src/androidTest/resources

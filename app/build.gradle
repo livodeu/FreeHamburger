@@ -14,6 +14,7 @@ android {
         versionName "0.1"
         resConfigs "en", "de"
         buildConfigField("long", "BUILD_TIME", String.valueOf(System.currentTimeMillis()) + "L")
+        buildConfigField("boolean", "DIAG", "false")
         testApplicationId applicationId + ".test"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         testInstrumentationRunnerArguments disableAnalytics: 'true'
@@ -52,12 +53,14 @@ android {
             versionNameSuffix "-debug"
             manifestPlaceholders = [name: "@string/app_name_debug", icon: "@mipmap/ic_launcher_debug", roundicon: "@mipmap/ic_launcher_round_debug"]
             resValue "string", "app_search_auth", defaultConfig.applicationId + applicationIdSuffix + '.SearchContentProvider'
+            buildConfigField("boolean", "DIAG", "true")
             crunchPngs true
             testCoverageEnabled = true
         }
         release {
             manifestPlaceholders = [name: "@string/app_name", icon: "@mipmap/ic_launcher", roundicon: "@mipmap/ic_launcher_round"]
             resValue "string", "app_search_auth", defaultConfig.applicationId + '.SearchContentProvider'
+            buildConfigField("boolean", "DIAG", "true")
             minifyEnabled true
             shrinkResources true
             crunchPngs true
@@ -90,6 +93,7 @@ dependencies {
     //noinspection GradleDependency
     implementation 'com.google.android.exoplayer:exoplayer-hls:2.9.6'  // also working: 2.9.[5..0]; not working: 2.10.0
     implementation 'com.google.android.exoplayer:extension-okhttp:2.9.6'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.2'
 
     androidTestImplementation 'androidx.test:core:1.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'

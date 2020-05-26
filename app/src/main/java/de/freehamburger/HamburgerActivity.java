@@ -1,10 +1,12 @@
 package de.freehamburger;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -38,6 +40,59 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     HamburgerService service;
     CoordinatorLayout coordinatorLayout;
     @App.BackgroundSelection private int background;
+
+    /**
+     * Apply the preferred orientation.
+     * @param activity Activity to apply the orientation to
+     * @param prefs SharedPreferences
+     * @throws NullPointerException if any parameter is {@code null}
+     */
+    @SuppressLint("SourceLockedOrientationActivity")
+    static void applyOrientation(@NonNull AppCompatActivity activity, @NonNull SharedPreferences prefs) {
+        @App.Orientation String orientation = prefs.getString(App.PREF_ORIENTATION, null);
+        if (orientation == null) {
+            orientation = App.PREF_ORIENTATION_DEFAULT;
+            SharedPreferences.Editor ed = prefs.edit();
+            ed.putString(App.PREF_ORIENTATION, orientation);
+            ed.apply();
+        }
+        switch (orientation) {
+            case App.ORIENTATION_PORTRAIT: activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT); break;
+            case App.ORIENTATION_LANDSCAPE: activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE); break;
+            default: activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        }
+    }
+
+    /**
+     * Applies a theme to the given activity.
+     * @param activity  AppCompatActivity
+     * @param lightBackground true / false
+     * @param again true / false
+     * @throws NullPointerException if {@code activity} is {@code null}
+     */
+    private static void applyTheme(@NonNull AppCompatActivity activity, boolean lightBackground, boolean again) {
+        if (BuildConfig.DEBUG) Log.i(TAG, "applyTheme(" + activity.getClass().getSimpleName() + ", " + lightBackground + ", " + again + ")");
+        @StyleRes int resid;
+        if (activity instanceof HamburgerActivity) {
+            HamburgerActivity ha = (HamburgerActivity) activity;
+            if (lightBackground) {
+                resid = ha.hasMenuOverflowButton() ? R.style.AppTheme_NoActionBar_Light : R.style.AppTheme_NoActionBar_Light_NoOverflowButton;
+            } else {
+                resid = ha.hasMenuOverflowButton() ? R.style.AppTheme_NoActionBar : R.style.AppTheme_NoActionBar_NoOverflowButton;
+            }
+        } else {
+            if (lightBackground) {
+                resid = R.style.AppTheme_NoActionBar_Light;
+            } else {
+                resid = R.style.AppTheme_NoActionBar;
+            }
+        }
+        if (again) {
+            activity.getTheme().applyStyle(resid, true);
+        } else {
+            activity.setTheme(resid);
+        }
+    }
 
     /**
      * Selects and applies a theme according to the preferences.<br>
@@ -74,83 +129,6 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         return background;
     }
 
-    /**
-     * Applies a theme to the given activity.
-     * @param activity  AppCompatActivity
-     * @param lightBackground true / false
-     * @param again true / false
-     * @throws NullPointerException if {@code activity} is {@code null}
-     */
-    private static void applyTheme(@NonNull AppCompatActivity activity, boolean lightBackground, boolean again) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "applyTheme(" + activity.getClass().getSimpleName() + ", " + lightBackground + ", " + again + ")");
-        @StyleRes int resid;
-        if (activity instanceof HamburgerActivity) {
-            HamburgerActivity ha = (HamburgerActivity) activity;
-            if (lightBackground) {
-                resid = ha.hasMenuOverflowButton() ? R.style.AppTheme_NoActionBar_Light : R.style.AppTheme_NoActionBar_Light_NoOverflowButton;
-            } else {
-                resid = ha.hasMenuOverflowButton() ? R.style.AppTheme_NoActionBar : R.style.AppTheme_NoActionBar_NoOverflowButton;
-            }
-        } else {
-            if (lightBackground) {
-                resid = R.style.AppTheme_NoActionBar_Light;
-            } else {
-                resid = R.style.AppTheme_NoActionBar;
-            }
-        }
-        if (again) {
-            activity.getTheme().applyStyle(resid, true);
-        } else {
-            activity.setTheme(resid);
-        }
-    }
-
-    /*
-     * Determines the theme to use.<br>
-     * <ul>
-     * <li>
-     * If the {@link App#PREF_BACKGROUND background preference} is set to {@link App#BACKGROUND_AUTO auto},
-     * the sun position is used to determined whether a light or dark theme is used.
-     * If the user has given permission to access the device location, the location is used to determine sunrise and sunset;
-     * otherwise the location will be estimated.
-     * After sunset, a dark background is applied, before sunset a light background is applied.
-     * </li>
-     * <li>
-     * If the preference is set to {@link App#BACKGROUND_LIGHT light} or {@link App#BACKGROUND_DARK dark}, a light resp. dark background is set.
-     * </li>
-     * </ul>
-     * @param ctx Context
-     * @param prefs SharedPreferences (optional)
-     * @return {@link App#BACKGROUND_LIGHT} or {@link App#BACKGROUND_DARK}
-     * @throws NullPointerException if {@code ctx} is {@code null}
-     *
-    @App.BackgroundSelection
-    @Deprecated
-    private static int resolveBackground(@NonNull Context ctx, @Nullable SharedPreferences prefs) {
-        if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        @App.BackgroundSelection int background = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
-        if (background == App.BACKGROUND_AUTO) {
-            Calendar now = new GregorianCalendar();
-            Sun sun = null;
-            if (ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                LocationManager lm = (LocationManager) ctx.getSystemService(LOCATION_SERVICE);
-                if (lm != null) {
-                    Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    if (location == null) location = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                    if (location == null) location = lm.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
-                    if (location != null) {
-                        sun = Sun.sunriseAndSunset(now, location.getLatitude(), location.getLongitude());
-                    }
-                }
-            }
-            if (sun == null) {
-                sun = Sun.sunriseAndSunset(now);
-            }
-            background = sun.isDay(now) ? App.BACKGROUND_LIGHT : App.BACKGROUND_DARK;
-        }
-        return background;
-    }*/
-
     @App.BackgroundSelection
     public int getBackground() {
         return this.background;
@@ -183,6 +161,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) setSupportActionBar(toolbar);
         this.coordinatorLayout = findViewById(R.id.coordinator_layout);
+        applyOrientation(this, prefs);
     }
 
     /** {@inheritDoc} */
@@ -241,6 +220,8 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
         if (App.PREF_BACKGROUND.equals(key)) {
             this.background = applyTheme(this, prefs, true);
+        } else if (App.PREF_ORIENTATION.equals(key)) {
+            applyOrientation(this, prefs);
         }
     }
 

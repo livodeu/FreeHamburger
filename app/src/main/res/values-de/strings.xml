@@ -9,6 +9,7 @@
     <string name="action_filters_enabled">Aktiv</string>
     <string name="action_open_app">App öffnen</string>
     <string name="action_show_weberrors_no">Nicht wieder anzeigen</string>
+    <string name="pref_title_orientation_main">Ausrichtung</string>
     <string name="msg_background_active">Hintergrundabfragen sind aktiv und werden etwa alle %1$s Minuten ausgeführt.</string>
     <string name="msg_background_active_short">Hintergrundabfragen aktiv (alle %1$s Min.)</string>
     <string name="msg_background_inactive">Hintergrundabfragen sind deaktiviert.</string>
@@ -57,6 +58,7 @@
     <string name="msg_not_modified">Die Daten sind noch aktuell.</string>
     <string name="action_search">Suche</string>
     <string name="action_share">Teilen</string>
+    <string name="action_share_screenshot">Screenshot teilen</string>
     <string name="action_scroll_to_top">Nach oben</string>
     <string name="msg_not_found">Nicht gefunden: „%1$s”</string>
     <string name="msg_sorry">Entschuldigen Sie bitte die Unterbrechung!</string>

@@ -41,6 +41,7 @@
     <string name="action_share">Share</string>
     <string name="action_share_image">Share picture</string>
     <string name="action_share_news">Share article</string>
+    <string name="action_share_screenshot">Share screenshot</string>
     <string name="action_share_video">Share video</string>
     <string name="action_shortcut_create">Create shortcut</string>
     <string name="action_show_updates" translatable="false">Show bg updates</string>
@@ -214,18 +215,16 @@
     <string name="pref_title_ask_before_finish_on">ask user for confirmation.</string>
     <string name="pref_title_background">Background</string>
     <string name="pref_title_font_zoom">Text magnification</string>
+    <string name="pref_title_open_links_internally">ARD links</string>
+    <string name="pref_title_open_links_internally_off">will be opened in the browser</string>
+    <string name="pref_title_open_links_internally_on">will be opened internally</string>
+    <string name="pref_title_orientation_main">Orientation</string>
     <string name="pref_title_poll">Poll</string>
     <string name="pref_title_poll_on">Active.</string>
     <string name="pref_title_poll_off">Inactive.</string>
     <string name="pref_title_poll_breaking_only">Show \"breaking\" news only</string>
     <string name="pref_title_poll_over_mobile">Over mobile networks</string>
     <string name="pref_title_poll_stats">Data usage</string>
-    <string name="pref_title_quotationmarks_fix">Wrong quotation marks</string>
-    <string name="pref_title_quotationmarks_fix_on">will be fixed („”)</string>
-    <string name="pref_title_quotationmarks_fix_off">will be left as they are (\" \")</string>
-    <string name="pref_title_open_links_internally">ARD links</string>
-    <string name="pref_title_open_links_internally_off">will be opened in the browser</string>
-    <string name="pref_title_open_links_internally_on">will be opened internally</string>
     <string name="pref_title_play_intro">Show introduction</string>
     <string name="pref_title_pref_cache_max_size">Max. cache size</string>
     <string name="pref_title_pref_mem_cache_max_size">Max. memory cache size</string>
@@ -237,6 +236,9 @@
     <string name="pref_title_pref_load_videos_over_mobile_off">Play videos via mobile network off</string>
     <string name="pref_title_proxy_server">Proxy Server</string>
     <string name="pref_title_proxy_type">Proxy Type</string>
+    <string name="pref_title_quotationmarks_fix">Wrong quotation marks</string>
+    <string name="pref_title_quotationmarks_fix_on">will be fixed („”)</string>
+    <string name="pref_title_quotationmarks_fix_off">will be left as they are (\" \")</string>
     <string name="pref_title_time_mode">Time mode</string>
     <string name="pref_title_time_mode_on">Relative</string>
     <string name="pref_title_time_mode_off">Absolute</string>

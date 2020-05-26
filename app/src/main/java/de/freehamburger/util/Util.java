@@ -167,19 +167,23 @@ public class Util {
     /**
      * Deletes the {@link App#EXPORTS_DIR exports} directory.
      * @param ctx Context
+     * @param minAgeMs only delete files that are older than this
      * @throws NullPointerException if {@code ctx} is {@code null}
      */
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @AnyThread
-    public static void clearExports(@NonNull Context ctx) {
+    public static void clearExports(@NonNull Context ctx, long minAgeMs) {
         File exports = new File(ctx.getCacheDir(), App.EXPORTS_DIR);
         if (!exports.isDirectory()) return;
         final List<File> contents = listFiles(exports);
+        final long now = System.currentTimeMillis();
+        boolean skippedAtLeastOne = false;
         for (File file : contents) {
+            if (now - file.lastModified() < minAgeMs) {skippedAtLeastOne = true; continue;}
             if (BuildConfig.DEBUG) Log.w(TAG, "Deleting exports file " + file + " (from " + new java.util.Date(file.lastModified()) + ", " + file.length() + " bytes)");
             deleteFile(file);
         }
-        exports.delete();
+        if (!skippedAtLeastOne) exports.delete();
     }
 
     /**
@@ -652,6 +656,30 @@ public class Util {
             }
         }
         return space;
+    }
+
+    /**
+     * @param crash Throwable
+     * @return stack trace
+     */
+    @NonNull
+    public static String getStackTrace(@NonNull Throwable crash) {
+        final StringBuilder sb = new StringBuilder(2048);
+        final StackTraceElement[] ste = crash.getStackTrace();
+        for (StackTraceElement st : ste) {
+            sb.append(st.getClassName()).append('.').append(st.getMethodName());
+            if (st.isNativeMethod()) sb.append("(native)");
+            String file = st.getFileName();
+            if (file != null) {
+                int ln = st.getLineNumber();
+                if (ln >= 0) sb.append('(').append(file).append(':').append(ln).append(')');
+                else sb.append('(').append(file).append(')');
+            } else {
+                sb.append("(unknown src)");
+            }
+            sb.append('\n');
+        }
+        return sb.toString().trim();
     }
 
     /**

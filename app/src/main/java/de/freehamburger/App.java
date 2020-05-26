@@ -10,9 +10,13 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.media.AudioManager;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -22,13 +26,17 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import com.squareup.picasso.Request;
 
 import org.conscrypt.Conscrypt;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.InetSocketAddress;
@@ -49,6 +57,7 @@ import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
+import androidx.annotation.StringDef;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -72,13 +81,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String EXPORTS_DIR = "exports";
     /** the name of the file that imported fonts will be stored in (in the {@link #getFilesDir() files dir}) */
     public static final String FONT_FILE = "font.ttf";
-    //public final static String DATENSCHUTZERKLAERUNG = "datenschutzerklaerung100.json";
     /** the data will be re-loaded if the data in the local file is older than this */
     public static final long LOCAL_FILE_MAXAGE = 15 * 60_000L;
     /** String: maximum 'disk' cache size in MB */
     public static final String PREF_CACHE_MAX_SIZE = "pref_cache_max_size";
     /** String: default maximum 'disk' cache size in MB */
     public static final String DEFAULT_CACHE_MAX_SIZE = "15";
+    //public final static String DATENSCHUTZERKLAERUNG = "datenschutzerklaerung100.json";
     /** default maximum 'disk' cache size in MB */
     public static final long DEFAULT_CACHE_MAX_SIZE_MB = Long.parseLong(DEFAULT_CACHE_MAX_SIZE);
     /** String: maximum memory cache size in MB */
@@ -147,16 +156,23 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** ColorSpace to use when decoding bitmaps (apparently not [yet] supported by Picasso, see {@link com.squareup.picasso.RequestHandler#createBitmapOptions(Request)}) */
     public static final String PREF_COLORSPACE = "pref_colorspace";
     public static final TimeZone TIMEZONE = TimeZone.getTimeZone("Europe/Berlin");
+    public static final int BACKGROUND_AUTO = 0;
+    public static final int BACKGROUND_DARK = 1;
+    public static final int BACKGROUND_LIGHT = 2;
+    static final String ORIENTATION_AUTO = "AUTO";
+    static final String ORIENTATION_PORTRAIT = "PORTRAIT";
+    static final String ORIENTATION_LANDSCAPE = "LANDSCAPE";
+    /** String, one of {@link Orientation} */
+    static final String PREF_ORIENTATION = "pref_orientation";
+    @Orientation static final String PREF_ORIENTATION_DEFAULT = ORIENTATION_AUTO;
     /** teletext url without page number (must be appended) */
     final static String URL_TELETEXT_WO_PAGE = "https://www.ard-text.de/mobil/";
     /** teletext url */
     final static String URL_TELETEXT = URL_TELETEXT_WO_PAGE + "100";
     /** teletext host */
     final static String URI_TELETEXT_HOST = Uri.parse(URL_TELETEXT).getHost();
-    public static final int BACKGROUND_AUTO = 0;
-    public static final int BACKGROUND_DARK = 1;
-    public static final int BACKGROUND_LIGHT = 2;
-    static final String EXTRA_CRASH = "crash";
+    static final String EXTRA_CRASH = BuildConfig.APPLICATION_ID + ".crash";
+    static final String EXTRA_SCREENSHOT = BuildConfig.APPLICATION_ID + ".screenshot";
     /** back button behaviour: pressing back stops the app (respectively the Android default behaviour) */
     static final int USE_BACK_FINISH = 0;
     /** back button behaviour: pressing back navigates to the 'Home' category (if possible) */
@@ -562,33 +578,29 @@ public class App extends Application implements Application.ActivityLifecycleCal
             }
         }.start();
 
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            /** {@inheritDoc} */
-            @SuppressLint("ApplySharedPref")
-            @Override
-            public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            if (BuildConfig.DEBUG) {
+                boolean isCurrentThread = Thread.currentThread().equals(t);
+                Log.wtf(TAG, "*** Uncaught Exception in "  + (isCurrentThread ? "current thread: " : "another thread: ") + e.toString(), e);
+            }
 
-                if (BuildConfig.DEBUG) {
-                    boolean isCurrentThread = Thread.currentThread().equals(t);
-                    Log.wtf(TAG, "*** Uncaught Exception in "  + (isCurrentThread ? "current thread: " : "another thread: ") + e.toString() + "\nhttps://xkcd.com/2200/", e);
-                    return;
-                }
-
-                // if the user has been using the app, restart it
-                if (hasCurrentActivity()) {
+            // if the user has been using the app, restart it; else just exit
+            Activity activity = getCurrentActivity();
+            if (activity != null) {
+                if (!(e instanceof OutOfMemoryError)) {
                     try {
-                        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-                        if (am != null) {
-                            Intent mainActivityIntent = new Intent(App.this, MainActivity.class);
-                            mainActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            mainActivityIntent.putExtra(EXTRA_CRASH, true);
-                            PendingIntent intent = PendingIntent.getActivity(getBaseContext(), 0, mainActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
-                            am.set(AlarmManager.RTC, System.currentTimeMillis() + 2_000L, intent);
-                        }
-                    } catch (Throwable ignored) {
+                        View view = activity.getWindow().getDecorView();
+                        Bitmap bm = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
+                        view.draw(new Canvas(bm));
+                        restartApp(e, bm);
+                    } catch (Throwable ee) {
+                        if (BuildConfig.DEBUG) Log.e(TAG, ee.toString(), ee);
+                        restartApp(e, null);
                     }
+                } else {
+                    restartApp(e, null);
                 }
-
+            } else {
                 System.exit(-2);
             }
         });
@@ -625,12 +637,26 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
 
+        if (BuildConfig.DIAG) {
+            ComponentName a = null;
+            try {
+                a = new ComponentName(BuildConfig.APPLICATION_ID, ShareScreenshotActivity.class.getName());
+                getPackageManager().setComponentEnabledSetting(a, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+                int state = getPackageManager().getComponentEnabledSetting(a);
+                if (state != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                    if (BuildConfig.DEBUG) Log.e(TAG, "State of " + a + ": " + state);
+                }
+            } catch (Exception e) {
+                if (BuildConfig.DEBUG) Log.e(TAG, "While trying to enable " + a + ": " + e.toString());
+            }
+        }
+
         FileDeleter.run();
 
         new Thread() {
             @Override
             public void run() {
-                Util.clearExports(App.this);
+                Util.clearExports(App.this, 120_000L);
                 Util.clearAppWebview(App.this);
             }
         }.start();
@@ -668,6 +694,48 @@ public class App extends Application implements Application.ActivityLifecycleCal
             this.inflatedViewForWebViewActivity = null;
         }
         super.onTrimMemory(level);
+    }
+
+    /**
+     * Restarts the app after an unexpected error.
+     * @param e Throwable that caused the restart
+     * @param screenshot window content when the Throwable was thrown
+     */
+    private void restartApp(@NonNull Throwable e, @Nullable Bitmap screenshot) {
+        try {
+            AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            if (am != null) {
+                Intent mainActivityIntent = new Intent(this, MainActivity.class);
+                mainActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                mainActivityIntent.putExtra(EXTRA_CRASH, e);
+                if (screenshot != null) {
+                    File exports = new File(getCacheDir(), App.EXPORTS_DIR);
+                    if (!exports.isDirectory()) {
+                        if (!exports.mkdirs()) screenshot = null;
+                    }
+                    if (screenshot != null) {
+                        File screenshotFile = new File(exports, "screenshot_"  + BuildConfig.VERSION_NAME + '_' + System.currentTimeMillis() + ShareScreenshotActivity.FILETAG);
+                        OutputStream out = null;
+                        boolean compressed;
+                        try {
+                            out = new BufferedOutputStream(new FileOutputStream(screenshotFile));
+                            compressed = screenshot.compress(ShareScreenshotActivity.COMPRESSFORMAT, 70, out);
+                        } catch (Exception ee) {
+                            compressed = false;
+                            if (BuildConfig.DEBUG) Log.e(TAG, ee.toString(), ee);
+                        }
+                        Util.close(out);
+                        if (compressed && screenshotFile.length() > 0L) {
+                            mainActivityIntent.putExtra(ShareScreenshotActivity.EXTRA_SCREENSHOT_FILE, screenshotFile.getAbsolutePath());
+                        }
+                    }
+                }
+                PendingIntent intent = PendingIntent.getActivity(getBaseContext(), 0, mainActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+                am.set(AlarmManager.RTC, System.currentTimeMillis() + 2_000L, intent);
+            }
+        } catch (Throwable ignored) {
+        }
+        System.exit(-2);
     }
 
     /**
@@ -774,6 +842,10 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({BACKGROUND_AUTO, BACKGROUND_DARK, BACKGROUND_LIGHT})
     public @interface BackgroundSelection {}
+
+    @Retention(RetentionPolicy.SOURCE)
+    @StringDef({ORIENTATION_AUTO, ORIENTATION_LANDSCAPE, ORIENTATION_PORTRAIT})
+    @interface Orientation {}
 
     /**
      * Checks whether the {@link UpdateJobService background job} is scheduled.
