@@ -89,6 +89,8 @@
     <string name="action_section_news_short">Nachr.</string>
     <string name="action_section_ausland">Ausland</string>
     <string name="action_section_inland">Inland</string>
+    <string name="action_section_iv">Investigativ</string>
+    <string name="action_section_weather">Wetter</string>
     <string name="action_section_wirtschaft">Wirtschaft</string>
     <string name="action_section_wirtschaft_short">Wirtsch.</string>
     <string name="action_section_regional">Regionen</string>

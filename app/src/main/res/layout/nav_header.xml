@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="64dp"
+    android:layout_height="@dimen/menu_header_height"
     android:background="@android:color/transparent"
-    android:padding="16dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
     android:theme="@style/ThemeOverlay.AppCompat.Dark"
     android:orientation="vertical"
-    android:gravity="bottom">
+    android:gravity="bottom"
+    tools:layout_width="@dimen/width_navigation_drawer"
+    >
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/label_sections"
-        android:textAlignment="center" android:textAppearance="@style/TextAppearance.AppCompat.Body2.White"/>
+        android:textAlignment="center"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body2.White"/>
 
 </LinearLayout>

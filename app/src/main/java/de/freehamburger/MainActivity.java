@@ -138,6 +138,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private static final String ACTION_DELETE_FONT = "de.freehamburger.action.font_delete";
     /** used when the user has picked a font file to import */
     private static final int REQUEST_CODE_FONT_IMPORT = 815;
+    /** file tag for TTF files */
+    private static final String TTF_TAG = ".ttf";
 
     /** maximum number of recent sources/categories to keep */
     private static final int MAX_RECENT_SOURCES = 10;
@@ -552,12 +554,12 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return;
         }
         // check whether it is a ttf file
-        if (data.toString().toLowerCase(java.util.Locale.US).endsWith(".ttf")) {
+        if (data.toString().toLowerCase(java.util.Locale.US).endsWith(TTF_TAG)) {
             // it is a ttf file -> import it, and then proceed normally
             Typeface tf = importTtf(data, true);
             if (this.newsAdapter != null) this.newsAdapter.setTypeface(tf);
             return;
-        } else if ("content".equals(intent.getScheme()) && "*/*".equals(intent.getType())) {
+        } else if ("content".equals(scheme) && "*/*".equals(intent.getType())) {
             // some stoopid doodle siftware has passed meaningless nonsense to this app
             // (data like "content://com.android.providers.downloads.documents/document/476", type="*/*")
             // let's try to find out whether it is a ttf file
@@ -604,7 +606,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 return null;
             }
             // copy data to a temporary file
-            File tempFile = File.createTempFile("tempfont", ".ttf");
+            File tempFile = File.createTempFile("tempfont", TTF_TAG);
             // set a safety barrier of 4 MB; assumed that a truetype font file will not be bigger
             Util.copyFile(in, tempFile, -1, 1_048_576L << 2);
             Util.close(in);
@@ -749,7 +751,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     }
 
     /**
-     * The user has pressed the back button for a veery loong time.
+     * The user has pressed ◀ (the back button) for a veery loong time.
      * @return {@code true} if the action has been dealt with
      */
     private boolean onBackLongPressed() {
@@ -777,7 +779,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             public View getView(int position, View convertView, ViewGroup parent) {
                 TextView tv;
                 if (convertView instanceof TextView) {
-                    tv =(TextView)convertView;
+                    tv = (TextView)convertView;
                 } else {
                     tv = new TextView(MainActivity.this);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -1028,6 +1030,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         this.sourceForMenuItem.put(R.id.action_section_regional, Source.REGIONAL);
         this.sourceForMenuItem.put(R.id.action_section_video, Source.VIDEO);
         this.sourceForMenuItem.put(R.id.action_section_channels, Source.CHANNELS);
+        this.sourceForMenuItem.put(R.id.action_section_weather, Source.WEATHER);
+        this.sourceForMenuItem.put(R.id.action_section_iv, Source.IV);
         // check menuItem matching currentSource on initialisation
         updateMenu();
         // react to selections being made in the navigation menu

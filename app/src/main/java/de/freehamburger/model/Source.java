@@ -32,7 +32,9 @@ public enum Source {
     WIRTSCHAFT(R.string.action_section_wirtschaft, App.URL_PREFIX + "news/?ressort=wirtschaft", R.drawable.ic_build_black_24dp, false, "action_section_wirtschaft"),
     CHANNELS(R.string.action_section_channels, App.URL_PREFIX + "channels/", R.drawable.ic_tv_black_24dp, false, "action_section_sendungen"),
     /** params look like "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" */
-    REGIONAL(R.string.action_section_regional, App.URL_PREFIX + "news/?regions=", R.drawable.ic_place_black_24dp, true, "action_section_regional")
+    REGIONAL(R.string.action_section_regional, App.URL_PREFIX + "news/?regions=", R.drawable.ic_place_black_24dp, true, "action_section_regional"),
+    WEATHER(R.string.action_section_weather, App.URL_PREFIX + "weather/index.json", R.drawable.ic_outline_cloud_24, false, "action_section_weather"),
+    IV(R.string.action_section_iv, App.URL_PREFIX + "news/?ressort=investigativ", R.drawable.ic_search_black_24dp, false, "action_section_iv")
     ;
 
     public static final String FILE_SUFFIX = ".source";

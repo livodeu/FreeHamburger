@@ -28,11 +28,13 @@
     <string name="action_section_channels">Programmes</string>
     <string name="action_section_homepage">Home</string>
     <string name="action_section_inland">Domestic</string>
+    <string name="action_section_iv">Investigative</string>
     <string name="action_section_news">News</string>
     <string name="action_section_news_short">News</string>
     <string name="action_section_regional">Regional</string>
     <string name="action_section_sport">Sports</string>
     <string name="action_section_video">Video</string>
+    <string name="action_section_weather">Weather</string>
     <string name="action_section_wirtschaft">Economy</string>
     <string name="action_section_wirtschaft_short">Economy</string>
     <string name="action_select_regions">Regions</string>
