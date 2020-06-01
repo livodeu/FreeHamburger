@@ -4,13 +4,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import com.google.android.material.snackbar.Snackbar;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.appcompat.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,11 +12,19 @@ import android.view.ViewParent;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import de.freehamburger.adapters.FilterAdapter;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.TextFilter;
@@ -197,7 +198,7 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
         super.onResume();
         @App.BackgroundSelection int background = HamburgerActivity.applyTheme(this, null, false);
         this.coordinatorLayout.setBackgroundResource(background == App.BACKGROUND_LIGHT ? R.drawable.bg_news_light :R.drawable.bg_news);
-        RecyclerView.Adapter adapter = this.recyclerView.getAdapter();
+        @SuppressWarnings("rawtypes") RecyclerView.Adapter adapter = this.recyclerView.getAdapter();
         if (adapter != null) {
             if (adapter instanceof FilterAdapter) ((FilterAdapter) adapter).setBackground(background);
             this.filterCountOnResume = adapter.getItemCount();
