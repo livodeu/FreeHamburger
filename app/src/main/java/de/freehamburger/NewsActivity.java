@@ -149,7 +149,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/PlayerView.html">JavaDoc</a> */
     private PlayerView bottomVideoView;
     private TextView textViewBottomVideoViewOverlay;
-    private BottomSheetBehavior bottomSheetBehavior;
+    private BottomSheetBehavior<? extends LinearLayout> bottomSheetBehavior;
     private boolean loadVideo;
     @Nullable
     private ExoPlayer exoPlayerTopVideo;
