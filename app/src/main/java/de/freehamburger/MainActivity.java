@@ -1724,6 +1724,19 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     return;
                 }
                 List<News> sortedJointList = blob.getAllNews();
+                // limit number of RecyclerView columns to number of News items (effect noticeable, for example, in Weather section on tablets in landscape mode)
+                int nItems = sortedJointList.size();
+                RecyclerView.LayoutManager layoutManager = MainActivity.this.recyclerView.getLayoutManager();
+                if (layoutManager instanceof GridLayoutManager) {
+                    if (nItems >= 1 && nItems < ((GridLayoutManager)layoutManager).getSpanCount()) {
+                        // less News items than columns -> reduce number of columns (must be at least 1)
+                        ((GridLayoutManager)layoutManager).setSpanCount(nItems);
+                    } else {
+                        // reset span count
+                        ((GridLayoutManager)layoutManager).setSpanCount(getResources().getInteger(R.integer.num_columns));
+                    }
+                }
+                //
                 MainActivity.this.newsAdapter.setNewsList(sortedJointList, MainActivity.this.currentSource);
                 Date blobDate = blob.getDate();
                 if (blobDate != null) {
@@ -1786,8 +1799,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 }
 
                 if (MainActivity.this.listPositionToRestore >= 0) {
-                    RecyclerView.LayoutManager lm = MainActivity.this.recyclerView.getLayoutManager();
-                    if (lm != null) lm.scrollToPosition(MainActivity.this.listPositionToRestore);
+                    if (layoutManager != null) layoutManager.scrollToPosition(MainActivity.this.listPositionToRestore);
                     if (MainActivity.this.listPositionToRestore == 0) {
                         // if we scroll to the top, display the title
                         ((AppBarLayout)findViewById(R.id.appbar_layout)).setExpanded(true);
@@ -1993,6 +2005,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      * a 10-inch tablet in landscape mode should show 3 columns,
      * a 7-inch tablet in landscape mode should show 2 columns,
      * all other devices/orientations should have 1 column.<br>
+     * Note: the number of columns might be reduced after loading the data if the number of News items is less than the normal number of columns (see {@link #parseLocalFileAsync(File)})<br>
      * Screen sizes in dp:
      * <ul>
      * <li>10"-tablet avd is 1280 dp x 648 dp in landscape mode and 720 dp x 1208 dp in portrait mode</li>
