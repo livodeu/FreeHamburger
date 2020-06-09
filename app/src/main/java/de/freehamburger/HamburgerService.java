@@ -15,6 +15,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.text.Html;
+import android.util.TypedValue;
 import android.widget.ImageView;
 
 import com.squareup.picasso.Callback;
@@ -169,7 +170,11 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     }
 
     /** {@inheritDoc}
-     * <br>This class implements {@link Html.ImageGetter} which is used in {@link Html#fromHtml(String, int, Html.ImageGetter, Html.TagHandler)} */
+     * <br>
+     * <br>According to that ↑, this method is allowed to return {@code null}; this actual implementation never returns {@code null}, though.
+     * <br>
+     * <br>This class implements {@link Html.ImageGetter} which is used in {@link Html#fromHtml(String, int, Html.ImageGetter, Html.TagHandler)}
+     * */
     @Override
     public Drawable getDrawable(@NonNull String source) {
         Bitmap cached = getCachedBitmap(source);
@@ -228,7 +233,8 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     }
 
     /**
-     * Loads a picture via Picasso into the given ImageView.
+     * Loads a picture via Picasso into the given ImageView.<br>
+     * If the url points to a resource ("android.resource://…"), Picasso will not be used, though.
      * @param url picture URL
      * @param dest ImageView
      * @param imageWidth expected width of the image
@@ -237,7 +243,23 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      */
     @RequiresPermission(Manifest.permission.INTERNET)
     public void loadImageIntoImageView(@NonNull String url, @Nullable final ImageView dest, int imageWidth, int imageHeight) {
-        if (url.length() < 8) return;
+        if (url.length() < 8) {
+            if (BuildConfig.DEBUG) Log.e(TAG, "Cannot load image from \"" + url + "\"!");
+            return;
+        }
+        if (url.startsWith("android.resource:")) {
+            // e.g. "android.resource://de.freehamburger/2131230843"
+            if (dest == null) return;
+            int slash = url.lastIndexOf('/');
+            if (slash < 20) return;
+            try {
+                int id = Integer.parseInt(url.substring(slash + 1));
+                Drawable d = getResources().getDrawableForDensity(id, TypedValue.DENSITY_NONE, null);
+                dest.setImageDrawable(d);
+                return;
+            } catch (Exception ignored) {
+            }
+        }
         if (url.charAt(0) == '/' && url.charAt(1) == '/') {
             url = "https:" + url;
         } else if (url.startsWith("http:")) {
@@ -490,6 +512,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
                         .noFade()   // without noFade(), the picture would be dimmed before display
                         .centerCrop()
                         .into(this.dest, this);
+
             } else {
                 if (BuildConfig.DEBUG) Log.e(TAG, "PictureLoader for " + url + " with both dest and target null!");
                 if (service.cannotDownload()) return;
