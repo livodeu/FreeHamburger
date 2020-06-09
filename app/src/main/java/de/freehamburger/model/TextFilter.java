@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import androidx.annotation.VisibleForTesting;
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 
@@ -83,6 +84,12 @@ public class TextFilter implements Filter {
         return new TextFilter(p, atStart, atEnd, false, false);
     }
 
+    /**
+     * Checks whether any word in cs ends with needle.
+     * @param cs CharSequence to search
+     * @param needle CharSequence to look for
+     * @return {@code true} if any word in cs ends with needle
+     */
     private static boolean endsWith(@Nullable CharSequence cs, @NonNull final CharSequence needle) {
         if (cs == null) return false;
         final int nl = needle.length();
@@ -99,6 +106,12 @@ public class TextFilter implements Filter {
         return false;
     }
 
+    /**
+     * Checks whether any word in cs starts with needle.
+     * @param cs CharSequence to search
+     * @param needle CharSequence to look for
+     * @return {@code true} if any word in cs starts with needle
+     */
     private static boolean startsWith(@Nullable CharSequence cs, @NonNull final CharSequence needle) {
         if (cs == null) return false;
         final int nl = needle.length();
@@ -141,7 +154,8 @@ public class TextFilter implements Filter {
      * @param temporary true / false
      * @param inverse true if the logic should be inverted
      */
-    private TextFilter(@NonNull CharSequence phrase, boolean atStart, boolean atEnd, boolean temporary, boolean inverse) {
+    @VisibleForTesting
+    public TextFilter(@NonNull CharSequence phrase, boolean atStart, boolean atEnd, boolean temporary, boolean inverse) {
         super();
         this.phrase = phrase;
         this.atStart = atStart;
@@ -165,12 +179,11 @@ public class TextFilter implements Filter {
         if (news == null) return false;
         // we do not filter videos by text because my momma always said, "Video was like a box of chocolates. You never know what you're gonna get."
         if (News.NEWS_TYPE_VIDEO.equals(news.getType())) return true;
-        //TODO remove HTML content before checking
         if (atStart) {
             if (startsWith(news.getFirstSentenceLowerCase(), phrase)) return false;
             if (startsWith(news.getToplineLowerCase(), phrase)) return false;
             if (startsWith(news.getTitleLowerCase(), phrase)) return false;
-            if (news.getContent() != null && startsWith(news.getContent().getHtmlText().toLowerCase(Locale.GERMAN), phrase)) return false;
+            if (news.getContent() != null && startsWith(news.getContent().getPlainText().toLowerCase(Locale.GERMAN), phrase)) return false;
             for (String tag : news.getTags()) {
                 if (startsWith(tag.toLowerCase(Locale.GERMAN), phrase)) return false;
             }
@@ -181,7 +194,7 @@ public class TextFilter implements Filter {
             if (endsWith(news.getFirstSentenceLowerCase(), phrase)) return false;
             if (endsWith(news.getToplineLowerCase(), phrase)) return false;
             if (endsWith(news.getTitleLowerCase(), phrase)) return false;
-            if (news.getContent() != null && endsWith(news.getContent().getHtmlText().toLowerCase(Locale.GERMAN), phrase)) return false;
+            if (news.getContent() != null && endsWith(news.getContent().getPlainText().toLowerCase(Locale.GERMAN), phrase)) return false;
             for (String tag : news.getTags()) {
                 if (endsWith(tag.toLowerCase(Locale.GERMAN), phrase)) return false;
             }
@@ -192,7 +205,7 @@ public class TextFilter implements Filter {
             if (news.getFirstSentenceLowerCase() != null && news.getFirstSentenceLowerCase().contains(phrase)) return false;
             if (news.getToplineLowerCase() != null && news.getToplineLowerCase().contains(phrase)) return false;
             if (news.getTitleLowerCase() != null && news.getTitleLowerCase().contains(phrase)) return false;
-            if (news.getContent() != null && news.getContent().getHtmlText().toLowerCase(Locale.GERMAN).contains(phrase)) return false;
+            if (news.getContent() != null && news.getContent().getPlainText().toLowerCase(Locale.GERMAN).contains(phrase)) return false;
             for (String tag : news.getTags()) {
                 if (tag.toLowerCase(Locale.GERMAN).contains(phrase)) return false;
             }
