@@ -2,12 +2,9 @@ package de.freehamburger.model;
 
 import android.content.Context;
 import android.preference.PreferenceManager;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.text.TextUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -16,9 +13,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import de.freehamburger.App;
-import de.freehamburger.BuildConfig;
 
 /**
  *
@@ -26,17 +24,16 @@ import de.freehamburger.BuildConfig;
 public class TextFilter implements Filter {
 
     private static final Pattern NON_WORD_CHAR_PATTERN = Pattern.compile("\\W");
-
-    /** the filter phrase in <em>lower case</em> only*/
-    @NonNull private CharSequence phrase;
     /** true if the filter will not be persisted */
     private final boolean temporary;
+    /** true if the logic should be inversed (currently not persistable as it is used only during search) */
+    private final boolean inverse;
+    /** the filter phrase in <em>lower case</em> only*/
+    @NonNull private CharSequence phrase;
     /** true if the filter should apply to word starts only (if true, "trump" filters "trumpet" but not "strumpet") */
     private boolean atStart;
     /** true if the filter should apply to word ends only (if true, "pet" filters "trumpet" but not "trumpeting") */
     private boolean atEnd;
-    /** true if the logic should be inversed (currently not persistable as it is used only during search) */
-    private final boolean inverse;
 
     /**
      * Loads the preferred filters from the preferences.
@@ -54,6 +51,27 @@ public class TextFilter implements Filter {
         }
         Collections.sort(filters);
         return filters;
+    }
+
+    /**
+     * Checks whether any word in cs ends with needle.
+     * @param cs CharSequence to search
+     * @param needle CharSequence to look for
+     * @return {@code true} if any word in cs ends with needle
+     */
+    private static boolean endsWith(@Nullable CharSequence cs, @NonNull final CharSequence needle) {
+        if (cs == null) return false;
+        final int nl = needle.length();
+        if (nl == 0) return true;
+        int csl = cs.length();
+        if (csl < nl) return false;
+        final String[] parts = NON_WORD_CHAR_PATTERN.split(cs, -1);
+        for (String part : parts) {
+            int pl = part.length();
+            if (pl < nl) continue;
+            if (TextUtils.equals(part.subSequence(pl - nl, pl), needle)) return true;
+        }
+        return false;
     }
 
     /**
@@ -85,28 +103,6 @@ public class TextFilter implements Filter {
     }
 
     /**
-     * Checks whether any word in cs ends with needle.
-     * @param cs CharSequence to search
-     * @param needle CharSequence to look for
-     * @return {@code true} if any word in cs ends with needle
-     */
-    private static boolean endsWith(@Nullable CharSequence cs, @NonNull final CharSequence needle) {
-        if (cs == null) return false;
-        final int nl = needle.length();
-        if (nl == 0) return true;
-        int csl = cs.length();
-        if (csl < nl) return false;
-        final String[] parts = NON_WORD_CHAR_PATTERN.split(cs, -1);
-        if (BuildConfig.DEBUG) android.util.Log.i(TextFilter.class.getSimpleName(), Arrays.toString(parts));
-        for (String part : parts) {
-            int pl = part.length();
-            if (pl < nl) continue;
-            if (TextUtils.equals(part.subSequence(pl - nl, pl), needle)) return true;
-        }
-        return false;
-    }
-
-    /**
      * Checks whether any word in cs starts with needle.
      * @param cs CharSequence to search
      * @param needle CharSequence to look for
@@ -119,7 +115,6 @@ public class TextFilter implements Filter {
         int csl = cs.length();
         if (csl < nl) return false;
         final String[] parts = NON_WORD_CHAR_PATTERN.split(cs, -1);
-        if (BuildConfig.DEBUG) android.util.Log.i(TextFilter.class.getSimpleName(), Arrays.toString(parts));
         for (String part : parts) {
             int pl = part.length();
             if (pl < nl) continue;
@@ -171,6 +166,33 @@ public class TextFilter implements Filter {
         return internalAccept(news);
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public int compareTo(@NonNull Filter o) {
+        return getText().toString().compareTo(o.getText().toString());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TextFilter)) return false;
+        TextFilter that = (TextFilter) o;
+        return temporary == that.temporary && atStart == that.atStart && atEnd == that.atEnd && inverse == that.inverse && Objects.equals(phrase, that.phrase);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public CharSequence getText() {
+        return phrase;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public int hashCode() {
+        return Objects.hash(phrase, temporary, atStart, atEnd, inverse);
+    }
+
     /**
      * @param news News
      * @return true if this Filter accepts the News
@@ -214,33 +236,6 @@ public class TextFilter implements Filter {
             }
         }
         return true;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int compareTo(@NonNull Filter o) {
-        return getText().toString().compareTo(o.getText().toString());
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof TextFilter)) return false;
-        TextFilter that = (TextFilter) o;
-        return temporary == that.temporary && atStart == that.atStart && atEnd == that.atEnd && inverse == that.inverse && Objects.equals(phrase, that.phrase);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CharSequence getText() {
-        return phrase;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int hashCode() {
-        return Objects.hash(phrase, temporary, atStart, atEnd, inverse);
     }
 
     public boolean isAtEnd() {
