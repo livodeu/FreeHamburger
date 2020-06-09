@@ -4,12 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import androidx.annotation.CallSuper;
-import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.UiThread;
-import androidx.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,6 +15,12 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
 
+import androidx.annotation.CallSuper;
+import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import androidx.preference.PreferenceManager;
 import de.freehamburger.App;
 import de.freehamburger.R;
@@ -283,6 +283,7 @@ public class NewsView extends RelativeLayout {
             // it is perfectly normal to have no TeaserImage
             this.imageView.setImageDrawable(null);
             this.imageView.setTag(null);
+            this.imageView.setVisibility(View.GONE);
             // make sure the textViewDate is as wide as the imageView would be
             int imageWidth = getResources().getDimensionPixelSize(R.dimen.image_width_normal);
             int sbit = getResources().getDimensionPixelSize(R.dimen.space_between_image_and_text);
