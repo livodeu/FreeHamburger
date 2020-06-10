@@ -332,13 +332,10 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
             }
             final int originalVolume = am.getStreamVolume(App.STREAM_TYPE);
             new FlexiFader(this, (float)originalVolume / (float)am.getStreamMaxVolume(App.STREAM_TYPE), 0, FADEOUT).start();
-            this.handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (abandonFocus && VideoActivity.this.hasAudioFocus) abandonAudioFocus(am);
-                    if (VideoActivity.this.exoPlayerVideo != null) VideoActivity.this.exoPlayerVideo.setPlayWhenReady(false);
-                    am.setStreamVolume(App.STREAM_TYPE, originalVolume, 0);
-                }
+            this.handler.postDelayed(() -> {
+                if (abandonFocus && VideoActivity.this.hasAudioFocus) abandonAudioFocus(am);
+                if (VideoActivity.this.exoPlayerVideo != null) VideoActivity.this.exoPlayerVideo.setPlayWhenReady(false);
+                am.setStreamVolume(App.STREAM_TYPE, originalVolume, 0);
             }, totalDelay);
         }
         return totalDelay;
@@ -416,6 +413,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
             this.period = period;
         }
 
+        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
         private static boolean safeSleep(long sleep) {
             try {
                 Thread.sleep(sleep);
