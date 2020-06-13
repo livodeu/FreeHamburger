@@ -5,8 +5,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import androidx.annotation.Nullable;
-import com.google.android.material.snackbar.Snackbar;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -21,9 +19,12 @@ import android.widget.RadioButton;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
+import androidx.annotation.Nullable;
 import de.freehamburger.R;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.TextFilter;
@@ -35,6 +36,8 @@ import de.freehamburger.util.CoordinatorLayoutHolder;
 public class FilterView extends RelativeLayout implements TextWatcher, CompoundButton.OnCheckedChangeListener {
 
     private static final String PREF_1F601_SHOWN = "pref_1f601_shown";
+    private final TextSetter textSetter = new TextSetter();
+    private Handler handler;
     private EditText editTextPhrase;
     private ImageButton buttonDelete;
     private RadioButton radioButtonAnywhere;
@@ -74,25 +77,48 @@ public class FilterView extends RelativeLayout implements TextWatcher, CompoundB
 
     /** {@inheritDoc} */
     @Override
-    public void afterTextChanged(Editable s) {
+    public void afterTextChanged(final Editable s) {
+        if (this.handler != null) this.handler.removeCallbacks(this.textSetter);
+        //if (BuildConfig.DEBUG) android.util.Log.i("FilterView", "afterTextChanged('" + s + "')");
         if (this.reflistener != null) {
             Listener listener = this.reflistener.get();
             if (listener != null) listener.textChanged(s);
         }
         boolean phraseIsEmpty = TextUtils.isEmpty(s);
+        if (!phraseIsEmpty) {
+            // check for invalid chars
+            final int n = s.length();
+            StringBuilder sb = new StringBuilder(n);
+            StringBuilder error = null;
+            for (int i = 0; i < n; i++) {
+                char c = s.charAt(i);
+                if (TextFilter.isInvalid(c)) {
+                    if (error == null) error = new StringBuilder().append(getContext().getString(R.string.label_char_invalid)).append(": ");
+                    else error.append(", ");
+                    if (Character.isLetterOrDigit(c)) error.append(c); else error.append((int)c);
+                } else {
+                    sb.append(c);
+                }
+            }
+            this.editTextPhrase.setError(error);
+            if (error != null) {
+                ensureHandler();
+                this.textSetter.text = sb;
+                this.handler.postDelayed(this.textSetter, 5_000L);
+            }
+        }
         // lint says: there is a ic_clear_black_24dp marked as private in com.google.android.material:material
         this.buttonDelete.setImageResource(phraseIsEmpty ? R.drawable.ic_delete_black_24dp : R.drawable.ic_clear_blakk_24dp);
         this.buttonDelete.setContentDescription(phraseIsEmpty ? getContext().getString(R.string.hint_filter_button_delete) : getContext().getString(R.string.hint_filter_button_clear));
-        if (s.toString().toLowerCase().hashCode() == 110640538 // 🎺.substring(0,5)
+        if (s.toString().toLowerCase().hashCode() == 110640538
                 && !PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean(PREF_1F601_SHOWN, false)) {
             Context ctx = getContext();
             if (ctx instanceof Activity) {
                 View v = ((Activity)ctx).findViewById(R.id.v1f601);
                 if (v != null) {
                     v.setVisibility(View.VISIBLE);
-                    Handler handler = getHandler();
-                    if (handler == null) handler = new Handler();
-                    handler.postDelayed(() -> v.setVisibility(View.GONE), 3_000L);
+                    ensureHandler();
+                    this.handler.postDelayed(() -> v.setVisibility(View.GONE), 3_000L);
                     SharedPreferences.Editor ed = PreferenceManager.getDefaultSharedPreferences(getContext()).edit();
                     ed.putBoolean(PREF_1F601_SHOWN, true);
                     ed.apply();
@@ -107,15 +133,33 @@ public class FilterView extends RelativeLayout implements TextWatcher, CompoundB
         /* no-op */
     }
 
+    /**
+     * Makes sure that {@link #handler} is set.
+     */
+    private void ensureHandler() {
+        if (this.handler != null) return;
+        this.handler = getHandler();
+        if (this.handler == null) this.handler = new Handler();
+    }
+
+    /**
+     * Focuses the {@link #editTextPhrase EditText}.
+     */
     public void focusEditText() {
-        this.editTextPhrase.requestFocus();
-        InputMethodManager imm = (InputMethodManager)getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null) imm.showSoftInput(this.editTextPhrase, InputMethodManager.SHOW_IMPLICIT);
+        if (!this.editTextPhrase.requestFocus()) return;
+        ensureHandler();
+        // showSoftInput(…) does not work without that delay
+        this.handler.postDelayed(() -> {
+            InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm == null) return;
+            imm.showSoftInput(this.editTextPhrase, 0);
+        }, 250L);
     }
 
     /**
      * Initialisation.
      * @param ctx Context
+     * @throws NullPointerException if {@code ctx} is {@code null}
      */
     private void init(Context ctx) {
         LayoutInflater inflater = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -230,6 +274,15 @@ public class FilterView extends RelativeLayout implements TextWatcher, CompoundB
                 Toast.makeText(v.getContext(), contentDescription, Toast.LENGTH_SHORT).show();
             }
             return true;
+        }
+    }
+
+    private final class TextSetter implements Runnable {
+        private CharSequence text;
+
+        @Override
+        public void run() {
+            FilterView.this.editTextPhrase.setText(this.text);
         }
     }
 }

@@ -29,6 +29,7 @@
     <string name="pref_title_font_zoom">Schriftvergrößerung</string>
     <string name="action_import_font">Schrift importieren</string>
     <string name="error_proxy_connection_failed">Der als Proxy eingestellte Host %1$s nimmt keine Verbindung an Port %2$s an!</string>
+    <string name="label_char_invalid">Ungültig</string>
     <string name="label_license">Lizenz</string>
     <string name="label_yes">Ja</string>
     <string name="label_notification_channel">Meldungen</string>
@@ -138,6 +139,7 @@
     <string name="msg_search_sugg_deleted_locale">Die Suchvorschläge wurden wegen der Sprachänderung zurückgesetzt!</string>
     <string name="action_filter">Filter</string>
     <string name="hint_filter">zu filternder Text</string>
+    <string name="hint_filter_add">Mit + fügen Sie einen neuen Filter hinzu</string>
     <string name="hint_filter_button_clear">Antippen um den Text zu löschen</string>    <!-- https://de.wikipedia.org/wiki/Infinitivgruppe -->
     <string name="hint_filter_button_delete">Antippen um den Filter zu entfernen</string>    <!-- https://de.wikipedia.org/wiki/Infinitivgruppe -->
     <string name="msg_filters_removed">Alle Filter wurden gelöscht.</string>

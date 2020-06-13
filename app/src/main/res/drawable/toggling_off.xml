@@ -1,0 +1,14 @@
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android"
+    android:oneshot="true" android:visible="true">
+    <item android:drawable="@drawable/ic_toggle_9" android:duration="@integer/toggle_animation_step" />
+    <item android:drawable="@drawable/ic_toggle_8" android:duration="@integer/toggle_animation_step" />
+    <item android:drawable="@drawable/ic_toggle_7" android:duration="@integer/toggle_animation_step" />
+    <item android:drawable="@drawable/ic_toggle_6" android:duration="@integer/toggle_animation_step" />
+    <item android:drawable="@drawable/ic_toggle_5" android:duration="@integer/toggle_animation_step" />
+    <item android:drawable="@drawable/ic_toggle_4" android:duration="@integer/toggle_animation_step" />
+    <item android:drawable="@drawable/ic_toggle_3" android:duration="@integer/toggle_animation_step" />
+    <item android:drawable="@drawable/ic_toggle_2" android:duration="@integer/toggle_animation_step" />
+    <item android:drawable="@drawable/ic_toggle_1" android:duration="@integer/toggle_animation_step" />
+    <item android:drawable="@drawable/ic_toggle_0" android:duration="@integer/toggle_animation_step" />
+</animation-list>
+ 

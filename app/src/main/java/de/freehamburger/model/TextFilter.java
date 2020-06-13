@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import de.freehamburger.App;
+import de.freehamburger.FilterActivity;
 
 /**
  *
@@ -75,31 +76,69 @@ public class TextFilter implements Filter {
     }
 
     /**
-     * @param phrase as stored in the preferences (possibly starting with [ or ])
+     * Tests a given char.
+     * @param c character to test
+     * @return true if the char is not suitable, false if it is
+     */
+    public static boolean isInvalid(final char c) {
+        return (c < 0x20 || c > 0x7e) && (c < 0xa1 || c > 0xff);
+    }
+
+    /**
+     * @param phrase as stored in the preferences (possibly starting with {@link FilterActivity#C_ATSTART [} or {@link FilterActivity#C_ATEND ]})
      * @return TextFilter
+     * @throws NullPointerException if {@code phrase} is {@code null}
      */
     @NonNull
     private static TextFilter parse(@NonNull final String phrase) {
-        final CharSequence p;
+        CharSequence p;
         boolean atStart = false;
         boolean atEnd = false;
         if (phrase.length() > 1) {
             char c = phrase.charAt(0);
-            if (c == '[') {
+            if (c == FilterActivity.C_ATSTART) {
                 atStart = true;
                 p = phrase.substring(1).toLowerCase(Locale.GERMAN);
-            } else if (c == ']') {
+            } else if (c == FilterActivity.C_ATEND) {
                 atEnd = true;
                 p = phrase.substring(1).toLowerCase(Locale.GERMAN);
             } else {
                 p = phrase.toLowerCase(Locale.GERMAN);
             }
+            p = sanitize(p);
         } else if (phrase.length() == 1) {
             p = phrase.toLowerCase(Locale.GERMAN);
         } else {
             p = "";
         }
         return new TextFilter(p, atStart, atEnd, false, false);
+    }
+
+    /**
+     * Removes invalid chars from the given input.<br>
+     * This shouldn't end up in the filter:
+     * <pre>
+     *   ┓   ┏
+     *   ╭◜≋◝╮
+     *  ⋃(⊙ ⊙)⋃
+     *    │⚇│
+     *    ╰⊍╯</pre>
+     * @param input possibly bad chars
+     * @return clean chars
+     * @throws NullPointerException if {@code input} is {@code null}
+     */
+    @NonNull
+    private static CharSequence sanitize(@NonNull final CharSequence input) {
+        final int n = input.length();
+        final StringBuilder sb = new StringBuilder(n);
+        for (int i = 0; i < n; i++) {
+            char c = input.charAt(i);
+            if (isInvalid(c)) {
+                continue;
+            }
+            sb.append(c);
+        }
+        return sb;
     }
 
     /**

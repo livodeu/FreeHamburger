@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_marginStart="8dp"
@@ -28,11 +28,13 @@
         android:layout_alignParentTop="true"
         android:layout_toStartOf="@id/buttonDelete"
         android:layout_toEndOf="@id/textViewLabel"
-        android:hint="@string/hint_filter"
-        android:inputType="text|textNoSuggestions|textFilter"
         android:focusable="true"
         android:focusableInTouchMode="true"
-        tools:ignore="Autofill"/>
+        android:hint="@string/hint_filter"
+        android:imeOptions="actionDone|flagNoPersonalizedLearning"
+        android:inputType="text|textNoSuggestions|textFilter"
+        android:importantForAutofill="no"
+        />
 
     <ImageButton
         android:id="@+id/buttonDelete"

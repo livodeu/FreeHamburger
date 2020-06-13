@@ -16,6 +16,7 @@
     <color name="colorIntro">#77ff0000</color>
     <color name="colorToplineShadow">#33064a91</color>
     <color name="colorBoxBackground">#111288cc</color>
+    <color name="colorToggling">#eebb33</color>
 
     <!-- background color for news -->
     <color name="colorBgNews">#5c26a6f0</color>

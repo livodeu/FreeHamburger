@@ -55,6 +55,7 @@
     <string name="action_view_picture">View picture</string>
 
     <string name="hint_filter">The phrase to filter</string>
+    <string name="hint_filter_add">Use the + button to add a new filter</string>
     <string name="hint_filter_button_clear">Click to clear the phrase</string>
     <string name="hint_filter_button_delete">Click to delete the filter</string>
     <string name="hint_intro_will_be_played">The introduction will be shown during the next start.</string>
@@ -103,6 +104,7 @@
     <string name="error_video">Video playback error</string>
 
     <string name="label_ca">ca.</string>
+    <string name="label_char_invalid">Invalid</string>
     <string name="label_current_cache_size">currently %1$d MB out of %2$d MB</string>
     <string name="label_current_cache_size_kb">currently %1$d kB out of %2$d MB</string>
     <string name="label_every_minutes">every %1$s minutes</string>
