@@ -5,5 +5,6 @@
     <integer name="max_magnification_text">200</integer>
     <integer name="min_magnification_text">50</integer>
     <integer name="num_columns">1</integer>
+    <integer name="snackbar_action_font_size">26</integer>
     <integer name="toggle_animation_step">40</integer>
 </resources>

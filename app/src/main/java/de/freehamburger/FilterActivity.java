@@ -55,18 +55,17 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
     private boolean filterChanging;
 
     /**
-     * Adds a filter.
+     * Adds a filter with an empty phrase.
      * @return {@code true} if the filter has been added
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean addFilter() {
         FilterAdapter adapter = (FilterAdapter)this.recyclerView.getAdapter();
         if (adapter == null) return false;
-        Filter filter = new TextFilter("");
-        boolean added = adapter.addFilter(filter);
+        boolean added = adapter.addFilter(new TextFilter(""));
         invalidateOptionsMenu();
         if (added) {
-            this.handler.postDelayed(() -> FilterActivity.this.recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1), 500L);
+            this.handler.postDelayed(() -> this.recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1), 500L);
         }
         return added;
     }
@@ -116,10 +115,12 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
         FilterView filterView = (FilterView)parent;
         EditText editTextPhrase = filterView.findViewById(R.id.editTextPhrase);
         if (editTextPhrase != null && !TextUtils.isEmpty(editTextPhrase.getText())) {
+            // the filter phrase was not empty -> clear the filter phrase
             editTextPhrase.setText(null);
             invalidateOptionsMenu();
             return;
         }
+        // the filter phrase was empty -> delete the filter
         int pos = this.recyclerView.getChildAdapterPosition(filterView);
         if (pos == RecyclerView.NO_POSITION) return;
         FilterAdapter filterAdapter = (FilterAdapter)this.recyclerView.getAdapter();
@@ -134,7 +135,8 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
         int id = item.getItemId();
         if (id == R.id.action_add_filter) {
             if (!addFilter()) {
-                Snackbar.make(this.coordinatorLayout, R.string.error_filter_not_added, Snackbar.LENGTH_SHORT).show();
+                this.sb = Snackbar.make(this.coordinatorLayout, R.string.error_filter_not_added, Snackbar.LENGTH_SHORT);
+                this.sb.show();
             }
             return true;
         }
@@ -147,10 +149,9 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
             ed.apply();
             this.filterChanging = true;
             invalidateOptionsMenu();
-            //this.handler.postDelayed(this::invalidateOptionsMenu, 50 + getResources().getInteger(R.integer.toggle_animation_step) * 10);
             this.handler.postDelayed(() -> {
-                sb = Snackbar.make(coordinatorLayout, nowEnabled ? R.string.msg_filters_enabled : R.string.msg_filters_disabled, Snackbar.LENGTH_SHORT);
-                sb.show();
+                this.sb = Snackbar.make(coordinatorLayout, nowEnabled ? R.string.msg_filters_enabled : R.string.msg_filters_disabled, Snackbar.LENGTH_SHORT);
+                this.sb.show();
             }, TOGGLE_ANIMATION_OFFSET + getResources().getInteger(R.integer.toggle_animation_step) * 10);
         }
         return super.onOptionsItemSelected(item);
@@ -244,13 +245,14 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
         }
         if (this.filterCountOnResume == 0) {
             this.sb = Snackbar.make(this.coordinatorLayout, R.string.hint_filter_add, Snackbar.LENGTH_INDEFINITE);
-            this.sb.setActionTextColor(0xffededed);
+            this.sb.setActionTextColor(getResources().getColor(R.color.colorDirtyWhite));
+            // the "+" action text corresponds to the + icon ic_add_ededed_24dp in the menu - they should look the same so that the snackbar text refers to both
             this.sb.setAction("+", v -> {
                 if (!addFilter()) {
                     Snackbar.make(this.coordinatorLayout, R.string.error_filter_not_added, Snackbar.LENGTH_SHORT).show();
                 }
             });
-            Util.setSnackbarActionFont(this.sb, Typeface.MONOSPACE, 26f);
+            Util.setSnackbarActionFont(this.sb, Typeface.MONOSPACE, getResources().getInteger(R.integer.snackbar_action_font_size));
             this.sb.show();
         }
     }

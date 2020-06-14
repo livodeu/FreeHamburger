@@ -1718,7 +1718,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     Snackbar sb = Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_INDEFINITE);
                     sb.setAction("↻", v -> handler.postDelayed(MainActivity.this::onRefresh, 500L));
                     sb.setActionTextColor(Util.getColor(MainActivity.this, R.color.colorPrimaryLight));
-                    Util.setSnackbarActionFont(sb, Typeface.DEFAULT_BOLD, 26f);
+                    Util.setSnackbarActionFont(sb, Typeface.DEFAULT_BOLD, getResources().getInteger(R.integer.snackbar_action_font_size));
                     sb.show();
                     MainActivity.this.swipeRefreshLayout.setRefreshing(false);
                     return;
