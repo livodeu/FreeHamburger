@@ -68,26 +68,6 @@ public class OkHttpDownloader extends Downloader {
 
     /**
      * {@inheritDoc}
-     * The original app V2.3.3 sends these requests:<br>
-     * Upon app start:
-     * <pre>
-     *     GET /api2/homepage/ HTTP/1.1
-     *     Cache-Control: max-age=0
-     *     User-Agent: Tagesschau/de.tagesschau (2018080901, Android: 6.0.1)
-     *     Host: www.tagesschau.de
-     *     Connection: Keep-Alive
-     *     Accept-Encoding: gzip
-     *     If-Modified-Since: Sat, 14 Oct 1066 09:00:00 GMT
-     * </pre>
-     * or, when the user used swipe refresh:
-     * <pre>
-     *     GET /api2/homepage/ HTTP/1.1
-     *     Cache-Control: no-cache
-     *     User-Agent: Tagesschau/de.tagesschau (2018080901, Android: 6.0.1)
-     *     Host: www.tagesschau.de
-     *     Connection: Keep-Alive
-     *     Accept-Encoding: gzip
-     * </pre>
      */
     @NonNull
     protected Result load(@NonNull Order order) {

@@ -13,24 +13,17 @@ import java.util.regex.Pattern;
 /**
  * <pre>
  * "box" : {
- * "title" : "Rätsel um verschwundenen Interpol-Chef",
- * "subtitle" : "Auf China-Reise",
+ * "title" : "Rätsel um verschwundene Ente",
+ * "subtitle" : "Auf Grönland-Reise",
  * "images" : {
- *  "title" : "Interpol-Präsident Meng Hongwei.",
- *  "copyright" : "AP",
- *  "alttext" : "Interpol-Präsident Meng Hongwei",
- *  "preferredVariants" : "16x9",
+ *  "title" : "Präsidente",
+ *  "copyright" : "AAP",
+ *  "alttext" : "El Präsidente Al Dente",
+ *  "preferredVariants" : "6x9",
  *  "type" : "image",
  *  "videowebl" : {
- *      "imageurl" : "https://www.tagesschau.de/ausland/hongwei-101~_v-videowebl.jpg"
+ *      "imageurl" : "https://www.lordinateur.de/ausland/jomei.jpg"
  *  }
- *
- * "box": {
- *  "title": "Untersuchungsanlage ",
- *  "subtitle": "Untersuchungsanlage ",
- *  "text": "<strong>Grundgesamtheit:</strong> Wahlberechtigte in Deutschland<br/><strong>Stichprobe:</strong> Repräsentative Zufallsauswahl / Dual Frame (Festnetz- und Mobilfunkstichprobe)<br/><strong>Erhebungsverfahren:</strong> Telefoninterviews (CATI) <br/><strong>Fallzahl: </strong> 1.035 Wahlberechtigte<br/><strong>Erhebungszeitraum:  </strong>17. bis 19. September 2018<br/><strong>Gewichtung:</strong> nach soziodemographischen Merkmalen<br/><strong>Fehlertoleranz: </strong>1,4* bis 3,1** Prozentpunkte<br/><strong>Durchführendes Institut:</strong> Infratest dimap<br/><br/>* bei einem Anteilswert von 5 Prozent ** bei einem Anteilswert von 50 Prozent",
- *  "source": ""
- * }
  * </pre>
  */
 public class Box implements Serializable {

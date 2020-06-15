@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +40,7 @@ public class TtfInfo {
         try {
             raf = new RandomAccessFile(file, "r");
             raf.seek(4);
-            final int nTables = raf.readShort();
+            final int nTables = Math.max(0, raf.readShort());
             final Map<String, TtfTable> tables = new HashMap<>(nTables);
             raf.skipBytes(6);
             byte[] buf = new byte[4];
@@ -131,6 +132,10 @@ public class TtfInfo {
             return ttfNameTable;
         }
 
+        /**
+         * See <a href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html">https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html</a>.
+         * @return Font designer name
+         */
         @Nullable
         private String getDesignerName() {
             for (TtfNameRecord record : nameRecords) {
@@ -141,6 +146,10 @@ public class TtfInfo {
             return null;
         }
 
+        /**
+         * See <a href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html">https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html</a>.
+         * @return Font name
+         */
         @Nullable
         private String getFontFullName() {
             for (TtfNameRecord record : nameRecords) {
@@ -151,6 +160,10 @@ public class TtfInfo {
             return null;
         }
 
+        /**
+         * See <a href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html">https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html</a>.
+         * @return Font manufacturer name
+         */
         @Nullable
         private String getManufacturerName() {
             for (TtfNameRecord record : nameRecords) {
@@ -170,7 +183,11 @@ public class TtfInfo {
     }
 
     /**
-     * See <a href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html">https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html</a>
+     * See
+     * <ul>
+     * <li><a href="https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html">https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html</a></li>
+     * <li><a href="https://docs.microsoft.com/en-us/typography/opentype/spec/name">https://docs.microsoft.com/en-us/typography/opentype/spec/name</a></li>
+     * </ul>
      */
     private static class TtfNameRecord {
         private short platformID;
@@ -190,12 +207,12 @@ public class TtfInfo {
             ttfNameRecord.nameID = raf.readShort();
             ttfNameRecord.length = raf.readShort();
             ttfNameRecord.offset = raf.readShort();
-            if (ttfNameRecord.length > 0) {
+            if (ttfNameRecord.length > 0 && ttfNameRecord.offset >= 0) {
                 final long pos = raf.getFilePointer();
                 raf.seek(stringOffset - 4 + ttfNameRecord.offset);
                 byte[] buf = new byte[ttfNameRecord.length];
                 raf.read(buf);
-                ttfNameRecord.content = new String(buf, 0, buf.length, buf[0] == 0 ? "UTF-16BE" : "ISO-8859-1");
+                ttfNameRecord.content = new String(buf, 0, buf.length, buf[0] == 0 ? StandardCharsets.UTF_16BE : StandardCharsets.ISO_8859_1);
                 raf.seek(pos);
             }
             return ttfNameRecord;

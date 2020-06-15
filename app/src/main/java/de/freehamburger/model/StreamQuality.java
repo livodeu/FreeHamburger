@@ -26,7 +26,7 @@ public enum StreamQuality {
     H264XL(R.string.label_streamquality_xl, 1280),
     /** unknown dimensions */
     PODCASTVIDEOM_IAS(-1, -1),
-    /** unknown dimensions;<br><em>NOTE: as of March 2020, these URLs do not work as they point to hls.tagesschau.de which only works with http: but NOT with https:!</em> */
+    /** unknown dimensions;<br><em>NOTE: as of March to June 2020, these URLs do not work as they point to hls.….de which only works with http: but NOT with https:!</em> */
     ADAPTIVESTREAMING(R.string.label_streamquality_adaptive, -1);
 
     /** StreamQuality array where XL is preferred; after that ordered by descending quality */

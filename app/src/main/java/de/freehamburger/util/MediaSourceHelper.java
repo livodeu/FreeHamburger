@@ -20,7 +20,7 @@ import okhttp3.Call;
  */
 public class MediaSourceHelper {
 
-    /** "ExoPlayer" seems to be used by the original app, at least for contacts to hls.tagesschau.de */
+    /** "ExoPlayer" seems to be used by the 'other' app */
     private static final String USER_AGENT = "ExoPlayer";
 
     private ExtractorMediaSource.Factory ems;
@@ -34,7 +34,7 @@ public class MediaSourceHelper {
     }
 
     /**
-     * For HLS streams like http://tagesschau-lh.akamaihd.net/i/tagesschau_3@66339/master.m3u8.
+     * For HLS streams like http://akajunisd.akamaihd.net/i/aktuellekamera_3@66339/muster.m3u8.
      * @param cf Call.Factory (aka OkHttpClient)
      * @param uri Uri
      * @return MediaSource
