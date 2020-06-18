@@ -26,6 +26,4 @@
 -dontwarn javax.annotation.**
 # A resource is loaded with a relative path so the package of this class must be preserved.
 -keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
-# get rid of: Didn't find class "androidx.core.app.CoreComponentFactory"
--keep class androidx.core.app.CoreComponentFactory { *; }
 -printusage ../doc/removedby4r8.txt
