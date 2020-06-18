@@ -29,23 +29,6 @@
         android:summaryOff="@string/pref_title_time_mode_off"
         />
 
-    <SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:key="pref_correct_quotation_marks"
-        android:title="@string/pref_title_quotationmarks_fix"
-        android:summaryOn="@string/pref_title_quotationmarks_fix_on"
-        android:summaryOff="@string/pref_title_quotationmarks_fix_off"
-    />
-
-    <SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:key="pref_topline_marquee"
-        android:title="@string/pref_title_pref_topline_marquee"
-        android:icon="@drawable/ic_compare_arrows_ededed_24dp"
-        android:summaryOn="@string/pref_title_pref_topline_marquee_on"
-        android:summaryOff="@string/pref_title_pref_topline_marquee_off"
-        />
-
     <SeekBarPreference
         android:key="pref_font_zoom"
         android:max="@integer/max_magnification_text"
@@ -68,4 +51,21 @@
         android:enabled="false">
         <intent android:action="de.freehamburger.action.font_delete" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
     </Preference>
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="pref_topline_marquee"
+        android:title="@string/pref_title_pref_topline_marquee"
+        android:icon="@drawable/ic_compare_arrows_ededed_24dp"
+        android:summaryOn="@string/pref_title_pref_topline_marquee_on"
+        android:summaryOff="@string/pref_title_pref_topline_marquee_off"
+        />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:key="pref_correct_quotation_marks"
+        android:title="@string/pref_title_quotationmarks_fix"
+        android:summaryOn="@string/pref_title_quotationmarks_fix_on"
+        android:summaryOff="@string/pref_title_quotationmarks_fix_off"
+        />
 </PreferenceScreen>
