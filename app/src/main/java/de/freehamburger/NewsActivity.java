@@ -314,7 +314,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     }
 
     /**
-     * Applies the {@link #news} to the views. No abuse. And no queues.
+     * Applies the {@link #news} to the views. If you find a rhyme you may keep it.
      */
     private void applyNews() {
         if (this.news == null) {
@@ -322,18 +322,23 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.textViewContent.setText(null);
             return;
         }
+        boolean validAudio = false;
+        boolean validTopVideo = false;
+        boolean validBottomVideo = false;
         // top video from news.streams
         String newsVideo = StreamQuality.getStreamsUrl(this, this.news.getStreams());
-        if (newsVideo != null) {
-            if (this.exoPlayerTopVideo != null) {
-                newsVideo = Util.makeHttps(newsVideo);
-                MediaSource msTopVideo = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), Uri.parse(newsVideo));
+        if (newsVideo != null && this.exoPlayerTopVideo != null) {
+            Uri videoUri = Uri.parse(Util.makeHttps(newsVideo));
+            if (App.isHostAllowed(videoUri.getHost())) {
+                validTopVideo = true;
+                MediaSource msTopVideo = this.mediaSourceHelper.buildMediaSource(((App) getApplicationContext()).getOkHttpClient(), videoUri);
                 this.exoPlayerTopVideo.prepare(msTopVideo, true, true);
                 ((SimpleExoPlayer) this.exoPlayerTopVideo).setVolume(0f);
                 this.exoPlayerTopVideo.setRepeatMode(Player.REPEAT_MODE_ALL);
                 this.exoPlayerTopVideo.setPlayWhenReady(true);
             }
-        } else {
+        }
+        if (!validTopVideo) {
             this.topVideoView.setVisibility(View.GONE);
         }
         this.textViewTitle.setText(this.news.getTitle());
@@ -343,17 +348,23 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         // audio from the news.content part
         Audio audio = content != null && content.hasAudio() ? content.getAudioList().get(0) : null;
         if (audio != null) {
-            this.buttonAudio.setTag(audio.getStream());
-            this.buttonAudio.setContentDescription(audio.getTitle());
-            this.textViewAudioTitle.setText(audio.getTitle());
-            this.textViewAudioTitle.setTypeface(Util.getTypefaceForTextView(this.textViewAudioTitle, audio.getTitle()));
-            this.textViewAudioTitle.setSelected(true);
-            this.audioBlock.setVisibility(View.VISIBLE);
-            // restore the layout params for the textViewContent
-            RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewContent.getLayoutParams();
-            lp.removeRule(RelativeLayout.BELOW);
-            lp.addRule(RelativeLayout.BELOW, R.id.audioBlock);
-        } else {
+            String audioUrl = audio.getStream();
+            Uri audioUri = audioUrl != null ? Uri.parse(Util.makeHttps(audioUrl)) : null;
+            if (audioUri != null && App.isHostAllowed(audioUri.getHost())) {
+                validAudio = true;
+                this.buttonAudio.setTag(audio.getStream());
+                this.buttonAudio.setContentDescription(audio.getTitle());
+                this.textViewAudioTitle.setText(audio.getTitle());
+                this.textViewAudioTitle.setTypeface(Util.getTypefaceForTextView(this.textViewAudioTitle, audio.getTitle()));
+                this.textViewAudioTitle.setSelected(true);
+                this.audioBlock.setVisibility(View.VISIBLE);
+                // restore the layout params for the textViewContent
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewContent.getLayoutParams();
+                lp.removeRule(RelativeLayout.BELOW);
+                lp.addRule(RelativeLayout.BELOW, R.id.audioBlock);
+            }
+        }
+        if (!validAudio) {
             this.buttonAudio.setTag(null);
             this.textViewAudioTitle.setText(null);
             this.audioBlock.setVisibility(View.GONE);
@@ -374,47 +385,44 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     String url = StreamQuality.getStreamsUrl(this, contentVideo.getStreams());
                     if (url == null) continue;
                     Uri uri = Uri.parse(Util.makeHttps(url));
-                    if (uri != null) {
+                    if (uri != null && App.isHostAllowed(uri.getHost())) {
                         uris.add(uri);
                         if (contentVideoTitle.length() > 0) contentVideoTitle.append(", ");
                         contentVideoTitle.append(contentVideo.getTitle());
                     }
                 }
                 if (!uris.isEmpty()) {
+                    validBottomVideo = true;
                     this.textViewBottomVideoPeek.setTypeface(Util.getTypefaceForTextView(this.textViewBottomVideoPeek, contentVideoTitle.toString()));
                     this.textViewBottomVideoPeek.setText(contentVideoTitle);
                     this.textViewBottomVideoViewOverlay.setText(contentVideoTitle);
                     msBottomVideo = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), uris);
                     if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.prepare(msBottomVideo, true, true);
                     this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-                } else {
-                    this.textViewBottomVideoPeek.setText(null);
-                    this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
                 }
             } else {
                 // one content video (usual case)
                 Video contentVideo = videoList.get(0);
                 String url = StreamQuality.getStreamsUrl(this, contentVideo.getStreams());
-                if (url != null) {
-                    url = Util.makeHttps(url);
+                Uri uri = url != null ? Uri.parse(Util.makeHttps(url)) : null;
+                if (uri != null && App.isHostAllowed(uri.getHost())) {
+                    validBottomVideo = true;
                     String contentVideoTitle = contentVideo.getTitle();
                     this.textViewBottomVideoPeek.setTypeface(Util.getTypefaceForTextView(this.textViewBottomVideoPeek, contentVideoTitle));
                     this.textViewBottomVideoPeek.setText(contentVideoTitle);
                     this.textViewBottomVideoViewOverlay.setText(contentVideoTitle);
-                    msBottomVideo = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), Uri.parse(url));
+                    msBottomVideo = this.mediaSourceHelper.buildMediaSource(((App) getApplicationContext()).getOkHttpClient(), uri);
                     if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.prepare(msBottomVideo, true, true);
                     this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-                } else {
-                    this.textViewBottomVideoPeek.setText(null);
-                    this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
                 }
             }
-        } else {
+        }
+        if (!validBottomVideo) {
             this.textViewBottomVideoPeek.setText(null);
             this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
         }
         // if there is an audio element or a bottom video, show a warning if audio output is muted
-        if (audio != null || (content != null && content.hasVideo())) {
+        if (validAudio || validBottomVideo) {
             if (this.originalAudioVolume == 0 && PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_WARN_MUTE, App.PREF_WARN_MUTE_DEFAULT)) {
                 ImageView muteWarning = findViewById(R.id.muteWarning);
                 if (muteWarning != null) {
