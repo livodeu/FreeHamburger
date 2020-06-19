@@ -5,16 +5,20 @@ def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
+    // SDK version 30 causes a memory leak in AudioManager
     compileSdkVersion 29
     defaultConfig {
         applicationId "de.freehamburger"
         minSdkVersion 21
+        //noinspection OldTargetApi
         targetSdkVersion 29
         versionCode 1
         versionName "0.1"
         resConfigs "en", "de"
         buildConfigField("long", "BUILD_TIME", String.valueOf(System.currentTimeMillis()) + "L")
         buildConfigField("boolean", "DIAG", "false")
+        buildConfigField("String", "DEMO_TITLE", "null")
+        buildConfigField("String", "DEMO_TEXT", "null")
         testApplicationId applicationId + ".test"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         testInstrumentationRunnerArguments disableAnalytics: 'true'
@@ -48,6 +52,18 @@ android {
     }
 
     buildTypes {
+        // demo mode suppresses external content
+        demo {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+            manifestPlaceholders = [name: "@string/app_name_debug", icon: "@mipmap/ic_launcher_debug", roundicon: "@mipmap/ic_launcher_round_debug"]
+            resValue "string", "app_search_auth", defaultConfig.applicationId + applicationIdSuffix + '.SearchContentProvider'
+            buildConfigField("boolean", "DIAG", "true")
+            buildConfigField("String", "DEMO_TITLE", "\"Commentarii de bello Androidio - Liber I\"")
+            buildConfigField("String", "DEMO_TEXT", "\"Gallia est omnis divisa in partes tres, quarum unam incolunt Belgae, aliam Aquitani, tertiam qui ipsorum lingua Celtae, nostra Galli appellantur. Hi omnes lingua, institutis, legibus inter se differunt. Gallos ab Aquitanis Garumna flumen, a Belgis Matrona et Sequana dividit. Horum omnium fortissimi sunt Belgae, propterea quod a cultu atque humanitate provinciae longissime absunt, minimeque ad eos mercatores saepe commeant atque ea quae ad effeminandos animos pertinent important, proximique sunt Germanis, qui trans Rhenum incolunt, quibuscum continenter bellum gerunt. Qua de causa Helvetii quoque reliquos Gallos virtute praecedunt, quod fere cotidianis proeliis cum Germanis contendunt, cum aut suis finibus eos prohibent aut ipsi in eorum finibus bellum gerunt. Eorum una pars, quam Gallos obtinere dictum est, initium capit a flumine Rhodano, continetur Garumna flumine, Oceano, finibus Belgarum, attingit etiam ab Sequanis et Helvetiis flumen Rhenum, vergit ad septentriones. Belgae ab extremis Galliae finibus oriuntur, pertinent ad inferiorem partem fluminis Rheni, spectant in septentrionem et orientem solem. Aquitania a Garumna flumine ad Pyrenaeos montes et eam partem Oceani quae est ad Hispaniam pertinet; spectat inter occasum solis et septentriones.\"")
+            crunchPngs true
+            testCoverageEnabled = false
+        }
         debug {
             applicationIdSuffix ".debug"
             versionNameSuffix "-debug"
@@ -55,12 +71,11 @@ android {
             resValue "string", "app_search_auth", defaultConfig.applicationId + applicationIdSuffix + '.SearchContentProvider'
             buildConfigField("boolean", "DIAG", "true")
             crunchPngs true
-            testCoverageEnabled = true
+            testCoverageEnabled = false
         }
         release {
             manifestPlaceholders = [name: "@string/app_name", icon: "@mipmap/ic_launcher", roundicon: "@mipmap/ic_launcher_round"]
             resValue "string", "app_search_auth", defaultConfig.applicationId + '.SearchContentProvider'
-            buildConfigField("boolean", "DIAG", "true")
             minifyEnabled true
             shrinkResources true
             crunchPngs true
@@ -82,9 +97,9 @@ dependencies {
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
     implementation 'com.google.android.material:material:1.1.0'
     // https://github.com/square/okhttp
-    implementation 'com.squareup.okhttp3:okhttp:4.4.0'  // also working: 4.3.1, with okhttp 4.3.1, see: https://github.com/square/okhttp/issues/5760
-    // https://github.com/google/conscrypt
-    implementation 'org.conscrypt:conscrypt-android:2.2.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.7.2'  // also working: 4.4.0, 4.3.1, with okhttp 4.3.1, see: https://github.com/square/okhttp/issues/5760
+    // https://github.com/google/conscrypt - integrates with okhttp (see https://github.com/square/okhttp)
+    implementation 'org.conscrypt:conscrypt-android:2.4.0'  // also working: 2.2.1
     implementation 'com.squareup.picasso:picasso:2.71828'
     //noinspection GradleDependency
     implementation 'com.google.android.exoplayer:exoplayer-core:2.9.6' // also working: 2.9.[5..1]; not working: 2.10.0

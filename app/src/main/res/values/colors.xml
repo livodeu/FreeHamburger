@@ -18,10 +18,17 @@
     <color name="colorBoxBackground">#111288cc</color>
     <color name="colorToggling">#eebb33</color>
 
-    <!-- background color for news -->
+    <!-- dark and light background colors for the RecyclerView -->
+    <color name="colorRecyclerBg">#ff0f70aa</color>
+    <color name="colorRecyclerBgLight">#ffffffff</color>
+
+    <!-- dark background color for news -->
     <color name="colorBgNews">#5c26a6f0</color>
-    <color name="colorBgNewsLight">#ffffffff</color>
     <color name="colorBgNewsFocused">#c01e83bd</color>
+    <color name="colorBgNewsPressed">#c01e83bd</color>
+    <!-- light background color for news -->
+    <color name="colorBgNewsLight">#ffffffff</color>
+    <color name="colorBgNewsPressedLight">#c0208bc9</color>
     <color name="colorBgNewsFocusedLight">#c0208bc9</color>
 
     <!-- title text color for regional news -->
