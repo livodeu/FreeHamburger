@@ -31,8 +31,6 @@ import android.view.ViewGroup;
 
 import com.squareup.picasso.Request;
 
-import org.conscrypt.Conscrypt;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -87,7 +85,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_CACHE_MAX_SIZE = "pref_cache_max_size";
     /** String: default maximum 'disk' cache size in MB */
     public static final String DEFAULT_CACHE_MAX_SIZE = "15";
-    //public final static String DATENSCHUTZERKLAERUNG = "datenschutzerklaerung100.json";
     /** default maximum 'disk' cache size in MB */
     public static final long DEFAULT_CACHE_MAX_SIZE_MB = Long.parseLong(DEFAULT_CACHE_MAX_SIZE);
     /** String: maximum memory cache size in MB */
@@ -166,11 +163,11 @@ public class App extends Application implements Application.ActivityLifecycleCal
     static final String PREF_ORIENTATION = "pref_orientation";
     @Orientation static final String PREF_ORIENTATION_DEFAULT = ORIENTATION_AUTO;
     /** teletext url without page number (must be appended) */
-    final static String URL_TELETEXT_WO_PAGE = "https://www.ard-text.de/mobil/";
+    static final String URL_TELETEXT_WO_PAGE = "https://www.ard-text.de/mobil/";
     /** teletext url */
-    final static String URL_TELETEXT = URL_TELETEXT_WO_PAGE + "100";
+    static final String URL_TELETEXT = URL_TELETEXT_WO_PAGE + "100";
     /** teletext host */
-    final static String URI_TELETEXT_HOST = Uri.parse(URL_TELETEXT).getHost();
+    static final String URI_TELETEXT_HOST = Uri.parse(URL_TELETEXT).getHost();
     static final String EXTRA_CRASH = BuildConfig.APPLICATION_ID + ".crash";
     static final String EXTRA_SCREENSHOT = BuildConfig.APPLICATION_ID + ".screenshot";
     /** back button behaviour: pressing back stops the app (respectively the Android default behaviour) */
@@ -191,14 +188,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
     private static final Set<String> PERMITTED_HOSTS = new HashSet<>(28);
 
     /*
-     for info about latest 'official' app versions, call:
-     wget -U "F-Droid 1.6.2" https://service.tagesschau.de/app/repo/index-v1.jar
-     unpack the jar file
-     and look into the enclosed json file
-      */
+     * possible app versions and os versions are merged into the user agent
+     */
     static {
         //                                                                                          2.5.1           2.5.2       2.5.3
         String[] VERSIONS = new String[] {"2018080901", "2018102216", "2019011010", "2019032813", "2019040312", "2019071716", "2019080809"};
+        // https://en.wikipedia.org/wiki/Android_version_history
         String[] OSS = new String[] {"6.0.1", "7.0.1", "7.1.0", "7.1.1", "7.1.2", "8.0.0", "8.1.0", "9.0.0", "10.0.0"};
         USER_AGENT = "Tagesschau/de.tagesschau (" + VERSIONS[(int)(Math.random() * VERSIONS.length)] + ", Android: " + OSS[(int)(Math.random() * OSS.length)] + ")";
     }
@@ -315,6 +310,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
         return false;
     }
 
+    /**
+     * Closes the {@link #client OkHttpClient}.
+     */
     private void closeClient() {
         try {
             if (this.client != null) {
@@ -562,12 +560,25 @@ public class App extends Application implements Application.ActivityLifecycleCal
          https://square.github.io/okhttp/security_providers/
          and
          https://developer.android.com/reference/javax/net/ssl/SSLSocket#default-configuration-for-different-android-versions
+
+         Accessing Conscrypt via reflection allows to simply remove the reference in build.gradle without any other modifications
          */
         try {
             // https://github.com/square/okhttp#requirements
-            Security.insertProviderAt(Conscrypt.newProvider(), 1);
+            Class<?> conscryptClass = Class.forName("org.conscrypt.Conscrypt");
+            java.lang.reflect.Method newProvider = conscryptClass.getMethod("newProvider");
+            // the method might throw UnsatisfiedLinkError
+            Object provider = newProvider.invoke(null);
+            if (provider instanceof java.security.Provider) {
+                int installedAt = Security.insertProviderAt((java.security.Provider) provider, 1);
+                if (BuildConfig.DEBUG) {
+                    if (installedAt < 0) Log.e(TAG, "Failed to insert " + provider);
+                }
+            }
+        } catch (ClassNotFoundException cnfe) {
+            if (BuildConfig.DEBUG) Log.i(TAG, "Running without Conscrypt.");
         } catch (Throwable t) {
-            if (BuildConfig.DEBUG) Log.e(TAG, t.toString());
+            if (BuildConfig.DEBUG) Log.e(TAG, "Failed to instantiate Conscrypt: " + t.toString());
         }
 
         // loading the permitted hosts asynchronously saves ca. 10 to 20 ms
