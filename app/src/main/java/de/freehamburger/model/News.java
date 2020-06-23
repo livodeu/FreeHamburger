@@ -39,6 +39,7 @@ public final class News implements Comparable<News>, Serializable {
     public static final String NEWS_TYPE_STORY = "story";
     public static final String NEWS_TYPE_WEBVIEW = "webview";
     public static final String NEWS_TYPE_VIDEO = "video";
+    public static final News DEMO = BuildConfig.DEMO_TITLE != null ? new News(false) : null;
     private static final String TAG = "News";
     /** Example: 2017-11-16T11:54:03.882+01:00 */
     private static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
@@ -116,7 +117,7 @@ public final class News implements Comparable<News>, Serializable {
      * @return text without HTML elements
      */
     @Nullable
-    private static String fixHtml(@Nullable final String input) {
+    public static String fixHtml(@Nullable final String input) {
         if (input == null) return null;
         if (input.length() == 0) return "";
         String output;
@@ -268,6 +269,7 @@ public final class News implements Comparable<News>, Serializable {
     public static News parseNews(@NonNull final JsonReader reader, boolean regional) throws IOException {
         final News news = new News(regional);
         loop(reader, news);
+        if (BuildConfig.DEMO_TITLE != null) news.demonize();
         return news;
     }
 
@@ -295,6 +297,31 @@ public final class News implements Comparable<News>, Serializable {
             return -1;
         }
         return Long.compare(o.ts, ts);
+    }
+
+    /**
+     * Replaces content that has been loaded from a remote source with dummy content.
+     */
+    public void demonize() {
+        if (BuildConfig.DEMO_TITLE == null) return;
+        //noinspection deprecation
+        this.date = new Date(2020,0,1,12,34);
+        this.ts = this.date.getTime();
+        this.externalId = String.valueOf(id);
+        this.title = BuildConfig.DEMO_TITLE;
+        this.titleL = this.title.toLowerCase();
+        this.topline = "Liber I";
+        this.toplineL = this.topline.toLowerCase();
+        this.content = Content.DEMO;
+        this.firstSentence = "Androidium est omnis divisum in partes XI.";
+        this.firstSentenceL = this.firstSentence.toLowerCase();
+        this.details = null;
+        this.shorttext = null;
+        this.ressort = "ausland";
+        this.type = NEWS_TYPE_STORY;
+        this.teaserImage = TeaserImage.DEMO;
+        this.shareUrl = "https://www.example.org/share.htm";
+        this.streams.clear();
     }
 
     /** {@inheritDoc} */

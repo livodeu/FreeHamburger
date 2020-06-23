@@ -76,6 +76,15 @@ public class Content implements Serializable {
      */
     private static final String TAG_LISTITEM_END = "font";
 
+    public static final Content DEMO = BuildConfig.DEMO_TITLE != null ? new Content() : null;
+
+    static {
+        if (DEMO != null) {
+            DEMO.text = BuildConfig.DEMO_TEXT;
+            DEMO.plainText = BuildConfig.DEMO_TITLE;
+        }
+    }
+
     @NonNull private final List<ContentElement> elementList = new ArrayList<>(16);
     @NonNull private final List<Video> videoList = new ArrayList<>();
     @NonNull private final List<Audio> audioList = new ArrayList<>();
@@ -207,7 +216,7 @@ public class Content implements Serializable {
                     String boxLink = box.getLink();
                     if (!TextUtils.isEmpty(boxLink)) {
                         htmlTextBuilder.append("<font color=\"").append(colorBox).append("\"><").append(TAG_BOX_LINK).append('>')
-                        // e.g.: "link": "<a href=\"https://www.tagesschau.de/api2/ausland/grossbritannien-eu-regeln-101.json\" type=\"intern\">mehr</a>",
+                        // e.g.: "link": "<a href=\"https://www.server.nl/api7/buitenland/guldenvlies.json\" type=\"intern\">meer</a>",
                         .append(boxLink).append("</").append(TAG_BOX_LINK).append("></font>");
                     }
                     htmlTextBuilder.append("</").append(TAG_BOX).append(">");
