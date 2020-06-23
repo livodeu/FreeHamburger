@@ -5,30 +5,20 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
-        <item name="colorButtonNormal">@color/colorPrimary</item> <!-- the background color of a button -->
+        <item name="colorButtonNormal">@color/colorPrimary</item>
         <item name="android:navigationBarColor">@color/colorPrimary</item>
         <item name="android:fastScrollThumbDrawable">@android:drawable/btn_default</item>
         <item name="android:fastScrollOverlayPosition">atThumb</item>
         <item name="android:alertDialogTheme">@style/AppAlertDialogTheme</item>
         <item name="alertDialogTheme">@style/AppAlertDialogTheme</item>
         <item name="android:windowBackground">@color/colorPrimaryLight</item>
-        <item name="android:windowBackgroundFallback">@color/colorPrimaryLight</item>
         <item name="listMenuViewStyle">@style/AppTheme.ListMenuViewStyle</item>
-        <item name="android:contextPopupMenuStyle">@style/ContextMenu</item>
         <item name="color_bg_news">@color/colorBgNews</item>
         <item name="color_bg_news_focused">@color/colorBgNewsFocused</item>
-    </style>
-
-    <style name="AppTheme.Black">
-        <item name="android:windowBackground">@android:color/black</item>
-    </style>
-
-    <style name="AppTheme.Launcher" parent="AppTheme">
-        <item name="colorPrimary">@android:color/transparent</item>
-        <item name="colorPrimaryDark">@android:color/transparent</item>
-        <item name="colorAccent">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowBackground">@drawable/color_primary_to_grey_gradient</item>
+        <item name="snackbarStyle">@style/Widget.App.Snackbar</item>
+        <!-- down here are the differences to the standard styles.xml -->
+        <!-- contextPopupMenuStyle allows a colored context menu (it'd have a white background if this were not here) -->
+        <item name="android:contextPopupMenuStyle">@style/ContextMenu</item>
     </style>
 
     <style name="ContextMenu" parent="AppTheme">
@@ -41,14 +31,6 @@
         <item name="android:dropDownVerticalOffset">0dip</item>
         <item name="android:dropDownHorizontalOffset">0dip</item>
         <item name="android:dropDownWidth">wrap_content</item>
-    </style>
-
-    <style name="AppTheme.ListMenuViewStyle" parent="Widget.AppCompat.ListMenuView">
-        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Body2.White</item>
-        <item name="android:itemTextAppearance">@style/TextAppearance.AppCompat.Body2.White</item>
-        <item name="android:itemBackground">@drawable/bg_menuitem</item>
-        <item name="subMenuArrow">@drawable/ic_arrow_right_ededed_24dp</item>
-        <item name="android:subMenuArrow">@drawable/ic_arrow_right_ededed_24dp</item>
     </style>
 
 </resources>

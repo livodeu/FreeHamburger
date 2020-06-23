@@ -1,6 +1,8 @@
 <resources>
 
     <!-- https://developer.android.com/guide/topics/ui/look-and-feel/darktheme -->
+    <!-- https://medium.com/androiddevelopers/appcompat-v23-2-daynight-d10f90c83e94 -->
+    <!-- Does not work without other modifications: <style name="AppTheme" parent="Theme.MaterialComponents.DayNight"> -->
     <style name="AppTheme" parent="Theme.AppCompat.DayNight">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
@@ -15,6 +17,12 @@
         <item name="listMenuViewStyle">@style/AppTheme.ListMenuViewStyle</item>
         <item name="color_bg_news">@color/colorBgNews</item>
         <item name="color_bg_news_focused">@color/colorBgNewsFocused</item>
+        <!-- https://www.material.io/develop/android/components/snackbars/#theming-snackbars -->
+        <item name="snackbarStyle">@style/Widget.App.Snackbar</item>
+    </style>
+
+    <style name="Widget.App.Snackbar" parent="Widget.Design.Snackbar">
+        <item name="android:background">@drawable/bg_button</item>
     </style>
 
     <style name="AppTheme.Black">
@@ -45,7 +53,7 @@
         <item name="android:windowBackground">@color/colorDirtyWhite</item>
         <item name="colorPrimary">@color/colorPrimaryLight</item>
         <item name="colorPrimaryDark">@color/colorPrimary</item>
-        <item name="colorButtonNormal">@color/colorPrimaryLight</item> <!-- the background color of a button -->
+        <item name="colorButtonNormal">@color/colorPrimaryLight</item>
         <item name="color_bg_news">@color/colorBgNewsLight</item>
         <item name="color_bg_news_focused">@color/colorBgNewsFocusedLight</item>
     </style>
@@ -54,7 +62,7 @@
         <item name="android:windowBackground">@color/colorDirtyWhite</item>
         <item name="colorPrimary">@color/colorPrimaryLight</item>
         <item name="colorPrimaryDark">@color/colorPrimary</item>
-        <item name="colorButtonNormal">@color/colorPrimaryLight</item> <!-- the background color of a button -->
+        <item name="colorButtonNormal">@color/colorPrimaryLight</item>
         <item name="actionOverflowButtonStyle">@null</item>
     </style>
 
