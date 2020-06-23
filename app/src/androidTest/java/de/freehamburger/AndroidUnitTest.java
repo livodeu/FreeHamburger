@@ -2,6 +2,7 @@ package de.freehamburger;
 
 import android.app.Activity;
 import android.app.DownloadManager;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
@@ -13,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ShortcutManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.security.NetworkSecurityPolicy;
 import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
@@ -25,25 +27,32 @@ import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.StyleRes;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 import androidx.test.filters.SmallTest;
+import androidx.test.rule.ActivityTestRule;
 import de.freehamburger.adapters.NewsRecyclerAdapter;
 import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Region;
 import de.freehamburger.model.Source;
+import de.freehamburger.model.TextFilter;
 import de.freehamburger.supp.SearchHelper;
 import de.freehamburger.util.MediaSourceHelper;
 import de.freehamburger.util.TtfInfo;
@@ -73,12 +82,29 @@ public class AndroidUnitTest {
     private static final long DOWNLOAD_TIMEOUT = 6_000L;
     /** max age of the downloaded json data before we download again */
     private static final long FILE_MAX_AGE = 3_600_000L;
+    @Rule
+    public ActivityTestRule<NewsActivity> newsActivityRule = new ActivityTestRule<>(NewsActivity.class);
     private Context ctx;
     private File file;
     private DownloadManager dm;
     private long downloadId;
     @Nullable
     private Set<String> regions;
+
+    private static String styleIdToString(@StyleRes final int resid) {
+        try {
+            final Field[] ff = R.style.class.getFields();
+            for (Field f : ff) {
+                Object o = f.get(R.style.class);
+                if (o instanceof Integer) {
+                    if (resid == (int)o) return f.getName();
+                }
+            }
+        } catch (Exception e) {
+            fail(e.toString());
+        }
+        return null;
+    }
 
     @After
     public void cleanup() {
@@ -150,7 +176,7 @@ public class AndroidUnitTest {
         assertTrue(FILENAME + " cannot be read", file.canRead());
         BlobParser bp = new BlobParser(ctx, null);
         Blob blob = bp.doInBackground(new File[] {file});
-        assertNotNull("BlobParser returned null", blob);
+        assertNotNull("BlobParser returned null for " + file, blob);
         // regional news
         List<News> regionalNews = blob.getRegionalNewsList();
         assertNotNull("Regional news list is null", regionalNews);
@@ -193,7 +219,7 @@ public class AndroidUnitTest {
         NotificationManager nm = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         assertNotNull(nm);
         StatusBarNotification[] n = nm.getActiveNotifications();
-        assertTrue(n.length > 0);
+        assertTrue("No active notifications", n.length > 0);
         // a little time to have a look at the notification
         try {
             Thread.sleep(5_000L);
@@ -211,6 +237,83 @@ public class AndroidUnitTest {
         NetworkSecurityPolicy nsp = NetworkSecurityPolicy.getInstance();
         assertFalse("Cleartext traffic to www.tagesschau.de is allowed", nsp.isCleartextTrafficPermitted("www.tagesschau.de"));
         assertFalse("Cleartext traffic to www.google.com is allowed", nsp.isCleartextTrafficPermitted("www.google.com"));
+    }
+
+    @Test
+    public void testErrorNotification() {
+        if (!BuildConfig.DIAG) return;
+        final String t = "T" + System.currentTimeMillis();
+        final int notificationId = 1 + (int)(Math.random() * 1000);
+        Intent intent = new Intent(ctx, MainActivity.class);
+        intent.putExtra(App.EXTRA_CRASH, new RuntimeException(t));
+        MainActivity.handleCrash(ctx, intent, notificationId);
+        NotificationManager nm = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        assertNotNull(nm);
+        StatusBarNotification[] nn = nm.getActiveNotifications();
+        assertTrue("No active notifications", nn.length > 0);
+        boolean found = false;
+        for (StatusBarNotification n : nn) {
+            if (n.getId() == notificationId) {
+                Bundle e = n.getNotification().extras;
+                assertNotNull(e);
+                CharSequence title = e.getCharSequence(Notification.EXTRA_TITLE);
+                assertTrue("Error notification title does not contain Exception message", TextUtils.indexOf(title, t) >= 0);
+                found = true;
+                break;
+            }
+        }
+        assertTrue("Error notification not found", found);
+        nm.cancel(notificationId);
+    }
+
+    /**
+     * Tests {@link TextFilter TextFilters}
+     */
+    @Test
+    public void testFilter() {
+        assertNotNull(file);
+        assertNotNull(ctx);
+        assertTrue("Does not exist: " + file, file.isFile());
+        BlobParser bp = new BlobParser(ctx, null);
+        Blob blob = bp.doInBackground(new File[] {file});
+        assertNotNull("BlobParser returned null for " + file, blob);
+        List<News> list = blob.getAllNews();
+        assertFalse(list.isEmpty());
+        News news0 = list.get(0);
+        assertNotNull(news0);
+        // must be a 'story' for a meaningful test
+        assertEquals(News.NEWS_TYPE_STORY, news0.getType());
+        // get a phrase from the News to test against
+        String partofNews = news0.getFirstSentence();
+        if (partofNews == null || partofNews.indexOf(' ') <= 0) partofNews = news0.getTopline();
+        if (partofNews == null || partofNews.indexOf(' ') <= 0) partofNews = news0.getTitle();
+        assertNotNull(partofNews);
+        partofNews = partofNews.toLowerCase(Locale.GERMAN);
+        int space = partofNews.indexOf(' ');
+        assertTrue(space > 0);
+        String firstWord = partofNews.substring(0, space).trim();
+        // a phrase very unlikely to occur in the News (let's hope that)
+        String notPartOfNews = "donald loves adi!";
+        // tf1 should NOT let news0 pass because it is directly derived from it
+        TextFilter tf1 = new TextFilter(partofNews);
+        assertFalse(tf1 + " accepts " + news0, tf1.accept(news0));
+        // tf1i is the inversed tf1
+        TextFilter tf1i = new TextFilter(partofNews, false, true);
+        assertTrue(tf1i + " does not accept " + news0, tf1i.accept(news0));
+        // tf2 should let news0 pass because it contains a phrase very unlikely to occur in the News
+        TextFilter tf2 = new TextFilter(notPartOfNews);
+        assertTrue(tf2 + " does not accept " + news0, tf2.accept(news0));
+        // tf2i is the inversed tf2
+        TextFilter tf2i = new TextFilter(notPartOfNews, false, true);
+        assertFalse(tf2i + " accepts " + news0, tf2i.accept(news0));
+        // tf3 should NOT let news0 pass because it is directly derived from it
+        TextFilter tf3 = new TextFilter(firstWord, true, false, false, false);
+        assertFalse(tf3 + " accepts " + news0, tf3.accept(news0));
+        // tf4 and tf5 should let news0 pass because HTML tags should not be included in the comparison
+        TextFilter tf4 = new TextFilter("<em>", false, false, false, false);
+        assertTrue(tf4 + " does not accept " + news0, tf4.accept(news0));
+        TextFilter tf5 = new TextFilter("<br>", false, false, false, false);
+        assertTrue(tf5 + " does not accept " + news0, tf5.accept(news0));
     }
 
     /**
@@ -315,9 +418,9 @@ public class AndroidUnitTest {
             }
             // image
             if (news.getTeaserImage() != null && news.getTeaserImage().hasImage()) {
-                assertEquals(nv.imageView.getVisibility(), View.VISIBLE);
+                assertEquals("Image view is not visible for " + news, nv.imageView.getVisibility(), View.VISIBLE);
             } else {
-                assertNotEquals(nv.imageView.getVisibility(), View.VISIBLE);
+                assertNotEquals("Image view is visible for imageless " + news, nv.imageView.getVisibility(), View.VISIBLE);
             }
 
         }
@@ -437,6 +540,21 @@ public class AndroidUnitTest {
         } catch (Exception e) {
             fail(e.getMessage());
         }
+    }
+
+    /**
+     * Tests {@link HamburgerActivity#applyTheme(AppCompatActivity, boolean, boolean)}.
+     */
+    @Test
+    public void testTheme() {
+        NewsActivity activity = newsActivityRule.launchActivity(new Intent(Intent.ACTION_MAIN));
+        assertNotNull(activity);
+        boolean overflowButton = activity.hasMenuOverflowButton();
+        @StyleRes int resid = HamburgerActivity.applyTheme(activity, true, false);
+        assertEquals("Unexpected theme: " + styleIdToString(resid), overflowButton ? R.style.AppTheme_NoActionBar_Light : R.style.AppTheme_NoActionBar_Light_NoOverflowButton, resid);
+        resid = HamburgerActivity.applyTheme(activity, false, true);
+        assertEquals("Unexpected theme: " + styleIdToString(resid), overflowButton ? R.style.AppTheme_NoActionBar : R.style.AppTheme_NoActionBar_NoOverflowButton, resid);
+        activity.finish();
     }
 
     /**
