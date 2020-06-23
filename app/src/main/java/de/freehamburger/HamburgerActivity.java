@@ -8,7 +8,6 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -24,9 +23,11 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StyleRes;
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import de.freehamburger.util.Util;
 
 /**
  * Base for {@link MainActivity} and {@link NewsActivity}.
@@ -70,8 +71,9 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
      * @param again true / false
      * @throws NullPointerException if {@code activity} is {@code null}
      */
-    private static void applyTheme(@NonNull AppCompatActivity activity, boolean lightBackground, boolean again) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "applyTheme(" + activity.getClass().getSimpleName() + ", " + lightBackground + ", " + again + ")");
+    @VisibleForTesting
+    @StyleRes
+    public static int applyTheme(@NonNull AppCompatActivity activity, boolean lightBackground, boolean again) {
         @StyleRes int resid;
         if (activity instanceof HamburgerActivity) {
             HamburgerActivity ha = (HamburgerActivity) activity;
@@ -92,6 +94,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         } else {
             activity.setTheme(resid);
         }
+        return resid;
     }
 
     /**
@@ -104,26 +107,19 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
      * @return {@link App#BACKGROUND_LIGHT} or {@link App#BACKGROUND_DARK}
      * @throws NullPointerException if {@code activity} is {@code null}
      */
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     @App.BackgroundSelection
-    static int applyTheme(@NonNull final AppCompatActivity activity, @Nullable SharedPreferences prefs, boolean again) {
+    public static int applyTheme(@NonNull final AppCompatActivity activity, @Nullable SharedPreferences prefs, boolean again) {
         // determine whether a light or a dark background is applicable
         if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(activity);
-        @App.BackgroundSelection int background  = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
+        @App.BackgroundSelection int background = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
         // select theme based on the background
         if (background == App.BACKGROUND_DARK) {
             applyTheme(activity, false, again);
         } else if (background == App.BACKGROUND_LIGHT) {
             applyTheme(activity, true, again);
         } else {
-            boolean nightMode;
-            if (BuildConfig.DEBUG) {
-                int n = activity.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
-                nightMode = (n == 32);
-                Log.i(TAG, "Night mode: " + (n == 32 ? "yes" : (n == 16 ? "no" : "undefined")));
-            } else {
-                nightMode = (activity.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-            }
-            applyTheme(activity, !nightMode, again);
+            applyTheme(activity, !Util.isNightMode(activity), again);
         }
         //
         return background;
@@ -233,7 +229,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         Intent settingsIntent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
         if (getPackageManager().resolveActivity(settingsIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
             sb = Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_LONG);
-            // the unicode wrench symbol 🔧 (0x1f527)
+            // the unicode wrench symbol (0x1f527)
             sb.setAction("\uD83D\uDD27", v -> {
                 sb.dismiss();
                 startActivity(settingsIntent);

@@ -3,20 +3,10 @@ package de.freehamburger.adapters;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-
-import androidx.annotation.FloatRange;
-import androidx.annotation.IntRange;
-import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.UiThread;
-import androidx.annotation.VisibleForTesting;
-import androidx.recyclerview.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.SparseArray;
 import android.util.TypedValue;
@@ -34,6 +24,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntRange;
+import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
+import androidx.recyclerview.widget.RecyclerView;
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.HamburgerService;
@@ -43,6 +41,7 @@ import de.freehamburger.model.Filter;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
 import de.freehamburger.util.Log;
+import de.freehamburger.util.Util;
 import de.freehamburger.views.NewsView;
 import de.freehamburger.views.NewsViewNoContent;
 import de.freehamburger.views.NewsViewNoContentNoTitle;
@@ -58,12 +57,12 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     @NonNull private final NewsAdapterActivity activity;
     @NonNull private final List<Filter> filters = new ArrayList<>(4);
     private final Handler handler = new Handler();
-    @App.BackgroundSelection private int background;
     /** a NewsView instance for each view type; used to preload News items via {@link #preloader} */
     private final SparseArray<NewsView> dummyNewsViews = new SparseArray<>(3);
     /** a ViewHolder instance for each view type */
     private final SparseArray<ViewHolder> viewholderCache = new SparseArray<>(3);
     private final Preloader preloader = new Preloader();
+    @App.BackgroundSelection private int background;
     private boolean filtersEnabled;
     private Thread viewholderCreator;
     private int contextMenuIndex = -1;
@@ -311,9 +310,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         switch (this.background) {
             case App.BACKGROUND_DARK: newsView.setBackgroundResource(R.drawable.bg_news); break;
             case App.BACKGROUND_LIGHT: newsView.setBackgroundResource(R.drawable.bg_news_light); break;
-            case App.BACKGROUND_AUTO:
-                boolean nightMode = (this.activity.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-                newsView.setBackgroundResource(nightMode ? R.drawable.bg_news : R.drawable.bg_news_light);
+            case App.BACKGROUND_AUTO: newsView.setBackgroundResource(Util.isNightMode(this.activity) ? R.drawable.bg_news : R.drawable.bg_news_light);
         }
 
         final Resources res = this.activity.getResources();

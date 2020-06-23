@@ -1,7 +1,6 @@
 package de.freehamburger.util;
 
 import android.Manifest;
-import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Context;
@@ -10,10 +9,10 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ShortcutInfo;
 import android.content.pm.ShortcutManager;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.Point;
@@ -26,6 +25,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.text.Html;
@@ -40,7 +40,6 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.webkit.MimeTypeMap;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -419,22 +418,19 @@ public class Util {
      * @throws NullPointerException if {@code sb} is {@code null}
      * @throws IllegalArgumentException if {@code duration} is less than 0
      */
-    public static void fadeSnackbar(@NonNull final Snackbar sb, @IntRange(from = 0) final long duration) {
-        final Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) sb.getView();
-        final TextView textView = snackLayout.findViewById(com.google.android.material.R.id.snackbar_text);
-        final Button action = snackLayout.findViewById(com.google.android.material.R.id.snackbar_action);
-        final int textColor = textView.getCurrentTextColor();
-        final int textColorEnd = Color.argb(0, Color.red(textColor), Color.green(textColor), Color.blue(textColor));
-        final int buttonTextColor = action.getCurrentTextColor();
-        final int buttonTextColorEnd = Color.argb(0, Color.red(buttonTextColor), Color.green(buttonTextColor), Color.blue(buttonTextColor));
-        final String propertyName = "textColor";
-        final ObjectAnimator oa = ObjectAnimator.ofArgb(textView, propertyName, textColor, textColorEnd).setDuration(duration);
-        final ObjectAnimator aa = ObjectAnimator.ofArgb(action, propertyName, buttonTextColor, buttonTextColorEnd).setDuration(duration);
-        final AnimatorSet animatorSet = new AnimatorSet();
-        animatorSet.playTogether(oa, aa);
-        animatorSet.setInterpolator(new AccelerateInterpolator(1.5f));
+    public static void fadeSnackbar(@NonNull final Snackbar sb, @IntRange(from = 0) long duration) {
+        float durationScale = Settings.Global.getFloat(sb.getContext().getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 0f);
+        if (durationScale < 0.1f) {
+            // make sure the animation does not happen if the animator scale is 0! (the Snackbar would be gone immediately)
+            sb.setDuration((int)duration).show();
+            return;
+        }
+        if (durationScale < 1f) duration = (long)(duration / durationScale);
+        Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) sb.getView();
+        ObjectAnimator oa = ObjectAnimator.ofFloat(snackLayout, "alpha", 1f, 0f).setDuration(duration);
+        oa.setInterpolator(new AccelerateInterpolator(2f));
         sb.show();
-        animatorSet.start();
+        oa.start();
     }
 
     /**
@@ -822,6 +818,16 @@ public class Util {
         NetworkInfo networkInfo = connMgr != null ? connMgr.getActiveNetworkInfo() : null;
         if (networkInfo == null || !networkInfo.isConnected()) return false;
         return (networkInfo.getType() == ConnectivityManager.TYPE_MOBILE || networkInfo.getType() == ConnectivityManager.TYPE_MOBILE_DUN);
+    }
+
+    /**
+     * Returns {@code true} if the {@link Configuration configuration} is in night mode.
+     * @param ctx Context
+     * @return true/false
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
+    public static boolean isNightMode(@NonNull Context ctx) {
+        return (ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
     }
 
     /**

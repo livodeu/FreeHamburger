@@ -9,7 +9,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.http.SslError;
@@ -144,8 +143,7 @@ public class WebViewActivity extends AppCompatActivity {
         setSupportActionBar(findViewById(R.id.toolbar));
 
         this.webView = findViewById(R.id.webView);
-        boolean nightMode = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-        this.webView.setBackgroundColor(nightMode ? Color.BLACK : Color.WHITE);
+        this.webView.setBackgroundColor(Util.isNightMode(this) ? Color.BLACK : Color.WHITE);
         this.webView.setWebViewClient(new HamburgerWebViewClient(this));
         this.webView.setWebChromeClient(new HamburgerWebChromeClient(this));
         this.webView.clearHistory();
