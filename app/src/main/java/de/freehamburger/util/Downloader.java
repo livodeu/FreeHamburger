@@ -14,6 +14,7 @@ import androidx.annotation.Size;
 import java.io.File;
 
 import de.freehamburger.BuildConfig;
+import okhttp3.HttpUrl;
 
 /**
  * General-purpose downloader.<br>
@@ -178,13 +179,14 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
      * for a download.
      */
     public static final class Order {
-        /** URL to download from (non-null) */
+        /** URL to download from (non-null and must start with http) */
         @NonNull
         final String url;
         /** local path for the data to be stored in (non-null) */
         @NonNull
         final String localPath;
         /** the listener to receive a notification upon completion */
+        @NonNull
         final DownloaderListener listener;
         /** the timestamp when the data had been updated most recently */
         final long mostRecentUpdate;
@@ -198,9 +200,13 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
          * @param mostRecentUpdate timestamp of most recent update of the data (0 if not known)
          * @param preventChunky {@code true} to add a "Transfer-Encoding: identity" request header
          * @param listener  the listener to receive a notification upon completion
+         * @throws IllegalArgumentException if {@code url} does not start with 'http' (anticipating behaviour of {@link okhttp3.HttpUrl.Builder#parse$okhttp(HttpUrl, String) HttpUrl.Builder.parse()})
+         * @throws NullPointerException if {@code url} is {@code null}
          */
-        public Order(@NonNull String url, @NonNull String localPath, @IntRange(from = 0) long mostRecentUpdate, boolean preventChunky, DownloaderListener listener) {
+        public Order(@NonNull String url, @NonNull String localPath, @IntRange(from = 0) long mostRecentUpdate, boolean preventChunky, @NonNull DownloaderListener listener) {
             super();
+            // as okhttp3.HttpUrl.Builder.parse() checks the url for http (and throws an IllegalArgumentException if it's not http), we might as well do it here…
+            if (!url.toLowerCase(java.util.Locale.US).startsWith("http")) throw new IllegalArgumentException("Not a http(s) URL: " + url);
             this.url = url;
             this.localPath = localPath;
             this.mostRecentUpdate = mostRecentUpdate;

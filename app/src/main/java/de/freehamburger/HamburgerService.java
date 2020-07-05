@@ -195,11 +195,11 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      * Loads a remote resource.
      * @param url Url to load from
      * @param localFile local file to save to
-     * @param listener DownloaderListener (optional)
+     * @param listener DownloaderListener
      * @throws NullPointerException if {@code localFile} is {@code null}
      */
     @RequiresPermission(Manifest.permission.INTERNET)
-    void loadFile(@NonNull String url, @NonNull File localFile, @Nullable Downloader.DownloaderListener listener) {
+    void loadFile(@NonNull String url, @NonNull File localFile, @NonNull Downloader.DownloaderListener listener) {
         loadFile(url, localFile, 0L, listener);
     }
 
@@ -208,17 +208,17 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      * @param url Url to load from
      * @param localFile local file to save to
      * @param mostRecentUpdate timestamp of point in time when the resource has been loaded most recently; will set the "If-Modified-Since" header
-     * @param listener DownloaderListener (optional)
+     * @param listener DownloaderListener
      * @throws NullPointerException if {@code localFile} is {@code null}
      */
     @RequiresPermission(Manifest.permission.INTERNET)
-    void loadFile(@NonNull String url, @NonNull File localFile, long mostRecentUpdate, @Nullable Downloader.DownloaderListener listener) {
+    void loadFile(@NonNull String url, @NonNull File localFile, long mostRecentUpdate, @NonNull Downloader.DownloaderListener listener) {
         OkHttpDownloader fd = new OkHttpDownloader(this);
         try {
            fd.executeOnExecutor(this.loaderExecutor, new Downloader.Order(url, localFile.getAbsolutePath(), mostRecentUpdate, false, listener));
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, "loadFile(\"" + url + "\", ..., ...) failed: " + e.toString());
-            if (listener != null) listener.downloaded(false, null);
+            listener.downloaded(false, null);
         }
     }
 
