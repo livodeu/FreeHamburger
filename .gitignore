@@ -8,7 +8,11 @@ captures/
 keystore.properties
 .directory
 /app/src/main/gen/
+/app/src/nonoptimisedDemo/
+/app/src/nonoptimisedDemo/res/
+/app/src/nonoptimisedDemo/res/drawable-anydpi/
 doc/
+/build.txt
 #Private test cases
 /app/src/androidTest/java/de/freehamburger/*Private.java
 /app/src/androidTest/resources

@@ -76,23 +76,14 @@ public class Content implements Serializable {
      */
     private static final String TAG_LISTITEM_END = "font";
 
-    public static final Content DEMO = BuildConfig.DEMO_TITLE != null ? new Content() : null;
-
-    static {
-        if (DEMO != null) {
-            DEMO.text = BuildConfig.DEMO_TEXT;
-            DEMO.plainText = BuildConfig.DEMO_TITLE;
-        }
-    }
-
     @NonNull private final List<ContentElement> elementList = new ArrayList<>(16);
     @NonNull private final List<Video> videoList = new ArrayList<>();
     @NonNull private final List<Audio> audioList = new ArrayList<>();
     @NonNull private final List<Related> relatedList = new ArrayList<>();
     /** the HTML text */
-    private String text;
+    String text;
     /** the plain text */
-    private String plainText;
+    String plainText;
 
     /**
      * Parses the given JsonReader to retrieve a Content element.

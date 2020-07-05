@@ -39,7 +39,6 @@ public final class News implements Comparable<News>, Serializable {
     public static final String NEWS_TYPE_STORY = "story";
     public static final String NEWS_TYPE_WEBVIEW = "webview";
     public static final String NEWS_TYPE_VIDEO = "video";
-    public static final News DEMO = BuildConfig.DEMO_TITLE != null ? new News(false) : null;
     private static final String TAG = "News";
     /** Example: 2017-11-16T11:54:03.882+01:00 */
     private static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
@@ -48,41 +47,41 @@ public final class News implements Comparable<News>, Serializable {
     private final Set<String> tags = new HashSet<>(8);
     private final Set<String> geotags = new HashSet<>(4);
     /** the streams of differenty qualities (highest number found was all 7 StreamQualities) */
-    private final Map<StreamQuality, String> streams = new EnumMap<>(StreamQuality.class);
+    final Map<StreamQuality, String> streams = new EnumMap<>(StreamQuality.class);
     private final Set<Region> regions = new HashSet<>(2);
-    private final long id = nextid++;
+    final long id = nextid++;
     private final boolean regional;
 
-    private boolean breakingNews;
-    @Nullable private Content content;
+    boolean breakingNews;
+    @Nullable Content content;
     /** {@code true} if this News has undergone corrective processing according to the User's preferences */
-    private boolean corrected;
-    @Nullable private Date date;
+    boolean corrected;
+    @Nullable Date date;
     /** equivalent to {@link #date} */
-    @IntRange(from = 0L) private long ts;
+    @IntRange(from = 0L) long ts;
     /** a URL pointing to a json file */
-    private String details;
+    String details;
     /** a URL pointing to a HTML file */
-    private String detailsWeb;
+    String detailsWeb;
     /** an id which is here used to check for equality */
-    private String externalId;
+    String externalId;
     /** the 3rd level title */
-    private String firstSentence;
-    private String ressort;
-    @Nullable private String shareUrl;
-    private String shorttext;
+    String firstSentence;
+    String ressort;
+    @Nullable String shareUrl;
+    String shorttext;
     /** the 2nd level title used only in the {@link Source#HOME HOME} category */
-    private String title;
-    private TeaserImage teaserImage;
+    String title;
+    TeaserImage teaserImage;
     /** the 1st level title */
-    private String topline;
-    @Nullable @NewsType private String type;
+    String topline;
+    @Nullable @NewsType String type;
     /** the contents of {@link #topline} in lower case */
-    private transient String toplineL;
+    transient String toplineL;
     /** the contents of {@link #title} in lower case */
-    private transient String titleL;
+    transient String titleL;
     /** the contents of {@link #firstSentence} in lower case */
-    private transient String firstSentenceL;
+    transient String firstSentenceL;
 
     /**
      * Fixes the given News objects.<br>
@@ -269,7 +268,16 @@ public final class News implements Comparable<News>, Serializable {
     public static News parseNews(@NonNull final JsonReader reader, boolean regional) throws IOException {
         final News news = new News(regional);
         loop(reader, news);
-        if (BuildConfig.DEMO_TITLE != null) news.demonize();
+        //noinspection ConstantConditions
+        if ("demo".equals(BuildConfig.BUILD_TYPE)) {
+            try {
+                Class<?> dc = Class.forName("de.freehamburger.model.Demo");
+                java.lang.reflect.Method demonize = dc.getMethod("demonize", News.class);
+                demonize.invoke(dc, news);
+            } catch (Exception e) {
+                Log.w(TAG, e.toString());
+            }
+        }
         return news;
     }
 
@@ -297,31 +305,6 @@ public final class News implements Comparable<News>, Serializable {
             return -1;
         }
         return Long.compare(o.ts, ts);
-    }
-
-    /**
-     * Replaces content that has been loaded from a remote source with dummy content.
-     */
-    public void demonize() {
-        if (BuildConfig.DEMO_TITLE == null) return;
-        //noinspection deprecation
-        this.date = new Date(2020,0,1,12,34);
-        this.ts = this.date.getTime();
-        this.externalId = String.valueOf(id);
-        this.title = BuildConfig.DEMO_TITLE;
-        this.titleL = this.title.toLowerCase();
-        this.topline = "Liber I";
-        this.toplineL = this.topline.toLowerCase();
-        this.content = Content.DEMO;
-        this.firstSentence = "Androidium est omnis divisum in partes XI.";
-        this.firstSentenceL = this.firstSentence.toLowerCase();
-        this.details = null;
-        this.shorttext = null;
-        this.ressort = "ausland";
-        this.type = NEWS_TYPE_STORY;
-        this.teaserImage = TeaserImage.DEMO;
-        this.shareUrl = "https://www.example.org/share.htm";
-        this.streams.clear();
     }
 
     /** {@inheritDoc} */

@@ -63,7 +63,7 @@
             android:visibility="gone"
             android:onClick="onQuickViewClicked"
             tools:ignore="ContentDescription"
-            tools:src="@drawable/dummy"
+            tools:src="@tools:sample/backgrounds/scenic"
             />
 
     </RelativeLayout>

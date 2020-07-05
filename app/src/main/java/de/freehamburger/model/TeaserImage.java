@@ -1,10 +1,5 @@
 package de.freehamburger.model;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import de.freehamburger.BuildConfig;
-import de.freehamburger.R;
-
 import android.util.JsonReader;
 import android.util.JsonToken;
 
@@ -14,6 +9,9 @@ import java.util.AbstractMap;
 import java.util.EnumMap;
 import java.util.Map;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 /**
  *
  */
@@ -21,24 +19,11 @@ public class TeaserImage implements Serializable {
 
     /** the {@link Quality Qualities} ordered from best to worst */
     private static final Quality[] BEST_QUALITY = new Quality[] {Quality.L, Quality.P2, Quality.M, Quality.P1, Quality.S};
-    public static final TeaserImage DEMO = BuildConfig.DEMO_TITLE != null ? new TeaserImage() : null;
 
-    static {
-        if (DEMO != null) {
-            DEMO.title = BuildConfig.DEMO_TITLE ;
-            DEMO.copyright = BuildConfig.DEMO_TITLE ;
-            DEMO.alttext = BuildConfig.DEMO_TITLE ;
-            String dummyImage = "android.resource://" + BuildConfig.APPLICATION_ID + "/" + R.drawable.dummy;
-            DEMO.images.put(Quality.S, dummyImage);
-            DEMO.images.put(Quality.M, dummyImage);
-            DEMO.images.put(Quality.L, dummyImage);
-        }
-    }
-
-    private final AbstractMap<Quality, String> images = new EnumMap<>(Quality.class);
-    private String title;
-    private String copyright;
-    private String alttext;
+    final AbstractMap<Quality, String> images = new EnumMap<>(Quality.class);
+    String title;
+    String copyright;
+    String alttext;
 
     /**
      * Parses the given JsonReader to retrieve a TeaserImage element.
@@ -104,7 +89,7 @@ public class TeaserImage implements Serializable {
     /**
      * Constructor.
      */
-    private TeaserImage() {
+    TeaserImage() {
         super();
     }
 
