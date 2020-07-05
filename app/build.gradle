@@ -93,7 +93,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation 'androidx.preference:preference:1.1.1'
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     implementation 'com.google.android.material:material:1.1.0'
     // https://github.com/square/okhttp
     implementation 'com.squareup.okhttp3:okhttp:4.7.2'  // also working: 4.4.0, 4.3.1, with okhttp 4.3.1, see: https://github.com/square/okhttp/issues/5760
