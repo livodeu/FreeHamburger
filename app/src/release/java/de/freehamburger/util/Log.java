@@ -4,7 +4,6 @@ import java.io.File;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import de.freehamburger.BuildConfig;
 
 /**
  * Empty class for release versions.
