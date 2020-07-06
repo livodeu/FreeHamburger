@@ -639,7 +639,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * @throws NullPointerException if {@code localFile} is {@code null}
      */
     @RequiresPermission(Manifest.permission.INTERNET)
-    private void loadFile(@NonNull String url, @NonNull File localFile, @Nullable Downloader.DownloaderListener listener) {
+    private void loadFile(@NonNull String url, @NonNull File localFile, @NonNull Downloader.DownloaderListener listener) {
         OkHttpDownloader downloader = new OkHttpDownloader(this);
         try {
             App app = (App) getApplicationContext();
@@ -647,7 +647,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             downloader.executeOnExecutor(this.loaderExecutor, new Downloader.Order(url, localFile.getAbsolutePath(), mostRecentUpdate, true, listener));
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG + id, "loadFile(\"" + url + "\", ..., ...) failed: " + e.toString());
-            if (listener != null) listener.downloaded(false, null);
+            listener.downloaded(false, null);
             done();
         }
     }
