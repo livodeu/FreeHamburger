@@ -39,18 +39,6 @@ android {
         preDexLibraries true
     }
 
-    flavorDimensions "optimisation"
-
-    productFlavors {
-        optimised {
-            // app size ca. 90% of nonoptimised
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-        nonoptimised {
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-
     buildTypes {
         // demo mode suppresses external content
         demo {
@@ -76,6 +64,7 @@ android {
             manifestPlaceholders = [name: "@string/app_name", icon: "@mipmap/ic_launcher", roundicon: "@mipmap/ic_launcher_round"]
             resValue "string", "app_search_auth", defaultConfig.applicationId + '.SearchContentProvider'
             minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             shrinkResources true
             crunchPngs true
             signingConfig signingConfigs.release
@@ -86,10 +75,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation 'androidx.preference:preference:1.1.1'

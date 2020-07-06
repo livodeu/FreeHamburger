@@ -188,14 +188,22 @@ public class App extends Application implements Application.ActivityLifecycleCal
     private static final Set<String> PERMITTED_HOSTS = new HashSet<>(28);
 
     /*
-     * possible app versions and os versions are merged into the user agent
+     * For older apps, possible app versions and os versions are merged into the user agent.
+     * For version 3.0.1, the user-agent is "okhttp/4.5.0"
      */
     static {
-        //                                                                                          2.5.1           2.5.2       2.5.3
-        String[] VERSIONS = new String[] {"2018080901", "2018102216", "2019011010", "2019032813", "2019040312", "2019071716", "2019080809"};
-        // https://en.wikipedia.org/wiki/Android_version_history
-        String[] OSS = new String[] {"6.0.1", "7.0.1", "7.1.0", "7.1.1", "7.1.2", "8.0.0", "8.1.0", "9.0.0", "10.0.0"};
-        USER_AGENT = "Tagesschau/de.tagesschau (" + VERSIONS[(int)(Math.random() * VERSIONS.length)] + ", Android: " + OSS[(int)(Math.random() * OSS.length)] + ")";
+        boolean beV3 = Math.random() < 0.5;
+        if (beV3) {
+            USER_AGENT = "okhttp/4.5.0";
+        } else {
+            //                                                                            2.5.0         2.5.1           2.5.2       2.5.3
+            String[] VERSIONS = new String[] {"2018080901", "2018102216", "2019011010", "2019032813", "2019040312", "2019071716", "2019080809"};
+            // https://en.wikipedia.org/wiki/Android_version_history
+            //TODO what does the other app send; 9.0.0 or 9.0 or else?
+            String[] OSS = new String[] {"6.0", "6.0.1", "7.0.1", "7.1.0", "7.1.1", "7.1.2", "8.0.0", "8.1.0", "9.0.0", "10.0.0"};
+            USER_AGENT = "Tagesschau/de.tagesschau (" + VERSIONS[(int) (Math.random() * VERSIONS.length)] + ", Android: " + OSS[(int) (Math.random() * OSS.length)] + ")";
+        }
+        if (BuildConfig.DEBUG) Log.i(TAG, "User agent is '" + USER_AGENT + "'");
     }
 
     private final Handler handler = new Handler();
