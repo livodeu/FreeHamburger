@@ -47,8 +47,8 @@ public class ButtonPreference extends Preference implements View.OnClickListener
     /** rotation period in ms */
     private static final long ROTATION = 333L;
     private static final float SHADOW_BLUR = 4f;
-    private static final float SHADOW_X = 8f;
-    private static final float SHADOW_Y = 8f;
+    private static final float SHADOW_X = 4f;
+    private static final float SHADOW_Y = 4f;
 
     private final Handler handler = new Handler();
 
@@ -285,7 +285,6 @@ public class ButtonPreference extends Preference implements View.OnClickListener
      * Stores the state of the preference.
      */
     private static class SavedState extends BaseSavedState {
-        @SuppressWarnings("unused")
         public static final Creator<SavedState> CREATOR = new Creator<ButtonPreference.SavedState>() {
             public ButtonPreference.SavedState createFromParcel(Parcel in) {
                 return new ButtonPreference.SavedState(in);
