@@ -59,10 +59,8 @@
     <string name="msg_not_modified">Die Daten sind noch aktuell.</string>
     <string name="action_search">Suche</string>
     <string name="action_share">Teilen</string>
-    <string name="action_share_screenshot">Screenshot teilen</string>
     <string name="action_scroll_to_top">Nach oben</string>
     <string name="msg_not_found">Nicht gefunden: „%1$s”</string>
-    <string name="msg_sorry">Entschuldigen Sie bitte die Unterbrechung!</string>
     <plurals name="msg_regions_selected">
         <item quantity="one">%1$d Region gewählt.</item>
         <item quantity="other">%1$d Regionen gewählt.</item>

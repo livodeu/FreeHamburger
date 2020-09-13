@@ -8,9 +8,7 @@ captures/
 keystore.properties
 .directory
 /app/src/main/gen/
-/app/src/nonoptimisedDemo/
-/app/src/nonoptimisedDemo/res/
-/app/src/nonoptimisedDemo/res/drawable-anydpi/
+/app/src/demo/
 doc/
 /build.txt
 #Private test cases

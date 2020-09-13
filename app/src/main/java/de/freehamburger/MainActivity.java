@@ -2,10 +2,7 @@ package de.freehamburger;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
-import android.app.Notification;
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
@@ -25,7 +22,6 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Icon;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -189,100 +185,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /** used to remember the font before SettingsActivity is invoked (separate from recentPreferences because, {@link SharedPreferences#getAll() according to docs}, they must not be modified) */
     private long recentFontTimestamp = 0L;
 
-    @VisibleForTesting
-    public static void handleCrash(@NonNull final Context ctx, @NonNull Intent intent, int notificationId) {
-        Throwable crash = (Throwable)intent.getSerializableExtra(App.EXTRA_CRASH);
-        int se = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
-        try {
-            se = ctx.getPackageManager().getComponentEnabledSetting(new ComponentName(BuildConfig.APPLICATION_ID, ShareScreenshotActivity.class.getName()));
-        } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
-        }
-        if (se == PackageManager.COMPONENT_ENABLED_STATE_ENABLED && crash != null) {
-            String screenShotFile = intent.getStringExtra(ShareScreenshotActivity.EXTRA_SCREENSHOT_FILE);
-            NotificationManager nm = (NotificationManager)ctx.getSystemService(NOTIFICATION_SERVICE);
-            if (nm != null) {
-                App app = (App)ctx.getApplicationContext();
-                final String msg = crash.getMessage();
-                final String stackTrace = Util.getStackTrace(crash);
-                if (BuildConfig.DEBUG) Log.i(TAG, stackTrace);
-                Notification.Builder builder = new Notification.Builder(ctx)
-                        .setVisibility(Notification.VISIBILITY_PUBLIC)
-                        .setCategory(Notification.CATEGORY_ERROR)
-                        .setSmallIcon(R.drawable.ic_notification)
-                        .setColor(0xffff8800)
-                        .setContentTitle(msg)
-                        .setContentText(stackTrace)
-                        .setStyle(new Notification.BigTextStyle().setBigContentTitle(msg).bigText(stackTrace))
-                        .setShowWhen(true)
-                        ;
-                if (screenShotFile != null && !(crash instanceof OutOfMemoryError)) {
-                    BitmapFactory.Options o = new BitmapFactory.Options();
-                    o.inSampleSize = 4;
-                    o.inPreferredConfig = Bitmap.Config.RGB_565;
-                    Bitmap bm = BitmapFactory.decodeFile(screenShotFile, o);
-                    if (bm != null) {
-                        int w = ctx.getResources().getDimensionPixelSize(android.R.dimen.notification_large_icon_width);
-                        int h = ctx.getResources().getDimensionPixelSize(android.R.dimen.notification_large_icon_height);
-                        builder.setLargeIcon(Bitmap.createScaledBitmap(bm, w, h, false));
-                    }
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    builder.setColorized(true);
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    builder.setAllowSystemGeneratedContextualActions(false);
-                }
-                // https://android-developers.googleblog.com/2016/06/notifications-in-android-n.html
-                boolean actionIconsShown = Build.VERSION.SDK_INT < Build.VERSION_CODES.N;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    Intent share = new Intent(Intent.ACTION_SEND);
-                    share.setType("text/plain");
-                    share.putExtra(Intent.EXTRA_SUBJECT, msg);
-                    share.putExtra(Intent.EXTRA_TEXT, stackTrace);
-                    share = Intent.createChooser(share, ctx.getString(R.string.app_name) + " error");
-                    share.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    PendingIntent piShare = PendingIntent.getActivity(app, 1, share, 0);
-                    builder.addAction(new Notification.Action.Builder(
-                            Icon.createWithResource(app, R.drawable.ic_share_ededed_24dp),
-                            actionIconsShown ? "Trace" : app.getString(R.string.action_share),
-                            piShare)
-                            .build());
-                    if (screenShotFile != null) {
-                        Intent shareScreenshot = new Intent(app, ShareScreenshotActivity.class);
-                        shareScreenshot.putExtra(ShareScreenshotActivity.EXTRA_SCREENSHOT_FILE, screenShotFile);
-                        PendingIntent piShareScreenshot = PendingIntent.getActivity(ctx, 2, shareScreenshot, PendingIntent.FLAG_UPDATE_CURRENT);
-                        builder.addAction(new Notification.Action.Builder(
-                                Icon.createWithResource(app, R.drawable.ic_share_ededed_24dp),
-                                actionIconsShown ? "Screenshot" : app.getString(R.string.action_share_screenshot),
-                                piShareScreenshot)
-                                .build());
-                    }
-                    // the 3rd one is left out when there is no network connection and below Nougat (the latter because there's to little space…)
-                    if (Util.isNetworkAvailable(ctx) && !actionIconsShown) {
-                        Intent sorry = new Intent(Intent.ACTION_VIEW);
-                        sorry.setDataAndType(Uri.parse("https://imgs.xkcd.com/comics/unreachable_state.png"), "text/plain");
-                        PendingIntent piSorry = PendingIntent.getActivity(ctx, 3, sorry, PendingIntent.FLAG_UPDATE_CURRENT);
-                        builder.addAction(new Notification.Action.Builder(
-                                Icon.createWithResource(app, R.drawable.ic_wb_sunny_ededed_24dp),
-                                "\uD83D\uDE1F",
-                                piSorry)
-                                .build());
-                    }
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    NotificationChannel nc = app.getNotificationChannel();
-                    if (nc != null) builder.setChannelId(nc.getId());
-                }
-                Notification n = builder.build();
-                nm.notify(notificationId, n);
-            }
-        } else {
-            Toast.makeText(ctx, R.string.msg_sorry, Toast.LENGTH_SHORT).show();
-        }
-        intent.removeExtra(App.EXTRA_CRASH);
-    }
-
     /**
      * Switches to another {@link Source}.<br>
      * Does not do anything if the given Source is the current one.
@@ -424,9 +326,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      */
     private void handleIntent(@Nullable Intent intent) {
         if (intent == null) intent = getIntent();
-        if (intent.hasExtra(App.EXTRA_CRASH)) {
-            handleCrash(this, intent, 747);
-        }
 
         final String action = intent.getAction();
 
@@ -1435,7 +1334,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      * The user has tapped the 'quick view' which, when visible, displays the article's {@link News#getTeaserImage() teaser image}.
      * @param ignored ignored View
      */
-    @SuppressWarnings("unused") // studio considers this unused, but it's referred to in content_main.xml...
     public void onQuickViewClicked(@Nullable View ignored) {
         this.quickView.setVisibility(View.GONE);
         this.quickView.setImageBitmap(null);

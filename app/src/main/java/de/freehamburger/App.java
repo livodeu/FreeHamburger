@@ -3,20 +3,14 @@ package de.freehamburger;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.media.AudioManager;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -26,15 +20,11 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 
 import com.squareup.picasso.Request;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.InetSocketAddress;
@@ -599,29 +589,11 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
             if (BuildConfig.DEBUG) {
+                Activity activity = getCurrentActivity();
                 boolean isCurrentThread = Thread.currentThread().equals(t);
-                Log.wtf(TAG, "*** Uncaught Exception in "  + (isCurrentThread ? "current thread: " : "another thread: ") + e.toString(), e);
+                Log.wtf(TAG, "*** Uncaught Exception in " + (activity != null ? activity.getClass().getSimpleName() : "no activity") + " in "  + (isCurrentThread ? "current thread: " : "another thread: ") + e.toString(), e);
             }
-
-            // if the user has been using the app, restart it; else just exit
-            Activity activity = getCurrentActivity();
-            if (activity != null) {
-                if (!(e instanceof OutOfMemoryError)) {
-                    try {
-                        View view = activity.getWindow().getDecorView();
-                        Bitmap bm = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
-                        view.draw(new Canvas(bm));
-                        restartApp(e, bm);
-                    } catch (Throwable ee) {
-                        if (BuildConfig.DEBUG) Log.e(TAG, ee.toString(), ee);
-                        restartApp(e, null);
-                    }
-                } else {
-                    restartApp(e, null);
-                }
-            } else {
-                System.exit(-2);
-            }
+            System.exit(-1);
         });
 
         // from O on, a NotificationChannel is required
@@ -655,20 +627,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
         PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-
-        if (BuildConfig.DIAG) {
-            ComponentName a = null;
-            try {
-                a = new ComponentName(BuildConfig.APPLICATION_ID, ShareScreenshotActivity.class.getName());
-                getPackageManager().setComponentEnabledSetting(a, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
-                int state = getPackageManager().getComponentEnabledSetting(a);
-                if (state != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
-                    if (BuildConfig.DEBUG) Log.e(TAG, "State of " + a + ": " + state);
-                }
-            } catch (Exception e) {
-                if (BuildConfig.DEBUG) Log.e(TAG, "While trying to enable " + a + ": " + e.toString());
-            }
-        }
 
         FileDeleter.run();
 
@@ -713,48 +671,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
             this.inflatedViewForWebViewActivity = null;
         }
         super.onTrimMemory(level);
-    }
-
-    /**
-     * Restarts the app after an unexpected error.
-     * @param e Throwable that caused the restart
-     * @param screenshot window content when the Throwable was thrown
-     */
-    private void restartApp(@NonNull Throwable e, @Nullable Bitmap screenshot) {
-        try {
-            AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            if (am != null) {
-                Intent mainActivityIntent = new Intent(this, MainActivity.class);
-                mainActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                mainActivityIntent.putExtra(EXTRA_CRASH, e);
-                if (screenshot != null) {
-                    File exports = new File(getCacheDir(), App.EXPORTS_DIR);
-                    if (!exports.isDirectory()) {
-                        if (!exports.mkdirs()) screenshot = null;
-                    }
-                    if (screenshot != null) {
-                        File screenshotFile = new File(exports, "screenshot_"  + BuildConfig.VERSION_NAME + '_' + System.currentTimeMillis() + ShareScreenshotActivity.FILETAG);
-                        OutputStream out = null;
-                        boolean compressed;
-                        try {
-                            out = new BufferedOutputStream(new FileOutputStream(screenshotFile));
-                            compressed = screenshot.compress(ShareScreenshotActivity.COMPRESSFORMAT, 70, out);
-                        } catch (Exception ee) {
-                            compressed = false;
-                            if (BuildConfig.DEBUG) Log.e(TAG, ee.toString(), ee);
-                        }
-                        Util.close(out);
-                        if (compressed && screenshotFile.length() > 0L) {
-                            mainActivityIntent.putExtra(ShareScreenshotActivity.EXTRA_SCREENSHOT_FILE, screenshotFile.getAbsolutePath());
-                        }
-                    }
-                }
-                PendingIntent intent = PendingIntent.getActivity(getBaseContext(), 0, mainActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
-                am.set(AlarmManager.RTC, System.currentTimeMillis() + 2_000L, intent);
-            }
-        } catch (Throwable ignored) {
-        }
-        System.exit(-2);
     }
 
     /**

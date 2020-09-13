@@ -2,7 +2,6 @@ package de.freehamburger;
 
 import android.app.Activity;
 import android.app.DownloadManager;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
@@ -14,7 +13,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.ShortcutManager;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.security.NetworkSecurityPolicy;
 import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
@@ -237,33 +235,6 @@ public class AndroidUnitTest {
         NetworkSecurityPolicy nsp = NetworkSecurityPolicy.getInstance();
         assertFalse("Cleartext traffic to www.tagesschau.de is allowed", nsp.isCleartextTrafficPermitted("www.tagesschau.de"));
         assertFalse("Cleartext traffic to www.google.com is allowed", nsp.isCleartextTrafficPermitted("www.google.com"));
-    }
-
-    @Test
-    public void testErrorNotification() {
-        if (!BuildConfig.DIAG) return;
-        final String t = "T" + System.currentTimeMillis();
-        final int notificationId = 1 + (int)(Math.random() * 1000);
-        Intent intent = new Intent(ctx, MainActivity.class);
-        intent.putExtra(App.EXTRA_CRASH, new RuntimeException(t));
-        MainActivity.handleCrash(ctx, intent, notificationId);
-        NotificationManager nm = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-        assertNotNull(nm);
-        StatusBarNotification[] nn = nm.getActiveNotifications();
-        assertTrue("No active notifications", nn.length > 0);
-        boolean found = false;
-        for (StatusBarNotification n : nn) {
-            if (n.getId() == notificationId) {
-                Bundle e = n.getNotification().extras;
-                assertNotNull(e);
-                CharSequence title = e.getCharSequence(Notification.EXTRA_TITLE);
-                assertTrue("Error notification title does not contain Exception message", TextUtils.indexOf(title, t) >= 0);
-                found = true;
-                break;
-            }
-        }
-        assertTrue("Error notification not found", found);
-        nm.cancel(notificationId);
     }
 
     /**

@@ -43,7 +43,6 @@
     <string name="action_share">Share</string>
     <string name="action_share_image">Share picture</string>
     <string name="action_share_news">Share article</string>
-    <string name="action_share_screenshot">Share screenshot</string>
     <string name="action_share_video">Share video</string>
     <string name="action_shortcut_create">Create shortcut</string>
     <string name="action_show_updates" translatable="false">Show bg updates</string>
@@ -190,7 +189,6 @@
     </plurals>
     <string name="msg_search_sugg_deleted_locale">Search suggestions have been cleared due to the recent change of locale!</string>
     <string name="msg_shortcut_exists">The shortcut already exists.</string>
-    <string name="msg_sorry">Sorry for the interruption!</string>
     <string name="msg_standby_bucket_frequent">This app is not used often. Background activities may be delayed by up to 8 hrs!</string>
     <string name="msg_standby_bucket_rare">This app is used rarely. Background activities may be delayed by up to 24 hrs!</string>
     <string name="msg_standby_bucket_workingset">This app is not used very often. Background activities may be delayed by up to 2 hrs!</string>
