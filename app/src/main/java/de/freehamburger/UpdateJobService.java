@@ -27,7 +27,6 @@ import android.widget.Toast;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -144,6 +143,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         //
         int intervalInMinutes;
         try {
+            //noinspection ConstantConditions
             intervalInMinutes = Integer.parseInt(prefs.getString(forNight ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, String.valueOf(minimumIntervalInMinutes)));
             // do not set to a longer interval than the rest of the night or day! (don't wait 7 hours at 5 o'clock!)
             float nowInHours = getCurrentTimeInHours();
@@ -190,6 +190,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     @NonNull
     static List<Long> getAllRequests(@NonNull Context ctx) {
         final Set<String> allRequests = PreferenceManager.getDefaultSharedPreferences(ctx).getStringSet(PREF_STAT_ALL, new HashSet<>(0));
+        //noinspection ConstantConditions
         if (allRequests.isEmpty()) return new ArrayList<>(0);
         final List<Long> ar = new ArrayList<>(allRequests.size());
         for (String r : allRequests) {
@@ -390,6 +391,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             // the simple comparison above does not consider the case that it's now just before the day-night or night-day switch
             // like, for example, at 5:54 => this is still night so we might apply a 420 minutes interval => next update near 13:00!
             final float nowInHours = getCurrentTimeInHours();
+            //noinspection ConstantConditions
             int intervalInMinutes = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(ctx).getString(jobWasScheduledForNight ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, String.valueOf(getMinimumIntervalInMinutes())));
             float intervalInHours = intervalInMinutes / 60f;
             float nightStart = getNightStart();
@@ -851,9 +853,9 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             if (oneOff) {
                 Log.i(TAG + id, "Hamburger update by one-off job");
             } else {
-                String when = DateFormat.getDateTimeInstance().format(new Date(this.scheduledAt));
-                Log.i(TAG + id, "Hamburger update, job originally scheduled at " + when);
-                Set<String> allRequests = prefs.getStringSet(PREF_STAT_ALL, new HashSet<>());
+                // Log.i(TAG + id, "Hamburger update, job originally scheduled at " +  java.text.DateFormat.getDateTimeInstance().format(new Date(this.scheduledAt)));
+                Set<String> allRequests = prefs.getStringSet(PREF_STAT_ALL, new HashSet<>(0));
+                //noinspection ConstantConditions
                 allRequests.add(String.valueOf(System.currentTimeMillis() - ADD_TO_PREF_STAT_ALL_VALUE));
                 SharedPreferences.Editor ed = prefs.edit();
                 ed.putStringSet(PREF_STAT_ALL, allRequests);
