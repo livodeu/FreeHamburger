@@ -551,6 +551,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             if (TextUtils.isEmpty(msg)) msg = e.toString();
             if (BuildConfig.DEBUG) Log.e(TAG, msg);
             if (showMsgUponFail) {
+                //noinspection ConstantConditions
                 if (msg.contains("EACCES")) {
                     Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_permission_denied, Snackbar.LENGTH_LONG).show();
                 } else {
