@@ -153,6 +153,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      */
     void createMemoryCache() {
         clearMemoryCache();
+        //noinspection ConstantConditions
         int maxRamCacheSizeInMB = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(App.PREF_MEM_CACHE_MAX_SIZE, App.DEFAULT_MEM_CACHE_MAX_SIZE));
         this.memoryCache = new com.squareup.picasso.LruCache(maxRamCacheSizeInMB << 20);
     }
