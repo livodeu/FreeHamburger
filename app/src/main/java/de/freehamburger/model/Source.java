@@ -59,6 +59,7 @@ public enum Source {
     @NonNull
     public static CharSequence getParamsForRegional(@NonNull Context ctx) {
         final Set<String> regionIds = PreferenceManager.getDefaultSharedPreferences(ctx).getStringSet(App.PREF_REGIONS, new HashSet<>(0));
+        //noinspection ConstantConditions
         final StringBuilder params = new StringBuilder(regionIds.size() * 3);
         // "0" is not valid (leads to HTTP 400 Bad Request)
         String idUnknown = String.valueOf(Region.UNKNOWN.getId());
