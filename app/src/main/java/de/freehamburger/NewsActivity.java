@@ -10,6 +10,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -322,20 +323,23 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.textViewContent.setText(null);
             return;
         }
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean validAudio = false;
         boolean validTopVideo = false;
         boolean validBottomVideo = false;
         // top video from news.streams
-        String newsVideo = StreamQuality.getStreamsUrl(this, this.news.getStreams());
-        if (newsVideo != null && this.exoPlayerTopVideo != null) {
-            Uri videoUri = Uri.parse(Util.makeHttps(newsVideo));
-            if (App.isHostAllowed(videoUri.getHost())) {
-                validTopVideo = true;
-                MediaSource msTopVideo = this.mediaSourceHelper.buildMediaSource(((App) getApplicationContext()).getOkHttpClient(), videoUri);
-                this.exoPlayerTopVideo.prepare(msTopVideo, true, true);
-                ((SimpleExoPlayer) this.exoPlayerTopVideo).setVolume(0f);
-                this.exoPlayerTopVideo.setRepeatMode(Player.REPEAT_MODE_ALL);
-                this.exoPlayerTopVideo.setPlayWhenReady(true);
+        if (prefs.getBoolean(App.PREF_SHOW_TOP_VIDEO, App.PREF_SHOW_TOP_VIDEO_DEFAULT)) {
+            String newsVideo = StreamQuality.getStreamsUrl(this, this.news.getStreams());
+            if (newsVideo != null && this.exoPlayerTopVideo != null) {
+                Uri videoUri = Uri.parse(Util.makeHttps(newsVideo));
+                if (App.isHostAllowed(videoUri.getHost())) {
+                    validTopVideo = true;
+                    MediaSource msTopVideo = this.mediaSourceHelper.buildMediaSource(((App) getApplicationContext()).getOkHttpClient(), videoUri);
+                    this.exoPlayerTopVideo.prepare(msTopVideo, true, true);
+                    ((SimpleExoPlayer) this.exoPlayerTopVideo).setVolume(0f);
+                    this.exoPlayerTopVideo.setRepeatMode(Player.REPEAT_MODE_ALL);
+                    this.exoPlayerTopVideo.setPlayWhenReady(true);
+                }
             }
         }
         if (!validTopVideo) {
@@ -423,7 +427,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
         // if there is an audio element or a bottom video, show a warning if audio output is muted
         if (validAudio || validBottomVideo) {
-            if (this.originalAudioVolume == 0 && PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_WARN_MUTE, App.PREF_WARN_MUTE_DEFAULT)) {
+            if (this.originalAudioVolume == 0 && prefs.getBoolean(App.PREF_WARN_MUTE, App.PREF_WARN_MUTE_DEFAULT)) {
                 ImageView muteWarning = findViewById(R.id.muteWarning);
                 if (muteWarning != null) {
                     AnimatorSet set = new AnimatorSet();
@@ -502,7 +506,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             }
 
             // if desired, replace all URLSpans linking to permitted hosts with InternalURLSpans which allows to open the urls internally
-            boolean internalLinks = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_OPEN_LINKS_INTERNALLY, App.PREF_OPEN_LINKS_INTERNALLY_DEFAULT);
+            boolean internalLinks = prefs.getBoolean(App.PREF_OPEN_LINKS_INTERNALLY, App.PREF_OPEN_LINKS_INTERNALLY_DEFAULT);
 
             URLSpan[] urlSpans = spannable.getSpans(0, spannable.length(), URLSpan.class);
             if (urlSpans != null) {

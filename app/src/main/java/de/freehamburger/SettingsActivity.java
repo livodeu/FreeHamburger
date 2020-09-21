@@ -348,6 +348,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             Preference prefCorrectQuotationMarks = findPreference(App.PREF_CORRECT_WRONG_QUOTATION_MARKS);
             Preference prefImportFont = findPreference("pref_import_font");
             Preference prefDeleteFont = findPreference("pref_delete_font");
+            Preference prefShowTopVideo = findPreference(App.PREF_SHOW_TOP_VIDEO);
             SeekBarPreference prefFontZoom = findPreference(App.PREF_FONT_ZOOM);
 
             if (prefImportFont != null && prefDeleteFont != null) {
@@ -416,6 +417,14 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     }
                     return true;
                 });
+            }
+
+            if (prefShowTopVideo != null) {
+                int iconSize = getResources().getDimensionPixelSize(R.dimen.pref_icon_size);
+                // 0x1f918 -> https://en.wikibooks.org/wiki/Unicode/Character_reference/1F000-1FFFF
+                prefShowTopVideo.setIcon(new BitmapDrawable(activity.getResources(),
+                        Util.makeCharBitmap("\uD83C\uDFA5", 0f, iconSize, iconSize, Color.BLACK, Color.TRANSPARENT,
+                                new PorterDuffColorFilter(getResources().getColor(R.color.colorDirtyWhite), PorterDuff.Mode.SRC_ATOP))));
             }
 
             if (prefCorrectQuotationMarks != null) {

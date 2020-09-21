@@ -53,6 +53,14 @@
     </Preference>
 
     <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:key="pref_show_top_video"
+        android:title="@string/pref_title_show_top_video"
+        android:summaryOn="@string/pref_title_show_top_video_on"
+        android:summaryOff="@string/pref_title_show_top_video_off"
+        />
+
+    <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="pref_topline_marquee"
         android:title="@string/pref_title_pref_topline_marquee"

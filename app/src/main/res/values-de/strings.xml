@@ -235,6 +235,9 @@
     <string name="pref_title_pref_topline_marquee">Laufschrift in Titelzeile</string>
     <string name="pref_title_pref_topline_marquee_on">wird ggf. verwendet</string>
     <string name="pref_title_pref_topline_marquee_off">wird nicht verwendet</string>
+    <string name="pref_title_show_top_video">Illustrierende Videos</string>
+    <string name="pref_title_show_top_video_off">Illustrierende Artikelvideos werden nicht gezeigt</string>
+    <string name="pref_title_show_top_video_on">Illustrierende Artikelvideos werden ggf. gezeigt</string>
 
     <string name="hint_intro_will_be_played">Die Einführung wird beim nächsten Start angezeigt.</string>
     <string name="hint_intro_will_not_be_played">Die Einführung wird beim nächsten Start nicht angezeigt.</string>

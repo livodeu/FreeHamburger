@@ -217,6 +217,9 @@
     <string name="pref_title_ask_before_finish_on">ask user for confirmation.</string>
     <string name="pref_title_background">Background</string>
     <string name="pref_title_font_zoom">Text magnification</string>
+    <string name="pref_title_show_top_video">Illustrative videos</string>
+    <string name="pref_title_show_top_video_off">Illustrative videos will not be shown</string>
+    <string name="pref_title_show_top_video_on">Illustrative videos will be shown</string>
     <string name="pref_title_open_links_internally">ARD links</string>
     <string name="pref_title_open_links_internally_off">will be opened in the browser</string>
     <string name="pref_title_open_links_internally_on">will be opened internally</string>

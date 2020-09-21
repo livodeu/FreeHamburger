@@ -946,7 +946,7 @@ public class Util {
             for (;; textSize += 1f) {
                 paint.setTextSize(textSize);
                 paint.getTextBounds(s, 0, l, bounds);
-                if (bounds.width() > wx || bounds.height() > wy) {
+                if (bounds.width() >= wx || bounds.height() >= wy) {
                     paint.setTextSize(textSize - 1f);
                     break;
                 }
@@ -960,8 +960,15 @@ public class Util {
             paint.setColorFilter(cf);
         }
         paint.getTextBounds(s, 0, l, bounds);
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, "ascent:  " + paint.getFontMetricsInt().ascent);
+            Log.i(TAG, "bottom:  " + paint.getFontMetricsInt().bottom);
+            Log.i(TAG, "descent: " + paint.getFontMetricsInt().descent);
+            Log.i(TAG, "leading: " + paint.getFontMetricsInt().leading);
+            Log.i(TAG, "top:     " + paint.getFontMetricsInt().top);
+        }
         canvas.setBitmap(bitmap);
-        canvas.drawText(s, wx / 2f, wy / 2f + bounds.height() / 2f, paint);
+        canvas.drawText(s, wx / 2f, wy / 2f + bounds.height() / 2f - paint.getFontMetricsInt().bottom, paint);
         return bitmap;
     }
 

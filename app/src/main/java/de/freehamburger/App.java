@@ -102,6 +102,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** boolean: ask before leaving the app */
     public static final String PREF_ASK_BEFORE_FINISH = "pref_ask_before_finish";
     public static final boolean PREF_ASK_BEFORE_FINISH_DEFAULT = true;
+    /** boolean: show or hide top video in news */
+    public static final String PREF_SHOW_TOP_VIDEO = "pref_show_top_video";
+    public static final boolean PREF_SHOW_TOP_VIDEO_DEFAULT = true;
     /** int: 0 closes the app; 1 navigates to home category; 2 navigates to recent section; see {@link BackButtonBehaviour} */
     public static final String PREF_USE_BACK_IN_APP = "pref_use_back";
     /** boolean */
