@@ -470,6 +470,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.textViewContent.setVisibility(View.GONE);
             this.textViewContent.setText(null);
         } else {
+            //noinspection ConstantConditions
             Spanned spanned = Util.fromHtml(htmlText, this.service);
             this.textViewContent.setText(spanned, TextView.BufferType.SPANNABLE);
             this.textViewContent.setVisibility(View.VISIBLE);
