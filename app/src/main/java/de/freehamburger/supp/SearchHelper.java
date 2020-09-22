@@ -254,6 +254,7 @@ public class SearchHelper {
         }
 
         /** {@inheritDoc} */
+        @SuppressWarnings("ConstantConditions")
         @Override
         public void run() {
             final ContentResolver cr = ctx.getContentResolver();

@@ -267,6 +267,7 @@ public class NewsView extends RelativeLayout {
         if (this.textViewFirstSentence != null) {
             String fs = news.getTextForTextViewFirstSentence();
             if (!TextUtils.isEmpty(fs)) {
+                //noinspection ConstantConditions
                 this.textViewFirstSentence.setText(fs.trim());
                 this.textViewFirstSentence.setVisibility(View.VISIBLE);
             } else {

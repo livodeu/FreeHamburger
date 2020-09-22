@@ -44,7 +44,7 @@ public class TextFilter implements Filter {
     @NonNull
     public static List<Filter> createTextFiltersFromPreferences(@NonNull Context ctx) {
         Set<String> preferredFilters = PreferenceManager.getDefaultSharedPreferences(ctx).getStringSet(App.PREF_FILTERS, new HashSet<>());
-        final List<Filter> filters = new ArrayList<>(preferredFilters.size());
+        @SuppressWarnings("ConstantConditions") final List<Filter> filters = new ArrayList<>(preferredFilters.size());
         for (String pf : preferredFilters) {
             pf = pf.trim();
             if (pf.length() == 0) continue;

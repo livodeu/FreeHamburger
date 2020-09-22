@@ -88,6 +88,7 @@ public enum Region {
      * @return AlertDialog
      * @throws NullPointerException if {@code activity} is {@code null}
      */
+    @SuppressWarnings("ConstantConditions")
     @NonNull
     public static AlertDialog selectRegions(@NonNull Activity activity) {
         final App app = (App)activity.getApplicationContext();
