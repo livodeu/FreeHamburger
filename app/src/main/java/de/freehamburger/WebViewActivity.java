@@ -219,6 +219,7 @@ public class WebViewActivity extends AppCompatActivity {
                 finish();
                 return;
             }
+            //noinspection ConstantConditions
             url = Util.makeHttps(url);
             this.webView.loadUrl(url);
         } else {
