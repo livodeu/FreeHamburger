@@ -262,6 +262,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         //
         String proxyServer;
         int proxyPort;
+        //noinspection ConstantConditions
         int colon = proxyServerAndPort.indexOf(':');
         if (colon > -1) {
             proxyServer = proxyServerAndPort.substring(0, colon).trim();
