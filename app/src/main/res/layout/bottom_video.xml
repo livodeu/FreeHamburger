@@ -77,13 +77,12 @@
             android:layout_centerVertical="true"
             android:elevation="50dp"
             android:src="@drawable/ic_pause_black_24dp"
-            android:tint="@color/colorAccent"
             android:scaleX="3"
             android:scaleY="3"
             android:contentDescription="@string/hint_paused"
             android:visibility="gone"
             tools:visibility="visible"
-            />
+            app:tint="@color/colorAccent" />
     </RelativeLayout>
 
 
