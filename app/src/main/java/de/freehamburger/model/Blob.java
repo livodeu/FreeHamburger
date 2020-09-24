@@ -29,6 +29,8 @@ public class Blob {
 
     private final List<News> newsList = new ArrayList<>(16);
     private final List<News> regionalNewsList = new ArrayList<>(16);
+    /** a https link to a data structure - not always present */
+    @Nullable private String newStoriesCountLink;
     private Date date;
 
     /**
@@ -79,6 +81,7 @@ public class Blob {
                     boolean keep = false;
                     for (Region newsRegion : newsRegions) {
                         String newsRegionId = String.valueOf(newsRegion.getId());
+                        //noinspection ConstantConditions
                         if (regionIdsToInclude.contains(newsRegionId)) {
                             keep = true;
                             break;
@@ -89,6 +92,10 @@ public class Blob {
                     }
                 }
                 blob.regionalNewsList.removeAll(toRemove);
+                continue;
+            }
+            if ("newStoriesCountLink".equals(name))  {
+                blob.newStoriesCountLink = reader.nextString();
                 continue;
             }
             if (reader.hasNext()) {
@@ -124,6 +131,20 @@ public class Blob {
     }
 
     /**
+     * @return Sorted list containing both national news and regional news
+     */
+    @NonNull
+    public List<News> getAllNews() {
+        final List<News> jointList = new ArrayList<>(this.newsList.size() + this.regionalNewsList.size());
+        jointList.addAll(this.newsList);
+        for (News rn : this.regionalNewsList) {
+            if (!jointList.contains(rn)) jointList.add(rn);
+        }
+        Collections.sort(jointList);
+        return jointList;
+    }
+
+    /**
      * Returns the date of the newest/youngest News item.
      * @return Date
      */
@@ -149,22 +170,13 @@ public class Blob {
         return this.date;
     }
 
-    @VisibleForTesting
-    public List<News> getRegionalNewsList() {
-        return regionalNewsList;
+    @Nullable
+    public String getNewStoriesCountLink() {
+        return this.newStoriesCountLink;
     }
 
-    /**
-     * @return Sorted list containing both national news and regional news
-     */
-    @NonNull
-    public List<News> getAllNews() {
-        final List<News> jointList = new ArrayList<>(this.newsList.size() + this.regionalNewsList.size());
-        jointList.addAll(this.newsList);
-        for (News rn : this.regionalNewsList) {
-            if (!jointList.contains(rn)) jointList.add(rn);
-        }
-        Collections.sort(jointList);
-        return jointList;
+    @VisibleForTesting
+    public List<News> getRegionalNewsList() {
+        return this.regionalNewsList;
     }
 }
