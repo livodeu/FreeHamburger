@@ -36,16 +36,6 @@ android {
     }
 
     buildTypes {
-        // demo mode suppresses external content
-        demo {
-            applicationIdSuffix ".debug"
-            versionNameSuffix "-debug"
-            manifestPlaceholders = [name: "@string/app_name_debug", icon: "@mipmap/ic_launcher_debug", roundicon: "@mipmap/ic_launcher_round_debug"]
-            resValue "string", "app_search_auth", defaultConfig.applicationId + applicationIdSuffix + '.SearchContentProvider'
-            crunchPngs true
-            testCoverageEnabled = false
-            signingConfig signingConfigs.debug
-        }
         debug {
             applicationIdSuffix ".debug"
             versionNameSuffix "-debug"
@@ -79,9 +69,9 @@ dependencies {
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     implementation 'com.google.android.material:material:1.2.1'
     // https://github.com/square/okhttp
-    implementation 'com.squareup.okhttp3:okhttp:4.7.2'  // also working: 4.4.0, 4.3.1, with okhttp 4.3.1, see: https://github.com/square/okhttp/issues/5760
-    // https://github.com/google/conscrypt - integrates with okhttp (see https://github.com/square/okhttp)
-    implementation 'org.conscrypt:conscrypt-android:2.4.0'  // also working: 2.2.1
+    implementation 'com.squareup.okhttp3:okhttp:4.9.0' // also working: 4.7.2, 4.4.0, 4.3.1, with okhttp 4.3.1, see: https://github.com/square/okhttp/issues/5760
+    // https://github.com/google/conscrypt - integrates with okhttp (see https://github.com/square/okhttp) - this is optional; the app runs without it
+    implementation 'org.conscrypt:conscrypt-android:2.5.1'  // also working: 2.4.0, 2.2.1
     implementation 'com.squareup.picasso:picasso:2.71828'
     //noinspection GradleDependency
     implementation 'com.google.android.exoplayer:exoplayer-core:2.9.6' // also working: 2.9.[5..1]; not working: 2.10.0
@@ -90,7 +80,6 @@ dependencies {
     //noinspection GradleDependency
     implementation 'com.google.android.exoplayer:exoplayer-hls:2.9.6'  // also working: 2.9.[5..0]; not working: 2.10.0
     implementation 'com.google.android.exoplayer:extension-okhttp:2.9.6'
-    //debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.2'
 
     androidTestImplementation 'androidx.test:core:1.3.0'
     androidTestImplementation 'androidx.test:runner:1.3.0'
