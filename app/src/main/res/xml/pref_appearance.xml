@@ -53,7 +53,7 @@
     </Preference>
 
     <SwitchPreferenceCompat
-        android:defaultValue="true"
+        android:defaultValue="@bool/showTopVideoDefault"
         android:key="pref_show_top_video"
         android:title="@string/pref_title_show_top_video"
         android:summaryOn="@string/pref_title_show_top_video_on"
