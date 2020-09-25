@@ -10,7 +10,7 @@
 
     <dimen name="topline_shadow_size">4</dimen>
 
-    <dimen name="width_navigation_drawer">180dp</dimen>
+    <dimen name="width_navigation_drawer">190dp</dimen>
 
     <dimen name="text_size_clockview_title">18sp</dimen>
 
