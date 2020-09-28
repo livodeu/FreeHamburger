@@ -95,9 +95,9 @@
             android:text="⚆"
             android:textAlignment="center"
             android:textColor="@android:color/white"
-            android:textSize="36sp"
+            android:textSize="36dp"
             android:focusable="false"
-            tools:ignore="HardcodedText" />
+            tools:ignore="HardcodedText,SpUsage" />
     </LinearLayout>
 
 </LinearLayout>
