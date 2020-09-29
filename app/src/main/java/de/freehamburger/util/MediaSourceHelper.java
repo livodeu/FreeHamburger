@@ -3,10 +3,11 @@ package de.freehamburger.util;
 import android.net.Uri;
 
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
-import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 
@@ -23,7 +24,7 @@ public class MediaSourceHelper {
     /** "ExoPlayer" seems to be used by the 'other' app */
     private static final String USER_AGENT = "ExoPlayer";
 
-    private ExtractorMediaSource.Factory ems;
+    private ProgressiveMediaSource.Factory pms;
     private HlsMediaSource.Factory hms;
 
     /**
@@ -46,7 +47,7 @@ public class MediaSourceHelper {
             DataSource.Factory dsf = new OkHttpDataSourceFactory(cf, USER_AGENT);
             this.hms = new HlsMediaSource.Factory(dsf);
         }
-        return this.hms.createMediaSource(uri);
+        return this.hms.createMediaSource(new MediaItem.Builder().setUri(uri).build());
     }
 
     /**
@@ -59,13 +60,12 @@ public class MediaSourceHelper {
     public MediaSource buildMediaSource(@NonNull Call.Factory cf, @NonNull Uri uri) {
         int contentType = com.google.android.exoplayer2.util.Util.inferContentType(uri);
         if (contentType == C.TYPE_HLS) return buildHlsMediaSource(cf, uri);
-        if (this.ems == null) {
+        if (this.pms == null) {
             // call of OkHttpDataSourceFactory constructor could be replaced by "new DefaultHttpDataSourceFactory(USER_AGENT);" if extension-okhttp were not used
             DataSource.Factory dsf = new OkHttpDataSourceFactory(cf, USER_AGENT);
-            this.ems = new ExtractorMediaSource.Factory(dsf);
-            this.ems.setExtractorsFactory(new Mp34ExtractorsFactory());
+            this.pms = new ProgressiveMediaSource.Factory(dsf, new Mp34ExtractorsFactory());
         }
-        return this.ems.createMediaSource(uri);
+        return this.pms.createMediaSource(new MediaItem.Builder().setUri(uri).build());
     }
 
     /**

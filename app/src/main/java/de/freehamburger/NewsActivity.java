@@ -50,11 +50,11 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.Renderer;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
@@ -335,7 +335,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 if (App.isHostAllowed(videoUri.getHost())) {
                     validTopVideo = true;
                     MediaSource msTopVideo = this.mediaSourceHelper.buildMediaSource(((App) getApplicationContext()).getOkHttpClient(), videoUri);
-                    this.exoPlayerTopVideo.prepare(msTopVideo, true, true);
+                    this.exoPlayerTopVideo.setMediaSource(msTopVideo, true);
+                    this.exoPlayerTopVideo.prepare();
                     ((SimpleExoPlayer) this.exoPlayerTopVideo).setVolume(0f);
                     this.exoPlayerTopVideo.setRepeatMode(Player.REPEAT_MODE_ALL);
                     this.exoPlayerTopVideo.setPlayWhenReady(true);
@@ -401,7 +402,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     this.textViewBottomVideoPeek.setText(contentVideoTitle);
                     this.textViewBottomVideoViewOverlay.setText(contentVideoTitle);
                     msBottomVideo = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), uris);
-                    if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.prepare(msBottomVideo, true, true);
+                    if (this.exoPlayerBottomVideo != null) {
+                        this.exoPlayerBottomVideo.setMediaSource(msBottomVideo, true);
+                        this.exoPlayerBottomVideo.prepare();
+                    }
                     this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
                 }
             } else {
@@ -416,7 +420,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     this.textViewBottomVideoPeek.setText(contentVideoTitle);
                     this.textViewBottomVideoViewOverlay.setText(contentVideoTitle);
                     msBottomVideo = this.mediaSourceHelper.buildMediaSource(((App) getApplicationContext()).getOkHttpClient(), uri);
-                    if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.prepare(msBottomVideo, true, true);
+                    if (this.exoPlayerBottomVideo != null) {
+                        this.exoPlayerBottomVideo.setMediaSource(msBottomVideo, true);
+                        this.exoPlayerBottomVideo.prepare();
+                    }
                     this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
                 }
             }
@@ -639,7 +646,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
      * Initialises the ExoPlayers.
      */
     private void initPlayers() {
-        DefaultTrackSelector dts = new DefaultTrackSelector();
+        DefaultTrackSelector dts = new DefaultTrackSelector(this);
         // create ExoPlayer instances
         if (this.loadVideo) {
             this.exoPlayerTopVideo = ExoPlayerFactory.newSimpleInstance(this, dts);
@@ -648,7 +655,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.topVideoView.setPlayer(this.exoPlayerTopVideo);
             this.bottomVideoView.setPlayer(this.exoPlayerBottomVideo);
             // make the bottom video view scale
-            ((SimpleExoPlayer) this.exoPlayerBottomVideo).setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT);
+            ((SimpleExoPlayer) this.exoPlayerBottomVideo).setVideoScalingMode(Renderer.VIDEO_SCALING_MODE_SCALE_TO_FIT);
             // tap the top video view to mute/unmute its audio
             this.topVideoView.getVideoSurfaceView().setOnClickListener(ignored -> toggleTopVideoAudio());
         } else {
@@ -1231,7 +1238,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
         am.setMode(AudioManager.MODE_NORMAL);
         MediaSource msAudio = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), Uri.parse((String) src));
-        this.exoPlayerAudio.prepare(msAudio, true, true);
+        this.exoPlayerAudio.setMediaSource(msAudio, true);
+        this.exoPlayerAudio.prepare();
         this.exoPlayerAudio.setPlayWhenReady(true);
         if (this.originalAudioVolume > 0) {
             ensureMinVolume((float) this.originalAudioVolume / (float) this.maxAudioVolume);

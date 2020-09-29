@@ -122,7 +122,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
      */
     private void initPlayer() {
         // create ExoPlayer instance
-        this.exoPlayerVideo = ExoPlayerFactory.newSimpleInstance(this, new DefaultTrackSelector());
+        this.exoPlayerVideo = ExoPlayerFactory.newSimpleInstance(this, new DefaultTrackSelector(this));
         // assign the ExoPlayer instance to the video view
         this.playerView.setPlayer(this.exoPlayerVideo);
         View st = findViewById(R.id.exo_subtitles);
@@ -286,7 +286,8 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
                 newsVideo = Util.makeHttps(newsVideo);
                 MediaSource ms = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), Uri.parse(newsVideo));
                 requestAudioFocus();
-                this.exoPlayerVideo.prepare(ms, true, true);
+                this.exoPlayerVideo.setMediaSource(ms, true);
+                this.exoPlayerVideo.prepare();
                 this.exoPlayerVideo.setPlayWhenReady(true);
             }
         } else {

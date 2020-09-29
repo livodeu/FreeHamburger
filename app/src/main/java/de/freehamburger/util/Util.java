@@ -608,10 +608,26 @@ public class Util {
     public static String getExoPlaybackExceptionMessage(@NonNull final ExoPlaybackException error) {
         String msg;
         switch (error.type) {
-            case ExoPlaybackException.TYPE_SOURCE: msg = error.getSourceException().getMessage(); break;
-            case ExoPlaybackException.TYPE_RENDERER: msg = error.getRendererException().getMessage(); break;
-            case ExoPlaybackException.TYPE_UNEXPECTED: msg = error.getUnexpectedException().getMessage(); break;
-            default: msg = null;
+            case ExoPlaybackException.TYPE_SOURCE:
+                msg = error.getSourceException().getMessage();
+                break;
+            case ExoPlaybackException.TYPE_RENDERER:
+                msg = error.getRendererException().getMessage();
+                break;
+            case ExoPlaybackException.TYPE_UNEXPECTED:
+                msg = error.getUnexpectedException().getMessage();
+                break;
+            case ExoPlaybackException.TYPE_OUT_OF_MEMORY:
+                msg = error.getOutOfMemoryError().getMessage();
+                break;
+            case ExoPlaybackException.TYPE_TIMEOUT:
+                msg = error.getTimeoutException().getMessage();
+                break;
+            case ExoPlaybackException.TYPE_REMOTE:
+                msg = error.getMessage();
+                break;
+            default:
+                msg = null;
         }
         return msg != null ? msg : error.toString();
     }
