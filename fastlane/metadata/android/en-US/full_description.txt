@@ -1,0 +1,8 @@
+Hamburger is an open client app for the news provided by the oldest German public broadcaster.
+It does not contain any trackers.
+Connections are made only to a predetermined set of servers and not to data dealers.
+If your eyes are positioned horizontally and if you think that vertical videos are not so hot, this app may be for you.
+Also contains access to Teletext!
+And, if you like, you may filter articles that contain certain words.
+
+Needs Android 5 or newer.

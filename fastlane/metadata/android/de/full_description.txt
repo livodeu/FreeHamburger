@@ -1,6 +1,8 @@
 Hamburger ist eine offene Client-App für die Nachrichten des ältesten öffentlich-rechtlichen Fernsehsenders Deutschlands. 
 Es sind keinerlei Tracker enthalten. 
 Verbindungen werden nur zu einem festgelegten Satz von Servern des Senderverbundes aufgebaut, nicht zu Datenhändlern.
-Wenn Ihre Augen horizontal angeordnet sind und Sie daher finden, dass Vertikalvideos sind nicht der letzte heiße Scheiß sind, ist die App vielleicht was für Sie.
+Wenn Ihre Augen horizontal angeordnet sind und Sie daher finden, dass Vertikalvideos nichts für Sie sind, ist diese App vielleicht was für Sie.
+Für Traditionalisten: Videotext gibt es auch.
+Und für Genervte: Sie können Nachrichten ausblenden, die bestimmte Begriffe enthalten.
 
 Systemvoraussetzung: Android 5 oder neuer

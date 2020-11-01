@@ -1,0 +1,1 @@
+Hamburger is an open client app for the news provided by the oldest German public broadcaster.
