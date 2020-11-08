@@ -10,8 +10,8 @@ android {
         applicationId "de.freehamburger"
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.1"
         resConfigs "en", "de"
         buildConfigField("long", "BUILD_TIME", String.valueOf(System.currentTimeMillis()) + "L")
         testApplicationId applicationId + ".test"
