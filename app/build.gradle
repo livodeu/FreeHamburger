@@ -6,6 +6,18 @@ keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
     compileSdkVersion 30
+
+
+    splits {
+        // this reduces the apk size by about 2 to 3 MB
+        abi {
+            enable true
+            reset()
+            include "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
+            universalApk false
+        }
+    }
+
     defaultConfig {
         applicationId "de.freehamburger"
         minSdkVersion 21
@@ -31,7 +43,7 @@ android {
 
     dexOptions {
         maxProcessCount 8
-        javaMaxHeapSize "2g"
+        javaMaxHeapSize "3g"
         preDexLibraries true
     }
 
@@ -67,10 +79,11 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'androidx.preference:preference:1.1.1'
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
+    // https://github.com/material-components/material-components-android
     implementation 'com.google.android.material:material:1.4.0'
     // https://github.com/square/okhttp
     //noinspection GradleDependency
-    implementation 'com.squareup.okhttp3:okhttp:4.9.1' // with okhttp 4.3.1, see: https://github.com/square/okhttp/issues/5760
+    implementation 'com.squareup.okhttp3:okhttp:4.9.1'
     // https://github.com/google/conscrypt - integrates with okhttp (see https://github.com/square/okhttp) - this is optional; the app runs without it
     implementation 'org.conscrypt:conscrypt-android:2.5.2'
     //noinspection GradleDependency
