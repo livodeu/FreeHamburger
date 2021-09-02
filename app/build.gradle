@@ -5,8 +5,7 @@ def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
-    compileSdkVersion 30
-
+    compileSdkVersion 31
 
     splits {
         // this reduces the apk size by about 2 to 3 MB
@@ -21,8 +20,7 @@ android {
     defaultConfig {
         applicationId "de.freehamburger"
         minSdkVersion 21
-        //noinspection OldTargetApi
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionCode 2
         versionName "1.0.1"
         resConfigs "en", "de"
