@@ -1,5 +1,6 @@
 package de.freehamburger;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -50,6 +51,7 @@ public class BootReceiver extends BroadcastReceiver {
         NotificationManager nm = (NotificationManager) app.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
 
+        @SuppressLint("InlinedApi")
         final Notification.Builder builder = new Notification.Builder(app)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(app.getString(R.string.app_name))
@@ -57,7 +59,9 @@ public class BootReceiver extends BroadcastReceiver {
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setCategory(Notification.CATEGORY_STATUS)
                 .setAutoCancel(true)
-                .setContentIntent(PendingIntent.getService(app, 1, new Intent(UpdateJobService.ACTION_CLEAR_NOTIFICATION, null, app, UpdateJobService.class), PendingIntent.FLAG_ONE_SHOT))
+                .setContentIntent(PendingIntent.getService(app, 1,
+                        new Intent(UpdateJobService.ACTION_CLEAR_NOTIFICATION, null, app, UpdateJobService.class),
+                        (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? (PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE) : PendingIntent.FLAG_ONE_SHOT))
                 .setStyle(new Notification.BigTextStyle()
                         .setBigContentTitle(app.getString(R.string.app_name))
                         .bigText(app.getString(R.string.msg_background_active, String.valueOf(scheduled / 60_000L)))

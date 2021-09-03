@@ -1,6 +1,7 @@
 package de.freehamburger;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -266,7 +267,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
 
     @NonNull
     static PendingIntent makeIntentToDisable(@NonNull App app) {
-        return PendingIntent.getService(app, 1, new Intent(ACTION_DISABLE_POLLING, null, app, UpdateJobService.class), PendingIntent.FLAG_ONE_SHOT);
+        @SuppressLint("InlinedApi") int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? (PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE) : PendingIntent.FLAG_ONE_SHOT;
+        return PendingIntent.getService(app, 1, new Intent(ACTION_DISABLE_POLLING, null, app, UpdateJobService.class), flags);
     }
 
     /**
@@ -281,7 +283,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         Intent mainIntent = new Intent(app, MainActivity.class);
         mainIntent.setAction(ACTION_NOTIFICATION);
         if (news != null) mainIntent.putExtra(EXTRA_FROM_NOTIFICATION, news.getExternalId());
-        return PendingIntent.getActivity(app, 0, mainIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        @SuppressLint("InlinedApi") int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE) : PendingIntent.FLAG_UPDATE_CURRENT;
+        return PendingIntent.getActivity(app, 0, mainIntent, flags);
     }
 
     /**
@@ -300,7 +303,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         extras.putString(EXTRA_FROM_NOTIFICATION, news.getExternalId());
         extras.putSerializable(NewsActivity.EXTRA_NEWS, news);
         viewDetailsIntent.putExtras(extras);
-        return PendingIntent.getActivity(app, 0, viewDetailsIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        @SuppressLint("InlinedApi") int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE) : PendingIntent.FLAG_UPDATE_CURRENT;
+        return PendingIntent.getActivity(app, 0, viewDetailsIntent, flags);
     }
 
     /**
@@ -314,7 +318,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private static PendingIntent makeIntentForVideoActivity(@NonNull App app, @NonNull News news) {
         Intent viewVideoIntent = new Intent(app, VideoActivity.class);
         viewVideoIntent.putExtra(VideoActivity.EXTRA_NEWS, news);
-        return PendingIntent.getActivity(app, 0, viewVideoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        @SuppressLint("InlinedApi") int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE) : PendingIntent.FLAG_UPDATE_CURRENT;
+        return PendingIntent.getActivity(app, 0, viewVideoIntent, flags);
     }
 
     /**
@@ -328,7 +333,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private static PendingIntent makeIntentForWebViewActivity(@NonNull App app, @NonNull News news) {
         Intent viewWebIntent = new Intent(app, WebViewActivity.class);
         viewWebIntent.putExtra(WebViewActivity.EXTRA_NEWS, news);
-        return PendingIntent.getActivity(app, 0, viewWebIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        @SuppressLint("InlinedApi") int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE) : PendingIntent.FLAG_UPDATE_CURRENT;
+        return PendingIntent.getActivity(app, 0, viewWebIntent, flags);
     }
 
     /**
@@ -853,9 +859,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             if (oneOff) {
                 Log.i(TAG + id, "Hamburger update by one-off job");
             } else {
-                // Log.i(TAG + id, "Hamburger update, job originally scheduled at " +  java.text.DateFormat.getDateTimeInstance().format(new Date(this.scheduledAt)));
-                Set<String> allRequests = prefs.getStringSet(PREF_STAT_ALL, new HashSet<>(0));
                 //noinspection ConstantConditions
+                Set<String> allRequests = new HashSet<>(prefs.getStringSet(PREF_STAT_ALL, new HashSet<>(0)));
                 allRequests.add(String.valueOf(System.currentTimeMillis() - ADD_TO_PREF_STAT_ALL_VALUE));
                 SharedPreferences.Editor ed = prefs.edit();
                 ed.putStringSet(PREF_STAT_ALL, allRequests);
@@ -874,7 +879,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings("JavaReflectionMemberAccess")
     @Override
     public boolean onStopJob(JobParameters params) {
         this.stopJobReceived = true;
