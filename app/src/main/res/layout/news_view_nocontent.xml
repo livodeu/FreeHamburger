@@ -35,6 +35,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/textViewTopline"
+        android:layout_toStartOf="@+id/textViewTitle"
         android:ellipsize="end"
         android:fontFamily="sans-serif-condensed"
         android:maxLines="1"
@@ -42,7 +43,7 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         android:textColor="@android:color/black"
         tools:ignore="RtlSymmetry"
-        tools:text="12.34.5678 12:34"/>
+        tools:text="vor 1234 Stunden"/>
 
     <ImageView
         android:id="@+id/imageView"
@@ -70,16 +71,16 @@
         android:layout_below="@+id/textViewTopline"
         android:layout_alignParentEnd="true"
         android:layout_toEndOf="@id/imageView"
+        android:autoSizeTextType="uniform"
+        android:breakStrategy="high_quality"
         android:ellipsize="end"
         android:fontFamily="sans-serif-condensed"
+        android:hyphenationFrequency="full"
         android:maxLines="6"
         android:textAppearance="@style/TextAppearance.AppCompat.Title"
         android:textColor="@color/colorContent"
-        android:hyphenationFrequency="full"
-        android:breakStrategy="high_quality"
-        android:autoSizeTextType="uniform"
         tools:ignore="RtlSymmetry,UnusedAttribute"
-        tools:text="@tools:sample/lorem/random"/>
+        tools:text="@tools:sample/lorem/random" />
 
 </RelativeLayout>
 
