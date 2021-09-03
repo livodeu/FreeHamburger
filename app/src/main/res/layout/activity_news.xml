@@ -47,6 +47,7 @@
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
+        android:contentDescription="@string/action_read_stop"
         android:visibility="gone"
         tools:visibility="visible"
         android:layout_width="wrap_content"
