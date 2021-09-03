@@ -197,6 +197,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         for (String r : allRequests) {
             ar.add(Long.parseLong(r) + ADD_TO_PREF_STAT_ALL_VALUE);
         }
+        //noinspection ComparatorCombinators
         Collections.sort(ar, (o1, o2) -> o2.compareTo(o1));
         return ar;
     }
