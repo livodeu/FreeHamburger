@@ -1,5 +1,7 @@
 package de.freehamburger.util;
 
+import androidx.annotation.NonNull;
+
 import com.google.android.exoplayer2.extractor.Extractor;
 import com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import com.google.android.exoplayer2.extractor.mp3.Mp3Extractor;
@@ -12,6 +14,7 @@ class Mp34ExtractorsFactory implements ExtractorsFactory {
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public Extractor[] createExtractors() {
         return new Extractor[] {new Mp4Extractor(), new Mp3Extractor()};
     }
