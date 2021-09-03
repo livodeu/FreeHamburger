@@ -1,4 +1,5 @@
 tagesschau.de
+23degrees.io
 3sat.de
 sportschau.de
 ard-text.de
@@ -14,6 +15,7 @@ dw.com
 funk.net
 hessenschau.de
 hr.de
+hs-data.com
 kika.de
 mdr.de
 ndr.de

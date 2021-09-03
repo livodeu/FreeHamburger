@@ -35,6 +35,13 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import androidx.annotation.WorkerThread;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.ByteArrayInputStream;
@@ -43,17 +50,9 @@ import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
-import androidx.annotation.WorkerThread;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
 import de.freehamburger.model.News;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
@@ -319,6 +318,12 @@ public class WebViewActivity extends AppCompatActivity {
             // block schemes other than "http" and "data"
             String scheme = uri.getScheme();
             if (scheme != null && !scheme.startsWith("http") && !scheme.startsWith("data")) return true;
+            if (App.isHostRestrictedToNonScript(host)) {
+                if (path.endsWith(".js")) {
+                    if (BuildConfig.DEBUG) Log.w(TAG, "Host " + host + " is restricted to non-script data but tried to provide " + path);
+                    return true;
+                }
+            }
             // block non-whitelisted hosts
             if (!App.isHostAllowed(host)) return true;
             //
@@ -328,6 +333,10 @@ public class WebViewActivity extends AppCompatActivity {
             return false;
         }
 
+        /**
+         * Constructor.
+         * @param activity WebViewActivity
+         */
         private HamburgerWebViewClient(@NonNull WebViewActivity activity) {
             super();
             this.activity = activity;
@@ -343,7 +352,7 @@ public class WebViewActivity extends AppCompatActivity {
             String scheme = uri.getScheme();
             boolean allowedScheme = (scheme == null || "http".equals(scheme) || "https".equals(scheme));
             boolean allowed = allowedScheme && App.isHostAllowed(uri.getHost());
-            if (!allowed && view.getUrl().equals(url)) {
+            if (!allowed && (view.getUrl() == null || view.getUrl().equals(url))) {
                 // determine what was the culprit, scheme (possibly "whatsapp") or host
                 String offending = !allowedScheme ? scheme : uri.getHost();
                 //
@@ -398,7 +407,6 @@ public class WebViewActivity extends AppCompatActivity {
                     wr = new WebResourceResponse("text/html", CHARSET, new ByteArrayInputStream(HTTP_404_BYTES));
                     wr.setStatusCodeAndReasonPhrase(HttpURLConnection.HTTP_NOT_FOUND, "Not found.");
                 }
-                //if (BuildConfig.DEBUG) Log.w(TAG, "shouldInterceptRequest() - blocking " + uri);
                 return wr;
             }
             if (("http".equals(scheme) || "https".equals(scheme)) && "GET".equals(request.getMethod()) && isDownloadableResource(uri.toString())) {
@@ -419,11 +427,7 @@ public class WebViewActivity extends AppCompatActivity {
             Uri uri = request.getUrl();
             if ("http".equalsIgnoreCase(uri.getScheme())) {
                 this.handler.postDelayed(() -> {
-                    String oldUrl = uri.toString();
-                    String newUrl = "https" + oldUrl.substring(4);
-                    Map<String, String> addtlHeaders = new HashMap<>(1);
-                    addtlHeaders.put("Warning", "199 INACCEPTABLE HTTPS TO HTTP REDIRECTION");
-                    view.loadUrl(newUrl, addtlHeaders);
+                    view.loadUrl("https" + uri.toString().substring(4));
                 }, 200L);
                 return true;
             }
@@ -443,6 +447,10 @@ public class WebViewActivity extends AppCompatActivity {
         @Nullable private String urlForErrors;
         @Nullable private Snackbar sb;
 
+        /**
+         * Constructor.
+         * @param activity AppCompatActivity
+         */
         private HamburgerWebChromeClient(@NonNull AppCompatActivity activity) {
             super();
             this.refactivity = new WeakReference<>(activity);

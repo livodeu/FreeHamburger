@@ -177,22 +177,23 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** used to build a preferences key to store the most recent <em>user-initiated</em> update of a {@link Source} */
     private static final String PREFS_PREFIX_MOST_RECENT_MANUAL_UPDATE = "latest_manual_";
     private static final String TAG = "App";
-    private static final Set<String> PERMITTED_HOSTS = new HashSet<>(28);
+    private static final Set<String> PERMITTED_HOSTS = new HashSet<>(30);
+    private static final Set<String> PERMITTED_HOSTS_NO_SCRIPT = new HashSet<>(2);
 
     /*
      * For older apps, possible app versions and os versions are merged into the user agent.
-     * For version 3.0.1, the user-agent is "okhttp/4.5.0"
+     * For version 3.0.1, the user-agent is "okhttp/4.5.0", for version 3.2.0, the user-agent is "okhttp/4.7.2"
      */
     static {
         boolean beV3 = Math.random() < 0.5;
         if (beV3) {
-            USER_AGENT = "okhttp/4.5.0";
+            String[] OKHTTP_VERSIONS = new String[] {"4.5.0", "4.7.2"};
+            USER_AGENT = "okhttp/" + OKHTTP_VERSIONS[(int) (Math.random() * OKHTTP_VERSIONS.length)];
         } else {
             //                                                                            2.5.0         2.5.1           2.5.2       2.5.3
             String[] VERSIONS = new String[] {"2018080901", "2018102216", "2019011010", "2019032813", "2019040312", "2019071716", "2019080809"};
             // https://en.wikipedia.org/wiki/Android_version_history
-            //TODO what does the other app send; 9.0.0 or 9.0 or else?
-            String[] OSS = new String[] {"6.0", "6.0.1", "7.0.1", "7.1.0", "7.1.1", "7.1.2", "8.0.0", "8.1.0", "9.0.0", "10.0.0"};
+            String[] OSS = new String[] {"6.0", "6.0.1", "7.0.1", "7.1.0", "7.1.1", "7.1.2", "8.0.0", "8.1.0", "9.0.0", "10.0.0", "11.0.0"};
             USER_AGENT = "Tagesschau/de.tagesschau (" + VERSIONS[(int) (Math.random() * VERSIONS.length)] + ", Android: " + OSS[(int) (Math.random() * OSS.length)] + ")";
         }
         if (BuildConfig.DEBUG) Log.i(TAG, "User agent is '" + USER_AGENT + "'");
@@ -305,6 +306,26 @@ public class App extends Application implements Application.ActivityLifecycleCal
         if (host == null) return false;
         for (String allowedHost : PERMITTED_HOSTS) {
             if (host.endsWith(allowedHost)) {
+                return true;
+            }
+        }
+        if (BuildConfig.DEBUG) Log.w(TAG, "Host " + host + " is not allowed!");
+        return false;
+    }
+
+    /**
+     * Determines whether the given host is on the {@link #PERMITTED_HOSTS_NO_SCRIPT no-script-gr(e|a)ylist}.<br>
+     * Data may be loaded from these hosts only if it does not represent executable code.<br>
+     * These hosts must be on the {@link #PERMITTED_HOSTS white list}, too!<br>
+     * Returns {@code false} if {@code host} is {@code null}.<br>
+     * <em>Will return {@code false} if the host is not in lower case!</em>
+     * @param host host in lowercase chars
+     * @return {@code true} / {@code false}
+     */
+    public static synchronized boolean isHostRestrictedToNonScript(@Nullable final String host) {
+        if (host == null) return false;
+        for (String restrictedHost : PERMITTED_HOSTS_NO_SCRIPT) {
+            if (host.endsWith(restrictedHost)) {
                 return true;
             }
         }
@@ -586,7 +607,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
         new Thread() {
             @Override
             public void run() {
-                PERMITTED_HOSTS.addAll(Util.loadResourceTextFile(App.this, R.raw.permitted_hosts, 28, true));
+                PERMITTED_HOSTS.addAll(Util.loadResourceTextFile(App.this, R.raw.permitted_hosts, 30, true));
+                PERMITTED_HOSTS_NO_SCRIPT.addAll(Util.loadResourceTextFile(App.this, R.raw.permitted_hosts_no_js, 2, true));
             }
         }.start();
 
