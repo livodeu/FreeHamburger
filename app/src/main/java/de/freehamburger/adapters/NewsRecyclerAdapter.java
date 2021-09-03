@@ -581,7 +581,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             if (!(ctx instanceof NewsAdapterController)) throwWrongContext(ctx);
             NewsAdapterController newsAdapterController = (NewsAdapterController)ctx;
             NewsRecyclerAdapter adapter = newsAdapterController.getAdapter();
-            int position = getAdapterPosition();
+            int position = getBindingAdapterPosition();
             try {
                 News news = adapter.isFiltered() ? adapter.filteredNews.get(position) : adapter.newsList.get(position);
                 if (news != null) newsAdapterController.onNewsClicked(news, v, this.xPosOfEventActionUp, this.yPosOfEventActionUp);
@@ -595,7 +595,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
             Context ctx = v.getContext();
             if (!(ctx instanceof NewsAdapterController)) throwWrongContext(ctx);
-            int position = getAdapterPosition();
+            int position = getBindingAdapterPosition();
             if (position < 0) return;
             NewsAdapterController ma = (NewsAdapterController) ctx;
             ma.getMenuInflater().inflate(R.menu.list_item_menu, menu);
