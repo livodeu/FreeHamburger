@@ -50,6 +50,17 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.ActionBar;
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayerFactory;
@@ -80,16 +91,6 @@ import java.util.Set;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 
-import androidx.annotation.ColorInt;
-import androidx.annotation.FloatRange;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.StringRes;
-import androidx.appcompat.app.ActionBar;
-import androidx.core.app.ActivityOptionsCompat;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import de.freehamburger.adapters.RelatedAdapter;
 import de.freehamburger.model.Audio;
 import de.freehamburger.model.Content;
@@ -657,7 +658,12 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             // make the bottom video view scale
             ((SimpleExoPlayer) this.exoPlayerBottomVideo).setVideoScalingMode(Renderer.VIDEO_SCALING_MODE_SCALE_TO_FIT);
             // tap the top video view to mute/unmute its audio
-            this.topVideoView.getVideoSurfaceView().setOnClickListener(ignored -> toggleTopVideoAudio());
+            try {
+                //noinspection ConstantConditions
+                this.topVideoView.getVideoSurfaceView().setOnClickListener(ignored -> toggleTopVideoAudio());
+            } catch (NullPointerException ignored) {
+                // this never occurred but lint thinks it might…
+            }
         } else {
             this.topVideoView.setVisibility(View.GONE);
         }
