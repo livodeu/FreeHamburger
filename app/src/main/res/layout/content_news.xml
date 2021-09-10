@@ -7,8 +7,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fastScrollEnabled="true"
-    app:layout_behavior="@string/appbar_scrolling_view_behavior"
     android:fitsSystemWindows="true"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".NewsActivity"
     tools:showIn="@layout/activity_news"
     >
@@ -17,25 +17,25 @@
         android:id="@+id/topBlock"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingStart="@dimen/news_content_margin_topblock_start"
-        android:paddingEnd="@dimen/news_content_margin_topblock_end"
         android:animateLayoutChanges="false"
         android:clipChildren="true"
+        android:paddingStart="@dimen/news_content_margin_topblock_start"
+        android:paddingEnd="@dimen/news_content_margin_topblock_end"
         >
 
         <ImageView
             android:id="@+id/muteWarning"
             android:layout_width="120dp"
             android:layout_height="120dp"
-            android:src="@drawable/ic_volume_off_black_24dp"
-            android:background="@drawable/bg_button"
-            android:layout_marginTop="200dp"
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
-            android:elevation="20dp"
-            android:contentDescription="@string/msg_volume_mute"
-            android:scaleType="fitXY"
+            android:layout_marginTop="200dp"
             android:alpha="0"
+            android:background="@drawable/bg_button"
+            android:contentDescription="@string/msg_volume_mute"
+            android:elevation="20dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/ic_volume_off_black_24dp"
             android:visibility="gone"
             />
 
@@ -49,8 +49,8 @@
             android:layout_marginBottom="8dp"
             android:focusable="false"
             android:focusableInTouchMode="false"
-            app:use_controller="false"
             app:resize_mode="fixed_width"
+            app:use_controller="false"
             />
 
         <TextView
@@ -71,39 +71,38 @@
             tools:text="@tools:sample/lorem"
             />
 
-        <RelativeLayout
+        <LinearLayout
             android:id="@+id/audioBlock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/textViewTitle"
             android:layout_marginBottom="8dp"
             android:background="@color/colorPrimarySemiTrans"
+            android:minHeight="48dp"
+            android:orientation="horizontal"
             >
 
             <ImageButton
                 android:id="@+id/buttonAudio"
+                android:contentDescription="@string/hint_audio_content_play"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
+                android:layout_height="match_parent"
                 android:layout_marginEnd="8dp"
-                android:onClick="playAudio"
+                android:minHeight="48dp"
                 android:src="@drawable/ic_play_arrow_black_24dp"
-                tools:ignore="ContentDescription"/>
+                tools:ignore="ContentDescription" />
 
             <TextView
                 android:id="@+id/textViewAudioTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/buttonAudio"
+                android:layout_gravity="center_vertical"
                 android:ellipsize="marquee"
                 android:singleLine="true"
                 android:textSize="@dimen/text_size_news_audio_title"
-                tools:text="Audio element title"
-                />
+                tools:text="Audio element title" />
 
-        </RelativeLayout>
+        </LinearLayout>
 
         <TextView android:id="@+id/textViewContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/audioBlock" android:autoLink="none" android:breakStrategy="high_quality" android:hyphenationFrequency="full" android:justificationMode="none" android:lineSpacingExtra="2sp" android:linksClickable="false" android:textColor="@android:color/black" android:textSize="@dimen/text_size_news_content" tools:ignore="UnusedAttribute" tools:text="@tools:sample/lorem/random" />
 
@@ -111,9 +110,9 @@
             android:id="@+id/dividerRelated"
             android:layout_width="match_parent"
             android:layout_height="1px"
-            android:background="@color/colorPrimaryDark"
             android:layout_below="@+id/textViewContent"
             android:layout_marginTop="16dp"
+            android:background="@color/colorPrimaryDark"
             />
 
         <TextView
@@ -121,12 +120,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/dividerRelated"
-            android:layout_marginTop="16dp"
             android:layout_marginStart="4dp"
+            android:layout_marginTop="16dp"
             android:layout_marginEnd="4dp"
-            android:text="@string/label_related"
-            android:maxLines="1"
             android:labelFor="@+id/recyclerViewRelated"
+            android:maxLines="1"
+            android:text="@string/label_related"
             android:textAppearance="@style/TextAppearance.AppCompat.Title"/>
 
         <androidx.recyclerview.widget.RecyclerView

@@ -42,6 +42,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.MimeTypeMap;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -131,7 +132,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/PlayerView.html">JavaDoc</a> */
     private PlayerView topVideoView;
     private TextView textViewTitle;
-    private RelativeLayout audioBlock;
+    private ViewGroup /*RelativeLayout*/ audioBlock;
     private ImageButton buttonAudio;
     private TextView textViewAudioTitle;
     private TextView textViewContent;
@@ -895,6 +896,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         this.bottomVideoView = findViewById(R.id.bottomVideoView);
         this.textViewBottomVideoViewOverlay = findViewById(R.id.textViewBottomVideoViewOverlay);
         this.bottomVideoPauseIndicator = findViewById(R.id.bottomVideoPauseIndicator);
+        this.buttonAudio.setOnClickListener(this::playAudio);
         this.buttonAudio.setOnLongClickListener(v -> {
             Object tag = v.getTag();
             if (!(tag instanceof String)) return false;
