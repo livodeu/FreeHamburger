@@ -14,8 +14,15 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NavUtils;
+
 import com.google.android.exoplayer2.ExoPlaybackException;
-import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -24,13 +31,6 @@ import com.google.android.exoplayer2.ui.PlayerView;
 
 import java.lang.ref.WeakReference;
 
-import androidx.annotation.FloatRange;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NavUtils;
 import de.freehamburger.model.News;
 import de.freehamburger.model.StreamQuality;
 import de.freehamburger.util.Log;
@@ -121,7 +121,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
      */
     private void initPlayer() {
         // create ExoPlayer instance
-        this.exoPlayerVideo = ExoPlayerFactory.newSimpleInstance(this, new DefaultTrackSelector(this));
+        this.exoPlayerVideo = new SimpleExoPlayer.Builder(this).setTrackSelector(new DefaultTrackSelector(this)).build();
         // assign the ExoPlayer instance to the video view
         this.playerView.setPlayer(this.exoPlayerVideo);
         View st = findViewById(R.id.exo_subtitles);
@@ -139,6 +139,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
             }
 
             /** {@inheritDoc} */
+            @SuppressWarnings("deprecation")
             @Override
             public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
                 if (playbackState == Player.STATE_BUFFERING) {
@@ -170,7 +171,6 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
                 am = (AudioManager)getSystemService(AUDIO_SERVICE);
                 if (am  != null) {
                     this.audioVolumeBeforeDucking = am.getStreamVolume(App.STREAM_TYPE);
-                    //setVolume(0f);
                     am.setStreamVolume(App.STREAM_TYPE, 0, 0);
                 }
                 break;
@@ -182,7 +182,6 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
                     this.audioVolumeBeforeDucking = 0;
                 } else {
                     if (am != null) am.setStreamVolume(App.STREAM_TYPE, am.getStreamMaxVolume(App.STREAM_TYPE), 0);
-                    //setVolume(1f);
                 }
                 break;
             default:
