@@ -52,7 +52,6 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
     private static final int UI_FLAGS = View.SYSTEM_UI_FLAG_LOW_PROFILE
             | View.SYSTEM_UI_FLAG_FULLSCREEN
             | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            //| View.SYSTEM_UI_FLAG_IMMERSIVE
             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
             ;
@@ -159,7 +158,6 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
     /** {@inheritDoc} */
     @Override
     public void onAudioFocusChange(int focusChange) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "onAudioFocusChange(" + focusChange + ")");
         AudioManager am;
         switch (focusChange) {
             case AudioManager.AUDIOFOCUS_LOSS:
@@ -366,17 +364,6 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
         if (BuildConfig.DEBUG && !hasAudioFocus) Log.e(TAG, "Did not get audio focus!");
     }
 
-    /*
-     * Sets the audio volume.
-     * @param value [0..1]
-     *
-    private void setVolume(@FloatRange(from = 0f, to = 1f) float value) {
-        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
-        if (am == null) return;
-        int max = am.getStreamMaxVolume(App.STREAM_TYPE);
-        am.setStreamVolume(App.STREAM_TYPE, Math.round(value * max), 0);
-    }*/
-
     /**
      * Shows the {@link #progressBar progress spinner}.
      */
@@ -428,7 +415,6 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
         @Override
         public void run() {
             if (this.refActivity == null) return;
-            Log.i(TAG, "Fading from " + this.from + " to " + this.to + " over " + this.period + " ms");
             VideoActivity videoActivity = this.refActivity.get();
             if (videoActivity.exoPlayerVideo == null) return;
             final long interval = this.period >= 250L ? this.period / 10 : 25L;
@@ -439,19 +425,16 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
             final int max = am.getStreamMaxVolume(App.STREAM_TYPE);
             if (step > 0f) {
                 for (; vol < this.to; vol += step) {
-                    //videoActivity.exoPlayerVideo.setVolume(vol);
                     am.setStreamVolume(App.STREAM_TYPE, Math.round(vol * max), 0);
                     if (!safeSleep(interval)) break;
                 }
             } else {
                 for (; vol > this.to; vol += step) {
-                    //videoActivity.exoPlayerVideo.setVolume(vol);
                     am.setStreamVolume(App.STREAM_TYPE, Math.round(vol * max), 0);
                     if (!safeSleep(interval)) break;
                 }
             }
             if (vol != this.to) {
-                //videoActivity.exoPlayerVideo.setVolume(this.to);
                 am.setStreamVolume(App.STREAM_TYPE, Math.round(to * max), 0);
             }
         }
