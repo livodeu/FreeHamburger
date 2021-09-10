@@ -1,5 +1,13 @@
 package de.freehamburger;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.app.NotificationManager;
@@ -19,8 +27,16 @@ import android.text.TextUtils;
 import android.util.JsonReader;
 import android.view.View;
 
-import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.StyleRes;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceManager;
+import androidx.test.filters.SmallTest;
+import androidx.test.rule.ActivityTestRule;
+
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 
 import org.junit.After;
@@ -37,13 +53,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.annotation.StyleRes;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.preference.PreferenceManager;
-import androidx.test.filters.SmallTest;
-import androidx.test.rule.ActivityTestRule;
 import de.freehamburger.adapters.NewsRecyclerAdapter;
 import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
@@ -57,14 +66,6 @@ import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
 import de.freehamburger.views.NewsView;
 import okhttp3.OkHttpClient;
-
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.fail;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 
 /**
  *
@@ -316,10 +317,10 @@ public class AndroidUnitTest {
         MediaSource ms = msh.buildMediaSource(app.getOkHttpClient(), uri);
         assertNotNull(ms);
         assertTrue(ms instanceof HlsMediaSource);
-        uri = Uri.parse("https://media.tagesschau.de/video/2019/0718/TV-20190718-0659-2401.webm.h264.mp4");
+        uri = Uri.parse("https://media.tagesschau.de/video/2021/0910/TV-20210910-0717-4200.webm.h264.mp4");
         ms = msh.buildMediaSource(app.getOkHttpClient(), uri);
         assertNotNull(ms);
-        assertTrue(ms instanceof ExtractorMediaSource);
+        assertTrue("Not a ProgressiveMediaSource: " + ms, ms instanceof ProgressiveMediaSource);
     }
 
     /**
