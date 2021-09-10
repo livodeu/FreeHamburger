@@ -53,7 +53,7 @@ public class OkHttpDownloader extends Downloader {
 
     /** "has not been found" */
     private final String errorUnknownHost;
-    private OkHttpClient client;
+    private final OkHttpClient client;
     private Reference<DownloaderListener> listener;
 
     /**
