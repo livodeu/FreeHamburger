@@ -16,6 +16,8 @@ funk.net
 hessenschau.de
 hr.de
 hs-data.com
+inforadio.de
+jumpradio.de
 kika.de
 mdr.de
 ndr.de
@@ -25,6 +27,8 @@ rbb24.de
 rbb-online.de
 sr.de
 swr.de
+swr3.de
 tagesschau24.de
 wdr.de
+wdrhf.akamaized.net
 akamaihd.net
