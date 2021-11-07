@@ -120,7 +120,7 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.ViewHold
         public void onClick(View v) {
             Context ctx = v.getContext();
             if (ctx instanceof OnRelatedClickListener) {
-                int position = getAdapterPosition();
+                int position = getBindingAdapterPosition();
                 ((OnRelatedClickListener)ctx).onRelatedClicked(position);
             }
         }

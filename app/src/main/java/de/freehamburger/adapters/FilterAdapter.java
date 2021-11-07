@@ -83,7 +83,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         filterView.setListener(new FilterView.Listener() {
             @Override
             public void anywhere() {
-                int pos = holder.getAdapterPosition();
+                int pos = holder.getBindingAdapterPosition();
                 Filter filter = FilterAdapter.this.filters.get(pos);
                 if (!(filter instanceof TextFilter)) return;
                 ((TextFilter)filter).setAtStartAndAtAend(false, false);
@@ -91,7 +91,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
             @Override
             public void atEnd() {
-                int pos = holder.getAdapterPosition();
+                int pos = holder.getBindingAdapterPosition();
                 Filter filter = FilterAdapter.this.filters.get(pos);
                 if (!(filter instanceof TextFilter)) return;
                 ((TextFilter)filter).setAtStartAndAtAend(false, true);
@@ -99,7 +99,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
             @Override
             public void atStart() {
-                int pos = holder.getAdapterPosition();
+                int pos = holder.getBindingAdapterPosition();
                 Filter filter = FilterAdapter.this.filters.get(pos);
                 if (!(filter instanceof TextFilter)) return;
                 ((TextFilter)filter).setAtStartAndAtAend(true, false);
@@ -107,7 +107,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
             @Override
             public void textChanged(Editable s) {
-                int pos = holder.getAdapterPosition();
+                int pos = holder.getBindingAdapterPosition();
                 Filter filter = filters.get(pos);
                 if (!(filter instanceof TextFilter)) return;
                 ((TextFilter)filter).setPhrase(s);
