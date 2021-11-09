@@ -749,10 +749,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             builder.setWhen(when).setShowWhen(true);
         }
 
-        /*if (News.NEWS_TYPE_STORY.equals(news.getType())) {
-            builder.addAction(new Notification.Action(R.drawable.ic_details_ededed_24dp, getString(R.string.action_details), makeIntentForNewsActivity(app, news)));
-        }*/
-
         NotificationChannel nc = null;
         if (news.isBreakingNews()) {
             builder.setColor(Util.getColor(this, R.color.colorAccent));
@@ -886,6 +882,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         if (BuildConfig.DEBUG) {
             try {
                 Method getStopReason = JobParameters.class.getMethod("getStopReason");
+                @SuppressWarnings("ConstantConditions")
                 int reason = (int) getStopReason.invoke(params);
                 String reasons;
                 switch (reason) {
