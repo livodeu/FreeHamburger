@@ -152,7 +152,7 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
             this.handler.postDelayed(() -> {
                 this.sb = Snackbar.make(coordinatorLayout, nowEnabled ? R.string.msg_filters_enabled : R.string.msg_filters_disabled, Snackbar.LENGTH_SHORT);
                 this.sb.show();
-            }, TOGGLE_ANIMATION_OFFSET + getResources().getInteger(R.integer.toggle_animation_step) * 10);
+            }, TOGGLE_ANIMATION_OFFSET + getResources().getInteger(R.integer.toggle_animation_step) * 10L);
         }
         return super.onOptionsItemSelected(item);
     }
@@ -223,7 +223,7 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
             }, TOGGLE_ANIMATION_OFFSET);
             this.filterChanging = false;
             // call the else branch below after the animation is complete
-            this.handler.postDelayed(this::invalidateOptionsMenu, TOGGLE_ANIMATION_OFFSET + getResources().getInteger(R.integer.toggle_animation_step) * 10);
+            this.handler.postDelayed(this::invalidateOptionsMenu, TOGGLE_ANIMATION_OFFSET + getResources().getInteger(R.integer.toggle_animation_step) * 10L);
         } else {
             menuItemEnable.setIcon(filtersEnabled ? R.drawable.ic_toggle_9: R.drawable.ic_toggle_0);
         }
