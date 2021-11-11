@@ -56,7 +56,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
 
     private Button button;
     @IntRange(from = 0) private int selectedIndex = 0;
-    @NonNull private CharSequence[] states;
+    @NonNull private final CharSequence[] states;
     @Nullable private int[] colors;
 
     private SoundPool soundPool;
@@ -138,18 +138,6 @@ public class ButtonPreference extends Preference implements View.OnClickListener
 
         rotate(true);
 
-        /*try {
-            if (this.states.length > 0) {
-                this.button.setEnabled(true);
-                setSummary(this.states[this.selectedIndex]);
-            } else {
-                this.button.setEnabled(false);
-                setSummary("");
-            }
-        } catch (IllegalStateException e) {
-            if (BuildConfig.DEBUG) android.util.Log.e(getClass().getSimpleName(), e.toString());
-            this.handler.postDelayed(new SummarySetter(), 300L);
-        }*/
         this.handler.postDelayed(new SummarySetter(), 200L);
     }
 
