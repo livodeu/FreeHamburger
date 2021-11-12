@@ -182,10 +182,10 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     /*
      * For older apps, possible app versions and os versions are merged into the user agent.
-     * For version 3.0.1, the user-agent is "okhttp/4.5.0", for version 3.2.0, the user-agent is "okhttp/4.7.2"
+     * For version 3.0.1, the user-agent is "okhttp/4.5.0", for version 3.2.0 and 3.2.3, the user-agent is "okhttp/4.7.2"
      */
     static {
-        boolean beV3 = Math.random() < 0.5;
+        boolean beV3 = Math.random() < 0.75;
         if (beV3) {
             String[] OKHTTP_VERSIONS = new String[] {"4.5.0", "4.7.2"};
             USER_AGENT = "okhttp/" + OKHTTP_VERSIONS[(int) (Math.random() * OKHTTP_VERSIONS.length)];
@@ -193,7 +193,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
             //                                                                            2.5.0         2.5.1           2.5.2       2.5.3
             String[] VERSIONS = new String[] {"2018080901", "2018102216", "2019011010", "2019032813", "2019040312", "2019071716", "2019080809"};
             // https://en.wikipedia.org/wiki/Android_version_history
-            String[] OSS = new String[] {"6.0", "6.0.1", "7.0.1", "7.1.0", "7.1.1", "7.1.2", "8.0.0", "8.1.0", "9.0.0", "10.0.0", "11.0.0"};
+            String[] OSS = new String[] {"6.0", "6.0.1", "7.0.1", "7.1.0", "7.1.1", "7.1.2", "8.0.0", "8.1.0", "9.0.0", "10.0.0", "11.0.0", "12.0.0"};
             USER_AGENT = "Tagesschau/de.tagesschau (" + VERSIONS[(int) (Math.random() * VERSIONS.length)] + ", Android: " + OSS[(int) (Math.random() * OSS.length)] + ")";
         }
         if (BuildConfig.DEBUG) Log.i(TAG, "User agent is '" + USER_AGENT + "'");
