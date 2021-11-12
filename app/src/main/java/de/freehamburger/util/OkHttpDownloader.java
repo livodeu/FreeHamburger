@@ -115,10 +115,9 @@ public class OkHttpDownloader extends Downloader {
             }
             MediaType mediaType = body.contentType();
             // contentLength is the number of bytes that will be transmitted - not the number of bytes written to out
-            long contentLength = body.contentLength();
-            if (BuildConfig.DEBUG) {
-                if (contentLength <= 0L) Log.e(TAG, "No Content-Length after request with headers:\n" + request.headers().toString());
-            }
+            // Whether a content-length value is returned or not apparently does not depend on the request headers;
+            // instead, it seems that all requests except the ones for Source.HOME return a content length
+            final long contentLength = body.contentLength();
             out = new BufferedOutputStream(new FileOutputStream(f));
             final boolean gzip = "gzip".equals(response.header("Content-Encoding"));
             if (gzip) {
