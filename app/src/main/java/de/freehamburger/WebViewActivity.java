@@ -59,33 +59,29 @@ import de.freehamburger.util.Util;
 
 public class WebViewActivity extends AppCompatActivity {
 
-    /** if {@link #EXTRA_NEWS} is <em>not</em> set, this can provide a url to display */
-    public static final String EXTRA_URL = "extra_url";
     /** boolean; if true, the ActionBar will not show the home arrow which would lead to MainActivity */
     public static final String EXTRA_NO_HOME_AS_UP = "extra_no_home_as_up";
+    /** if {@link #EXTRA_NEWS} is <em>not</em> set, this can provide a url to display */
+    public static final String EXTRA_URL = "extra_url";
     /** the News whose {@link News#getDetailsWeb() detailsWeb} attribute provides the url to display */
     static final String EXTRA_NEWS = "extra_news";
-    private static final String TAG = "WebViewActivity";
-    private static final String CHARSET = "UTF-8";
-    private static final byte[] HTTP_404_BYTES = "<!DOCTYPE html><html lang=\"en\"><head><title>404 Not found.</title></head><body></body></html>".getBytes(Charset.forName(CHARSET));
-    private static final byte[] HTTP_400_BYTES_MAILTO = "<!DOCTYPE html><html lang=\"en\"><head><title>400 Bad Request.</title></head><body><h1>Mail links are not supported.</h1></body></html>".getBytes(Charset.forName(CHARSET));
-    private static final int MAX_WEBSITE_ERRORS_TO_DISPLAY = 30;
     /** these are a big no-no (well, favicon isn't really, but we don't need it) */
     private static final String[] BADWORDS = new String[] {"analytics", "cpix", "favicon", "sitestat", "tracker", "tracking", "webtrekk", "xtcore"};
-    WebView webView;
-    private News news;
+    private static final String CHARSET = "UTF-8";
+    private static final byte[] HTTP_400_BYTES_MAILTO = "<!DOCTYPE html><html lang=\"en\"><head><title>400 Bad Request.</title></head><body><h1>Mail links are not supported.</h1></body></html>".getBytes(Charset.forName(CHARSET));
+    private static final byte[] HTTP_404_BYTES = "<!DOCTYPE html><html lang=\"en\"><head><title>404 Not found.</title></head><body></body></html>".getBytes(Charset.forName(CHARSET));
+    private static final int MAX_WEBSITE_ERRORS_TO_DISPLAY = 30;
+    private static final String MIME_HTML = "text/html";
+    private static final String SCHEME_HTTP = "http";
+    private static final String SCHEME_HTTPS = "https";
+    private static final String TAG = "WebViewActivity";
 
     /**
      * Initiates a download via the system's {@link DownloadManager}.
      * @param ctx Context
      * @param uri Uri
      */
-    private static void download(Context ctx, @NonNull final Uri uri) {
-        if (ctx == null) {
-            if (BuildConfig.DEBUG) Log.e(TAG, "download(null, " + uri + ")");
-            return;
-        }
-        if (BuildConfig.DEBUG) Log.i(TAG, "download(..., " + uri + ")");
+    private static void download(@NonNull Context ctx, @NonNull final Uri uri) {
         DownloadManager dm = (DownloadManager) ctx.getSystemService(Context.DOWNLOAD_SERVICE);
         if (dm == null) return;
         final DownloadManager.Request r = new DownloadManager.Request(uri);
@@ -102,6 +98,9 @@ public class WebViewActivity extends AppCompatActivity {
         r.setAllowedOverMetered(PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE));
         dm.enqueue(r);
     }
+
+    WebView webView;
+    private News news;
 
     /**
      * Returns a {@link PageFinishedListener PageFinishedListener} which gets notified when a page has been loaded. Defaults to null.
@@ -273,12 +272,9 @@ public class WebViewActivity extends AppCompatActivity {
     static class HamburgerWebViewClient extends WebViewClient {
 
         private static final String[] DOWNLOADABLE_RESOURCES = new String[] {
-                ".7z", ".apk", ".arw", ".bin", ".bz2", ".cr2", ".deb", ".dng", ".doc", ".epub", ".exe",
-                ".gz", ".iso", ".jar", ".nef", ".ods", ".odt", ".pdf", ".ppt", ".rar", ".tgz", ".ttf", ".vhd", ".xls", ".xz", ".zip"
+                ".7z", ".apk", ".arw", ".bin", ".bz2", ".cr2", ".deb", ".dng", ".doc", ".docx", ".epub", ".exe",
+                ".gz", ".iso", ".jar", ".nef", ".ods", ".odt", ".pdf", ".ppt", ".rar", ".tgz", ".ttf", ".vhd", ".xls", ".xlsx", ".xz", ".zip"
         };
-
-        private final Handler handler = new Handler();
-        private final WebViewActivity activity;
 
         /**
          * Checks whether the given resource should be downloaded.
@@ -317,7 +313,8 @@ public class WebViewActivity extends AppCompatActivity {
             if (host == null || path == null) return false;
             // block schemes other than "http" and "data"
             String scheme = uri.getScheme();
-            if (scheme != null && !scheme.startsWith("http") && !scheme.startsWith("data")) return true;
+            if (scheme != null && !scheme.startsWith("http") && !scheme.equals("data")) return true;
+            // block script resources from greylisted hosts
             if (App.isHostRestrictedToNonScript(host)) {
                 if (path.endsWith(".js")) {
                     if (BuildConfig.DEBUG) Log.w(TAG, "Host " + host + " is restricted to non-script data but tried to provide " + path);
@@ -326,12 +323,14 @@ public class WebViewActivity extends AppCompatActivity {
             }
             // block non-whitelisted hosts
             if (!App.isHostAllowed(host)) return true;
-            //
+            // block resources with unwanted content
             for (String badword : BADWORDS) {
                 if (path.contains(badword)) return true;
             }
             return false;
         }
+        private final Handler handler = new Handler();
+        private final WebViewActivity activity;
 
         /**
          * Constructor.
@@ -350,7 +349,7 @@ public class WebViewActivity extends AppCompatActivity {
             if (pageFinishedListener != null) pageFinishedListener.pageFinished(url);
             Uri uri = Uri.parse(url);
             String scheme = uri.getScheme();
-            boolean allowedScheme = (scheme == null || "http".equals(scheme) || "https".equals(scheme));
+            boolean allowedScheme = (scheme == null || SCHEME_HTTP.equals(scheme) || SCHEME_HTTPS.equals(scheme));
             boolean allowed = allowedScheme && App.isHostAllowed(uri.getHost());
             if (!allowed && (view.getUrl() == null || view.getUrl().equals(url))) {
                 // determine what was the culprit, scheme (possibly "whatsapp") or host
@@ -401,19 +400,20 @@ public class WebViewActivity extends AppCompatActivity {
             if (shouldBlock(uri)) {
                 WebResourceResponse wr;
                 if ("mailto".equals(scheme)) {
-                    wr = new WebResourceResponse("text/html", CHARSET, new ByteArrayInputStream(HTTP_400_BYTES_MAILTO));
+                    wr = new WebResourceResponse(MIME_HTML, CHARSET, new ByteArrayInputStream(HTTP_400_BYTES_MAILTO));
                     wr.setStatusCodeAndReasonPhrase(HttpURLConnection.HTTP_BAD_REQUEST, "Bad Request.");
                 } else {
-                    wr = new WebResourceResponse("text/html", CHARSET, new ByteArrayInputStream(HTTP_404_BYTES));
+                    wr = new WebResourceResponse(MIME_HTML, CHARSET, new ByteArrayInputStream(HTTP_404_BYTES));
                     wr.setStatusCodeAndReasonPhrase(HttpURLConnection.HTTP_NOT_FOUND, "Not found.");
                 }
                 return wr;
             }
-            if (("http".equals(scheme) || "https".equals(scheme)) && "GET".equals(request.getMethod()) && isDownloadableResource(uri.toString())) {
+            if ((SCHEME_HTTP.equals(scheme) || SCHEME_HTTPS.equals(scheme)) && "GET".equals(request.getMethod()) && isDownloadableResource(uri.toString())) {
                 if (request.hasGesture()) {
-                    this.handler.post(() -> download(view.getContext(), uri));
+                    final Context ctx = view.getContext();
+                    if (ctx != null) this.handler.post(() -> download(ctx, uri));
                 }
-                WebResourceResponse wr = new WebResourceResponse("text/html", CHARSET, new ByteArrayInputStream("<html><head></head><body></body></html>".getBytes()));
+                WebResourceResponse wr = new WebResourceResponse(MIME_HTML, CHARSET, new ByteArrayInputStream("<html><head></head><body></body></html>".getBytes()));
                 wr.setStatusCodeAndReasonPhrase(HttpURLConnection.HTTP_NO_CONTENT, "No Content.");
                 if (BuildConfig.DEBUG) android.util.Log.w(TAG, "shouldInterceptRequest(\"" + request.getMethod() + " " + uri + "\") - uri.host=" + uri.getHost() + " -> " + wr.getReasonPhrase());
                 return wr;
@@ -425,10 +425,8 @@ public class WebViewActivity extends AppCompatActivity {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             Uri uri = request.getUrl();
-            if ("http".equalsIgnoreCase(uri.getScheme())) {
-                this.handler.postDelayed(() -> {
-                    view.loadUrl("https" + uri.toString().substring(4));
-                }, 200L);
+            if (SCHEME_HTTP.equalsIgnoreCase(uri.getScheme())) {
+                this.handler.postDelayed(() -> view.loadUrl(SCHEME_HTTPS + uri.toString().substring(SCHEME_HTTP.length())), 200L);
                 return true;
             }
             return super.shouldOverrideUrlLoading(view, request);

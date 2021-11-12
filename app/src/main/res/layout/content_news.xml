@@ -104,7 +104,21 @@
 
         </LinearLayout>
 
-        <TextView android:id="@+id/textViewContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/audioBlock" android:autoLink="none" android:breakStrategy="high_quality" android:hyphenationFrequency="full" android:justificationMode="none" android:lineSpacingExtra="2sp" android:linksClickable="false" android:textColor="@android:color/black" android:textSize="@dimen/text_size_news_content" tools:ignore="UnusedAttribute" tools:text="@tools:sample/lorem/random" />
+        <TextView
+            android:id="@+id/textViewContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/audioBlock"
+            android:autoLink="none"
+            android:breakStrategy="high_quality"
+            android:hyphenationFrequency="full"
+            android:justificationMode="none"
+            android:lineSpacingExtra="2sp"
+            android:linksClickable="false"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/text_size_news_content"
+            tools:ignore="UnusedAttribute"
+            tools:text="@tools:sample/lorem/random" />
 
         <View
             android:id="@+id/dividerRelated"

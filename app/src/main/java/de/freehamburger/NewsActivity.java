@@ -64,7 +64,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Renderer;
 import com.google.android.exoplayer2.SimpleExoPlayer;
@@ -148,6 +147,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         if (BuildConfig.DEBUG)
             Log.i(TAG, "The original audio volume has been updated to " + originalAudioVolume + " out of " + maxAudioVolume);
     };
+    // located at the bottom edge, contains the video title
     private TextView textViewBottomVideoPeek;
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/PlayerView.html">JavaDoc</a> */
     private PlayerView bottomVideoView;
@@ -303,6 +303,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private boolean ttsInitialised = false;
     private boolean ttsSpeaking = false;
 
+    /**
+     * Abandons the audio focus.
+     * @param am AudioManager
+     */
     private void abandonAudioFocus(@Nullable AudioManager am) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (this.afr == null) return;
@@ -651,8 +655,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         DefaultTrackSelector dts = new DefaultTrackSelector(this);
         // create ExoPlayer instances
         if (this.loadVideo) {
-            this.exoPlayerTopVideo = ExoPlayerFactory.newSimpleInstance(this, dts);
-            this.exoPlayerBottomVideo = ExoPlayerFactory.newSimpleInstance(this, dts);
+            this.exoPlayerTopVideo = new SimpleExoPlayer.Builder(this).setTrackSelector(dts).build();
+            this.exoPlayerBottomVideo = new SimpleExoPlayer.Builder(this).setTrackSelector(dts).build();
             // assign the ExoPlayer instances to their video views
             this.topVideoView.setPlayer(this.exoPlayerTopVideo);
             this.bottomVideoView.setPlayer(this.exoPlayerBottomVideo);
@@ -668,7 +672,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         } else {
             this.topVideoView.setVisibility(View.GONE);
         }
-        this.exoPlayerAudio = ExoPlayerFactory.newSimpleInstance(this, dts);
+        this.exoPlayerAudio =  new SimpleExoPlayer.Builder(this).setTrackSelector(dts).build();
         // listen to state changes
         if (this.exoPlayerTopVideo != null) this.exoPlayerTopVideo.addListener(this.listenerTop);
         if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.addListener(this.listenerBottom);
@@ -903,6 +907,19 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             Util.sendBinaryData(v.getContext(), (String) tag, v.getContentDescription());
             return true;
         });
+        // click on the bottom video title text to expand the bottom sheet
+        this.textViewBottomVideoPeek.setOnClickListener(this::expandBottomSheet);
+        // long click on the bottom video title text switches between TruncateAt.END and TruncateAt.MARQUEE
+        this.textViewBottomVideoPeek.setOnLongClickListener(v -> {
+            if (!(v instanceof TextView)) return false;
+            TextUtils.TruncateAt t = ((TextView)v).getEllipsize();
+            ((TextView)v).setEllipsize(t == TextUtils.TruncateAt.MARQUEE ? TextUtils.TruncateAt.END : TextUtils.TruncateAt.MARQUEE);
+            v.setSelected(true);
+            return true;
+        });
+        // click the bottom video to pause/resume the video
+        View bottomVideoViewWrapper = findViewById(R.id.bottomVideoViewWrapper);
+        bottomVideoViewWrapper.setOnClickListener(this::onBottomVideoTapped);
 
         Typeface tf = Util.loadFont(this);
         if (tf != null) {
