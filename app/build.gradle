@@ -39,12 +39,6 @@ android {
         }
     }
 
-    dexOptions {
-        maxProcessCount 8
-        javaMaxHeapSize "3g"
-        preDexLibraries true
-    }
-
     lintOptions {
         // UseCompatLoadingForDrawables is misleading for minSdkVersion >= 21
         ignore("UseCompatLoadingForDrawables")
