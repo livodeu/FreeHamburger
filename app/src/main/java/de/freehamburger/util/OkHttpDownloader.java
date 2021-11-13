@@ -2,8 +2,10 @@ package de.freehamburger.util;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import androidx.annotation.NonNull;
+import android.os.Build;
 import android.text.TextUtils;
+
+import androidx.annotation.NonNull;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -15,11 +17,14 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.UnknownHostException;
+import java.security.cert.CertPathValidatorException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.zip.GZIPInputStream;
+
+import javax.net.ssl.SSLHandshakeException;
 
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
@@ -159,6 +164,23 @@ public class OkHttpDownloader extends Downloader {
             }
             publishProgress(1f);
             return new Result(order.url, HttpURLConnection.HTTP_BAD_REQUEST, msg, f, null, 0L, order.listener);
+        } catch (SSLHandshakeException e) {
+            if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
+            Util.close(in, body, out);
+            Util.deleteFile(f);
+            CertPathValidatorException cpve = Util.getSpecificCause(e, CertPathValidatorException.class);
+            StringBuilder msg = new StringBuilder();
+            if (cpve != null) {
+                msg.append(cpve.getMessage());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && cpve.getReason() != CertPathValidatorException.BasicReason.UNSPECIFIED) {
+                    msg.append(" (").append(cpve.getReason()).append(")");
+                }
+            } else {
+                msg.append(e.getMessage());
+            }
+            if (TextUtils.isEmpty(msg)) msg.append(e.toString());
+            publishProgress(1f);
+            return new Result(order.url, 500, msg.toString(), f, null, 0L, order.listener);
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
             Util.close(in, body, out);
