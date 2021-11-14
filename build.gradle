@@ -3,10 +3,6 @@ buildscript {
     
     repositories {
         google()
-        // while ExoPlayer is on 2.12.3, jcenter() is required - google() supplies ExoPlayer from 2.13.3 on
-        // (see https://dl.google.com/dl/android/maven2/com/google/android/exoplayer/group-index.xml)
-        //noinspection JcenterRepositoryObsolete
-        jcenter()
         mavenCentral()
     }
     dependencies {
@@ -17,8 +13,6 @@ buildscript {
 allprojects {
     repositories {
         google()
-        //noinspection JcenterRepositoryObsolete
-        jcenter()
         mavenCentral()
     }
 }

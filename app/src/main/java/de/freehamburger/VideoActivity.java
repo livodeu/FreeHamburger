@@ -12,7 +12,6 @@ import android.os.Handler;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
@@ -22,9 +21,9 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NavUtils;
 
-import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.ui.PlayerView;
@@ -35,6 +34,7 @@ import de.freehamburger.model.News;
 import de.freehamburger.model.StreamQuality;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.MediaSourceHelper;
+import de.freehamburger.util.PlayerListener;
 import de.freehamburger.util.Util;
 
 /**
@@ -70,7 +70,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
     private ProgressBar progressBar;
     private News news;
     @Nullable
-    private SimpleExoPlayer exoPlayerVideo;
+    private ExoPlayer exoPlayerVideo;
 
 
     private void abandonAudioFocus(@Nullable AudioManager am) {
@@ -121,33 +121,31 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
      */
     private void initPlayer() {
         // create ExoPlayer instance
-        this.exoPlayerVideo = new SimpleExoPlayer.Builder(this).setTrackSelector(new DefaultTrackSelector(this)).build();
+        this.exoPlayerVideo = new ExoPlayer.Builder(this).setTrackSelector(new DefaultTrackSelector(this)).build();
         // assign the ExoPlayer instance to the video view
         this.playerView.setPlayer(this.exoPlayerVideo);
         View st = findViewById(R.id.exo_subtitles);
         if (st != null) st.setVisibility(View.GONE);
         // listen to state changes
-        Player.EventListener listener = new Player.EventListener() {
+        PlayerListener listener = new PlayerListener(this,true) {
+
             /** {@inheritDoc} */
             @Override
-            public void onPlayerError(ExoPlaybackException error) {
+            public void onPlayerError(@NonNull PlaybackException error) {
                 abandonAudioFocus(null);
-                String msg = Util.getExoPlaybackExceptionMessage(error);
-                if (BuildConfig.DEBUG) Log.e(TAG, "Video player error: " + msg, error);
-                Toast.makeText(VideoActivity.this, msg, Toast.LENGTH_LONG).show();
+                super.onPlayerError(error);
                 finish();
             }
 
             /** {@inheritDoc} */
-            @SuppressWarnings("deprecation")
             @Override
-            public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-                if (playbackState == Player.STATE_BUFFERING) {
+            public void onPlayerStateOrOnPlayWhenReadyChanged() {
+                if (exoPlayerState == Player.STATE_BUFFERING) {
                     showProgressBar();
                 } else {
                     hideProgressBar();
                 }
-                if (playWhenReady && playbackState == Player.STATE_ENDED) {
+                if (exoPlayerPlayWhenReady && exoPlayerState == Player.STATE_ENDED) {
                     abandonAudioFocus(null);
                     VideoActivity.this.handler.postDelayed(() -> finish(), 750L);
                 }
@@ -216,14 +214,10 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
 
         this.playerView = findViewById(R.id.playerView);
         this.progressBar = findViewById(R.id.progressBar);
-        getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
-            /** {@inheritDoc} */
-            @Override
-            public void onSystemUiVisibilityChange(int visibility) {
-                if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
-                    VideoActivity.this.handler.removeCallbacks(VideoActivity.this::hide);
-                    VideoActivity.this.handler.postDelayed(VideoActivity.this::hide, AUTO_HIDE_DELAY_MILLIS);
-                }
+        getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(visibility -> {
+            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+                this.handler.removeCallbacks(this::hide);
+                this.handler.postDelayed(this::hide, AUTO_HIDE_DELAY_MILLIS);
             }
         });
     }

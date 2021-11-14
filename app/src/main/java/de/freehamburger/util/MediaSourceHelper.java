@@ -2,9 +2,11 @@ package de.freehamburger.util;
 
 import android.net.Uri;
 
+import androidx.annotation.NonNull;
+
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory;
+import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
@@ -13,7 +15,6 @@ import com.google.android.exoplayer2.upstream.DataSource;
 
 import java.util.List;
 
-import androidx.annotation.NonNull;
 import okhttp3.Call;
 
 /**
@@ -43,8 +44,8 @@ public class MediaSourceHelper {
     @NonNull
     private MediaSource buildHlsMediaSource(@NonNull Call.Factory cf, @NonNull Uri uri) {
         if (this.hms == null) {
-            // call of OkHttpDataSourceFactory constructor could be replaced by "new DefaultHttpDataSourceFactory(USER_AGENT);" if extension-okhttp were not used
-            DataSource.Factory dsf = new OkHttpDataSourceFactory(cf, USER_AGENT);
+            // call of OkHttpDataSource.Factory constructor could be replaced by "new DefaultHttpDataSourceFactory(USER_AGENT);" if extension-okhttp were not used
+            DataSource.Factory dsf = new OkHttpDataSource.Factory(cf).setUserAgent(USER_AGENT);
             this.hms = new HlsMediaSource.Factory(dsf);
         }
         return this.hms.createMediaSource(new MediaItem.Builder().setUri(uri).build());
@@ -62,7 +63,7 @@ public class MediaSourceHelper {
         if (contentType == C.TYPE_HLS) return buildHlsMediaSource(cf, uri);
         if (this.pms == null) {
             // call of OkHttpDataSourceFactory constructor could be replaced by "new DefaultHttpDataSourceFactory(USER_AGENT);" if extension-okhttp were not used
-            DataSource.Factory dsf = new OkHttpDataSourceFactory(cf, USER_AGENT);
+            DataSource.Factory dsf = new OkHttpDataSource.Factory(cf).setUserAgent(USER_AGENT);
             this.pms = new ProgressiveMediaSource.Factory(dsf, new Mp34ExtractorsFactory());
         }
         return this.pms.createMediaSource(new MediaItem.Builder().setUri(uri).build());

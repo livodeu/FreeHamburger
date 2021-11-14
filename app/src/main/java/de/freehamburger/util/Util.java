@@ -43,7 +43,22 @@ import android.webkit.MimeTypeMap;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.exoplayer2.ExoPlaybackException;
+import androidx.annotation.AnyThread;
+import androidx.annotation.ColorInt;
+import androidx.annotation.ColorRes;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RawRes;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.RequiresPermission;
+import androidx.annotation.VisibleForTesting;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.BufferedOutputStream;
@@ -56,6 +71,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,20 +87,6 @@ import java.util.Set;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 
-import androidx.annotation.AnyThread;
-import androidx.annotation.ColorInt;
-import androidx.annotation.ColorRes;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RawRes;
-import androidx.annotation.RequiresApi;
-import androidx.annotation.RequiresPermission;
-import androidx.annotation.VisibleForTesting;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.FileProvider;
-import androidx.recyclerview.widget.RecyclerView;
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.MainActivity;
@@ -599,40 +601,6 @@ public class Util {
     }
 
     /**
-     * Returns the ExoPlayer error message contained in the given Exception.
-     * @param error ExoPlaybackException
-     * @return error message
-     * @throws NullPointerException if {@code error} is {@code null}
-     */
-    @NonNull
-    public static String getExoPlaybackExceptionMessage(@NonNull final ExoPlaybackException error) {
-        String msg;
-        switch (error.type) {
-            case ExoPlaybackException.TYPE_SOURCE:
-                msg = error.getSourceException().getMessage();
-                break;
-            case ExoPlaybackException.TYPE_RENDERER:
-                msg = error.getRendererException().getMessage();
-                break;
-            case ExoPlaybackException.TYPE_UNEXPECTED:
-                msg = error.getUnexpectedException().getMessage();
-                break;
-            case ExoPlaybackException.TYPE_OUT_OF_MEMORY:
-                msg = error.getOutOfMemoryError().getMessage();
-                break;
-            case ExoPlaybackException.TYPE_TIMEOUT:
-                msg = error.getTimeoutException().getMessage();
-                break;
-            case ExoPlaybackException.TYPE_REMOTE:
-                msg = error.getMessage();
-                break;
-            default:
-                msg = null;
-        }
-        return msg != null ? msg : error.toString();
-    }
-
-    /**
      * Returns the Space occupied by a file or directory.<br>
      * Will return 0 if the file does not exist or if it could not be accessed.
      * @param file file <em>or</em> directory
@@ -668,6 +636,22 @@ public class Util {
             }
         }
         return space;
+    }
+
+    /**
+     * Attempts to find a specific Throwable among the causes of the given Throwable.
+     * Returns the Throwable itself if it is already an instance of the given class.
+     * @param e Throwable
+     * @return T
+     * @throws NullPointerException if any parameter is {@code null}
+     */
+    @Nullable
+    public static <T extends Throwable> T getSpecificCause(@NonNull Throwable e, @NonNull final Class<T> causeClass) {
+        do {
+            if (causeClass.isAssignableFrom(e.getClass())) return causeClass.cast(e);
+            e = e.getCause();
+        } while (e != null);
+        return null;
     }
 
     /**
@@ -846,23 +830,6 @@ public class Util {
         return (ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
     }
 
-    /**
-     * Attempts to find a SSLPeerUnverifiedException among the causes of the given Throwable.
-     * @param e Throwable
-     * @return SSLPeerUnverifiedException
-     */
-    @Nullable
-    public static SSLPeerUnverifiedException isPeerUnverified(@NonNull Throwable e) {
-        if (e instanceof SSLPeerUnverifiedException) return (SSLPeerUnverifiedException)e;
-        for (;;) {
-            Throwable cause = e.getCause();
-            if (cause == null) break;
-            if (cause instanceof SSLPeerUnverifiedException) return (SSLPeerUnverifiedException)cause;
-            e = cause;
-        }
-        return null;
-    }
-
     private static boolean isTest(@NonNull Context ctx) {
         // Contexts for unit tests are android.app.ContextImpl
         return BuildConfig.DEBUG && !ctx.getClass().getName().startsWith(Objects.requireNonNull(MainActivity.class.getPackage()).getName());
@@ -997,6 +964,34 @@ public class Util {
     @NonNull
     public static String makeHttps(@NonNull final String url) {
         return url.toLowerCase(Locale.US).startsWith("http:") ? "https:" + url.substring(5) : url;
+    }
+
+    /**
+     * Returns an error message for the given PlaybackException.
+     * @param ctx Context
+     * @param error PlaybackException
+     * @return error message
+     * @throws NullPointerException if any parameter is {@code null}
+     */
+    @NonNull
+    public static String playbackExceptionMsg(@NonNull Context ctx, @NonNull final PlaybackException error) {
+        String msg = null;
+        if (error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED) {
+            msg = ctx.getString(R.string.error_connection_interrupted);
+        } else {
+            Collection<Class<? extends Throwable>> possibleCauses = Arrays.asList(UnknownHostException.class, SSLPeerUnverifiedException.class);
+            for (Class<? extends Throwable> possibleCause : possibleCauses) {
+                Throwable cause = getSpecificCause(error, possibleCause);
+                if (cause != null) {
+                    msg = cause.getMessage();
+                    break;
+                }
+            }
+            if (msg == null) msg = error.getMessage();
+        }
+        if (BuildConfig.DEBUG) Log.e(TAG, "Playback error: " + msg + " (" + error.getErrorCodeName() + ")");
+        if (msg == null) msg = error.getErrorCodeName();
+        return msg;
     }
 
     /**
@@ -1287,15 +1282,22 @@ public class Util {
         if (s == null) return;
         Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) s.getView();
         TextView textView = snackLayout.findViewById(com.google.android.material.R.id.snackbar_text);
-        if (textView == null) {
-            return;
-        }
-        if (font != null) {
-            textView.setTypeface(font);
-        }
-        if (textSize >= 1f) {
-            textView.setTextSize(textSize);
-        }
+        if (textView == null) return;
+        if (font != null) textView.setTypeface(font);
+        if (textSize >= 1f) textView.setTextSize(textSize);
+    }
+
+    /**
+     * Allow more lines of text in a Snackbar.
+     * @param s Snackbar
+     * @param maxLines max. number of text lines
+     */
+    public static void setSnackbarMaxLines(@Nullable Snackbar s, @IntRange(from = 1) int maxLines) {
+        if (s == null) return;
+        Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) s.getView();
+        TextView textView = snackLayout.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (textView == null) return;
+        textView.setMaxLines(maxLines);
     }
 
     /**
