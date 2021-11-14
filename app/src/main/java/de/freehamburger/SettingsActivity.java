@@ -143,10 +143,6 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             this.snackbar.dismiss();
             this.snackbar = null;
         }
-        /*if (getFragmentManager().getBackStackEntryCount() == 0 && getIntent().getStringExtra(EXTRA_SHOW_FRAGMENT) == null) {
-            this.currentHeader = null;
-            invalidateOptionsMenu();
-        }*/
         if (this.isManageStorageActivity) {
             // this leads back to the system settings
             finishAffinity();
@@ -204,7 +200,10 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         super.onPause();
     }
 
-    /** {@inheritDoc} */
+    /** {@inheritDoc} <br>
+     * As Androodle invented this, don't you dare bother me with "Oh this call is deprecated! Fix it though it's not broken!" stuff…
+     */
+    @SuppressWarnings("deprecation")
     @Override
     public boolean onPreferenceStartFragment(PreferenceFragmentCompat caller, Preference pref) {
         // Instantiate the new Fragment
