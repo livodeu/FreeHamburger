@@ -373,6 +373,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             pickIntent.addCategory(Intent.CATEGORY_OPENABLE);
             pickIntent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
             if (getPackageManager().resolveActivity(pickIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                //noinspection deprecation
                 startActivityForResult(pickIntent, REQUEST_CODE_FONT_IMPORT);
             }
             return;
