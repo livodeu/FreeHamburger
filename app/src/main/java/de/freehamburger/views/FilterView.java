@@ -24,6 +24,7 @@ import com.google.android.material.snackbar.Snackbar;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import de.freehamburger.R;
 import de.freehamburger.model.Filter;
@@ -154,6 +155,11 @@ public class FilterView extends RelativeLayout implements TextWatcher, CompoundB
             if (imm == null) return;
             imm.showSoftInput(this.editTextPhrase, 0);
         }, 250L);
+    }
+
+    @NonNull
+    public ImageButton getButtonDelete() {
+        return this.buttonDelete;
     }
 
     /**

@@ -1,5 +1,6 @@
 package de.freehamburger.adapters;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import androidx.annotation.IntRange;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.freehamburger.App;
+import de.freehamburger.FilterActivity;
 import de.freehamburger.R;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.TextFilter;
@@ -25,17 +27,17 @@ import de.freehamburger.views.FilterView;
 public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder> {
 
     private final List<Filter> filters = new ArrayList<>(4);
-    @NonNull private final Context context;
+    @NonNull private final FilterActivity filterActivity;
     @App.BackgroundSelection private int background;
     @Nullable private Filter focusMe;
 
     /**
      * Constructor.
-     * @param ctx Context
+     * @param filterActivity FilterActivity
      */
-    public FilterAdapter(@NonNull Context ctx) {
+    public FilterAdapter(@NonNull FilterActivity filterActivity) {
         super();
-        this.context = ctx;
+        this.filterActivity = filterActivity;
     }
 
     /**
@@ -43,6 +45,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
      * @param filter Filter to add
      * @return {@code true} if the filter has been added
      */
+    @SuppressLint("NotifyDataSetChanged")
     public boolean addFilter(@Nullable Filter filter) {
         if (filter == null || this.filters.contains(filter)) return false;
         this.focusMe = filter;
@@ -125,7 +128,8 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     @Override
     @NonNull
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = new FilterView(this.context);
+        FilterView v = new FilterView(this.filterActivity);
+        v.getButtonDelete().setOnClickListener(this.filterActivity::onDeleteClicked);
         return new FilterAdapter.ViewHolder(v);
     }
 
@@ -139,6 +143,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         this.background = background;
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void setFilters(@Nullable List<Filter> filters) {
         this.filters.clear();
         if (filters != null) {
