@@ -87,7 +87,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     /** Notification id */
     static final int NOTIFICATION_ID = 123;
     static final String ACTION_CLEAR_NOTIFICATION = "de.freehamburger.action.clear_notification";
-    private static final String ACTION_DISABLE_POLLING = "de.freehamburger.action.disable_polling";
     /** the Intent action passed to {@link MainActivity} when the Notification is tapped */
     static final String ACTION_NOTIFICATION = "de.freehamburger.action.notification";
     /** long: timestamp when statistics collection started */
@@ -102,6 +101,9 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     static final Source SOURCE = Source.HOME;
     /** if set, contains {@link News#getExternalId() News.externalId} */
     static final String EXTRA_FROM_NOTIFICATION = "de.freehamburger.from_notification";
+    /** estimated byte count for one retrieval (average recorded over several months) */
+    static final long ESTIMATED_NETWORK_BYTES = 72_000L;
+    private static final String ACTION_DISABLE_POLLING = "de.freehamburger.action.disable_polling";
     /** boolean: show extended notification instead of standard one (only possible from {@link Build.VERSION_CODES#N Nougat}) */
     private static final String PREF_NOTIFICATION_EXTENDED = "pref_notification_extended";
     /** String set: logs timestamps of all requests */
@@ -110,8 +112,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private static final int HARD_MINIMUM_INTERVAL_MINUTES = 5;
     private static final String TAG = "UpdateJobService";
     private static final BitmapFactory.Options BITMAPFACTORY_OPTIONS = new BitmapFactory.Options();
-    /** estimated byte count for one retrieval (average recorded over several months) */
-    static final long ESTIMATED_NETWORK_BYTES = 72_000L;
     /** to be added to values stored in {@link #PREF_STAT_ALL}<br><em>(DEBUG versions only!)</em> */
     private static final long ADD_TO_PREF_STAT_ALL_VALUE = 1_500_000_000_000L;
     /** String: contains the {@link News#getExternalId() id} of the News that was shown as a Notification most recently */
@@ -129,6 +129,14 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private JobParameters params;
     private long scheduledAt;
     private boolean stopJobReceived;
+
+    /**
+     * Constructor.
+     */
+    public UpdateJobService() {
+        super();
+        this.id = nextid++;
+    }
 
     /**
      * Calculates the interval between periodic job executions.<br>
@@ -216,7 +224,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * Returns the minimum interval in minutes, either {@link #HARD_MINIMUM_INTERVAL_MINUTES} or the {@link JobInfo#getMinPeriodMillis() value imposed by Android}.
      * @return minimum interval <em>in minutes</em>
      */
-    @IntRange(from = 300)
     static int getMinimumIntervalInMinutes() {
         // the minimum interval is set by Android
         int minimumIntervalInMinutes;
@@ -266,6 +273,11 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         return hour >= getNightStart() || hour < getNightEnd();
     }
 
+    /**
+     * Creates a PendingIntent to disable background updates.
+     * @param app App
+     * @return PendingIntent
+     */
     @NonNull
     static PendingIntent makeIntentToDisable(@NonNull App app) {
         @SuppressLint("InlinedApi") int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? (PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE) : PendingIntent.FLAG_ONE_SHOT;
@@ -289,7 +301,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
-     * Creates a PendingIntent designed to open the given News in NewsActivity.
+     * Creates a PendingIntent designed to open the given News in {@link NewsActivity}.
      * @param app App
      * @param news News
      * @return PendingIntent
@@ -309,7 +321,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
-     * Creates a PendingIntent designed to open the given News in VideoActivity.
+     * Creates a PendingIntent designed to open the given News in {@link VideoActivity}.
      * @param app App
      * @param news News
      * @return PendingIntent
@@ -412,8 +424,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 yes = true;
                 if (BuildConfig.DEBUG) Log.i(TAG, "Job needs rescheduling: (night=" + isNight + "; scheduled for night=" + jobWasScheduledForNight + ") - day will begin in " + (60 * (nightEnd - nowInHours)) + " min.");
             }
-        } else if (BuildConfig.DEBUG) {
-            Log.i(TAG, "Job needs rescheduling: (night=" + isNight + "; scheduled for night=" + jobWasScheduledForNight + ")");
         }
         return yes;
     }
@@ -433,20 +443,11 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 .apply();
     }
 
-    /**
-     * Constructor.
-     */
-    public UpdateJobService() {
-        super();
-        this.id = nextid++;
-    }
-
     /** {@inheritDoc} */
     @Override
-    public void blobParsed(@Nullable Blob blob, boolean ok, Throwable oops) {
+    public void blobParsed(@Nullable Blob blob, boolean ok, @Nullable Throwable oops) {
         if (!ok || blob == null || oops != null) {
             if (BuildConfig.DEBUG && oops != null) Log.e(TAG + id, "Parsing failed: " + oops.toString());
-
             done();
             return;
         }
@@ -599,7 +600,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         if (statStart == 0L) editor.putLong(PREF_STAT_START, now);
         editor.putInt(PREF_STAT_COUNT, jobsSoFar + 1);
         if (result.contentLength <= 0L) {
-            if (BuildConfig.DEBUG) Log.e(TAG + id, "No content length received!");
             editor.putBoolean(PREF_STAT_ESTIMATED, true);
             editor.putLong(PREF_STAT_RECEIVED, receivedSoFar + ESTIMATED_NETWORK_BYTES);
         } else {
@@ -917,12 +917,18 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         // not interesting
     }
 
+    /**
+     * Removes the notification.
+     */
     void removeNotification() {
         NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         if (nm == null) return;
         nm.cancel(NOTIFICATION_ID);
     }
 
+    /**
+     * Reschedules the job; see {@link #makeJobInfo(Context)}.
+     */
     private void reschedule() {
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
         if (js == null) return;
