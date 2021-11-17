@@ -2,6 +2,8 @@ package de.freehamburger.model;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.JsonReader;
+
 import androidx.annotation.AnyThread;
 import androidx.annotation.FloatRange;
 import androidx.annotation.MainThread;
@@ -9,7 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.Size;
 import androidx.annotation.VisibleForTesting;
-import android.util.JsonReader;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -226,6 +227,7 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
                             latestRead = read;
                             publishProgress(progress);
                         }
+                        //noinspection BusyWait
                         Thread.sleep(100L);
                     }
                 } catch (Exception e) {

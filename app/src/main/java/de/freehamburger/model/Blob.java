@@ -20,6 +20,7 @@ import java.util.Set;
 
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
+import de.freehamburger.R;
 import de.freehamburger.util.Log;
 
 /**
@@ -107,6 +108,17 @@ public class Blob {
         if (prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
             News.correct(blob.newsList);
             News.correct(blob.regionalNewsList);
+        }
+        // replace some text within the News instances because the Context that we have here has not been passed down
+        final String[] toReplace = new String[] {"\uD83D\uDD17"};    // "\uD83D\uDD17" is the "link" symbol (unicode 0x1f517)
+        final String[] replaceWith = new String[] {ctx.getString(R.string.label_link)};
+        for (News news : blob.newsList) {
+            Content content = news.getContent();
+            if (content != null) content.replace(toReplace, replaceWith);
+        }
+        for (News news : blob.regionalNewsList) {
+            Content content = news.getContent();
+            if (content != null) content.replace(toReplace, replaceWith);
         }
         //
         return blob;

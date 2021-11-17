@@ -1,5 +1,6 @@
 package de.freehamburger.model;
 
+import android.net.Uri;
 import android.os.Build;
 import android.text.Html;
 import android.text.Spanned;
@@ -7,6 +8,12 @@ import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.JsonToken;
 import android.util.MalformedJsonException;
+
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringDef;
+import androidx.annotation.VisibleForTesting;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -17,11 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.StringDef;
-import androidx.annotation.VisibleForTesting;
+import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.util.Util;
 
@@ -122,6 +125,7 @@ public class Content implements Serializable {
                     || ContentElement.TYPE_QUOTATION.equals(type)
                     || ContentElement.TYPE_IMAGE_GALLERY.equals(type)
                     || ContentElement.TYPE_BOX.equals(type)
+                    || ContentElement.TYPE_HTMLEMBED.equals(type)
                     || ContentElement.TYPE_LIST.equals(type)
                     || ContentElement.TYPE_VIDEO.equals(type)
                     || ContentElement.TYPE_AUDIO.equals(type)
@@ -175,6 +179,23 @@ public class Content implements Serializable {
                         htmlTextBuilder.append("<li>&nbsp;&nbsp;<").append(TAG_LISTITEM_START).append('>').append(url).append("</").append(TAG_LISTITEM_END).append("></li>\n");
                     }
                     htmlTextBuilder.append("</ul>\n<br>\n");
+                }
+            } else if (ContentElement.TYPE_HTMLEMBED.equals(type)) {
+                HtmlEmbed htmlEmbed = ce.htmlEmbed;
+                // check for valid urls, especially skip those that start with App.URL_PREFIX
+                if (htmlEmbed != null && htmlEmbed.getUrl() != null && !htmlEmbed.getUrl().startsWith(App.URL_PREFIX)) {
+                    String label = null;
+                    try {label = Uri.parse(htmlEmbed.getUrl()).getHost(); } catch (Exception ignored) {}
+                    if (TextUtils.isEmpty(label)) label = htmlEmbed.getService();
+                    if (!TextUtils.isEmpty(label)) {
+                        // the 🔗 symbol will be replaced later in Blob.parseApi()
+                        htmlTextBuilder.append("<p style=\"background-color:lightgray\"><small>\uD83D\uDD17</small>")
+                                .append("&nbsp;<a href=\"")
+                                .append(htmlEmbed.getUrl())
+                                .append("\">")
+                                .append(label)
+                                .append("</a></p><br>\n");
+                    }
                 }
             } else if (ContentElement.TYPE_BOX.equals(type)) {
                 Box box = ce.getBox();
@@ -340,6 +361,21 @@ public class Content implements Serializable {
         return !videoList.isEmpty();
     }
 
+    /**
+     * Replaces occurrences of {@code what} in {@link #text} with {@code with}.
+     * @param what to replace
+     * @param with replacements
+     */
+    public void replace(final String[] what, final String[] with) {
+        if (this.text == null || what == null || with == null) return;
+        final int n = what.length;
+        if (with.length != n) return;
+        for (int i = 0; i < n; i++) {
+            if (what[i] == null || with[i] == null) continue;
+            this.text = this.text.replace(what[i], with[i]);
+        }
+    }
+
     /** {@inheritDoc} */
     @Override
     @NonNull
@@ -361,6 +397,7 @@ public class Content implements Serializable {
         static final String TYPE_VIDEO = "video";
         static final String TYPE_RELATED = "related";
         static final String TYPE_BOX = "box";
+        static final String TYPE_HTMLEMBED = "htmlEmbed";
         static final String TYPE_LIST = "list";
         static final String TYPE_QUOTATION = "quotation";
         static final String TYPE_SOCIALMEDIA = "socialmedia";
@@ -377,6 +414,7 @@ public class Content implements Serializable {
         @Nullable private Box box;
         @Nullable private Lyst list;
         @Nullable private Related[] related;
+        @Nullable private HtmlEmbed htmlEmbed;
 
         /**
          * @param reader JsonReader
@@ -414,6 +452,9 @@ public class Content implements Serializable {
                         ce.box = Box.parse(reader);
                     } else if ("list".equals(name)) {
                         ce.list = Lyst.parse(reader);
+                    } else if ("htmlEmbed".equals(name)) {
+                        ce.htmlEmbed = HtmlEmbed.parse(reader);
+                        if (BuildConfig.DEBUG) android.util.Log.i("Content.ContentElement", "Found content element '" + name + "': " + ce.htmlEmbed);
                     } else if ("quotation".equals(name)) {
                         reader.beginObject();
                         reader.nextName();
@@ -422,6 +463,7 @@ public class Content implements Serializable {
                     } else if ("related".equals(name)) {
                         ce.related = Related.parse(reader);
                     } else {
+                        if (BuildConfig.DEBUG && !"tracking".equals(name)) android.util.Log.w("Content.ContentElement", "Skipping content element '" + name + "'");
                         reader.skipValue();
                     }
                 }
@@ -462,6 +504,11 @@ public class Content implements Serializable {
         @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
         public Gallery getGallery() {
             return gallery;
+        }
+
+        @Nullable
+        public HtmlEmbed getHtmlEmbed() {
+            return htmlEmbed;
         }
 
         @Nullable
@@ -508,7 +555,7 @@ public class Content implements Serializable {
          * See <a href="https://developer.android.com/studio/write/annotations#enum-annotations">here</a>
          */
         @Retention(RetentionPolicy.SOURCE)
-        @StringDef({TYPE_TEXT, TYPE_HEADLINE, TYPE_IMAGE_GALLERY, TYPE_VIDEO, TYPE_AUDIO, TYPE_BOX, TYPE_LIST, TYPE_RELATED, TYPE_QUOTATION, TYPE_SOCIALMEDIA, TYPE_WEBVIEW})
+        @StringDef({TYPE_TEXT, TYPE_HEADLINE, TYPE_IMAGE_GALLERY, TYPE_VIDEO, TYPE_AUDIO, TYPE_BOX, TYPE_HTMLEMBED, TYPE_LIST, TYPE_RELATED, TYPE_QUOTATION, TYPE_SOCIALMEDIA, TYPE_WEBVIEW})
         @interface ContentType {}
     }
 }

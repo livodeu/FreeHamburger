@@ -7,6 +7,7 @@ import android.annotation.TargetApi;
 import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -416,7 +417,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             if (imageSpans != null) {
                 for (ImageSpan imageSpan : imageSpans) {
                     String src = imageSpan.getSource();
-                    if (src == null) continue;
+                    if (src == null || src.startsWith(ContentResolver.SCHEME_ANDROID_RESOURCE)) continue;
                     src = Util.makeHttps(src);
                     SpannableImageTarget target = new SpannableImageTarget(this, spannable, imageSpan, SCALE_PICTURES_TO_PERCENT);
                     // store target in an (otherwise unused) instance variable to avoid garbage collection, because the service holds only a WeakReference on the target
@@ -452,11 +453,11 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     if (internalLinks) {
                         Uri uri = Uri.parse(url);
                         String host = uri.getHost() != null ? uri.getHost().toLowerCase(Locale.US) : null;
-                        if (App.isHostAllowed(host)) {
+                        if (App.isHostAllowed(host) && !App.isHostRestrictedToNonScript(host)) {
                             InternalURLSpan internalURLSpan = new InternalURLSpan(url, getResources().getColor(R.color.colorLinkInternal));
                             spannable.setSpan(internalURLSpan, start, end, 0);
                         } else {
-                            URLSpanWChooser urlSpanWChooser = new URLSpanWChooser(url, getResources().getColor(R.color.colorLinkExternal));
+                            URLSpanWChooser urlSpanWChooser = new URLSpanWChooser(url, getResources().getColor(R.color.colorLinkExternal), "text/html");
                             spannable.setSpan(urlSpanWChooser, start, end, 0);
                         }
                     } else {
@@ -465,7 +466,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                             InternalURLSpan internalURLSpan = new InternalURLSpan(url, getResources().getColor(R.color.colorLinkInternal));
                             spannable.setSpan(internalURLSpan, start, end, 0);
                         } else {
-                            URLSpanWChooser urlSpanWChooser = new URLSpanWChooser(url, getResources().getColor(R.color.colorLinkExternal));
+                            URLSpanWChooser urlSpanWChooser = new URLSpanWChooser(url, getResources().getColor(R.color.colorLinkExternal), "application/json");
                             spannable.setSpan(urlSpanWChooser, start, end, 0);
                         }
                     }
@@ -928,7 +929,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             if (nm != null) nm.cancel(UpdateJobService.NOTIFICATION_ID);
         }
 
-        if (this.news == null) {
+        if (!Util.TEST && this.news == null) {
             finish();
         }
     }
@@ -956,7 +957,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             sendIntent.putExtra(Intent.EXTRA_TEXT, url);
             if (title != null) sendIntent.putExtra(Intent.EXTRA_SUBJECT, title);
             sendIntent.setType("text/plain");
-            startActivity(Intent.createChooser(sendIntent, getString(R.string.label_select_app, "HTML")));
+            //startActivity(Intent.createChooser(sendIntent, getString(R.string.label_select_app, "HTML")));
+            startActivity(Intent.createChooser(sendIntent, null));
             return true;
         }
         if (id == R.id.action_read) {
@@ -1444,6 +1446,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private static class URLSpanWChooser extends URLSpan {
         @ColorInt
         private final int linkColor;
+        @Nullable private final String mime;
 
         /**
          * Constructor.
@@ -1452,8 +1455,20 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
          * @throws NullPointerException if {@code url} is {@code null}
          */
         private URLSpanWChooser(@NonNull String url, @IntRange(from = 1) @ColorInt int linkColor) {
+            this(url, linkColor, null);
+        }
+
+        /**
+         * Constructor.
+         * @param url URL
+         * @param linkColor link color
+         * @param mime MIME type
+         * @throws NullPointerException if {@code url} is {@code null}
+         */
+        private URLSpanWChooser(@NonNull String url, @IntRange(from = 1) @ColorInt int linkColor, @Nullable String mime) {
             super(Util.makeHttps(url));
             this.linkColor = linkColor;
+            this.mime = mime;
         }
 
         /** {@inheritDoc} */
@@ -1462,17 +1477,21 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             Uri uri = Uri.parse(getURL());
             String lps = uri.getLastPathSegment();
             String tag = lps != null ? lps.substring(lps.lastIndexOf('.') + 1) : null;
-            String mime = tag != null ? MimeTypeMap.getSingleton().getMimeTypeFromExtension(tag) : null;
+            String mime = this.mime != null ? this.mime : (tag != null ? MimeTypeMap.getSingleton().getMimeTypeFromExtension(tag) : null);
             Context context = widget.getContext();
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setDataAndType(uri, mime);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            Intent chooserIntent = Intent.createChooser(intent, context.getString(R.string.label_select_app, lps != null ? lps : getURL()));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT);
+            }
+            Intent chooserIntent = Intent.createChooser(intent, null);
             try {
                 context.startActivity(chooserIntent);
             } catch (ActivityNotFoundException e) {
-                if (BuildConfig.DEBUG) Log.w(getClass().getSimpleName(), "Actvity was not found for intent, " + intent.toString());
+                if (BuildConfig.DEBUG) Log.w(getClass().getSimpleName(), "Actvity was not found for intent " + intent.toString());
             }
+
         }
 
         /** {@inheritDoc} */

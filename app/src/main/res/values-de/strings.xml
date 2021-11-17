@@ -32,6 +32,7 @@
     <string name="error_proxy_connection_failed">Der als Proxy eingestellte Host %1$s nimmt keine Verbindung an Port %2$s an!</string>
     <string name="label_char_invalid">Ungültig</string>
     <string name="label_license">Lizenz</string>
+    <string name="label_link">↗ Verknüpfung zu</string>
     <string name="label_yes">Ja</string>
     <string name="label_notification_channel">Meldungen</string>
     <string name="label_notification_channel_hipri">Eilmeldungen</string>
@@ -56,7 +57,6 @@
     <string name="label_current_cache_size">momentan %1$d MB von %2$d MB genutzt</string>
     <string name="pref_hint_pref_cache_max_size">Max. Cachegröße in MB</string>
     <string name="label_current_cache_size_kb">momentan %1$d kB von %2$d MB genutzt</string>
-    <string name="label_select_app">Bitte App für %1$s wählen</string>
     <string name="msg_not_modified">Die Daten sind noch aktuell.</string>
     <string name="action_search">Suche</string>
     <string name="action_share">Teilen</string>

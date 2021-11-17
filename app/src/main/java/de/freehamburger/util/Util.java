@@ -100,8 +100,20 @@ import de.freehamburger.model.Source;
 public class Util {
 
     public static final Typeface CONDENSED = Typeface.create("sans-serif-condensed", Typeface.NORMAL);
+    /** Determines whether this is a test build. */
+    public static final boolean TEST;
     private static final String TAG = "Util";
     private static final Typeface NORMAL = Typeface.create("sans-serif", Typeface.NORMAL);
+
+    static {
+        boolean found = false;
+        try {
+            Class.forName("androidx.test.espresso.Espresso");
+            found = true;
+        } catch (Throwable ignored) {
+        }
+        TEST = found;
+    }
 
     /**
      * Returns true if the characters following {@code array[pos]} are those given in {@code chars}.
