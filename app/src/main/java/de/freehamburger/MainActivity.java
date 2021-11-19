@@ -958,6 +958,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         this.coordinatorLayout = findViewById(R.id.coordinator_layout);
         this.fab = findViewById(R.id.fab);
         this.quickView = findViewById(R.id.quickView);
+        this.quickView.setOnClickListener(this::onQuickViewClicked);
         this.recyclerView = findViewById(R.id.recyclerView);
         this.recyclerView.setHasFixedSize(true);
         selectLayoutManager();
