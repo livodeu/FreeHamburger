@@ -2,6 +2,7 @@ package de.freehamburger.util;
 
 import android.Manifest;
 import android.os.AsyncTask;
+
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
 import androidx.annotation.MainThread;
@@ -80,18 +81,19 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
     public interface DownloaderListener {
 
         /**
+         * The download progress has changed.
+         * @param progress [0..1]
+         */
+        @MainThread
+        void downloadProgressed(@FloatRange(from = 0, to = 1) float progress);
+
+        /**
          * Finally, the download process has come to an end. Look at {@code result} to see what you got.
          * @param completed {@code true} if the process has <u>not</u> been cancelled ({@code true} does not indicate a successful download)
          * @param result    Result (or {@code null} in case of an error)
          */
         @MainThread
         void downloaded(boolean completed, @Nullable Result result);
-
-        /**
-         * The download progress has changed.
-         * @param progress [0..1]
-         */
-        void downloadProgressed(@FloatRange(from = 0, to = 1) float progress);
     }
 
     /**
