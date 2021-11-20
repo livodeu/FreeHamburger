@@ -28,7 +28,9 @@ import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.system.ErrnoException;
 import android.system.Os;
+import android.text.Editable;
 import android.text.Html;
+import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
@@ -60,6 +62,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.material.snackbar.Snackbar;
+
+import org.xml.sax.XMLReader;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -104,6 +108,14 @@ public class Util {
     public static final boolean TEST;
     private static final String TAG = "Util";
     private static final Typeface NORMAL = Typeface.create("sans-serif", Typeface.NORMAL);
+    /**
+     * Selection of wrong quotation marks<br>
+     * <pre>
+     * 0x0022   0x201d  0x201f
+     * "        ”       ‟
+     * </pre>
+     */
+    private static final char[] WRONG_QUOTES = new char[] {'\u0022', '\u201d', '\u201f'};
 
     static {
         boolean found = false;
@@ -425,6 +437,18 @@ public class Util {
     }
 
     /**
+     * Returns true if the given String does not contain invalid quotation marks.
+     * @param s String to check
+     * @return true / false
+     */
+    private static boolean doesNotContainWrongQuotes(@NonNull final String s) {
+        for (char wrong : WRONG_QUOTES) {
+            if (s.indexOf(wrong) >= 0) return false;
+        }
+        return true;
+    }
+
+    /**
      * Displays a Snackbar and fades it over a given period of time.<br>
      * <b>The Snackbar will not be dismissed after the time is up, though!</b>
      * @param sb Snackbar <em>which is not shown yet</em>
@@ -471,22 +495,30 @@ public class Util {
     }
 
     /**
-     * Replaces "Text." with „Text.”<br>
+     * Replaces "Text." with „Text.“<br>
      * Lower/first is „ (0x201e), upper/last is “ (0x201c).<br>
-     * See <a href="https://en.wikipedia.org/wiki/Quotation_mark#German">here</a> &amp; <a href="https://de.wikipedia.org/wiki/Anf%C3%BChrungszeichen#Anf%C3%BChrungszeichen_im_Deutschen">hier</a>.
+     * See <a href="https://en.wikipedia.org/wiki/Quotation_mark#German">here</a> &amp; <a href="https://de.wikipedia.org/wiki/Anf%C3%BChrungszeichen#Anf%C3%BChrungszeichen_im_Deutschen">hier</a>.<br>
+     * <hr>
+     * <i>This code, of course, does not help if a well-paid employee is negligent and enters only part of the required quotation marks or a wild mix of different ones…</i>
      * @param value String
      * @return CharSequence
      */
     @NonNull
     public static CharSequence fixQuotationMarks(@Nullable final String value) {
         if (value == null || value.length() == 0) return "";
-        final char wrong = '"';
-        final char correctLower = '„';
-        final char correctUpper = '”';
+        if (doesNotContainWrongQuotes(value)) return value;
+        final char correctLower = '\u201e'; // '„';
+        final char correctUpper = '\u201c'; // '“';
         final StringBuilder out = new StringBuilder(value.length());
         boolean recentWasLower = false;
         for (int pos = 0;;) {
-            int found = value.indexOf(wrong, pos);
+            // find the next wrong quotation mark, starting from position <pos>
+            int found = -1;
+            for (char wrong : WRONG_QUOTES) {
+                int f = value.indexOf(wrong, pos);
+                if (f < 0) continue;
+                if (found < 0 || f < found) found = f;
+            }
             if (found < 0) {
                 out.append(value.substring(pos));
                 break;
@@ -497,12 +529,17 @@ public class Util {
                 pos = 1;
                 continue;
             }
-            // check whether found is within a html tag
+            // check whether <found> is within a html tag
             int nextHtmlTag = value.lastIndexOf('<', found);
             int nextHtmlTagEnd = value.lastIndexOf('>', found);
             if (nextHtmlTag >= 0 && nextHtmlTagEnd < nextHtmlTag) {
                 nextHtmlTagEnd = value.indexOf('>', found + 1);
                 if (nextHtmlTagEnd > 0) {
+                    String remainderBeforeHtmlTag = value.substring(pos, nextHtmlTag);
+                    int lastCorrectLower = remainderBeforeHtmlTag.lastIndexOf(correctLower);
+                    int lastCorrectUpper = remainderBeforeHtmlTag.lastIndexOf(correctUpper);
+                    if (lastCorrectLower > lastCorrectUpper) recentWasLower = true;
+                    else if (lastCorrectUpper > lastCorrectLower) recentWasLower = false;
                     out.append(value, pos, nextHtmlTagEnd + 1);
                     pos = nextHtmlTagEnd + 1;
                     continue;
@@ -530,16 +567,48 @@ public class Util {
      * @return Spanned (specifically, a {@link SpannableStringBuilder})
      */
     @NonNull
-    public static Spanned fromHtml(@NonNull String html, @Nullable Html.ImageGetter im) {
+    public static Spanned fromHtml(final Context ctx, @NonNull String html, @Nullable Html.ImageGetter im) {
         Spanned spanned;
+        final List<PositionedSpan> additionalSpans = new ArrayList<>();
+        final Html.TagHandler tagHandler = new Html.TagHandler() {
+
+            private PositionedSpan pendingSpan = null;
+            private String tagForSpan = null;
+
+            @Override
+            public void handleTag(boolean opening, String tag, Editable output, XMLReader xmlReader) {
+                if (ctx == null || "body".equals(tag) || "html".equals(tag)) return;
+                if (opening) {
+                    this.pendingSpan = PositionedSpan.forTag(ctx, tag, output.length());
+                    if (this.pendingSpan != null) this.tagForSpan = tag;
+                } else {
+                    if (this.pendingSpan != null && tag.equals(this.tagForSpan)) {
+                        this.pendingSpan.setLength(output.length() - this.pendingSpan.getPos());
+                        additionalSpans.add(pendingSpan);
+                    }
+                    this.pendingSpan = null;
+                }
+            }
+        };
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            spanned = Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT, im, null);
+            spanned = Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT, im, tagHandler);
+            if (spanned instanceof Spannable) {
+                for (PositionedSpan span : additionalSpans) {
+                    span.applyToSpannable((Spannable)spanned);
+                }
+            }
         } else {
             /*
              Html.fromHtml in API 23 (Android 6.0) does not create BackgroundColorSpans!
              It seems that API 24 introduces the "startCssStyle()" method.
              */
-            spanned = Html.fromHtml(html, im, null);
+            spanned = Html.fromHtml(html, im, tagHandler);
+            if (spanned instanceof Spannable) {
+                for (PositionedSpan span : additionalSpans) {
+                    span.applyToSpannable((Spannable)spanned);
+                }
+            }
             // remove superfluous blank lines that have been introduced by Html.FROM_HTML_MODE_LEGACY
             spanned = replaceAll(spanned, "\n" + Content.REMOVE_NEW_LINE, "");
             // this is just to be sure that no REMOVE_NEW_LINE will be left

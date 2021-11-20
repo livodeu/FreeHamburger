@@ -3,11 +3,12 @@ package de.freehamburger.model;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.JsonReader;
+import android.util.JsonToken;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import android.util.JsonReader;
-import android.util.JsonToken;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,6 +52,9 @@ public class Blob {
     @NonNull
     static Blob parseApi(@NonNull Context ctx, @NonNull final JsonReader reader) throws IOException {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        @News.Flag int flags = 0;
+        boolean htmlEmbed = prefs.getBoolean(App.PREF_SHOW_EMBEDDED_HTML_LINKS, App.PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT);
+        if (htmlEmbed) flags |= News.FLAG_INCLUDE_HTMLEMBED;
         //
         final Blob blob = new Blob();
         String name = null;
@@ -63,11 +67,11 @@ public class Blob {
                 continue;
             }
             if ("news".equals(name) || "channels".equals(name)) {
-                blob.newsList.addAll(parseNewsList(reader, false));
+                blob.newsList.addAll(parseNewsList(reader, false, flags));
                 continue;
             }
             if ("regional".equals(name)) {
-                blob.regionalNewsList.addAll(parseNewsList(reader, true));
+                blob.regionalNewsList.addAll(parseNewsList(reader, true, flags));
                 // remove news from those regions that the user is not interested in
                 final Set<String> regionIdsToInclude = prefs.getStringSet(App.PREF_REGIONS, new HashSet<>(0));
                 final Set<News> toRemove = new HashSet<>();
@@ -110,7 +114,7 @@ public class Blob {
             News.correct(blob.regionalNewsList);
         }
         // replace some text within the News instances because the Context that we have here has not been passed down
-        final String[] toReplace = new String[] {"\uD83D\uDD17"};    // "\uD83D\uDD17" is the "link" symbol (unicode 0x1f517)
+        final String[] toReplace = new String[] {Content.MARK_LINK};    // "\uD83D\uDD17" is the "link" symbol (unicode 0x1f517)
         final String[] replaceWith = new String[] {ctx.getString(R.string.label_link)};
         for (News news : blob.newsList) {
             Content content = news.getContent();
@@ -125,11 +129,11 @@ public class Blob {
     }
 
     @NonNull
-    private static Collection<News> parseNewsList(@NonNull final JsonReader reader, final boolean regional) throws IOException {
+    private static Collection<News> parseNewsList(@NonNull final JsonReader reader, final boolean regional, @News.Flag final int flags) throws IOException {
         final Set<News> newsList = new HashSet<>(16);
         reader.beginArray();
         for (; reader.hasNext(); ) {
-            newsList.add(News.parseNews(reader, regional));
+            newsList.add(News.parseNews(reader, regional, flags));
         }
         reader.endArray();
         return newsList;

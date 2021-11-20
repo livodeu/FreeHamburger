@@ -57,8 +57,10 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
@@ -589,12 +591,16 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     }
                     JsonReader reader = null;
                     try {
+                        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
                         reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
                         reader.setLenient(true);
-                        News parsed = News.parseNews(reader, news.isRegional());
+                        @News.Flag int flags = 0;
+                        boolean htmlEmbed = prefs.getBoolean(App.PREF_SHOW_EMBEDDED_HTML_LINKS, App.PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT);
+                        if (htmlEmbed) flags |= News.FLAG_INCLUDE_HTMLEMBED;
+                        News parsed = News.parseNews(reader, news.isRegional(), flags);
                         Util.close(reader);
                         reader = null;
-                        if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
+                        if (prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
                             News.correct(parsed);
                         }
                         Intent intent = new Intent(MainActivity.this, NewsActivity.class);
@@ -1214,7 +1220,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /** {@inheritDoc} */
     @Override
     protected void onNewIntent(Intent intent) {
-        //TODO check effects of super.onNewIntent(intent); which was suggested by lint after migrating to androidx
         super.onNewIntent(intent);
         handleIntent(intent);
     }
@@ -1398,10 +1403,12 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
             // let's remember the Source that we are loading now - in case the user changes it while we are loading...
             private final Source sourceToSetOnSuccess = MainActivity.this.currentSource;
+            @ColorInt
             private final int c = Util.getColor(MainActivity.this, R.color.colorPrimary);
 
             /** {@inheritDoc} */
             @Override
+            @MainThread
             public void downloadProgressed(@FloatRange(from = 0, to = 1) float progress) {
                 int p = (int)(PROGRESS_DOWNLOAD_PARSE * progress) << 24;
                 MainActivity.this.swipeRefreshLayout.setProgressBackgroundColorSchemeColor(p + c);
@@ -1409,7 +1416,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
             /** {@inheritDoc} */
             @Override
-            public void downloaded(boolean completed, @Nullable Downloader.Result result) {
+            @MainThread
+            public void downloaded(boolean completed, @Nullable final Downloader.Result result) {
                 if (!completed || result == null || result.file == null) {
                     MainActivity.this.swipeRefreshLayout.setRefreshing(false);
                     return;
@@ -1496,6 +1504,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
 
     /** {@inheritDoc} */
+    @SuppressLint("NotifyDataSetChanged")
     @Override
     protected void onRestart() {
         super.onRestart();
@@ -1622,7 +1631,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private synchronized void parseLocalFileAsync(@Nullable File file) {
         if (file == null) return;
         BlobParser blobParser = new BlobParser(this, new BlobParser.BlobParserListener() {
-
+            @ColorInt
             private final int c = Util.getColor(MainActivity.this, R.color.colorPrimary);
 
             @Override
@@ -1945,9 +1954,10 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /**
      * Starts the {@link TeletextActivity}.
      * @param fromExternal {@code true} if the request originated outside of this app (via Intent.ACTION_VIEW)
+     * @param page page number
      */
     private void startTeletext(boolean fromExternal, @IntRange(from = 100, to = 899) int page) {
-        Intent intent = new Intent(this, TeletextActivity.class);
+        final Intent intent = new Intent(this, TeletextActivity.class);
         if (page == 100) {
             intent.putExtra(WebViewActivity.EXTRA_URL, App.URL_TELETEXT);
         } else {

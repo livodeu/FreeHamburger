@@ -37,6 +37,7 @@ import android.text.method.LinkMovementMethod;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ImageSpan;
 import android.text.style.LineBackgroundSpan;
+import android.text.style.TextAppearanceSpan;
 import android.text.style.URLSpan;
 import android.util.JsonReader;
 import android.view.KeyEvent;
@@ -100,6 +101,7 @@ import de.freehamburger.util.Downloader;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.MediaSourceHelper;
 import de.freehamburger.util.PlayerListener;
+import de.freehamburger.util.PositionedSpan;
 import de.freehamburger.util.TextViewImageSpanClickHandler;
 import de.freehamburger.util.Util;
 
@@ -404,13 +406,33 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.textViewContent.setVisibility(View.GONE);
             this.textViewContent.setText(null);
         } else {
-            //noinspection ConstantConditions
-            Spanned spanned = Util.fromHtml(htmlText, this.service);
+            List<PositionedSpan> additionalSpans = new ArrayList<>();
+            assert htmlText != null;
+
+            Spanned spanned = Util.fromHtml(this, htmlText, this.service);
+
+            final String xsmallStart = "<xsm>";
+            final String xsmallEnd = "</xsm>";
+            for (int pos = 0; ; ) {
+                int start = TextUtils.indexOf(spanned, xsmallStart, pos);
+                if (start < 0) break;
+                int end = TextUtils.indexOf(spanned, xsmallEnd, start + 1);
+                if (end < 0) break;
+                htmlText = htmlText.substring(0, start) + htmlText.substring(end + xsmallEnd.length());
+                additionalSpans.add(new PositionedSpan(new TextAppearanceSpan(this, android.R.style.TextAppearance_DeviceDefault_Small), start, end - start));
+                pos = end + xsmallEnd.length();
+            }
+
             this.textViewContent.setText(spanned, TextView.BufferType.SPANNABLE);
             this.textViewContent.setVisibility(View.VISIBLE);
 
             // spannable is a SpannableString; therefore the text cannot be modified easily here
+            CharSequence text = this.textViewContent.getText();
             Spannable spannable = (Spannable) this.textViewContent.getText();
+
+            for (PositionedSpan positionedSpan : additionalSpans) {
+                spannable.setSpan(positionedSpan.characterStyle, positionedSpan.getPos(), positionedSpan.getPos() + positionedSpan.getLength(), 0);
+            }
 
             // load images
             ImageSpan[] imageSpans = spannable.getSpans(0, spannable.length(), ImageSpan.class);
@@ -726,11 +748,15 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 }
                 JsonReader reader = null;
                 try {
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(NewsActivity.this);
                     reader = new JsonReader(new InputStreamReader(new FileInputStream(result.file), StandardCharsets.UTF_8));
-                    News news = News.parseNews(reader, false);
+                    @News.Flag int flags = 0;
+                    boolean htmlEmbed = prefs.getBoolean(App.PREF_SHOW_EMBEDDED_HTML_LINKS, App.PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT);
+                    if (htmlEmbed) flags |= News.FLAG_INCLUDE_HTMLEMBED;
+                    News news = News.parseNews(reader, false, flags);
                     Util.close(reader);
                     reader = null;
-                    if (PreferenceManager.getDefaultSharedPreferences(NewsActivity.this).getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
+                    if (prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
                         News.correct(news);
                     }
                     Intent intent = new Intent(NewsActivity.this, NewsActivity.class);
@@ -1073,7 +1099,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     try {
                         reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
                         reader.setLenient(true);
-                        News parsed = News.parseNews(reader, NewsActivity.this.news.isRegional());
+                        @News.Flag int flags = 0;
+                        boolean htmlEmbed = PreferenceManager.getDefaultSharedPreferences(NewsActivity.this).getBoolean(App.PREF_SHOW_EMBEDDED_HTML_LINKS, App.PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT);
+                        if (htmlEmbed) flags |= News.FLAG_INCLUDE_HTMLEMBED;
+                        News parsed = News.parseNews(reader, NewsActivity.this.news.isRegional(), flags);
                         Util.close(reader);
                         reader = null;
                         // it is probably not necessary here to call News.correct()

@@ -1,6 +1,8 @@
 package de.freehamburger.model;
 
 import android.os.Build;
+
+import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -43,6 +45,11 @@ public final class News implements Comparable<News>, Serializable {
     /** Example: 2017-11-16T11:54:03.882+01:00 */
     private static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
     private static long nextid = 1L;
+
+
+    @Flag
+    public static final int FLAG_INCLUDE_HTMLEMBED = 1;
+
 
     private final Set<String> tags = new HashSet<>(8);
     private final Set<String> geotags = new HashSet<>(4);
@@ -132,10 +139,11 @@ public final class News implements Comparable<News>, Serializable {
      * Parses the data read from the given JsonReader and fills the given News object.
      * @param reader JsonReader
      * @param news News
+     * @param flags flags
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if either parameter is {@code null}
      */
-    private static void loop(@NonNull final JsonReader reader, @NonNull final News news) throws IOException {
+    private static void loop(@NonNull final JsonReader reader, @NonNull final News news, @Flag final int flags) throws IOException {
         String name = null;
         final Set<TeaserImage> images = new HashSet<>(1);
         reader.beginObject();
@@ -163,7 +171,7 @@ public final class News implements Comparable<News>, Serializable {
             } else if ("externalId".equals(name)) {
                 news.externalId = reader.nextString();
             } else if ("content".equals(name)) {
-                news.content = Content.parseContent(reader);
+                news.content = Content.parseContent(reader, flags);
             } else if ("date".equals(name)) {
                 String dateString = reader.nextString();
                 try {
@@ -260,14 +268,15 @@ public final class News implements Comparable<News>, Serializable {
      * Parses the given JsonReader to retrieve a News element.
      * @param reader JsonReader
      * @param regional {@code true} if the News originates in the "regional" part of the json data
+     * @param flags flags
      * @return News
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if {@code reader} is {@code null}
      */
     @NonNull
-    public static News parseNews(@NonNull final JsonReader reader, boolean regional) throws IOException {
+    public static News parseNews(@NonNull final JsonReader reader, boolean regional, @Flag final int flags) throws IOException {
         final News news = new News(regional);
-        loop(reader, news);
+        loop(reader, news, flags);
         //noinspection ConstantConditions
         if ("demo".equals(BuildConfig.BUILD_TYPE)) {
             try {
@@ -541,11 +550,13 @@ public final class News implements Comparable<News>, Serializable {
                 + ", Content: \"" + content + "\")";
     }
 
-    /**
-     * See <a href="https://developer.android.com/studio/write/annotations#enum-annotations">here</a>
-     */
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({NEWS_TYPE_STORY, NEWS_TYPE_WEBVIEW, NEWS_TYPE_VIDEO})
     public @interface NewsType {}
+
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({FLAG_INCLUDE_HTMLEMBED})
+    public @interface Flag {}
 
 }

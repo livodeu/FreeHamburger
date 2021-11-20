@@ -26,6 +26,7 @@ import java.util.Map;
 
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
+import de.freehamburger.util.PositionedSpan;
 import de.freehamburger.util.Util;
 
 /**
@@ -37,6 +38,8 @@ public class Content implements Serializable {
     private static final String HTML_BR = "<br>";
     /** marker for superfluous new lines to be removed (this String can be anything that is very unlikely to occur in the text naturally) */
     public static final String REMOVE_NEW_LINE = "#####";
+    /** the 🔗 symbol (unicode 0x1f517) */
+    static final String MARK_LINK = "\uD83D\uDD17";
     private static String colorQuotation = "#064a91";
     /** The color that a box element will be rendered in */
     private static String colorBox = "#064a91";
@@ -91,12 +94,13 @@ public class Content implements Serializable {
     /**
      * Parses the given JsonReader to retrieve a Content element.
      * @param reader JsonReader
+     * @param flags flags
      * @return Content
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if {@code reader} is {@code null}
      */
     @NonNull
-    static Content parseContent(@NonNull final JsonReader reader) throws IOException {
+    static Content parseContent(@NonNull final JsonReader reader, @News.Flag final int flags) throws IOException {
         final Content content = new Content();
         reader.beginArray();
         // attach a sequential id to each element so that we can restore the original order any time
@@ -125,7 +129,7 @@ public class Content implements Serializable {
                     || ContentElement.TYPE_QUOTATION.equals(type)
                     || ContentElement.TYPE_IMAGE_GALLERY.equals(type)
                     || ContentElement.TYPE_BOX.equals(type)
-                    || ContentElement.TYPE_HTMLEMBED.equals(type)
+                    || (ContentElement.TYPE_HTMLEMBED.equals(type) && (flags & News.FLAG_INCLUDE_HTMLEMBED) > 0)
                     || ContentElement.TYPE_LIST.equals(type)
                     || ContentElement.TYPE_VIDEO.equals(type)
                     || ContentElement.TYPE_AUDIO.equals(type)
@@ -148,7 +152,7 @@ public class Content implements Serializable {
                     // create html text
                     htmlTextBuilder.append(sb).append("<br><br>");
                     // create plain text
-                    Spanned spannedPlainText = Util.fromHtml(Util.removeLinks(sb).toString(), null);
+                    Spanned spannedPlainText = Util.fromHtml(null, Util.removeLinks(sb).toString(), null);
                     plainTextBuilder.append(spannedPlainText).append('\n');
                 }
             } else if (ContentElement.TYPE_HEADLINE.equals(type)) {
@@ -189,12 +193,17 @@ public class Content implements Serializable {
                     if (TextUtils.isEmpty(label)) label = htmlEmbed.getService();
                     if (!TextUtils.isEmpty(label)) {
                         // the 🔗 symbol will be replaced later in Blob.parseApi()
-                        htmlTextBuilder.append("<p style=\"background-color:lightgray\"><small>\uD83D\uDD17</small>")
-                                .append("&nbsp;<a href=\"")
+                        // the <xsm></xsm> tag will be resolved in Util.fromHtml()
+                        htmlTextBuilder.append("<p style=\"background-color:lightgray\">")
+                                .append("<a href=\"")
                                 .append(htmlEmbed.getUrl())
-                                .append("\">")
+                                .append("\">↗&nbsp;")
                                 .append(label)
-                                .append("</a></p><br>\n");
+                                .append("</a><br>")
+                                .append(PositionedSpan.TAG_XSMALL_OPENING)
+                                .append(MARK_LINK)
+                                .append(PositionedSpan.TAG_XSMALL_CLOSING)
+                                .append("</p><br>\n");
                     }
                 }
             } else if (ContentElement.TYPE_BOX.equals(type)) {
@@ -454,7 +463,6 @@ public class Content implements Serializable {
                         ce.list = Lyst.parse(reader);
                     } else if ("htmlEmbed".equals(name)) {
                         ce.htmlEmbed = HtmlEmbed.parse(reader);
-                        if (BuildConfig.DEBUG) android.util.Log.i("Content.ContentElement", "Found content element '" + name + "': " + ce.htmlEmbed);
                     } else if ("quotation".equals(name)) {
                         reader.beginObject();
                         reader.nextName();
@@ -463,7 +471,9 @@ public class Content implements Serializable {
                     } else if ("related".equals(name)) {
                         ce.related = Related.parse(reader);
                     } else {
-                        if (BuildConfig.DEBUG && !"tracking".equals(name)) android.util.Log.w("Content.ContentElement", "Skipping content element '" + name + "'");
+                        // known elements that wil be ignored: "tracking", "social"
+                        if (BuildConfig.DEBUG && !"tracking".equals(name) && !"social".equals(name))
+                            android.util.Log.w("Content.ContentElement", "Skipping content element '" + name + "'");
                         reader.skipValue();
                     }
                 }

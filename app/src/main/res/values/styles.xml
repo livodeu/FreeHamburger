@@ -78,6 +78,12 @@
         <item name="android:textSize">@dimen/text_size_navigation</item>
     </style>
 
+    <style name="TextAppearance.Xsm" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textSize">10sp</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:lineSpacingMultiplier">0.75</item>
+    </style>
+
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
 
     <style name="AppAlertDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">

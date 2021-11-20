@@ -91,6 +91,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** boolean: open web links internally instead of posting an {@link Intent#ACTION_VIEW} intent */
     public static final String PREF_OPEN_LINKS_INTERNALLY = "pref_open_links_internally";
     public static final boolean PREF_OPEN_LINKS_INTERNALLY_DEFAULT = true;
+    /** boolean: show a link for htmlEmbed content */
+    public static final String PREF_SHOW_EMBEDDED_HTML_LINKS = "pref_show_enbedded_html_links";
+    public static final boolean PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT = true;
     /** String: DIRECT, HTTP or SOCKS */
     public static final String PREF_PROXY_TYPE = "pref_proxy_type";
     public static final String PREF_REGIONS = "pref_regions";

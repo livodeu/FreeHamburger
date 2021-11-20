@@ -32,7 +32,7 @@
     <string name="error_proxy_connection_failed">Der als Proxy eingestellte Host %1$s nimmt keine Verbindung an Port %2$s an!</string>
     <string name="label_char_invalid">Ungültig</string>
     <string name="label_license">Lizenz</string>
-    <string name="label_link">↗ Verknüpfung zu</string>
+    <string name="label_link">(externes Ziel)</string>
     <string name="label_yes">Ja</string>
     <string name="label_notification_channel">Meldungen</string>
     <string name="label_notification_channel_hipri">Eilmeldungen</string>
