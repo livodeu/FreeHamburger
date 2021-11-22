@@ -6,7 +6,4 @@
             <certificates src="user" tools:ignore="AcceptsUserCertificates" />
         </trust-anchors>
     </base-config>
-    <domain-config>
-        <domain includeSubdomains="true">www.tagesschau.de</domain>
-    </domain-config>
 </network-security-config>
