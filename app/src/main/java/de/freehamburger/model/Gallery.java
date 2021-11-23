@@ -1,11 +1,12 @@
 package de.freehamburger.model;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.JsonToken;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -15,7 +16,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
+ * A sequence of pictures.<br>
+ * Each picture is represented by an instance of {@link Item}.<br>
+ * Each Item is usually available in different sizes:
+ * <ul>
+ * <li>klein1x1                140x140</li>
+ * <li>videowebs               256x144</li>
+ * <li>portraetgross8x9        256x288</li>
+ * <li>mittelgross1x1          420x420</li>
+ * <li>videowebm               512x288</li>
+ * <li>portraetgrossplus8x9    512x576</li>
+ * <li>videoweb1x1l            559x559</li>
+ * <li>videowebl               960x540</li>
+ * </ul>
+ * Not all of these will be considered - see {@link Quality}
  */
 public class Gallery implements Serializable {
 
@@ -30,7 +44,7 @@ public class Gallery implements Serializable {
      * @throws NullPointerException if {@code reader} is {@code null}
      */
     @NonNull
-    public static Gallery parse(@NonNull final JsonReader reader) throws IOException {
+    static Gallery parse(@NonNull final JsonReader reader) throws IOException {
         final Gallery gallery = new Gallery();
         reader.beginArray();
         for (; reader.hasNext(); ) {
@@ -46,12 +60,20 @@ public class Gallery implements Serializable {
         return items;
     }
 
-    public enum Quality {
-        L, M, S
+    /**
+     * A representation of the dimensions of an {@link Item}.
+     */
+    enum Quality {
+        /** 960x540 */
+        L, 
+        /** 512x288 */
+        M, 
+        /** 256x144 */
+        S
     }
 
     /**
-     *
+     * A representation of an individual picture within a Gallery.
      */
     public static class Item implements Serializable {
 
@@ -59,6 +81,7 @@ public class Gallery implements Serializable {
         private String title;
         private String copyright;
 
+        @NonNull
         static Item parse(@NonNull final JsonReader reader) throws IOException {
             Item item = new Item();
             reader.beginObject();
@@ -107,17 +130,17 @@ public class Gallery implements Serializable {
         }
 
         @Nullable
-        public String getCopyright() {
+        String getCopyright() {
             return copyright;
         }
 
         @NonNull
         @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-        public Map<Quality, String> getImages() {
+        Map<Quality, String> getImages() {
             return images;
         }
 
-        public String getTitle() {
+        String getTitle() {
             return title;
         }
     }

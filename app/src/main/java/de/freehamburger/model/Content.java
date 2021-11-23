@@ -51,6 +51,10 @@ public class Content implements Serializable {
      */
     private static final String TAG_BOX = "p";
     /**
+     * The html tag that a gallery title will be wrapped into.
+     */
+    private static final String TAG_GALLERY_TITLE = "b";
+    /**
      * The html tag that a box element title will be wrapped into ({@link #colorBox} will be applied, too)<br>
      * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()}<br>
      * h1 - h6 will be rendered bold with a text size factor defined in Html.HtmlToSpannedConverter.HEADING_SIZES
@@ -246,9 +250,11 @@ public class Content implements Serializable {
             } else if (ContentElement.TYPE_IMAGE_GALLERY.equals(type)) {
                 Gallery gallery = ce.getGallery();
                 if (gallery != null) {
+                    String galleryTitle = ce.getTitle();
+                    if (!TextUtils.isEmpty(galleryTitle)) htmlTextBuilder.append("<").append(TAG_GALLERY_TITLE).append(">").append(galleryTitle).append("</").append(TAG_GALLERY_TITLE).append(">");
                     for (Gallery.Item item : gallery.getItems()) {
                         Map<Gallery.Quality, String> pics = item.getImages();
-                        String url;
+                        final String url;
                         if (pics.containsKey(Gallery.Quality.M)) {
                             url = pics.get(Gallery.Quality.M);
                         } else if (pics.containsKey(Gallery.Quality.L)) {
@@ -414,6 +420,7 @@ public class Content implements Serializable {
 
         /** the order by which the ContentElements originally appeared in the Content element */
         @IntRange(from = MIN_ORDER) private int order;
+        private String title;
         @Nullable @ContentType
         private String type;
         @Nullable private String value;
@@ -470,6 +477,8 @@ public class Content implements Serializable {
                         reader.endObject();
                     } else if ("related".equals(name)) {
                         ce.related = Related.parse(reader);
+                    } else if ("title".equals(name)) {
+                        ce.title = reader.nextString();
                     } else {
                         // known elements that wil be ignored: "tracking", "social"
                         if (BuildConfig.DEBUG && !"tracking".equals(name) && !"social".equals(name))
@@ -530,6 +539,11 @@ public class Content implements Serializable {
         @Nullable
         Related[] getRelated() {
             return related;
+        }
+
+        @Nullable
+        String getTitle() {
+            return title;
         }
 
         @ContentType
