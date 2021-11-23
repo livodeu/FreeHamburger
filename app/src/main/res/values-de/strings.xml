@@ -38,6 +38,7 @@
     <string name="label_notification_channel_hipri">Eilmeldungen</string>
     <string name="label_notification_channel_desc">Diese Kategorie betrifft Hamburger Nachrichten mit Standardpriorität</string>
     <string name="label_notification_channel_desc_hipri">Diese Kategorie betrifft Hamburger Nachrichten hoher Priorität (Eilmeldungen)</string>
+    <string name="error_news_not_found">Der Artikel wurde nicht gefunden.</string>
     <string name="error_no_network">Kein Datennetz.</string>
     <string name="error_no_network_ext">Für eine sinnvolle Verwendung sollten Sie das Gerät mit dem Internet verbinden.</string>
     <string name="hint_search">Suche</string>

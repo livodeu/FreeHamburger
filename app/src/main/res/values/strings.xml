@@ -84,6 +84,7 @@
     <string name="error_no_further_details">There are no further details for this.</string>
     <string name="error_no_network">No network.</string>
     <string name="error_no_network_ext">This device should be connected to the web to be useful.</string>
+    <string name="error_news_not_found">Article not found.</string>
     <string name="error_parsing">Error while parsing the data!</string>
     <string name="error_peer_not_verified">\"%1$s\" could not be verified!</string>
     <string name="error_permission_denied">Permission denied!</string>

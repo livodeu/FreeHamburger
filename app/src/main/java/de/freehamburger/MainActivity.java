@@ -586,7 +586,11 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                         return;
                     }
                     if (result.rc >= 400) {
-                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
+                        if (result.rc == 404) {
+                            Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_news_not_found, Snackbar.LENGTH_LONG).show();
+                        } else {
+                            Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
+                        }
                         return;
                     }
                     JsonReader reader = null;
