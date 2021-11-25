@@ -231,6 +231,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             int cc;
             LinearLayoutManager lm;
+            boolean withoutShift;
             switch (event.getKeyCode()) {
                 case KeyEvent.KEYCODE_MOVE_HOME:
                     this.recyclerView.scrollToPosition(0);
@@ -254,15 +255,15 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                                 break;
                             }
                         }
-                    } else {
-                        lm = (LinearLayoutManager) this.recyclerView.getLayoutManager();
-                        if (lm != null) {
-                            cc = this.newsAdapter.getItemCount();
-                            int last = lm.findLastCompletelyVisibleItemPosition();
-                            if (last < cc - 1) this.recyclerView.scrollToPosition(last + 1);
-                        }
+                        return true;
                     }
-                    break;
+                    lm = (LinearLayoutManager) this.recyclerView.getLayoutManager();
+                    if (lm != null) {
+                        cc = this.newsAdapter.getItemCount();
+                        int last = lm.findLastCompletelyVisibleItemPosition();
+                        if (last < cc - 1) this.recyclerView.scrollToPosition(last + 1);
+                    }
+                    return true;
                 case KeyEvent.KEYCODE_DPAD_UP:
                 case KeyEvent.KEYCODE_PAGE_UP:
                     if (this.drawerLayout.isDrawerOpen(GravityCompat.END)) {
@@ -278,25 +279,31 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                                 break;
                             }
                         }
-                    } else {
-                        lm = (LinearLayoutManager) this.recyclerView.getLayoutManager();
-                        if (lm != null) {
-                            int first = lm.findFirstCompletelyVisibleItemPosition();
-                            if (first > 0) this.recyclerView.scrollToPosition(first - 1);
-                        }
+                        return true;
+                    }
+                    lm = (LinearLayoutManager) this.recyclerView.getLayoutManager();
+                    if (lm != null) {
+                        int first = lm.findFirstCompletelyVisibleItemPosition();
+                        if (first > 0) this.recyclerView.scrollToPosition(first - 1);
+                    }
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                    // on multi-column layouts, shift must be pressed along with dpad-left to open the drawer
+                    lm = (LinearLayoutManager) this.recyclerView.getLayoutManager();
+                    withoutShift = lm != null && (!(lm instanceof GridLayoutManager) || ((GridLayoutManager) lm).getSpanCount() == 1);
+                    if (withoutShift || event.isShiftPressed()) {
+                        // no animation in tests
+                        this.drawerLayout.openDrawer(GravityCompat.END, !Util.TEST);
                     }
                     break;
-                case KeyEvent.KEYCODE_DPAD_LEFT:
-                    // if multi-column layout, left key is used to navigate in the grid
-                    if (this.recyclerView.getLayoutManager() instanceof GridLayoutManager) break;
-                    //
-                    this.drawerLayout.openDrawer(GravityCompat.END);
-                    break;
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
-                    // if multi-column layout, right key is used to navigate in the grid
-                    if (this.recyclerView.getLayoutManager() instanceof GridLayoutManager) break;
-                    //
-                    this.drawerLayout.closeDrawer(GravityCompat.END);
+                    // on multi-column layouts, shift must be pressed along with dpad-right to close the drawer
+                    lm = (LinearLayoutManager) this.recyclerView.getLayoutManager();
+                    withoutShift = lm != null && (!(lm instanceof GridLayoutManager) || ((GridLayoutManager) lm).getSpanCount() == 1);
+                    if (withoutShift || event.isShiftPressed()) {
+                        // no animation in tests
+                        this.drawerLayout.closeDrawer(GravityCompat.END, !Util.TEST);
+                    }
                     break;
             }
         }
@@ -1017,7 +1024,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.clock_menu, menu);
-        // if there is a qwert? keyboard connected, display menu shortcuts (btw, they are activated via the ctrl modifier)
+        // if there is a qwert? keyboard connected, display menu shortcuts (btw, they are activated via the ctrl modifier but only if the menu is not visible)
         if (getResources().getConfiguration().keyboard == Configuration.KEYBOARD_QWERTY) {
             Util.decorateMenuWithShortcuts(menu);
         }
