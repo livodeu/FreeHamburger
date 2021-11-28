@@ -11,9 +11,9 @@
     <string name="action_show_weberrors_no">Nicht wieder anzeigen</string>
     <string name="hint_audio_content_play">Audioinhalte abspielen</string>
     <string name="pref_title_orientation_main">Ausrichtung</string>
-    <string name="msg_background_active">Hintergrundabfragen sind aktiv und werden etwa alle %1$s Minuten ausgeführt.</string>
-    <string name="msg_background_active_short">Hintergrundabfragen aktiv (alle %1$s Min.)</string>
-    <string name="msg_background_inactive">Hintergrundabfragen sind deaktiviert.</string>
+    <string name="msg_background_active">Hintergrundaktualisierungen sind aktiv und werden etwa alle %1$s Minuten ausgeführt.</string>
+    <string name="msg_background_active_short">Hintergrundaktualisierungen aktiv (alle %1$s Min.)</string>
+    <string name="msg_background_inactive">Hintergrundaktualisierungen sind deaktiviert.</string>
     <string name="msg_filters_disabled">Filter sind jetzt deaktiviert.</string>
     <string name="msg_filters_enabled">Filter sind jetzt aktiviert.</string>
     <string name="action_teletext_short">VT</string>
@@ -199,8 +199,8 @@
     <string name="label_filter">Filter</string>
     <string name="action_section_sport">Sport</string>
     <string name="action_section_video">Video</string>
-    <string name="pref_header_polling">Hintergrundabfragen</string>
-    <string name="pref_title_poll">Hintergrundabfragen</string>
+    <string name="pref_header_polling">Hintergrundaktualisierungen</string>
+    <string name="pref_title_poll">Hintergrund&#173;aktualisierungen</string>
     <string name="pref_title_poll_breaking_only">Nur Eilmeldungen</string>
     <string name="pref_hint_poll_interval">Abfrageintervall</string>
     <string name="pref_hint_poll_interval_night">Abfrageintervall nachts</string>
@@ -213,10 +213,10 @@
     <string name="label_every_minutes">alle %1$s Minuten</string>
     <string name="pref_title_poll_stats">Datenverbrauch</string>
     <plurals name="label_poll_stats">
-        <item quantity="one">Durch %1$s Hintergrundabfrage wurden seit %3$s %2$s empfangen.</item>
-        <item quantity="other">Durch %1$s Hintergrundabfragen wurden seit %3$s %2$s empfangen.</item>
+        <item quantity="one">Durch %1$s Hintergrundaktualisierung wurden seit %3$s %2$s empfangen.</item>
+        <item quantity="other">Durch %1$s Hintergrundaktualisierungen wurden seit %3$s %2$s empfangen.</item>
     </plurals>
-    <string name="label_poll_stats_none">Es sind keine Hintergrundabfragen registriert.</string>
+    <string name="label_poll_stats_none">Es sind keine Hintergrundaktualisierungen registriert.</string>
     <string name="label_reset_q">Zurücksetzen?</string>
     <string name="pref_title_poll_over_mobile">Im Mobilnetz</string>
     <string name="label_related">☛ Mehr zum Thema</string>
@@ -230,9 +230,10 @@
     <string name="hint_menu_search">Dieser Menüeintrag startet die Suchfunktion</string>
     <string name="error_timeout">Beim Laden ist eine Zeitüberschreitung aufgetreten.</string>
     <string name="msg_text_copied">Der Text wurde in die Zwischenablage kopiert.</string>
-    <string name="msg_standby_bucket_frequent">Die App wird nicht oft genutzt. Hintergrundabfragen können um bis zu 8 h verzögert sein!</string>
-    <string name="msg_standby_bucket_rare">Die App wird selten genutzt. Hintergrundabfragen können um bis zu 24 h verzögert sein!</string>
-    <string name="msg_standby_bucket_workingset">Die App wird nicht sehr oft genutzt. Hintergrundabfragen können um bis zu 2 h verzögert sein!</string>
+    <string name="msg_standby_bucket_active">Die App wurde kürzlich genutzt. Hintergrundaktualisierungen werden wahrscheinlich nicht verzögert.</string>
+    <string name="msg_standby_bucket_frequent">Die App wird nicht oft genutzt. Hintergrundaktualisierungen können um bis zu 8 h verzögert sein!</string>
+    <string name="msg_standby_bucket_rare">Die App wird selten genutzt. Hintergrundaktualisierungen können um bis zu 24 h verzögert sein!</string>
+    <string name="msg_standby_bucket_workingset">Die App wird nicht sehr oft genutzt. Hintergrundaktualisierungen können um bis zu 2 h verzögert sein!</string>
     <string name="label_website_errors">Webseitenfehler</string>
     <string name="msg_website_errors">Diese Webseite enthält Fehler.</string>
     <string name="pref_title_pref_topline_marquee">Laufschrift in Titelzeile</string>
