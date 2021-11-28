@@ -809,7 +809,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             if (ACTION_DISABLE_POLLING.equals(intent.getAction())) {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
                 SharedPreferences.Editor ed = prefs.edit();
-                ed.putBoolean(App.PREF_POLL, false);
+                ed.putBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT);
                 ed.apply();
                 removeNotification();
                 Toast.makeText(getApplicationContext(), R.string.msg_background_inactive, Toast.LENGTH_LONG).show();
@@ -826,7 +826,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         this.params = params;
         App app = (App) getApplicationContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
-        if (!prefs.getBoolean(App.PREF_POLL, false)) {
+        if (!prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)) {
             done();
             return false;
         }

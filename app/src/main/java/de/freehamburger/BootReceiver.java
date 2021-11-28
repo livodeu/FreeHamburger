@@ -36,7 +36,7 @@ public class BootReceiver extends BroadcastReceiver {
         // btw: the intent has got the extra "android.intent.extra.user_handle" with a java.lang.Integer value of 0
         App app = (App)ctx.getApplicationContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
-        if (!prefs.getBoolean(App.PREF_POLL, false)) return;
+        if (!prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)) return;
         long scheduled = app.isBackgroundJobScheduled();
         if (scheduled == 0L) {
             app.scheduleStart();

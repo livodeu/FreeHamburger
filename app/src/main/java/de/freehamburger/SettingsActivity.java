@@ -35,15 +35,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
 
-import com.google.android.material.snackbar.Snackbar;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.text.DateFormat;
-import java.text.NumberFormat;
-import java.util.Date;
-
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -62,6 +53,16 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 import androidx.preference.SeekBarPreference;
 import androidx.preference.SwitchPreferenceCompat;
+
+import com.google.android.material.snackbar.Snackbar;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.NumberFormat;
+import java.util.Date;
+
 import de.freehamburger.prefs.ButtonPreference;
 import de.freehamburger.prefs.DisablingValueListPreference;
 import de.freehamburger.prefs.SummarizingEditTextPreference;
@@ -81,6 +82,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
     private HamburgerService service;
     /** {@code true} if the user has clicked "Manage Storage" in the system settings for this app - identified by:<ol><li>{@link Intent} action is {@link Intent#ACTION_VIEW ACTION_VIEW},</li><li>Intent data is {@code null}</li></ol> */
     private boolean isManageStorageActivity;
+    private boolean fromBackgroundTile = false;
     private Snackbar snackbar;
     private WebView webViewForHelp;
     private AlertDialog helpDialog;
@@ -148,6 +150,10 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             finishAffinity();
             return;
         }
+        if (this.fromBackgroundTile) {
+            finish();
+            return;
+        }
         super.onBackPressed();
     }
 
@@ -157,12 +163,14 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             this.isManageStorageActivity = extras.getBoolean(EXTRA_STORAGE_ACTIVITY);
+            ComponentName cn = extras.getParcelable("android.intent.extra.COMPONENT_NAME");
+            this.fromBackgroundTile = cn != null && cn.getClassName().endsWith(BackgroundTile.class.getSimpleName());
         }
         setTheme(R.style.AppTheme);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings_activity);
 
-        if (!this.isManageStorageActivity) {
+        if (!this.isManageStorageActivity && !this.fromBackgroundTile) {
             ActionBar actionBar = getSupportActionBar();
             if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(true);
         }
@@ -179,7 +187,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.settings, new RootPreferenceFragment())
+                .replace(R.id.settings, this.fromBackgroundTile ? new PollingPreferenceFragment() : new RootPreferenceFragment())
                 .commit();
     }
 
@@ -240,6 +248,10 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     .replace(R.id.settings, fragment)
                     .addToBackStack(null)
                     .commit();
+        } else if (this.fromBackgroundTile) {
+            // hide the back arrow in the action bar because we don't want to navigate within the app (only exit)
+            ActionBar actionBar = getSupportActionBar();
+            if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(false);
         }
         if (this.service == null) {
             bindService(new Intent(this, HamburgerService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
@@ -801,7 +813,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             Context ctx = getContext();
             if (ctx == null) return;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-                    && PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_POLL, false)) {
+                    && PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)) {
                 new Handler().postDelayed(this::checkBucket, 3_000L);
             }
         }

@@ -130,6 +130,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_PLAY_INTRO = "pref_play_intro";
     /** boolean */
     public static final String PREF_POLL = "pref_poll";
+    public static final boolean PREF_POLL_DEFAULT = false;
     /** boolean */
     public static final String PREF_POLL_BREAKING_ONLY = "pref_poll_breaking_only";
     /** boolean */
@@ -679,7 +680,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
         if (PREF_POLL.equals(key)) {
-            boolean on = prefs.getBoolean(key, false);
+            boolean on = prefs.getBoolean(key, PREF_POLL_DEFAULT);
             if (on) {
                 scheduleStart();
             } else {

@@ -183,6 +183,9 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES"/>
+            </intent-filter>
         </activity>
 
         <receiver android:name=".BootReceiver"
@@ -200,6 +203,17 @@
             android:name=".UpdateJobService"
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <service
+            android:name=".BackgroundTile"
+            android:icon="@drawable/ic_launcher_qs"
+            android:label="@string/pref_title_poll"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <provider
             android:name=".supp.SearchContentProvider"
