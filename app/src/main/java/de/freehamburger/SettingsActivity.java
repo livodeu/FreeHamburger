@@ -645,12 +645,12 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             if (a == null) return;
             UsageStatsManager usm = (UsageStatsManager)a.getSystemService(Context.USAGE_STATS_SERVICE);
             if (usm == null) return;
-            int bucket = usm.getAppStandbyBucket();
+            final int bucket = usm.getAppStandbyBucket();
             // bucket will be 5 if the app is whitelisted, 10 if the app is active
             View v = getView();
             View anchor = v != null ? Util.findTextView(v.findViewById(android.R.id.list), getString(R.string.pref_hint_poll_interval)) : null;
             if (anchor == null) anchor = a.getWindow().getDecorView();
-            @StringRes int msg;
+            @StringRes final int msg;
             switch (bucket) {
                 case UsageStatsManager.STANDBY_BUCKET_WORKING_SET:
                     msg = R.string.msg_standby_bucket_workingset;
@@ -659,6 +659,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     msg = R.string.msg_standby_bucket_frequent;
                     break;
                 case UsageStatsManager.STANDBY_BUCKET_RARE:
+                case UsageStatsManager.STANDBY_BUCKET_RESTRICTED:
                     msg = R.string.msg_standby_bucket_rare;
                     break;
                 default:
