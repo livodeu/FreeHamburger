@@ -911,12 +911,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         return false;
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public void parsingProgressed(float progress) {
-        // not interesting
-    }
-
     /**
      * Removes the notification.
      */

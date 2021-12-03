@@ -135,7 +135,7 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
          * The parsing progress has changed.
          * @param progress [0..1]
          */
-        void parsingProgressed(@FloatRange(from = 0, to = 1) float progress);
+        default void parsingProgressed(@FloatRange(from = 0, to = 1) float progress) {}
     }
 
     /**
