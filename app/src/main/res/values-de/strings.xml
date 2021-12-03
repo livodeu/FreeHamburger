@@ -162,6 +162,7 @@
     <string name="pref_title_quotationmarks_fix_off">werden so belassen (\" \")</string>
     <string name="action_read">Vorlesen</string>
     <string name="action_read_stop">Nicht mehr vorlesen</string>
+    <string name="error_connection_failed">Verbindung zu %1$s fehlgeschlagen!</string>
     <string name="error_connection_interrupted">Die Datenverbindung wurde unterbrochen!</string>
     <string name="action_share_video">Video teilen</string>
     <string name="action_share_image">Bild teilen</string>
@@ -230,7 +231,6 @@
     <string name="hint_menu_search">Dieser Menüeintrag startet die Suchfunktion</string>
     <string name="error_timeout">Beim Laden ist eine Zeitüberschreitung aufgetreten.</string>
     <string name="msg_text_copied">Der Text wurde in die Zwischenablage kopiert.</string>
-    <string name="msg_standby_bucket_active">Die App wurde kürzlich genutzt. Hintergrundaktualisierungen werden wahrscheinlich nicht verzögert.</string>
     <string name="msg_standby_bucket_frequent">Die App wird nicht oft genutzt. Hintergrundaktualisierungen können um bis zu 8 h verzögert sein!</string>
     <string name="msg_standby_bucket_rare">Die App wird selten genutzt. Hintergrundaktualisierungen können um bis zu 24 h verzögert sein!</string>
     <string name="msg_standby_bucket_workingset">Die App wird nicht sehr oft genutzt. Hintergrundaktualisierungen können um bis zu 2 h verzögert sein!</string>

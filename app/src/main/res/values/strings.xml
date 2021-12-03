@@ -74,6 +74,7 @@
     <string name="intro_5">Enjoy the app!</string>
 
     <string name="error_audio_focus_denied">This cannot be played right now!</string>
+    <string name="error_connection_failed">Failed to connect to %1$s!</string>
     <string name="error_connection_interrupted">The network connection has been interrupted!</string>
     <string name="error_download_failed">Download failed:\n%1$s</string>
     <string name="error_download_failed2">Download failed.</string>

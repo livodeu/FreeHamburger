@@ -1,7 +1,5 @@
 package de.freehamburger;
 
-import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
-
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.NotificationManager;
@@ -89,6 +87,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -137,6 +136,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private static final String ACTION_DELETE_FONT = "de.freehamburger.action.font_delete";
     /** used when the user has picked a font file to import */
     private static final int REQUEST_CODE_FONT_IMPORT = 815;
+    /** ConnectException andSocketTimeoutException messages.toLowerCase() usually start with this (the first one with "Failed", the latter one with "failed") */
+    private static final String ERROR_CONNECTION_FAILED_MSG_PREFIX = "failed to connect to ";
     /** file tag for TTF files */
     private static final String TTF_TAG = ".ttf";
 
@@ -165,7 +166,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private FloatingActionButton fab;
     private RecyclerView recyclerView;
     private NewsRecyclerAdapter newsAdapter;
-    private DrawerLayout drawerLayout;
+    @VisibleForTesting public DrawerLayout drawerLayout;
     private ClockView clockView;
     private Filter searchFilter = null;
     @IntRange(from = -1) private int listPositionToRestore = RecyclerView.NO_POSITION;
@@ -346,10 +347,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 // scroll to matching article
                 this.handler.postDelayed(() -> {
                     int index = MainActivity.this.newsAdapter.findNews(newsExternalId);
-                    if (index >= 0) {
-                        if (BuildConfig.DEBUG) Log.i(TAG, "News with externalId '" + newsExternalId + "' found at pos. " + index);
-                        MainActivity.this.recyclerView.smoothScrollToPosition(index);
-                    } else if (BuildConfig.DEBUG) Log.e(TAG, "News with externalId '" + newsExternalId + "' not found!");
+                    if (index >= 0) MainActivity.this.recyclerView.smoothScrollToPosition(index);
                 }, 1_000L);
             }
             this.currentSource = UpdateJobService.SOURCE;
@@ -1445,10 +1443,11 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                         msg = getString(R.string.error_pin_verification);
                     } else if ("timeout".equals(msg)) {
                         msg = getString(R.string.error_timeout);
-                    } else if (msg.startsWith("Failed to connect to")) {
+                    } else if (msg.toLowerCase(Locale.US).startsWith(ERROR_CONNECTION_FAILED_MSG_PREFIX)) {
                         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+                        String proxyType = prefs.getString(App.PREF_PROXY_TYPE, Proxy.Type.DIRECT.toString());
                         String pp = prefs.getString(App.PREF_PROXY_SERVER, null);
-                        if (pp != null && msg.toLowerCase(Locale.US).contains(pp.toLowerCase(Locale.US))) {
+                        if (!Proxy.Type.DIRECT.toString().equals(proxyType) && pp != null && msg.toLowerCase(Locale.US).contains(pp.toLowerCase(Locale.US))) {
                             int colon = pp.indexOf(':');
                             String proxyServer, proxyPort;
                             if (colon > 0) {
@@ -1461,6 +1460,14 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                                 proxyPort = String.valueOf(App.DEFAULT_PROXY_PORT);
                             }
                             msg = getString(R.string.error_proxy_connection_failed, proxyServer, proxyPort);
+                        } else {
+                            if (result.sourceUri != null) {
+                                String host = Uri.parse(result.sourceUri).getHost();
+                                if (host != null) msg = getString(R.string.error_connection_failed, host);
+                                else msg = getString(R.string.error_connection_failed, msg.substring(ERROR_CONNECTION_FAILED_MSG_PREFIX.length()).trim());
+                            } else {
+                                msg = getString(R.string.error_connection_failed, msg.substring(ERROR_CONNECTION_FAILED_MSG_PREFIX.length()).trim());
+                            }
                         }
                     }
                     Snackbar sb = Snackbar.make(MainActivity.this.coordinatorLayout, msg, BuildConfig.DEBUG ? Snackbar.LENGTH_INDEFINITE : Snackbar.LENGTH_LONG);
@@ -1762,7 +1769,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 MainActivity.this.swipeRefreshLayout.setProgressBackgroundColorSchemeColor(p + c);
             }
         });
-        blobParser.executeOnExecutor(THREAD_POOL_EXECUTOR, file);
+        blobParser.executeOnExecutor(android.os.AsyncTask.THREAD_POOL_EXECUTOR, file);
     }
 
     /**

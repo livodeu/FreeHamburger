@@ -120,7 +120,7 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
         public final File file;
         public final long contentLength;
         /** the uri that supplied the data (not necessarily the uri that the user had requested; there might have been a redirect) */
-        final String sourceUri;
+        public final String sourceUri;
         final String contentType;
         @Nullable
         private DownloaderListener listener;
