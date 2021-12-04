@@ -1461,13 +1461,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                             }
                             msg = getString(R.string.error_proxy_connection_failed, proxyServer, proxyPort);
                         } else {
-                            if (result.sourceUri != null) {
-                                String host = Uri.parse(result.sourceUri).getHost();
-                                if (host != null) msg = getString(R.string.error_connection_failed, host);
-                                else msg = getString(R.string.error_connection_failed, msg.substring(ERROR_CONNECTION_FAILED_MSG_PREFIX.length()).trim());
-                            } else {
-                                msg = getString(R.string.error_connection_failed, msg.substring(ERROR_CONNECTION_FAILED_MSG_PREFIX.length()).trim());
-                            }
+                            String host = result.sourceUri != null ? Uri.parse(result.sourceUri).getHost() : null;
+                            msg = getString(R.string.error_connection_failed, host != null ? host : msg.substring(ERROR_CONNECTION_FAILED_MSG_PREFIX.length()).trim());
                         }
                     }
                     Snackbar sb = Snackbar.make(MainActivity.this.coordinatorLayout, msg, BuildConfig.DEBUG ? Snackbar.LENGTH_INDEFINITE : Snackbar.LENGTH_LONG);
