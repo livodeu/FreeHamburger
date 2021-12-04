@@ -1250,7 +1250,7 @@ public class Util {
         }
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         if (ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-            ctx.startActivity(intent);
+            ctx.startActivity(Intent.createChooser(intent, null));
         } else {
             if (ctx instanceof CoordinatorLayoutHolder) {
                 Snackbar.make(((CoordinatorLayoutHolder)ctx).getCoordinatorLayout(), R.string.error_no_app, Snackbar.LENGTH_LONG)
@@ -1320,7 +1320,7 @@ public class Util {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
         if (ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-            ctx.startActivity(intent);
+            ctx.startActivity(Intent.createChooser(intent, null));
         } else {
             if (ctx instanceof CoordinatorLayoutHolder) {
                 Snackbar.make(((CoordinatorLayoutHolder)ctx).getCoordinatorLayout(), R.string.error_no_app, Snackbar.LENGTH_LONG)

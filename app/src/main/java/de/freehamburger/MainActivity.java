@@ -808,7 +808,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             }
             intent.setType("text/plain");
             if (getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-                startActivity(intent);
+                startActivity(Intent.createChooser(intent, null));
             } else {
                 Snackbar.make(this.coordinatorLayout, R.string.error_no_app, Snackbar.LENGTH_LONG).show();
             }
@@ -886,7 +886,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             }
             intent.setType("text/plain");
             if (getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-                startActivity(intent);
+                startActivity(Intent.createChooser(intent, null));
             } else {
                 Snackbar.make(this.coordinatorLayout, R.string.error_no_app, Snackbar.LENGTH_LONG).show();
             }
