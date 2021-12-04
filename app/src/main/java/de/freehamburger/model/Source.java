@@ -3,6 +3,7 @@ package de.freehamburger.model;
 import android.content.Context;
 import android.preference.PreferenceManager;
 import androidx.annotation.DrawableRes;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -48,7 +49,46 @@ public enum Source {
     private final int icon;
     @Nullable private final String action;
     /** synchronises access from different threads */
+    @GuardedBy("lock")
     private volatile Reference<Thread> lockHolder;
+
+    /**
+     * Constructor.
+     * @param label string resource id
+     * @param url url
+     * @param icon icon resource
+     */
+    Source(@StringRes int label, String url, @DrawableRes int icon) {
+        this(label, url, icon, false);
+    }
+
+    /**
+     * Constructor.
+     * @param label string resource id
+     * @param url url
+     * @param icon icon resource
+     * @param needsParams {@code true} if this Source needs additional parameters
+     */
+    Source(@StringRes int label, String url, @DrawableRes int icon, boolean needsParams) {
+        this(label, url, icon, needsParams, null);
+    }
+
+    /**
+     * Constructor.
+     * @param label string resource id
+     * @param url url
+     * @param icon icon resource
+     * @param needsParams {@code true} if this Source needs additional parameters
+     * @param action action string for an Intent to display this Source
+     */
+    Source(@StringRes int label, String url, @DrawableRes int icon, boolean needsParams, @Nullable String action) {
+        this.label = label;
+        this.url = url;
+        this.icon = icon;
+        this.needsParams = needsParams;
+        this.action = action;
+        if (icon == 0) throw new java.lang.AssertionError("No source icon");
+    }
 
     /**
      * Returns the parameter char sequence for {@link #REGIONAL}, based on the user's preferences.
@@ -109,44 +149,6 @@ public enum Source {
         return null;
     }
 
-    /**
-     * Constructor.
-     * @param label string resource id
-     * @param url url
-     * @param icon icon resource
-     */
-    Source(@StringRes int label, String url, @DrawableRes int icon) {
-        this(label, url, icon, false);
-    }
-
-    /**
-     * Constructor.
-     * @param label string resource id
-     * @param url url
-     * @param icon icon resource
-     * @param needsParams {@code true} if this Source needs additional parameters
-     */
-    Source(@StringRes int label, String url, @DrawableRes int icon, boolean needsParams) {
-        this(label, url, icon, needsParams, null);
-    }
-
-    /**
-     * Constructor.
-     * @param label string resource id
-     * @param url url
-     * @param icon icon resource
-     * @param needsParams {@code true} if this Source needs additional parameters
-     * @param action action string for an Intent to display this Source
-     */
-    Source(@StringRes int label, String url, @DrawableRes int icon, boolean needsParams, @Nullable String action) {
-        this.label = label;
-        this.url = url;
-        this.icon = icon;
-        this.needsParams = needsParams;
-        this.action = action;
-        if (icon == 0) throw new java.lang.AssertionError("No source icon");
-    }
-
     @Nullable
     public String getAction() {
         return action;
@@ -169,22 +171,21 @@ public enum Source {
     }
 
     /**
+     * Returns the Thread that has locked this Source.
+     * @return Thread or null
+     */
+    @Nullable
+    public Thread getLockHolder() {
+        synchronized (lock) {
+            return lockHolder != null ? lockHolder.get() : null;
+        }
+    }
+
+    /**
      * @return the url
      */
     public String getUrl() {
         return url;
-    }
-
-    /**
-     * Returns the locked state of this Source.
-     * @return {@code true} / {@code false}
-     */
-    public boolean isLocked() {
-        boolean locked;
-        synchronized (lock) {
-            locked = lockHolder != null && lockHolder.get() != null;
-        }
-        return locked;
     }
 
     public boolean needsParams() {

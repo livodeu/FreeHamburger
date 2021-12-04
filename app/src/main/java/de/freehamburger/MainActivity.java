@@ -1371,7 +1371,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      * @param showMsgOnNetworkFailure if {@code true} show a message if there is no network connection
      */
     private void onRefresh(boolean showMsgOnNetworkFailure) {
-        if (this.currentSource.isLocked()) {
+        if (this.currentSource.getLockHolder() != null) {
             if (BuildConfig.DEBUG) Log.e(TAG, "Cannot refresh - " + currentSource + " is locked!");
             this.swipeRefreshLayout.setRefreshing(false);
             return;

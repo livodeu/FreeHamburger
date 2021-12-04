@@ -57,14 +57,15 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
         if (ctx == null) return null;
         Source src = Source.getSourceFromFile(files[0]);
         if (src == null) return null;
-        if (src.isLocked()) {
+        Thread lockHolder = src.getLockHolder();
+        if (lockHolder != null && lockHolder.isAlive()) {
             try {
-                Thread.sleep(250L);
+                lockHolder.join(1_000L);
             } catch (InterruptedException ignored) {
-                return null;
             }
-            if (src.isLocked()) {
-                if (BuildConfig.DEBUG) Log.e(getClass().getSimpleName(), "Cannot parse " + files[0] + " because " + src + " is locked!");
+            lockHolder = src.getLockHolder();
+            if (lockHolder != null && lockHolder.isAlive()) {
+                if (BuildConfig.DEBUG) Log.e(getClass().getSimpleName(), "Cannot parse " + files[0] + " because " + src + " is locked by " + lockHolder);
                 return null;
             }
         }

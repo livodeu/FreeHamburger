@@ -867,7 +867,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         if (needsReScheduling(this, params)) {
             reschedule();
         }
-        if (SOURCE.isLocked()) {
+        if (SOURCE.getLockHolder() != null) {
             done();
             return false;
         }
