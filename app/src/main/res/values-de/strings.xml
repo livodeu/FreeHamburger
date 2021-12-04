@@ -19,8 +19,6 @@
     <string name="action_teletext_short">VT</string>
     <string name="action_shortcut_create">Verknüpfung erstellen</string>
     <string name="error_shortcut_fail">Die Verknüpfung konnte nicht erstellt werden!</string>
-    <string name="error_peer_not_verified">„%1$s” konnte nicht verifiziert werden!</string>
-    <string name="error_video">Fehler beim Abspielen</string>
     <string name="msg_shortcut_exists">Die Verknüpfung existiert bereits.</string>
     <string name="app_build_date">Erstelldatum: %1$s</string>
     <string name="app_license">Diese App wird lizenziert unter der „GNU Affero General Public License v3.0”</string>

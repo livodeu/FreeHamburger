@@ -87,7 +87,6 @@
     <string name="error_no_network_ext">This device should be connected to the web to be useful.</string>
     <string name="error_news_not_found">Article not found.</string>
     <string name="error_parsing">Error while parsing the data!</string>
-    <string name="error_peer_not_verified">\"%1$s\" could not be verified!</string>
     <string name="error_permission_denied">Permission denied!</string>
     <string name="error_pin_verification">An invalid security certificate has been received!</string>
     <string name="error_poll_failed">This failed at %1$s with no reason given.</string>
@@ -103,7 +102,6 @@
     <string name="error_tts_fail_service">Speaking failed because there was a malfunction in the text-to-speech service.</string>
     <string name="error_tts_fail_synthesis">Speaking failed because the text-to-speech engine could not pronounce it.</string>
     <string name="error_unknown_host">has not been found</string>
-    <string name="error_video">Video playback error</string>
 
     <string name="label_ca">ca.</string>
     <string name="label_char_invalid">Invalid</string>
