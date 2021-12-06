@@ -8,45 +8,30 @@ import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
-import android.app.Activity;
 import android.app.DownloadManager;
-import android.app.NotificationManager;
-import android.app.job.JobInfo;
-import android.app.job.JobScheduler;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.content.pm.ShortcutManager;
 import android.net.Uri;
-import android.os.Build;
-import android.security.NetworkSecurityPolicy;
-import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
 import android.util.JsonReader;
+import android.view.KeyEvent;
 import android.view.View;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.annotation.StyleRes;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
+import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
-import androidx.test.filters.SmallTest;
-import androidx.test.rule.ActivityTestRule;
+import androidx.test.core.app.ActivityScenario;
+import androidx.test.filters.LargeTest;
+import androidx.test.filters.MediumTest;
 
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.source.hls.HlsMediaSource;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
+import org.junit.AfterClass;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -61,17 +46,14 @@ import de.freehamburger.model.Region;
 import de.freehamburger.model.Source;
 import de.freehamburger.model.TextFilter;
 import de.freehamburger.supp.SearchHelper;
-import de.freehamburger.util.MediaSourceHelper;
-import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
 import de.freehamburger.views.NewsView;
-import okhttp3.OkHttpClient;
 
 /**
- *
+ * Tests the data download and its representation in the gui.
  */
-@SmallTest
-public class AndroidUnitTest {
+@LargeTest
+public class DataAndGuiTest {
 
     private static final Source SOURCE = Source.HOME;
     private static final String FILENAME = SOURCE.name() + Source.FILE_SUFFIX;
@@ -81,49 +63,18 @@ public class AndroidUnitTest {
     private static final long DOWNLOAD_TIMEOUT = 6_000L;
     /** max age of the downloaded json data before we download again */
     private static final long FILE_MAX_AGE = 3_600_000L;
-    @Rule
-    public ActivityTestRule<NewsActivity> newsActivityRule = new ActivityTestRule<>(NewsActivity.class);
-    private Context ctx;
-    private File file;
-    private DownloadManager dm;
-    private long downloadId;
+    private static Context ctx;
+    private static File file;
+    private static DownloadManager dm;
+    private static long downloadId;
     @Nullable
-    private Set<String> regions;
-
-    private static String styleIdToString(@StyleRes final int resid) {
-        try {
-            final Field[] ff = R.style.class.getFields();
-            for (Field f : ff) {
-                Object o = f.get(R.style.class);
-                if (o instanceof Integer) {
-                    if (resid == (int)o) return f.getName();
-                }
-            }
-        } catch (Exception e) {
-            fail(e.toString());
-        }
-        return null;
-    }
-
-    @After
-    public void cleanup() {
-        // delete temporary file
-        if (file != null && file.isFile() && file.lastModified() - System.currentTimeMillis() >= FILE_MAX_AGE) {
-            if (!file.delete()) file.deleteOnExit();
-            dm.remove(downloadId);
-        }
-        // restore preferred regions
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        SharedPreferences.Editor ed = prefs.edit();
-        if (regions != null) ed.putStringSet(App.PREF_REGIONS, regions);
-        else ed.remove(App.PREF_REGIONS);
-        ed.apply();
-    }
+    private static Set<String> regions;
 
     /**
-     * Downloads the json data for {@link Source#HOME} and stores it in {@link #FILENAME}.
+     * If {@link #file} does not exist yet,
+     * downloads the json data for {@link Source#HOME} and stores it in {@link #FILENAME}.
      */
-    private void downloadHomepage() {
+    private static void downloadHomepage() {
         File files = ctx.getFilesDir();
         file = new File(files, FILENAME);
         if (file.isFile() && file.length() > 0L && file.lastModified() - System.currentTimeMillis() < FILE_MAX_AGE) return;
@@ -138,8 +89,8 @@ public class AndroidUnitTest {
         downloadId = dm.enqueue(r);
     }
 
-    @Before
-    public void init() {
+    @BeforeClass
+    public static void init() {
         ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext();
         assertNotNull(ctx);
         // save preferred regions
@@ -157,10 +108,26 @@ public class AndroidUnitTest {
         downloadHomepage();
     }
 
+    @AfterClass
+    public static void cleanup() {
+        // delete temporary file
+        if (file != null && file.isFile() && file.lastModified() - System.currentTimeMillis() >= FILE_MAX_AGE) {
+            if (!file.delete()) file.deleteOnExit();
+            dm.remove(downloadId);
+        }
+        // restore preferred regions
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        SharedPreferences.Editor ed = prefs.edit();
+        if (regions != null) ed.putStringSet(App.PREF_REGIONS, regions);
+        else ed.remove(App.PREF_REGIONS);
+        ed.commit();
+    }
+
     /**
      * This method tests the {@link BlobParser} which delegates to {@link Blob#parseApi(Context, JsonReader)}.
      */
     @Test(timeout = DOWNLOAD_TIMEOUT + 2_000L)
+    @MediumTest
     public void testBlobParser() {
         assertNotNull(file);
         if (!file.isFile() || file.length() == 0L) {
@@ -201,47 +168,29 @@ public class AndroidUnitTest {
         }
     }
 
-    /**
-     * Tests {@link BootReceiver}.
-     */
     @Test
-    public void testBootReceiver() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        boolean pollWasEnabled = prefs.getBoolean(App.PREF_POLL, false);
-        if (!pollWasEnabled) {
-            SharedPreferences.Editor ed = prefs.edit();
-            ed.putBoolean(App.PREF_POLL, true);
-            ed.apply();
-        }
-        BootReceiver br = new BootReceiver();
-        br.onReceive(ctx, new Intent(Intent.ACTION_BOOT_COMPLETED));
-        NotificationManager nm = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-        assertNotNull(nm);
-        StatusBarNotification[] n = nm.getActiveNotifications();
-        assertTrue("No active notifications", n.length > 0);
-        // a little time to have a look at the notification
-        try {
-            Thread.sleep(5_000L);
-        } catch (Exception ignored) {
-        }
-        SharedPreferences.Editor ed = prefs.edit();
-        ed.putBoolean(App.PREF_POLL, pollWasEnabled);
-        ed.apply();
-    }
-
-    @Test
-    @RequiresApi(24)
-    public void testCleartextTraffic() {
-        if (Build.VERSION.SDK_INT < 24) return;
-        NetworkSecurityPolicy nsp = NetworkSecurityPolicy.getInstance();
-        assertFalse("Cleartext traffic to www.tagesschau.de is allowed", nsp.isCleartextTrafficPermitted("www.tagesschau.de"));
-        assertFalse("Cleartext traffic to www.google.com is allowed", nsp.isCleartextTrafficPermitted("www.google.com"));
+    public void testDrawer() {
+        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
+        asn.moveToState(Lifecycle.State.RESUMED);
+        asn.onActivity(activity -> {
+            assertNotNull(activity.drawerLayout);
+            if (activity.drawerLayout.isDrawerOpen(GravityCompat.END)) activity.drawerLayout.closeDrawer(GravityCompat.END, false);
+            assertFalse(activity.drawerLayout.isDrawerOpen(GravityCompat.END));
+            KeyEvent keLeft = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT);
+            activity.dispatchKeyEvent(keLeft);
+            assertTrue("Drawer is not open", activity.drawerLayout.isDrawerOpen(GravityCompat.END));
+            KeyEvent keRight = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
+            activity.dispatchKeyEvent(keRight);
+            assertFalse("Drawer is not closed", activity.drawerLayout.isDrawerOpen(GravityCompat.END));
+            activity.finish();
+        });
     }
 
     /**
      * Tests {@link TextFilter TextFilters}
      */
     @Test
+    @MediumTest
     public void testFilter() {
         assertNotNull(file);
         assertNotNull(ctx);
@@ -254,7 +203,7 @@ public class AndroidUnitTest {
         News news0 = list.get(0);
         assertNotNull(news0);
         // must be a 'story' for a meaningful test
-        assertEquals(News.NEWS_TYPE_STORY, news0.getType());
+        Assume.assumeTrue(News.NEWS_TYPE_STORY.equals(news0.getType()));
         // get a phrase from the News to test against
         String partofNews = news0.getFirstSentence();
         if (partofNews == null || partofNews.indexOf(' ') <= 0) partofNews = news0.getTopline();
@@ -289,44 +238,10 @@ public class AndroidUnitTest {
     }
 
     /**
-     * Tests {@link App#isHostAllowed(String)}.
-     */
-    @Test
-    public void testHostAllowed() {
-        Uri uri;
-        uri = Uri.parse("https://www.google.com");
-        assertFalse(App.isHostAllowed(uri.getHost()));
-        uri = Uri.parse("https://www.tagesschau.de");
-        assertTrue(App.isHostAllowed(uri.getHost()));
-        uri = Uri.parse(App.URL_PREFIX);
-        assertTrue(App.isHostAllowed(uri.getHost()));
-        uri = Uri.parse(App.URL_TELETEXT);
-        assertTrue(App.isHostAllowed(uri.getHost()));
-        uri = Uri.parse("https://www.facebook.com");
-        assertFalse(App.isHostAllowed(uri.getHost()));
-    }
-
-    /**
-     * Tests {@link MediaSourceHelper}.
-     */
-    @Test
-    public void testMediaSourceHelper() {
-        App app = (App)ctx.getApplicationContext();
-        MediaSourceHelper msh = new MediaSourceHelper();
-        Uri uri = Uri.parse("http://tagesschau-lh.akamaihd.net/i/tagesschau_3@66339/master.m3u8");
-        MediaSource ms = msh.buildMediaSource(app.getOkHttpClient(), uri);
-        assertNotNull(ms);
-        assertTrue(ms instanceof HlsMediaSource);
-        uri = Uri.parse("https://media.tagesschau.de/video/2021/0910/TV-20210910-0717-4200.webm.h264.mp4");
-        ms = msh.buildMediaSource(app.getOkHttpClient(), uri);
-        assertNotNull(ms);
-        assertTrue("Not a ProgressiveMediaSource: " + ms, ms instanceof ProgressiveMediaSource);
-    }
-
-    /**
      * Tests the application of {@link News} objects to {@link NewsView NewsViews}.
      */
     @Test
+    @MediumTest
     public void testNewsView() {
         assertNotNull(file);
         if (!file.isFile() || file.length() == 0L) {
@@ -399,39 +314,10 @@ public class AndroidUnitTest {
     }
 
     /**
-     * Tests the creation of notification channels.
-     */
-    @Test
-    public void testNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            App app = (App)ctx.getApplicationContext();
-            assertNotNull(app.getNotificationChannel());
-            assertNotNull(app.getNotificationChannelHiPri());
-        }
-    }
-
-    /**
-     * Tests {@link App#getOkHttpClient()}.
-     */
-    @Test
-    public void testOkHttp() {
-        App app = (App)ctx.getApplicationContext();
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        String proxyServer = prefs.getString(App.PREF_PROXY_SERVER, null);
-        String proxyType = prefs.getString(App.PREF_PROXY_TYPE, "DIRECT");
-        OkHttpClient c = app.getOkHttpClient();
-        assertNotNull(c);
-        if (!TextUtils.isEmpty(proxyServer) && !"DIRECT".equals(proxyType)) {
-            assertNotNull(c.proxy());
-        } else {
-            assertNull(c.proxy());
-        }
-    }
-
-    /**
      * This method tests the creation of search suggestions (w/o actually inserting them into the database).
      */
     @Test
+    @MediumTest
     public void testSearchSuggestions() {
         Set<String> s = new HashSet<>();
         SearchHelper.splitSentence("Linux is the world's most popular computing platform. " +
@@ -472,95 +358,4 @@ public class AndroidUnitTest {
             fail(e.toString());
         }
     }
-
-    @Test
-    public void testShortcutInvocation() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
-        ShortcutManager shortcutManager = (ShortcutManager)ctx.getSystemService(Context.SHORTCUT_SERVICE);
-        assertNotNull(shortcutManager);
-        if (!shortcutManager.isRequestPinShortcutSupported()) return;
-        try {
-            App app = (App)ctx.getApplicationContext();
-            final Source[] sources = Source.values();
-            for (; ; ) {
-                int i = (int) (Math.random() * sources.length);
-                Source source = sources[i];
-                if (source.getAction() == null) continue;
-                assertTrue(Util.createShortcut(ctx, source, shortcutManager));
-                Intent intent = new Intent(ctx, MainActivity.class);
-                intent.setAction(source.getAction());
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                assertNotNull(ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY));
-                ctx.startActivity(intent);
-                Thread checker = new Thread() {
-                    @Override
-                    public void run() {
-                        try {
-                            sleep(1000);
-                            Activity current = app.getCurrentActivity();
-                            assertTrue("Current activity is " + current, current instanceof MainActivity);
-                            assertTrue(((MainActivity)current).handleShortcutIntent(intent));
-                        } catch (Exception e) {
-                            fail(e.getMessage());
-                        }
-                    }
-                };
-                checker.start();
-                checker.join();
-                break;
-            }
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
-    }
-
-    /**
-     * Tests {@link HamburgerActivity#applyTheme(AppCompatActivity, boolean, boolean)}.
-     */
-    @Test
-    public void testTheme() {
-        NewsActivity activity = newsActivityRule.launchActivity(new Intent(Intent.ACTION_MAIN));
-        assertNotNull(activity);
-        boolean overflowButton = activity.hasMenuOverflowButton();
-        @StyleRes int resid = HamburgerActivity.applyTheme(activity, true, false);
-        assertEquals("Unexpected theme: " + styleIdToString(resid), overflowButton ? R.style.AppTheme_NoActionBar_Light : R.style.AppTheme_NoActionBar_Light_NoOverflowButton, resid);
-        resid = HamburgerActivity.applyTheme(activity, false, true);
-        assertEquals("Unexpected theme: " + styleIdToString(resid), overflowButton ? R.style.AppTheme_NoActionBar : R.style.AppTheme_NoActionBar_NoOverflowButton, resid);
-        activity.finish();
-    }
-
-    /**
-     * Tests {@link TtfInfo}.
-     */
-    @Test
-    public void testTtf() {
-        File file = new File("/system/fonts/DroidSans.ttf");
-        assertTrue("Not a file: " + file.getAbsolutePath(), file.isFile());
-        try {
-            TtfInfo tti = TtfInfo.getTtfInfo(file);
-            assertNotNull(tti);
-            String fontName = tti.getFontFullName();
-            assertNotNull(fontName);
-            assertTrue(fontName.contains("Roboto"));
-        } catch (IOException e) {
-            fail(e.getMessage());
-        }
-    }
-
-    /**
-     * Tests scheduling the background update service.
-     */
-    @Test
-    public void testUpdateService() {
-        JobInfo jobInfo = UpdateJobService.makeJobInfo(ctx);
-        assertNotNull(jobInfo);
-        JobScheduler js = (JobScheduler)ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-        assertNotNull(js);
-        int result = js.schedule(jobInfo);
-        App app = (App)ctx.getApplicationContext();
-        assertTrue(app.isBackgroundJobScheduled() != 0L);
-        js.cancel(jobInfo.getId());
-        assertEquals(result, JobScheduler.RESULT_SUCCESS);
-    }
-
 }
