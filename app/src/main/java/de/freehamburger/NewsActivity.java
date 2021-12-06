@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -467,6 +468,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
             URLSpan[] urlSpans = spannable.getSpans(0, spannable.length(), URLSpan.class);
             if (urlSpans != null) {
+                @ColorInt final int colorInternal = Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M ? getResources().getColor(R.color.colorLinkInternal, getTheme()) : getResources().getColor(R.color.colorLinkInternal);
+                @ColorInt final int colorExternal = Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M ? getResources().getColor(R.color.colorLinkExternal, getTheme()) : getResources().getColor(R.color.colorLinkExternal);
                 for (URLSpan urlSpan : urlSpans) {
                     final String url = urlSpan.getURL();
                     int start = spannable.getSpanStart(urlSpan);
@@ -476,19 +479,22 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                         Uri uri = Uri.parse(url);
                         String host = uri.getHost() != null ? uri.getHost().toLowerCase(Locale.US) : null;
                         if (App.isHostAllowed(host) && !App.isHostRestrictedToNonScript(host)) {
-                            InternalURLSpan internalURLSpan = new InternalURLSpan(url, getResources().getColor(R.color.colorLinkInternal));
+                            // links identified as 'internal' will be opened within this app
+                            InternalURLSpan internalURLSpan = new InternalURLSpan(url, colorInternal);
                             spannable.setSpan(internalURLSpan, start, end, 0);
                         } else {
-                            URLSpanWChooser urlSpanWChooser = new URLSpanWChooser(url, getResources().getColor(R.color.colorLinkExternal), "text/html");
+                            // other links go to the browser
+                            URLSpanWChooser urlSpanWChooser = new URLSpanWChooser(url, colorExternal, "text/html");
                             spannable.setSpan(urlSpanWChooser, start, end, 0);
                         }
                     } else {
                         if (url.endsWith(".json")) {
                             // it does not make sense to pass json links to the browser
-                            InternalURLSpan internalURLSpan = new InternalURLSpan(url, getResources().getColor(R.color.colorLinkInternal));
+                            InternalURLSpan internalURLSpan = new InternalURLSpan(url, colorInternal);
                             spannable.setSpan(internalURLSpan, start, end, 0);
                         } else {
-                            URLSpanWChooser urlSpanWChooser = new URLSpanWChooser(url, getResources().getColor(R.color.colorLinkExternal), "application/json");
+                            // non-json links go to the browser
+                            URLSpanWChooser urlSpanWChooser = new URLSpanWChooser(url, colorExternal, "text/html");
                             spannable.setSpan(urlSpanWChooser, start, end, 0);
                         }
                     }
@@ -1514,13 +1520,16 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT);
             }
+            if (context.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) == null) {
+                Toast.makeText(context, R.string.error_no_app, Toast.LENGTH_SHORT).show();
+                return;
+            }
             Intent chooserIntent = Intent.createChooser(intent, null);
             try {
                 context.startActivity(chooserIntent);
             } catch (ActivityNotFoundException e) {
                 if (BuildConfig.DEBUG) Log.w(getClass().getSimpleName(), "Actvity was not found for intent " + intent.toString());
             }
-
         }
 
         /** {@inheritDoc} */
