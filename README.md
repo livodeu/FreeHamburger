@@ -1,6 +1,6 @@
-# Free Hamburgers
-<p>FreeHamburger is a news app for Android phones - it displays the news issued by the primary German public television and radio broadcaster.</p>
-<p>In contrast to the app provided by the broadcaster itself, FreeHamburger does not track the user in any way.</p>
+# Free Hamburgers ![Logo](app/src/main/res/mipmap-mdpi/ic_launcher.png)
+<p>Hamburger is a news app for Android phones - it displays the news issued by the primary German public television and radio broadcaster.</p>
+<p>In contrast to the app provided by the broadcaster itself, Hamburger does not track the user in any way.</p>
 
 ## Build
 
