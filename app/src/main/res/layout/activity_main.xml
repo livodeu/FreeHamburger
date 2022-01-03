@@ -60,11 +60,12 @@
             android:layout_margin="@dimen/fab_margin"
             android:contentDescription="@string/action_scroll_to_top"
             android:elevation="16dp"
+            android:tint="@color/colorContent"
             android:visibility="gone"
             app:backgroundTint="@color/colorPrimaryLight"
             app:rippleColor="@color/colorPrimary"
             app:srcCompat="@drawable/ic_arrow_upward_black_24dp"
-            tools:visibility="visible"/>
+            tools:visibility="visible" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
