@@ -6,13 +6,14 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
+import android.util.Log;
+
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
-import android.text.TextUtils;
-import android.util.Log;
 
 import java.io.File;
 import java.util.Arrays;
@@ -282,7 +283,7 @@ public class SearchHelper {
                 }
             }
             cv = new ContentValues[words.size()];
-            final String symbol = "android.resource://" + BuildConfig.APPLICATION_ID + '/' + source.getIcon();
+            final String symbol = "android.resource://" + BuildConfig.APPLICATION_ID + '/' + source.getIconSearch();
             final String querySuffix = '#' + source.name();
             int i = 0;
             for (String word : words) {

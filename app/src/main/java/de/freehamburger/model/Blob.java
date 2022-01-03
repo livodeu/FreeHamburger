@@ -2,6 +2,8 @@ package de.freehamburger.model;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.JsonReader;
 import android.util.JsonToken;
@@ -55,6 +57,16 @@ public class Blob {
         @News.Flag int flags = 0;
         boolean htmlEmbed = prefs.getBoolean(App.PREF_SHOW_EMBEDDED_HTML_LINKS, App.PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT);
         if (htmlEmbed) flags |= News.FLAG_INCLUDE_HTMLEMBED;
+        // give some current color values to the Content class
+        Resources r = ctx.getResources();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Resources.Theme t = ctx.getTheme();
+            Content.setColorBox("#" + Integer.toHexString(r.getColor(R.color.colorBox, t) & ~0xff000000));
+            Content.setColorQuotation("#" + Integer.toHexString(r.getColor(R.color.colorQuotation, t) & ~0xff000000));
+        } else {
+            Content.setColorBox("#" + Integer.toHexString(r.getColor(R.color.colorBox) & ~0xff000000));
+            Content.setColorQuotation("#" + Integer.toHexString(r.getColor(R.color.colorQuotation) & ~0xff000000));
+        }
         //
         final Blob blob = new Blob();
         String name = null;
@@ -114,7 +126,7 @@ public class Blob {
             News.correct(blob.regionalNewsList);
         }
         // replace some text within the News instances because the Context that we have here has not been passed down
-        final String[] toReplace = new String[] {Content.MARK_LINK};    // "\uD83D\uDD17" is the "link" symbol (unicode 0x1f517)
+        final String[] toReplace = new String[] {Content.MARK_LINK};
         final String[] replaceWith = new String[] {ctx.getString(R.string.label_link)};
         for (News news : blob.newsList) {
             Content content = news.getContent();

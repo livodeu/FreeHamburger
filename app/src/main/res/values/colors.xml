@@ -10,17 +10,20 @@
     <color name="colorLinkInternal">#ffa866</color>
     <color name="colorLinkExternal">#fe8b35</color>
     <color name="colorFilter">#55ffdd00</color>
-    <color name="colorContent">#000000</color>
+    <color name="colorContent">#ff000000</color>
     <color name="colorBottomSheetBackground">#ee0f70aa</color>
     <color name="colorDirtyWhite">#ededed</color>
     <color name="colorIntro">#77ff0000</color>
     <color name="colorToplineShadow">#33064a91</color>
+    <color name="colorBox">#064a91</color>
     <color name="colorBoxBackground">#111288cc</color>
+    <color name="colorQuotation">#064a91</color>
+    <!-- Do NOT overwrite colorSearchIcon in the night colors! The search icons will not be updated when there is a uiMode change! -->
+    <color name="colorSearchIcon">#ff1288cc</color>
     <color name="colorToggling">#eebb33</color>
 
-    <!-- dark and light background colors for the RecyclerView -->
-    <color name="colorRecyclerBg">#ff0f70aa</color>
-    <color name="colorRecyclerBgLight">#ffffffff</color>
+    <!-- background color for the RecyclerView -->
+    <color name="colorRecyclerBg">#ffffffff</color>
 
     <!-- dark background color for news -->
     <color name="colorBgNews">#5c26a6f0</color>

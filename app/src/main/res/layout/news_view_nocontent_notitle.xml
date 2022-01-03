@@ -27,7 +27,7 @@
         android:shadowColor="@color/colorToplineShadow"
         android:shadowDx="@dimen/topline_shadow_size" android:shadowDy="@dimen/topline_shadow_size" android:shadowRadius="@dimen/topline_shadow_size"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
-        android:textColor="@android:color/black"
+        android:textColor="@color/colorContent"
         tools:text="@tools:sample/lorem/random"/>
 
     <TextView
@@ -40,7 +40,7 @@
         android:maxLines="1"
         android:paddingEnd="@dimen/space_between_image_and_text"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
-        android:textColor="@android:color/black"
+        android:textColor="@color/colorContent"
         tools:ignore="RtlSymmetry"
         tools:text="12.34.5678 12:34"/>
 

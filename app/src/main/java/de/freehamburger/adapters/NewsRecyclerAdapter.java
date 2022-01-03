@@ -308,8 +308,8 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         this.handler.removeCallbacks(this.preloader);
         final NewsView newsView = (NewsView) holder.itemView;
         switch (this.background) {
-            case App.BACKGROUND_DARK: newsView.setBackgroundResource(R.drawable.bg_news); break;
-            case App.BACKGROUND_LIGHT: newsView.setBackgroundResource(R.drawable.bg_news_light); break;
+            case App.BACKGROUND_NIGHT: newsView.setBackgroundResource(R.drawable.bg_news); break;
+            case App.BACKGROUND_DAY: newsView.setBackgroundResource(R.drawable.bg_news_light); break;
             case App.BACKGROUND_AUTO: newsView.setBackgroundResource(Util.isNightMode(this.activity) ? R.drawable.bg_news : R.drawable.bg_news_light);
         }
 

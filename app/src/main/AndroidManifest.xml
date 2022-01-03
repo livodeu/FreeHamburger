@@ -166,7 +166,7 @@
         </activity>
         <activity
             android:name=".SettingsActivity"
-            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
             android:exported="false"
             android:icon="@drawable/ic_build_black_24dp"
             android:label="@string/action_settings"

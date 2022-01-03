@@ -12,6 +12,7 @@ import java.io.File;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
@@ -24,18 +25,18 @@ import de.freehamburger.R;
  */
 public enum Source {
 
-    HOME(R.string.action_section_homepage, App.URL_PREFIX + "homepage/", R.drawable.ic_home_black_24dp, false),
-    NEWS(R.string.action_section_news, App.URL_PREFIX + "news/", R.drawable.ic_local_library_black_24dp, false, "action_section_news"),
-    INLAND(R.string.action_section_inland, App.URL_PREFIX + "news/?ressort=inland", R.drawable.ic_germany, false, "action_section_inland"),
-    AUSLAND(R.string.action_section_ausland, App.URL_PREFIX + "news/?ressort=ausland", R.drawable.ic_language_black_24dp, false, "action_section_ausland"),
-    SPORT(R.string.action_section_sport, App.URL_PREFIX + "news/?ressort=sport", R.drawable.ic_directions_run_black_24dp, false, "action_section_sport"),
+    HOME(R.string.action_section_homepage, App.URL_PREFIX + "homepage/", R.drawable.ic_home_black_24dp, R.drawable.ic_home_search_24dp, false, null),
+    NEWS(R.string.action_section_news, App.URL_PREFIX + "news/", R.drawable.ic_local_library_black_24dp, R.drawable.ic_local_library_search_24dp, false, "action_section_news"),
+    INLAND(R.string.action_section_inland, App.URL_PREFIX + "news/?ressort=inland", R.drawable.ic_germany, R.drawable.ic_germany_search, false, "action_section_inland"),
+    AUSLAND(R.string.action_section_ausland, App.URL_PREFIX + "news/?ressort=ausland", R.drawable.ic_language_black_24dp, R.drawable.ic_language_search_24dp, false, "action_section_ausland"),
+    SPORT(R.string.action_section_sport, App.URL_PREFIX + "news/?ressort=sport", R.drawable.ic_directions_run_black_24dp, R.drawable.ic_directions_run_search_24dp, false, "action_section_sport"),
     VIDEO(R.string.action_section_video, App.URL_PREFIX + "news/?ressort=video", R.drawable.ic_videocam_black_24dp, false, "action_section_video"),
-    WIRTSCHAFT(R.string.action_section_wirtschaft, App.URL_PREFIX + "news/?ressort=wirtschaft", R.drawable.ic_build_black_24dp, false, "action_section_wirtschaft"),
+    WIRTSCHAFT(R.string.action_section_wirtschaft, App.URL_PREFIX + "news/?ressort=wirtschaft", R.drawable.ic_build_black_24dp, R.drawable.ic_build_search_24dp, false, "action_section_wirtschaft"),
     CHANNELS(R.string.action_section_channels, App.URL_PREFIX + "channels/", R.drawable.ic_tv_black_24dp, false, "action_section_sendungen"),
     /** params look like "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" */
-    REGIONAL(R.string.action_section_regional, App.URL_PREFIX + "news/?regions=", R.drawable.ic_place_black_24dp, true, "action_section_regional"),
-    WEATHER(R.string.action_section_weather, App.URL_PREFIX + "weather/index.json", R.drawable.ic_outline_cloud_24, false, "action_section_weather"),
-    IV(R.string.action_section_iv, App.URL_PREFIX + "news/?ressort=investigativ", R.drawable.ic_search_black_24dp, false, "action_section_iv")
+    REGIONAL(R.string.action_section_regional, App.URL_PREFIX + "news/?regions=", R.drawable.ic_place_black_24dp, R.drawable.ic_place_search_24dp,true, "action_section_regional"),
+    WEATHER(R.string.action_section_weather, App.URL_PREFIX + "weather/index.json", R.drawable.ic_outline_cloud_24, R.drawable.ic_outline_cloud_search_24, false, "action_section_weather"),
+    IV(R.string.action_section_iv, App.URL_PREFIX + "news/?ressort=investigativ", R.drawable.ic_search_black_24dp, R.drawable.ic_search_search_24dp, false, "action_section_iv")
     ;
 
     public static final String FILE_SUFFIX = ".source";
@@ -47,6 +48,8 @@ public enum Source {
     private final boolean needsParams;
     @DrawableRes
     private final int icon;
+    @DrawableRes
+    private final int iconSearch;
     @Nullable private final String action;
     /** synchronises access from different threads */
     @GuardedBy("lock")
@@ -82,9 +85,24 @@ public enum Source {
      * @param action action string for an Intent to display this Source
      */
     Source(@StringRes int label, String url, @DrawableRes int icon, boolean needsParams, @Nullable String action) {
+        this(label, url, icon, icon, needsParams, action);
+    }
+
+
+    /**
+     * Constructor.
+     * @param label string resource id
+     * @param url url
+     * @param icon icon resource
+     * @param iconSearch icon resource for {@link android.app.SearchManager#SUGGEST_COLUMN_ICON_1 SearchManager}
+     * @param needsParams {@code true} if this Source needs additional parameters
+     * @param action action string for an Intent to display this Source
+     */
+    Source(@StringRes int label, String url, @DrawableRes int icon, @DrawableRes int iconSearch, boolean needsParams, @Nullable String action) {
         this.label = label;
         this.url = url;
         this.icon = icon;
+        this.iconSearch = iconSearch;
         this.needsParams = needsParams;
         this.action = action;
         if (icon == 0) throw new java.lang.AssertionError("No source icon");
@@ -160,6 +178,18 @@ public enum Source {
     @DrawableRes
     public int getIcon() {
         return icon;
+    }
+
+    /**
+     * Returns the icon that will be used for search suggestions.
+     * Not set explicitly for Sources that do not supply search suggestions
+     * (see {@link de.freehamburger.supp.SearchHelper.Inserter#createSearchSuggestions(Context, Source, List, boolean) Inserter.createSearchSuggestions()}).<br>
+     * See also {@link android.app.SearchManager#SUGGEST_COLUMN_ICON_1 SearchManager}.
+     * @return icon to be used for search suggestions
+     */
+    @DrawableRes
+    public int getIconSearch() {
+        return iconSearch != 0 ? iconSearch : icon;
     }
 
     /**

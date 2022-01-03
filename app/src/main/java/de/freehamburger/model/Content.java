@@ -35,14 +35,17 @@ import de.freehamburger.util.Util;
 public class Content implements Serializable {
 
     public static final String FONT_FACE_IMAGE_TITLE = "sans-serif-condensed";
-    private static final String HTML_BR = "<br>";
     /** marker for superfluous new lines to be removed (this String can be anything that is very unlikely to occur in the text naturally) */
     public static final String REMOVE_NEW_LINE = "#####";
     /** the 🔗 symbol (unicode 0x1f517) */
     static final String MARK_LINK = "\uD83D\uDD17";
-    private static String colorQuotation = "#064a91";
-    /** The color that a box element will be rendered in */
-    private static String colorBox = "#064a91";
+    /**
+     * The html tag that a box element text will be wrapped into ({@link #colorBox} will be applied, too)<br>
+     * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()} <br>
+     * &lt;small&gt; will be rendered with a text size of 80% (see Html.HtmlToSpannedConverter.handleEndTag())
+     */
+    static final String TAG_BOX_TEXT = "small";
+    private static final String HTML_BR = "<br>";
     /**
      * The html tag that a box element will be wrapped into ({@link #colorBox} will be applied, too)<br>
      * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()}.<br>
@@ -62,12 +65,6 @@ public class Content implements Serializable {
     @Deprecated
     private static final String TAG_BOX_TITLE = "h6";
     /**
-     * The html tag that a box element text will be wrapped into ({@link #colorBox} will be applied, too)<br>
-     * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()} <br>
-     * &lt;small&gt; will be rendered with a text size of 80% (see Html.HtmlToSpannedConverter.handleEndTag())
-     */
-    static final String TAG_BOX_TEXT = "small";
-    /**
      * The html tag that a box element link will be wrapped into ({@link #colorBox} will be applied, too)<br>
      * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()} <br>
      * &lt;small&gt; will be rendered with a text size of 80% (see Html.HtmlToSpannedConverter.handleEndTag())
@@ -85,7 +82,9 @@ public class Content implements Serializable {
      * The html tag that a list item will end with.
      */
     private static final String TAG_LISTITEM_END = "font";
-
+    private static String colorQuotation = "#064a91";
+    /** The color that a box element will be rendered in */
+    private static String colorBox = "#064a91";
     @NonNull private final List<ContentElement> elementList = new ArrayList<>(16);
     @NonNull private final List<Video> videoList = new ArrayList<>();
     @NonNull private final List<Audio> audioList = new ArrayList<>();
@@ -218,6 +217,7 @@ public class Content implements Serializable {
                     String boxTitle = box.getTitle();
                     if (!TextUtils.isEmpty(boxTitle)) {
                         // add the box title
+                        if (BuildConfig.DEBUG) android.util.Log.i(Content.class.getSimpleName(), "Color " + colorBox + " for \"" + boxTitle + "\"");
                         //FIXME apparently, a <h6> causes the background color not being applied because in Html.setSpanFromMark() 'where' equals 'len'…
                         htmlTextBuilder.append("<font color=\"").append(colorBox).append("\">").append(boxTitle).append("</font>");
                     }
@@ -308,11 +308,11 @@ public class Content implements Serializable {
         return content;
     }
 
-    public static void setColorBox(@NonNull String color) {
+    static void setColorBox(@NonNull String color) {
         colorBox = color;
     }
 
-    public static void setColorQuotation(@NonNull String color) {
+    static void setColorQuotation(@NonNull String color) {
         colorQuotation = color;
     }
 
@@ -338,6 +338,13 @@ public class Content implements Serializable {
         return elementList;
     }
 
+    /**
+     * @return HTML text
+     */
+    public String getHtmlText() {
+        return text;
+    }
+
     public String getPlainText() {
         return plainText;
     }
@@ -345,13 +352,6 @@ public class Content implements Serializable {
     @NonNull
     public List<Related> getRelatedList() {
         return relatedList;
-    }
-
-    /**
-     * @return HTML text
-     */
-    public String getHtmlText() {
-        return text;
     }
 
     /**

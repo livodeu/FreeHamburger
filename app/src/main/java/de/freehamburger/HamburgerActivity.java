@@ -73,6 +73,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
      */
     @VisibleForTesting
     @StyleRes
+    @Deprecated
     public static int applyTheme(@NonNull AppCompatActivity activity, boolean lightBackground, boolean again) {
         @StyleRes int resid;
         if (activity instanceof HamburgerActivity) {
@@ -97,14 +98,41 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         return resid;
     }
 
+    @VisibleForTesting
+    @SuppressLint("SwitchIntDef")
+    public static void applyTheme(@NonNull final AppCompatActivity activity, @App.BackgroundSelection final int bg, final boolean again) {
+        @StyleRes final int resid;
+        final boolean overflowButton = (!(activity instanceof HamburgerActivity) || ((HamburgerActivity) activity).hasMenuOverflowButton());
+        if (!overflowButton) {
+            switch (bg) {
+                case App.BACKGROUND_DAY: resid = R.style.AppTheme_NoActionBar_Light_NoOverflowButton; break;
+                //case App.BACKGROUND_VDARK: resid = R.style.AppTheme_NoActionBar_Vdark_NoOverflowButton; break;
+                case App.BACKGROUND_NIGHT:
+                default: resid = R.style.AppTheme_NoActionBar_NoOverflowButton;
+            }
+        } else {
+            switch (bg) {
+                case App.BACKGROUND_DAY: resid = R.style.AppTheme_NoActionBar_Light; break;
+                //case App.BACKGROUND_VDARK: resid = R.style.AppTheme_NoActionBar_Vdark; break;
+                case App.BACKGROUND_NIGHT:
+                default: resid = R.style.AppTheme_NoActionBar;
+            }
+        }
+        if (again) {
+            activity.getTheme().applyStyle(resid, true);
+        } else {
+            activity.setTheme(resid);
+        }
+    }
+
     /**
      * Selects and applies a theme according to the preferences.<br>
-     * Returns the selected background, too ({@link App#BACKGROUND_LIGHT light} or {@link App#BACKGROUND_DARK dark}),
+     * Returns the selected background, too ({@link App#BACKGROUND_DAY light} or {@link App#BACKGROUND_NIGHT dark}),
      * so that information can be used to style Views.
      * @param activity AppCompatActivity
      * @param prefs SharedPreferences
      * @param again true / false
-     * @return {@link App#BACKGROUND_LIGHT} or {@link App#BACKGROUND_DARK}
+     * @return {@link App#BACKGROUND_DAY} or {@link App#BACKGROUND_NIGHT}
      * @throws NullPointerException if {@code activity} is {@code null}
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
@@ -113,15 +141,26 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         // determine whether a light or a dark background is applicable
         if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(activity);
         @App.BackgroundSelection int background = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
-        // select theme based on the background
-        if (background == App.BACKGROUND_DARK) {
-            applyTheme(activity, false, again);
-        } else if (background == App.BACKGROUND_LIGHT) {
-            applyTheme(activity, true, again);
-        } else {
-            applyTheme(activity, !Util.isNightMode(activity), again);
+        if (BuildConfig.DEBUG) {
+            String s;
+            switch (background) {
+                case App.BACKGROUND_NIGHT:
+                    s = "dark";
+                    break;
+                case App.BACKGROUND_AUTO:
+                    s = "auto";
+                    break;
+                case App.BACKGROUND_DAY:
+                    s = "light";
+                    break;
+                default:
+                    s = "?";
+            }
+            Log.i(TAG, "Preferred background is " + s + "; night mode: " + Util.isNightMode(activity));
         }
-        //
+        // select theme based on the background
+        if (background == App.BACKGROUND_AUTO) background = Util.isNightMode(activity) ? App.BACKGROUND_NIGHT : App.BACKGROUND_DAY;
+        applyTheme(activity, background, again);
         return background;
     }
 
@@ -152,6 +191,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         super.onCreate(savedInstanceState);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.registerOnSharedPreferenceChangeListener(this);
+        //App.setNightMode(prefs);
         this.background = applyTheme(this, prefs, false);
         setContentView(getMainLayout());
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -187,6 +227,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @Override
     protected void onResume() {
         try {
+            //App.setNightMode(PreferenceManager.getDefaultSharedPreferences(this));
             super.onResume();
             bindService(new Intent(this, HamburgerService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
         } catch (Throwable e) {

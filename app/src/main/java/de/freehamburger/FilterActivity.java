@@ -235,7 +235,7 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
     protected void onResume() {
         super.onResume();
         @App.BackgroundSelection int background = HamburgerActivity.applyTheme(this, null, false);
-        this.coordinatorLayout.setBackgroundResource(background == App.BACKGROUND_LIGHT ? R.drawable.bg_news_light :R.drawable.bg_news);
+        this.coordinatorLayout.setBackgroundResource(background == App.BACKGROUND_DAY ? R.drawable.bg_news_light :R.drawable.bg_news);
         @SuppressWarnings("rawtypes") RecyclerView.Adapter adapter = this.recyclerView.getAdapter();
         if (adapter != null) {
             if (adapter instanceof FilterAdapter) ((FilterAdapter) adapter).setBackground(background);

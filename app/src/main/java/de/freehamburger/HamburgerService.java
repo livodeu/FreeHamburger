@@ -96,7 +96,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     /**
      * Builds the Picasso instance.
      */
-    private void buildPicasso() {
+    private synchronized void buildPicasso() {
 
         if (this.picasso != null) {
             this.picasso.shutdown();
@@ -340,6 +340,10 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
             if (s.contains("HTTP 504")) return;
             if (s.contains("NetworkRequestHandler$ResponseException")) Log.e(TAG, "Loading image from '" + uri + "' failed: " + e.getMessage(), e);
             else Log.e(TAG, "Loading image from '" + uri + "' failed: " + e, e);
+        }
+        if (e instanceof IllegalStateException) {
+            //TODO check this
+            buildPicasso();
         }
     }
 

@@ -13,6 +13,8 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -812,6 +814,21 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             playBottomVideo();
         }
     }
+
+    /*
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Resources.Theme t = getTheme();
+            Content.setColorBox("#" + Integer.toHexString(getResources().getColor(R.color.colorBox, t)));
+            Content.setColorQuotation("#" + Integer.toHexString(getResources().getColor(R.color.colorQuotation, t)));
+        } else {
+            Content.setColorBox("#" + Integer.toHexString(getResources().getColor(R.color.colorBox)));
+            Content.setColorQuotation("#" + Integer.toHexString(getResources().getColor(R.color.colorQuotation)));
+        }
+    }*/
 
     /** {@inheritDoc} */
     @SuppressLint("ClickableViewAccessibility")

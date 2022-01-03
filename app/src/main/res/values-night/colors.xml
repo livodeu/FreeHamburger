@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimaryDark">#0f70aa</color>
+    <color name="colorPrimaryDarkSemiTrans">#770f70aa</color>
+    <color name="colorPrimary">#1288cc</color>
+    <color name="colorPrimarySemiTrans">#771288cc</color>
+
+    <color name="colorPrimaryLight">#0E6699</color>
+    <color name="colorPrimaryLightSemiTrans">#aa0E6699</color>
+
+    <color name="colorBox">#7ED2FC</color>
+    <color name="colorQuotation">#7ED2FC</color>
+
+    <!-- background color for the RecyclerView -->
+    <color name="colorRecyclerBg">#ff083854</color>
+
+    <color name="colorContent">#ffededed</color>
+    <!-- title text color for regional news -->
+    <color name="colorRegionalNews">#1CD5E6</color>
+    <!-- title text color for "breaking" (whatever that possibly means) news -->
+    <color name="colorBreakingNews">#ffff0000</color>
+</resources>

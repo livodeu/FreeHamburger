@@ -720,6 +720,55 @@ public class Util {
     }
 
     /**
+     * Returns a resource's name.
+     * @param ctx Context
+     * @param id resource id
+     * @return resource name
+     */
+    @NonNull
+    public static String getResourceName(Context ctx, int id) {
+        if (id == 0xffffffff) return "";
+        Resources r = ctx.getResources();
+        if (r == null) return "<NOR>";
+        StringBuilder out = new StringBuilder();
+        try {
+            String pkgname;
+            switch (id & 0xff000000) {
+                case 0x7f000000:
+                    pkgname = "app";
+                    break;
+                case 0x01000000:
+                    pkgname = "android";
+                    break;
+                default:
+                    pkgname = r.getResourcePackageName(id);
+                    break;
+            }
+            String typename;
+            try {
+                typename = r.getResourceTypeName(id);
+            } catch (UnsupportedOperationException ee) {
+                typename = "<null>";
+            }
+            String entryname;
+            try {
+                entryname = r.getResourceEntryName(id);
+            } catch (UnsupportedOperationException ee) {
+                entryname = "<null>";
+            }
+            out.append(pkgname);
+            out.append(":");
+            out.append(typename);
+            out.append("/");
+            out.append(entryname);
+        } catch (Resources.NotFoundException e) {
+            out.append("0x").append(Integer.toHexString(id));
+        }
+        return out.toString();
+    }
+
+
+    /**
      * Attempts to find a specific Throwable among the causes of the given Throwable.
      * Returns the Throwable itself if it is already an instance of the given class.
      * @param e Throwable
@@ -1024,13 +1073,13 @@ public class Util {
             paint.setColorFilter(cf);
         }
         paint.getTextBounds(s, 0, l, bounds);
-        if (BuildConfig.DEBUG) {
+        /*if (BuildConfig.DEBUG) {
             Log.i(TAG, "ascent:  " + paint.getFontMetricsInt().ascent);
             Log.i(TAG, "bottom:  " + paint.getFontMetricsInt().bottom);
             Log.i(TAG, "descent: " + paint.getFontMetricsInt().descent);
             Log.i(TAG, "leading: " + paint.getFontMetricsInt().leading);
             Log.i(TAG, "top:     " + paint.getFontMetricsInt().top);
-        }
+        }*/
         canvas.setBitmap(bitmap);
         canvas.drawText(s, wx / 2f, wy / 2f + bounds.height() / 2f - paint.getFontMetricsInt().bottom, paint);
         return bitmap;
@@ -1329,6 +1378,22 @@ public class Util {
                 Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    public static void setBackground(View view, @App.BackgroundSelection final int background) {
+        if (view == null) return;
+        switch (background) {
+            case App.BACKGROUND_NIGHT:
+                view.setBackgroundResource(R.drawable.bg_news);
+            case App.BACKGROUND_AUTO:
+                break;
+            case App.BACKGROUND_DAY:
+                view.setBackgroundResource(R.drawable.bg_news_light);
+                break;
+            //case App.BACKGROUND_VDARK:
+            //    break;
+        }
+        view.setBackgroundResource(background == App.BACKGROUND_DAY ? R.drawable.bg_news_light :R.drawable.bg_news);
     }
 
     /**

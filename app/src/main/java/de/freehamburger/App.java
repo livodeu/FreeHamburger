@@ -11,6 +11,7 @@ import android.app.job.JobScheduler;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.media.AudioManager;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -21,6 +22,17 @@ import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
+
+import androidx.annotation.AnyThread;
+import androidx.annotation.IntDef;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
+import androidx.annotation.StringDef;
+import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import com.squareup.picasso.Request;
 
@@ -39,16 +51,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
-import androidx.annotation.AnyThread;
-import androidx.annotation.IntDef;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresPermission;
-import androidx.annotation.StringDef;
-import androidx.annotation.UiThread;
-import androidx.annotation.VisibleForTesting;
-import androidx.appcompat.app.AppCompatDelegate;
+import de.freehamburger.model.Content;
 import de.freehamburger.model.Source;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.Log;
@@ -150,8 +153,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_COLORSPACE = "pref_colorspace";
     public static final TimeZone TIMEZONE = TimeZone.getTimeZone("Europe/Berlin");
     public static final int BACKGROUND_AUTO = 0;
-    public static final int BACKGROUND_DARK = 1;
-    public static final int BACKGROUND_LIGHT = 2;
+    public static final int BACKGROUND_NIGHT = 1;
+    public static final int BACKGROUND_DAY = 2;
+    //public static final int BACKGROUND_VDARK = 3;
     static final String ORIENTATION_AUTO = "AUTO";
     static final String ORIENTATION_PORTRAIT = "PORTRAIT";
     static final String ORIENTATION_LANDSCAPE = "LANDSCAPE";
@@ -334,6 +338,29 @@ public class App extends Application implements Application.ActivityLifecycleCal
             }
         }
         return false;
+    }
+
+    /**
+     * Sets the app's background mode according to the preferences.
+     * @param prefs SharedPreferences
+     * @throws NullPointerException if {@code prefs} is {@code null}
+     */
+    void setNightMode(@NonNull SharedPreferences prefs) {
+        @BackgroundSelection int background = prefs.getInt(PREF_BACKGROUND, BACKGROUND_AUTO);
+        switch (background) {
+            case BACKGROUND_DAY:
+                if (BuildConfig.DEBUG) Log.i(TAG, "Setting day mode");
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                break;
+            case BACKGROUND_NIGHT:
+                if (BuildConfig.DEBUG) Log.i(TAG, "Setting night mode");
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                break;
+            case BACKGROUND_AUTO:
+            default:
+                if (BuildConfig.DEBUG) Log.i(TAG, "Setting auto day/night mode");
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        }
     }
 
     /**
@@ -653,9 +680,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
         registerActivityLifecycleCallbacks(this);
 
-        PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
-
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.registerOnSharedPreferenceChangeListener(this);
+        setNightMode(prefs);
 
         FileDeleter.run();
 
@@ -689,7 +716,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
         } else if (PREF_PROXY_SERVER.equals(key) || PREF_PROXY_TYPE.equals(key)) {
             // OkHttpClient needs to be rebuilt next time
             closeClient();
-         }
+        } else if (PREF_BACKGROUND.equals(key)) {
+            setNightMode(prefs);
+        }
     }
 
     /** {@inheritDoc} */
@@ -804,7 +833,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @interface BackButtonBehaviour {}
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({BACKGROUND_AUTO, BACKGROUND_DARK, BACKGROUND_LIGHT})
+    @IntDef({BACKGROUND_AUTO, BACKGROUND_NIGHT, BACKGROUND_DAY})
     public @interface BackgroundSelection {}
 
     @Retention(RetentionPolicy.SOURCE)

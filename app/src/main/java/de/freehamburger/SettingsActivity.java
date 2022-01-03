@@ -406,6 +406,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
             if (prefBackground != null) {
                 prefBackground.setOnPreferenceChangeListener((preference, newValue) -> {
+                    if (BuildConfig.DEBUG) Log.i(TAG, "Selected background " + newValue);
                     if (Integer.valueOf(App.BACKGROUND_AUTO).equals(newValue)) {
                         boolean granted = ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
                         if (!granted) {

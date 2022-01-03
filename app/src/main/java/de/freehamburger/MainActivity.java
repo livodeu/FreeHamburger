@@ -1571,14 +1571,14 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         registerReceiver(this.connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
         // set the background color of the recyclerView
-        @App.BackgroundSelection int currentBackground = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
+        /*@App.BackgroundSelection int currentBackground = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
         switch(currentBackground) {
-            case App.BACKGROUND_DARK: this.recyclerView.setBackgroundColor(getResources().getColor(R.color.colorRecyclerBg)); break;
-            case App.BACKGROUND_LIGHT: this.recyclerView.setBackgroundColor(getResources().getColor(R.color.colorRecyclerBgLight)); break;
+            case App.BACKGROUND_NIGHT: this.recyclerView.setBackgroundColor(getResources().getColor(R.color.colorRecyclerBg)); break;
+            case App.BACKGROUND_DAY: this.recyclerView.setBackgroundColor(getResources().getColor(R.color.colorRecyclerBgLight)); break;
             case App.BACKGROUND_AUTO:
                 boolean nightMode = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
                 this.recyclerView.setBackgroundColor(nightMode ? getResources().getColor(R.color.colorRecyclerBg) : getResources().getColor(R.color.colorRecyclerBgLight));
-        }
+        }*/
 
         // this prepares the contents for WebViewActivity resp. TeletextActivity - these should start much faster (in the order of 30 ms vs. 350 ms)
         this.handler.postDelayed(() -> ((App)getApplicationContext()).createInflatedViewForWebViewActivity(true), 2_000L);

@@ -80,7 +80,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         FilterView filterView = (FilterView) holder.itemView;
-        filterView.setBackgroundResource(this.background == App.BACKGROUND_LIGHT ? R.drawable.bg_news_light : R.drawable.bg_news);
+        filterView.setBackgroundResource(this.background == App.BACKGROUND_DAY ? R.drawable.bg_news_light : R.drawable.bg_news);
         Filter filter = this.filters.get(position);
         filterView.setFilter(filter);
         filterView.setListener(new FilterView.Listener() {

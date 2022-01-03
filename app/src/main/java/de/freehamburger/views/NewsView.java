@@ -230,7 +230,7 @@ public class NewsView extends RelativeLayout {
         } else if (REGION_LABELS.contains(newsTopline)) {
             this.textViewTopline.setTextColor(getResources().getColor(R.color.colorRegionalNews));
         } else {
-            this.textViewTopline.setTextColor(Color.BLACK);
+            this.textViewTopline.setTextColor(getResources().getColor(R.color.colorContent));
         }
 
         // title

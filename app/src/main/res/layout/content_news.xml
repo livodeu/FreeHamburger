@@ -66,7 +66,7 @@
             android:shadowColor="#33064a91"
             android:shadowDx="2" android:shadowDy="2" android:shadowRadius="2"
             android:singleLine="true"
-            android:textColor="@android:color/black"
+            android:textColor="@color/colorContent"
             android:textSize="@dimen/text_size_news_title"
             tools:text="@tools:sample/lorem"
             />
@@ -115,7 +115,7 @@
             android:justificationMode="none"
             android:lineSpacingExtra="2sp"
             android:linksClickable="false"
-            android:textColor="@android:color/black"
+            android:textColor="@color/colorContent"
             android:textSize="@dimen/text_size_news_content"
             tools:ignore="UnusedAttribute"
             tools:text="@tools:sample/lorem/random" />
