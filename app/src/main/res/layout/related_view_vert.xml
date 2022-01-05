@@ -43,7 +43,7 @@
         android:layout_below="@id/imageViewRelated"
         android:layout_marginTop="8dp"
         android:layout_alignParentStart="true"
-        android:textColor="#ff000000"
+        android:textColor="@color/colorContent"
         tools:text="12.34.5678"/>
 
     <TextView
@@ -52,7 +52,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/textViewDate"
         android:layout_alignParentStart="true"
-        android:textColor="#ff000000"
+        android:textColor="@color/colorContent"
         android:ellipsize="end"
         android:fontFamily="sans-serif-condensed"
         android:hyphenationFrequency="full"
