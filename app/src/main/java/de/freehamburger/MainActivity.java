@@ -934,6 +934,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         try {
             RecyclerView navMenuView = (RecyclerView)navigationView.getChildAt(0);
             navMenuView.addItemDecoration(new SpaceBetween(this, getResources().getDimensionPixelSize(R.dimen.space_between_menu_items)));
+            // hide the useless, ugly scrollbar that is showing at the right edge of smaller screens
+            navMenuView.setVerticalScrollBarEnabled(false);
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
         }
