@@ -12,17 +12,19 @@ import android.content.UriMatcher;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
+import android.util.Log;
+
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntRange;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
-import android.text.TextUtils;
-import android.util.Log;
 
 import java.util.Locale;
 
@@ -47,10 +49,11 @@ public class SearchContentProvider extends ContentProvider {
     static final String COLUMN_DISPLAY1 = "display1";
     /** display2 contains the <em>localised</em> {@link Source#getLabel() source label}<br>Therefore the database will be erased when the Locale changes! */
     static final String COLUMN_DISPLAY2 = "display2";
-    /** query consists of: {@link #COLUMN_DISPLAY1 display1} + '#' + source.name() */
+    /** query consists of: {@link #COLUMN_DISPLAY1 display1} + {@link SearchHelper#WORD_SOURCE_SEPARATOR} + source.name() */
     static final String COLUMN_QUERY = "query";
     /** symbol contains the {@link Source#getIcon()} source icon */
     static final String COLUMN_SYMBOL = "symbol";
+    static final String COLUMN_INTENTDATA = "intentdata";
     /** database table name */
     private static final String SUGGESTIONS = "suggestions";
     /** text for exceptions */
@@ -74,10 +77,12 @@ public class SearchContentProvider extends ContentProvider {
     private static final String[] SUGGESTION_PROJECTION = new String[] {
             "0 AS " + SearchManager.SUGGEST_COLUMN_FORMAT,
             COLUMN_SYMBOL + " AS " + SearchManager.SUGGEST_COLUMN_ICON_1,
+            "NULL" + " AS " + SearchManager.SUGGEST_COLUMN_ICON_2,
             COLUMN_DISPLAY1 + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_1,
             COLUMN_DISPLAY2 + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_2,
             COLUMN_QUERY + " AS " + SearchManager.SUGGEST_COLUMN_QUERY,
             COLUMN_DATE + " AS " + SearchManager.SUGGEST_COLUMN_LAST_ACCESS_HINT,
+            COLUMN_QUERY + " AS " + SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID,
             "_id"
     };
     private static final int URI_MATCH_SUGGEST = 1;
@@ -98,26 +103,30 @@ public class SearchContentProvider extends ContentProvider {
         final SQLiteDatabase db = this.databaseHelper.getWritableDatabase();
         int counter = 0;
 
-        db.beginTransaction();
-        final SQLiteStatement stmt = db.compileStatement(INSERT_STMT);
-        long rowId;
-        for (ContentValues value : values) {
-            stmt.bindLong(1, value.getAsLong(COLUMN_DATE));
-            stmt.bindString(2, value.getAsString(COLUMN_SYMBOL));
-            stmt.bindString(3, value.getAsString(COLUMN_DISPLAY1));
-            stmt.bindString(4, value.getAsString(COLUMN_DISPLAY2));
-            stmt.bindString(5, value.getAsString(COLUMN_QUERY));
-            rowId = stmt.executeInsert();
-            stmt.clearBindings();
-            if (rowId > 0) counter++;
+        try {
+            db.beginTransaction();
+            final SQLiteStatement stmt = db.compileStatement(INSERT_STMT);
+            long rowId;
+            for (ContentValues value : values) {
+                stmt.bindLong(1, value.getAsLong(COLUMN_DATE));
+                stmt.bindString(2, value.getAsString(COLUMN_SYMBOL));
+                stmt.bindString(3, value.getAsString(COLUMN_DISPLAY1));
+                stmt.bindString(4, value.getAsString(COLUMN_DISPLAY2));
+                stmt.bindString(5, value.getAsString(COLUMN_QUERY));
+                rowId = stmt.executeInsert();
+                stmt.clearBindings();
+                if (rowId > 0) counter++;
+            }
+            if (counter > 0) {
+                db.setTransactionSuccessful();
+                ContentResolver cr = ctx.getContentResolver();
+                if (cr != null) cr.notifyChange(this.uri, null, false);
+            }
+        } catch (SQLiteException e) {
+            if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
+        } finally {
+            db.endTransaction();
         }
-        if (counter > 0) {
-            db.setTransactionSuccessful();
-            ContentResolver cr = ctx.getContentResolver();
-            if (cr != null) cr.notifyChange(this.uri, null, false);
-        }
-
-        db.endTransaction();
         return counter;
     }
 

@@ -16,6 +16,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -37,19 +38,29 @@ import de.freehamburger.model.Source;
  */
 public class SearchHelper {
     
+    public static final char WORD_SOURCE_SEPARATOR = '#';
     private static final String TAG = "SearchHelper";
     /** words excluded from the search suggestions */
     private static final Set<String> EXCLUDED_SET = new HashSet<>(Arrays.asList(
             "ab", "aber", "ach", "alle", "allem", "allen", "allenfalls", "allerdings", "allerhand", "alles", "als", "alsbald", "also", "am",
             "an", "ans", "anbetracht", "andere", "anderem", "anderen", "anderer", "anderes",
+            "angesichts", "anhand",
+            "anschließend", "anschließende", "anschließendem", "anschließenden", "anschließender", "anschließendes",
+            "anstehend", "anstehende", "anstehendem", "anstehenden", "anstehender", "anstehendes",
             "auch", "auf", "aufgrund", "aufs", "aus", "außen", "aussen", "außer", "außerdem", "außerhalb", "ausser",
-            "bald", "baldige", "baldigem", "baldigen", "baldiger", "baldiges", "bei", "beide", "beidem", "beiden", "beider", "beides", "beim", "beinahe", "beispielsweise", "bereits", "bevor",
+            "ausschließlich", "ausschließliche", "ausschließlichem", "ausschließlichen", "ausschließlicher", "ausschließliches",
+            "bald", "baldige", "baldigem", "baldigen", "baldiger", "baldiges",
+            "befand", "befände", "befanden", "befandet", "befinden", "befindest", "befindet",
+            "bei", "beide", "beidem", "beiden", "beider", "beides", "beim", "beinahe", "beispielsweise", "bereit", "bereitet", "bereitete", "bereiteten", "bereits", "bevor",
+            "besonders",
             "bin", "bis", "bisher", "bisherige", "bisherigem", "bisherigen", "bisheriger", "bisheriges", "bislang", "bisschen", "bist", "bleiben", "bleibt", "blieb", "blieben",
+            "beziehungsweise", "bzw",
             "da", "dabei", "dafür", "daher", "dahin", "dahinter", "damals", "damalige", "damaligem", "damaligen", "damaliger", "damaliges",
             "damit", "danach", "dann", "daneben", "daran", "darauf", "daraus", "darf", "darum", "darunter", "darüber", "das", "dass", "daß", "dasselbe", "davon", "davor", "dazu",
-            "dem", "demnach", "demselben", "den", "denen", "denn", "dennoch", "denselben", "der", "deren", "derzeit", "des", "deshalb", "dessen", "desto",
+            "dem", "demnach", "demnächst", "demselben", "den", "denen", "denn", "dennoch", "denselben", "der", "deren", "derzeit", "des", "deshalb", "dessen", "desto",
             "die", "dies", "diese", "dieselbe", "dieselben", "diesem", "diesen", "dieser", "dieses",
             "doch", "dort", "dortige", "dortigem", "dortigen", "dortiger", "dortiges", "dorthin", "drüben", "drüber", "du", "durch", "durchaus", "dürfen", "dürft", "dürfte", "dürften",
+            "durchgeführt", "durchgeführte", "durchgeführtem", "durchgeführten", "durchgeführter", "durchgeführtes",
             "ehemalig", "ehemalige", "ehemaligem", "ehemaligen", "ehemaliger", "ehemaliges", "ehemals", "eher",
             "eigen", "eigene", "eigenen", "eigener", "eigenes", "eigentlich", "eigentliche", "eigentlichem", "eigentlichen", "eigentlicher", "eigentliches",
             "ein", "eine", "einem", "einen", "einer", "eines", "einige", "einst", "einstig", "einstige", "einstigem", "einstigen", "einstiger", "einstiges", "einstmals",
@@ -83,7 +94,7 @@ public class SearchHelper {
             "wie", "wieder", "wiederum", "wieso", "wieviel", "wieviele", "will", "wir", "wird",
             "wo", "wobei", "wofür", "wogegen", "woher", "wohin", "wohl", "wollen", "wollte", "wollten", "wonach", "woran", "worüber", "wovon", "wovor", "wozu", "würden",
             "zu", "zudem", "zuerst", "zuletzt", "zum", "zumal", "zur", "zuvor", "zuzüglich",
-            "+++"
+            "++", "+++"
     ));
     /** if true, then the {@link News#getContent() news content} will be included in search suggestions */
     private static final boolean INCLUDE_NEWS_CONTENT = true;
@@ -93,6 +104,8 @@ public class SearchHelper {
     private static final Source[] SOURCES;
     /** array that contains the local files for all {@link Source Sources} (the files do not necessarily exist) */
     private static final File[] LOCAL_FILES;
+    private static final int MIN_WORD_LENGTH = 2;
+    private static final String SPLITTER = " :\"„”-!?.,()&/'#<>[]{};•";
 
     static {
         SOURCES = Source.values();
@@ -112,7 +125,7 @@ public class SearchHelper {
      * @throws NullPointerException if any parameter is {@code null}
      */
     @Nullable
-    public static Inserter createSearchSuggestions(@NonNull Context ctx, @NonNull Source source, @NonNull final List<News> newsList, boolean testonly) {
+    public static Collection<Inserter> createSearchSuggestions(@NonNull Context ctx, @NonNull Source source, @NonNull final List<News> newsList, boolean testonly) {
         if (newsList.isEmpty()) return null;
         // no suggestions for videos - see TextFilter.internalAccept(News)
         if (Source.VIDEO == source || Source.CHANNELS == source) return null;
@@ -120,10 +133,20 @@ public class SearchHelper {
         long now = System.currentTimeMillis();
 
         setCreationTime(ctx, source, now);
-
-        Inserter inserter = new Inserter(ctx, source, newsList, now, testonly) ;
-        inserter.start();
-        return inserter;
+        final int count = newsList.size();
+        // max. number of threads to distribute the work to
+        final int threads = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
+        // don't process less than 16 news items per thread
+        final int newsPerThread = Math.max(16, count / threads);
+        final Collection<Inserter> inserters = new ArrayList<>(threads);
+        for (int i = 0, remaining = count; i < count;) {
+            int n = Math.min(remaining, newsPerThread);
+            inserters.add(new Inserter(ctx, source, newsList.subList(i, i + n), now, testonly));
+            remaining -= n;
+            i += n;
+        }
+        for (Inserter inserter : inserters) inserter.start();
+        return inserters;
     }
 
     /**
@@ -201,10 +224,11 @@ public class SearchHelper {
      * Extracts the words from a phrase and puts them into a given Collection of Strings.<br>
      * Words that<ol>
      * <li>are on the exclusion list</li>
-     * <li>are shorter than 2 chars</li>
+     * <li>are shorter than {@link #MIN_WORD_LENGTH} chars</li>
      * <li>start with a digit or a whitespace</li>
      * </ol>
-     * are excluded.
+     * are excluded.<br>
+     * Note: Splitting via {@code pattern = Pattern.compile("[ :\"„”\\-!?.,()&/'#<>\\[\\]{};•]"); String[] s = pattern.split(…);} has proved to be <i>much</i> slower.
      * @param phrase phrase to split
      * @param addHere Collection of Strings to add the words to
      * @throws NullPointerException if any parameter is {@code null}
@@ -212,11 +236,12 @@ public class SearchHelper {
     @WorkerThread
     @VisibleForTesting
     public static void splitSentence(@NonNull final String phrase, @NonNull final Collection<String> addHere) {
-        final StringTokenizer st = new StringTokenizer(phrase, " :\"„”-!?.,()&/'#<>[]{};", false);
+        final StringTokenizer st = new StringTokenizer(phrase, SPLITTER, false);
         while (st.hasMoreTokens()) {
-            String l = st.nextToken().toLowerCase(Locale.GERMAN);
+            final String token = st.nextToken();
+            if (token.length() < MIN_WORD_LENGTH) continue;
+            final String l = token.toLowerCase(Locale.GERMAN);
             if (EXCLUDED_SET.contains(l)) continue;
-            if (l.length() < 2) continue;
             char c = l.charAt(0);
             if (Character.isWhitespace(c) || Character.isDigit(c)) continue;
             addHere.add(l);
@@ -231,7 +256,7 @@ public class SearchHelper {
 
         private final @NonNull Context ctx;
         private final @NonNull Source source;
-        private final List<News> newsList;
+        private final Collection<News> newsList;
         private final long date;
         private final boolean testonly;
         @VisibleForTesting() public ContentValues[] cv;
@@ -240,11 +265,11 @@ public class SearchHelper {
          * Constructor.
          * @param ctx Context
          * @param source Source that the list of News belongs to
-         * @param newsList list of News objects
+         * @param newsList Collection of News objects
          * @param ts timestamp
          * @param testonly true if this is just a test and the database should not be touched
          */
-        private Inserter(@NonNull Context ctx, @NonNull Source source, @NonNull final List<News> newsList, long ts, boolean testonly) {
+        private Inserter(@NonNull Context ctx, @NonNull Source source, @NonNull final Collection<News> newsList, long ts, boolean testonly) {
             super();
             this.ctx = ctx;
             this.source = source;
@@ -279,12 +304,11 @@ public class SearchHelper {
                 if (INCLUDE_NEWS_CONTENT) {
                     Content content = news.getContent();
                     if (content != null && !TextUtils.isEmpty(content.getPlainText())) splitSentence(content.getPlainText(), words);
-
                 }
             }
             cv = new ContentValues[words.size()];
             final String symbol = "android.resource://" + BuildConfig.APPLICATION_ID + '/' + source.getIconSearch();
-            final String querySuffix = '#' + source.name();
+            final String querySuffix = WORD_SOURCE_SEPARATOR + source.name();
             int i = 0;
             for (String word : words) {
                 cv[i] = new ContentValues(5);

@@ -385,10 +385,16 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             }
             return;
         }
-        if (Intent.ACTION_SEARCH.equals(action)) {
-            String query = intent.getStringExtra(SearchManager.QUERY);
+        if (Intent.ACTION_SEARCH.equals(action) || getString(R.string.app_search_action).equals(action)) {
+            /*
+            if the user has picked a suggestion, intent.getData().getLastPathSegment() will contain "suggestion#source" (something like "a61#NEWS",
+            see SearchContentProvider.SUGGESTION_PROJECTION, from SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID)
+             */
+            String selectedSuggestion = intent.getData() != null ? intent.getData().getLastPathSegment() : null;
+            String query = selectedSuggestion != null ? selectedSuggestion : intent.getStringExtra(SearchManager.QUERY);
             if (query == null) return;
-            int sep = query.lastIndexOf('#');
+            CharSequence userQuery = intent.getCharSequenceExtra(SearchManager.USER_QUERY);
+            int sep = query.lastIndexOf(SearchHelper.WORD_SOURCE_SEPARATOR);
             String queryString = sep > 0 ? query.substring(0, sep) : query;
             @Nullable Source source = null;
             try {
@@ -1067,6 +1073,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private boolean onMenuItemSelected(@NonNull MenuItem item) {
         final int id = item.getItemId();
         if (id == R.id.action_search) {
+            // check whether search suggestions had been deleted in the past and, if so, inform the user accordingly
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
             long sd = prefs.getLong(SearchContentProvider.PREF_SEARCHSUGGESTIONS_DELETED_LOCALE_CHANGE, 0L);
             if (sd > 0L) {
@@ -1075,6 +1082,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 ed.remove(SearchContentProvider.PREF_SEARCHSUGGESTIONS_DELETED_LOCALE_CHANGE);
                 ed.apply();
             }
+            // launch the system's search dialog (https://developer.android.com/guide/topics/search/search-dialog#SearchDialog)
             onSearchRequested();
             return true;
         }

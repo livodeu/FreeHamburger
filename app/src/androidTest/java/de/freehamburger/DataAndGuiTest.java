@@ -32,6 +32,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -338,21 +339,25 @@ public class DataAndGuiTest {
         BlobParser bp = new BlobParser(ctx, null);
         Blob blob = bp.doInBackground(new File[] {file});
         assertNotNull("BlobParser returned null", blob);
-        SearchHelper.Inserter inserter = SearchHelper.createSearchSuggestions(ctx, SOURCE, blob.getAllNews(), true);
-        assertNotNull(inserter);
+        Collection<SearchHelper.Inserter> inserters = SearchHelper.createSearchSuggestions(ctx, SOURCE, blob.getAllNews(), true);
+        assertNotNull(inserters);
+        assertTrue(inserters.size() > 0);
         try {
-            inserter.join();
-            ContentValues[] cv = inserter.cv;
-            assertNotNull(cv);
-            assertTrue(cv.length > 0);
-            for (ContentValues c : cv) {
-                assertNotNull(c);
-                assertEquals(5, c.size());
-                assertNotNull(c.getAsLong("date"));
-                assertNotNull(c.getAsString("display1"));
-                assertNotNull(c.getAsString("display2"));
-                assertNotNull(c.getAsString("query"));
-                assertNotNull(c.getAsString("symbol"));
+            for (SearchHelper.Inserter inserter : inserters) inserter.join();
+            for (SearchHelper.Inserter inserter : inserters) {
+                assertFalse(inserter.isAlive());
+                ContentValues[] cv = inserter.cv;
+                assertNotNull(cv);
+                assertTrue(cv.length > 0);
+                for (ContentValues c : cv) {
+                    assertNotNull(c);
+                    assertEquals(5, c.size());
+                    assertNotNull(c.getAsLong("date"));
+                    assertNotNull(c.getAsString("display1"));
+                    assertNotNull(c.getAsString("display2"));
+                    assertNotNull(c.getAsString("query"));
+                    assertNotNull(c.getAsString("symbol"));
+                }
             }
         } catch (InterruptedException e) {
             fail(e.toString());

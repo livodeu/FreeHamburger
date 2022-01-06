@@ -59,8 +59,6 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEARCH" />
-
-                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
@@ -217,7 +215,10 @@
         <provider
             android:name=".supp.SearchContentProvider"
             android:authorities="@string/app_search_auth"
-            android:exported="false" />
+            android:readPermission="android.permission.GLOBAL_SEARCH"
+            android:exported="true">
+        </provider>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -226,7 +227,9 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/filepaths" />
-        </provider> <!-- PicassoProvider is not needed unless the default Picasso instance is used -->
+        </provider>
+
+        <!-- PicassoProvider is not needed unless the default Picasso instance is used -->
         <provider
             android:name="com.squareup.picasso.PicassoProvider"
             android:authorities="${applicationId}.com.squareup.picasso"
