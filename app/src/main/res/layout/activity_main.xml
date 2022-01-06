@@ -76,12 +76,12 @@
         android:layout_gravity="end"
         android:background="@color/colorPrimaryDarkSemiTrans"
         android:fitsSystemWindows="true"
+        android:paddingTop="@dimen/menu_padding_top"
+        app:headerLayout="@layout/nav_header"
         app:itemBackground="@drawable/bg_button"
         app:itemIconTint="@color/colorPrimary"
-        app:itemTextColor="@color/nav_item"
         app:itemTextAppearance="@style/TextAppearance.AppCompat.Body2.White"
-        app:headerLayout="@layout/nav_header"
-        app:menu="@menu/drawer_menu"
-        tools:visibility="visible"/>
+        app:itemTextColor="@color/nav_item"
+        app:menu="@menu/drawer_menu" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

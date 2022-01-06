@@ -75,7 +75,8 @@
 
     <style name="TextAppearance.AppCompat.Body2.White" parent="TextAppearance.AppCompat.Body2">
         <item name="android:textColor">@color/colorDirtyWhite</item>
-        <item name="android:textSize">@dimen/text_size_navigation</item>
+        <item name="android:textSize">@dimen/text_size_menu</item>
+        <item name="fontFamily">sans-serif-medium</item>
     </style>
 
     <style name="TextAppearance.Xsm" parent="TextAppearance.AppCompat.Small">
