@@ -740,10 +740,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 if (progress != null) progress.setVisibility(View.GONE);
                 return;
             }
-            this.handler.postDelayed(() -> service.loadFile(url, temp, new Downloader.SimpleDownloaderListener() {
-                @Override
-                public void downloaded(boolean completed, @Nullable Downloader.Result result) {
-
+            this.handler.postDelayed(() -> service.loadFile(url, temp, (completed, result) -> {
                 if (progress != null) progress.setVisibility(View.GONE);
                 if (!completed || result == null) {
                     Util.deleteFile(temp);
@@ -751,12 +748,12 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 }
                 if (result.rc != 200 || result.file == null) {
                     Util.deleteFile(temp);
-                    Toast.makeText(NewsActivity.this, getString(R.string.error_download_failed, result.msg), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.error_download_failed, result.msg), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 JsonReader reader = null;
                 try {
-                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(NewsActivity.this);
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
                     reader = new JsonReader(new InputStreamReader(new FileInputStream(result.file), StandardCharsets.UTF_8));
                     @News.Flag int flags = 0;
                     boolean htmlEmbed = prefs.getBoolean(App.PREF_SHOW_EMBEDDED_HTML_LINKS, App.PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT);
@@ -767,7 +764,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     if (prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
                         News.correct(news);
                     }
-                    Intent intent = new Intent(NewsActivity.this, NewsActivity.class);
+                    Intent intent = new Intent(this, NewsActivity.class);
                     intent.putExtra(NewsActivity.EXTRA_NEWS, news);
                     // prevent going "back" to MainActivity because the preceding activity is <this>, not a MainActivity
                     intent.putExtra(NewsActivity.EXTRA_NO_HOME_AS_UP, true);
@@ -1105,41 +1102,38 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 }
             }
             File tempFile = new File(getCacheDir(), "temp.json");
-            this.service.loadFile(url, tempFile, new Downloader.SimpleDownloaderListener() {
-                @Override
-                public void downloaded(boolean completed, @Nullable Downloader.Result result) {
-
-                    if (!completed || result == null) {
-                        Util.deleteFile(tempFile);
-                        return;
-                    }
-                    if (result.rc >= 400) {
-                        Snackbar.make(NewsActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
-                        Util.deleteFile(tempFile);
-                        return;
-                    }
-                    JsonReader reader = null;
-                    try {
-                        reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
-                        reader.setLenient(true);
-                        @News.Flag int flags = 0;
-                        boolean htmlEmbed = PreferenceManager.getDefaultSharedPreferences(NewsActivity.this).getBoolean(App.PREF_SHOW_EMBEDDED_HTML_LINKS, App.PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT);
-                        if (htmlEmbed) flags |= News.FLAG_INCLUDE_HTMLEMBED;
-                        News parsed = News.parseNews(reader, NewsActivity.this.news.isRegional(), flags);
-                        Util.close(reader);
-                        reader = null;
-                        // it is probably not necessary here to call News.correct()
-                        Intent intent = new Intent(NewsActivity.this, VideoActivity.class);
-                        intent.putExtra(VideoActivity.EXTRA_NEWS, parsed);
-                        startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(NewsActivity.this, R.anim.fadein, R.anim.fadeout).toBundle());
-                    } catch (Exception e) {
-                        Util.close(reader);
-                        if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
-                        Snackbar.make(NewsActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_LONG).show();
-                    } finally {
-                        Util.deleteFile(tempFile);
-                    }
-                }});
+            this.service.loadFile(url, tempFile, (completed, result) -> {
+                if (!completed || result == null) {
+                    Util.deleteFile(tempFile);
+                    return;
+                }
+                if (result.rc >= 400) {
+                    Snackbar.make(this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
+                    Util.deleteFile(tempFile);
+                    return;
+                }
+                JsonReader reader = null;
+                try {
+                    reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
+                    reader.setLenient(true);
+                    @News.Flag int flags = 0;
+                    boolean htmlEmbed = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_SHOW_EMBEDDED_HTML_LINKS, App.PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT);
+                    if (htmlEmbed) flags |= News.FLAG_INCLUDE_HTMLEMBED;
+                    News parsed = News.parseNews(reader, this.news.isRegional(), flags);
+                    Util.close(reader);
+                    reader = null;
+                    // it is probably not necessary here to call News.correct()
+                    Intent intent = new Intent(this, VideoActivity.class);
+                    intent.putExtra(VideoActivity.EXTRA_NEWS, parsed);
+                    startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(this, R.anim.fadein, R.anim.fadeout).toBundle());
+                } catch (Exception e) {
+                    Util.close(reader);
+                    if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
+                    Snackbar.make(this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_LONG).show();
+                } finally {
+                    Util.deleteFile(tempFile);
+                }
+            });
         } else {
             newNewsActivity(url);
         }

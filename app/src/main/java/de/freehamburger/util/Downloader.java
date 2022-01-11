@@ -85,7 +85,7 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
          * @param progress [0..1]
          */
         @MainThread
-        void downloadProgressed(@FloatRange(from = 0, to = 1) float progress);
+        default void downloadProgressed(@FloatRange(from = 0, to = 1) float progress) {}
 
         /**
          * Finally, the download process has come to an end. Look at {@code result} to see what you got.
@@ -94,17 +94,6 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
          */
         @MainThread
         void downloaded(boolean completed, @Nullable Result result);
-    }
-
-    /**
-     * Partial implementation of {@link DownloaderListener} with {@link DownloaderListener#downloadProgressed(float) downloadProgressed(float)} implemented as nop.
-     */
-    public abstract static class SimpleDownloaderListener implements DownloaderListener {
-
-        @Override
-        public void downloadProgressed(float progress) {
-            // nop
-        }
     }
 
     /**

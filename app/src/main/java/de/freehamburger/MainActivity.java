@@ -589,46 +589,43 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (url == null) return;
         try {
             File tempFile = File.createTempFile("details", ".json");
-            this.service.loadFile(url, tempFile, new Downloader.SimpleDownloaderListener() {
-                @Override
-                public void downloaded(boolean completed, @Nullable Downloader.Result result) {
-
-                    if (!completed || result == null) {
-                        return;
+            this.service.loadFile(url, tempFile, (completed, result) -> {
+                if (!completed || result == null) {
+                    return;
+                }
+                if (result.rc >= 400) {
+                    if (result.rc == 404) {
+                        Snackbar.make(this.coordinatorLayout, R.string.error_news_not_found, Snackbar.LENGTH_LONG).show();
+                    } else {
+                        Snackbar.make(this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
                     }
-                    if (result.rc >= 400) {
-                        if (result.rc == 404) {
-                            Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_news_not_found, Snackbar.LENGTH_LONG).show();
-                        } else {
-                            Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
-                        }
-                        return;
+                    return;
+                }
+                JsonReader reader = null;
+                try {
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                    reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
+                    reader.setLenient(true);
+                    @News.Flag int flags = 0;
+                    boolean htmlEmbed = prefs.getBoolean(App.PREF_SHOW_EMBEDDED_HTML_LINKS, App.PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT);
+                    if (htmlEmbed) flags |= News.FLAG_INCLUDE_HTMLEMBED;
+                    News parsed = News.parseNews(reader, news.isRegional(), flags);
+                    Util.close(reader);
+                    reader = null;
+                    if (prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
+                        News.correct(parsed);
                     }
-                    JsonReader reader = null;
-                    try {
-                        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
-                        reader = new JsonReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(tempFile)), StandardCharsets.UTF_8));
-                        reader.setLenient(true);
-                        @News.Flag int flags = 0;
-                        boolean htmlEmbed = prefs.getBoolean(App.PREF_SHOW_EMBEDDED_HTML_LINKS, App.PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT);
-                        if (htmlEmbed) flags |= News.FLAG_INCLUDE_HTMLEMBED;
-                        News parsed = News.parseNews(reader, news.isRegional(), flags);
-                        Util.close(reader);
-                        reader = null;
-                        if (prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
-                            News.correct(parsed);
-                        }
-                        Intent intent = new Intent(MainActivity.this, NewsActivity.class);
-                        intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
-                        startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(MainActivity.this, R.anim.fadein, R.anim.fadeout).toBundle());
-                    } catch (Exception e) {
-                        Util.close(reader);
-                        if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
-                        Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_LONG).show();
-                    } finally {
-                        Util.deleteFile(tempFile);
-                    }
-                }});
+                    Intent intent = new Intent(this, NewsActivity.class);
+                    intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
+                    startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(this, R.anim.fadein, R.anim.fadeout).toBundle());
+                } catch (Exception e) {
+                    Util.close(reader);
+                    if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
+                    Snackbar.make(this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_LONG).show();
+                } finally {
+                    Util.deleteFile(tempFile);
+                }
+            });
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
         }
@@ -2048,43 +2045,41 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (newsid == null) newsid = "temp";
         final File temp = new File(getCacheDir(), "quik_" + newsid.replace('/', '_').replace('\0', '_') + ".jpg");
         findViewById(R.id.plane).setVisibility(View.VISIBLE);
-        this.service.loadFile(url, temp, temp.lastModified(), new Downloader.SimpleDownloaderListener() {
-            @Override
-            public void downloaded(boolean completed, @Nullable Downloader.Result result) {
-                if (MainActivity.this.quickViewRequestCancelled) {
-                    MainActivity.this.quickViewRequestCancelled = false;
-                    FileDeleter.add(temp);
-                    findViewById(R.id.plane).setVisibility(View.GONE);
-                    MainActivity.this.newsForQuickView = null;
-                    return;
-                }
-                if (!completed || result == null || result.rc >= 400 || temp.length() == 0L) {
-                    FileDeleter.add(temp);
-                    findViewById(R.id.plane).setVisibility(View.GONE);
-                    MainActivity.this.newsForQuickView = null;
-                    if (result != null && !TextUtils.isEmpty(result.msg)) {
-                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
-                    } else {
-                        Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
-                    }
-                    return;
-                }
-                Bitmap bm = BitmapFactory.decodeFile(temp.getAbsolutePath(), OPTS_FOR_QUICKVIEW);
-                if (bm != null) {
-                    MainActivity.this.quickView.setVisibility(View.VISIBLE);
-                    MainActivity.this.quickView.setImageBitmap(bm);
-                } else {
-                    if (BuildConfig.DEBUG) Log.w(TAG, "Failed to decode bitmap from " + url);
-                    findViewById(R.id.plane).setVisibility(View.GONE);
-                    MainActivity.this.newsForQuickView = null;
-                    if (!TextUtils.isEmpty(result.msg)) {
-                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
-                    } else {
-                        Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
-                    }
-                }
+        this.service.loadFile(url, temp, temp.lastModified(), (completed, result) -> {
+            if (this.quickViewRequestCancelled) {
+                this.quickViewRequestCancelled = false;
                 FileDeleter.add(temp);
-            }});
+                findViewById(R.id.plane).setVisibility(View.GONE);
+                this.newsForQuickView = null;
+                return;
+            }
+            if (!completed || result == null || result.rc >= 400 || temp.length() == 0L) {
+                FileDeleter.add(temp);
+                findViewById(R.id.plane).setVisibility(View.GONE);
+                this.newsForQuickView = null;
+                if (result != null && !TextUtils.isEmpty(result.msg)) {
+                    Snackbar.make(this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
+                } else {
+                    Snackbar.make(this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
+                }
+                return;
+            }
+            Bitmap bm = BitmapFactory.decodeFile(temp.getAbsolutePath(), OPTS_FOR_QUICKVIEW);
+            if (bm != null) {
+                this.quickView.setVisibility(View.VISIBLE);
+                this.quickView.setImageBitmap(bm);
+            } else {
+                if (BuildConfig.DEBUG) Log.w(TAG, "Failed to decode bitmap from " + url);
+                findViewById(R.id.plane).setVisibility(View.GONE);
+                this.newsForQuickView = null;
+                if (!TextUtils.isEmpty(result.msg)) {
+                    Snackbar.make(this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
+                } else {
+                    Snackbar.make(this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_SHORT).show();
+                }
+            }
+            FileDeleter.add(temp);
+        });
     }
 
     /**
