@@ -35,6 +35,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -93,6 +94,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
      * @param webView WebView to (re-)use
      * @return AlertDialog
      */
+    @NonNull
     private static AlertDialog showHelp(@NonNull Activity activity, @RawRes int rawRes, @NonNull final WebView webView) {
         byte[] b = new byte[2048];
         final SpannableStringBuilder sb = new SpannableStringBuilder();
@@ -109,7 +111,22 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         } finally {
             Util.close(in);
         }
-        webView.loadDataWithBaseURL("about:blank", sb.toString(), "text/html", "UTF-8", null);
+        @ColorInt final int textColor;
+        @ColorInt final int bgColor;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            textColor = activity.getResources().getColor(R.color.colorContent, activity.getTheme());
+            bgColor = activity.getResources().getColor(R.color.colorPrimaryLight, activity.getTheme());
+        } else {
+            textColor = activity.getResources().getColor(R.color.colorContent);
+            bgColor = activity.getResources().getColor(R.color.colorPrimaryLight);
+        }
+        String textColorForCss = Integer.toHexString(textColor & ~0xff000000);
+        String bgColorForCss = Integer.toHexString(bgColor & ~0xff000000);
+        CharSequence cs = TextUtils.replace(sb,
+                new String[] {"<style></style>"},
+                new CharSequence[] {"<style>body{color:#" + textColorForCss + ";background:#" + bgColorForCss + "}</style>"}
+                );
+        webView.loadDataWithBaseURL("about:blank", cs.toString(), "text/html", "UTF-8", null);
         AlertDialog.Builder builder = new AlertDialog.Builder(activity, R.style.AppAlertDialogTheme)
                 .setTitle(R.string.action_help)
                 .setView(webView)

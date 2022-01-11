@@ -87,7 +87,14 @@
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
 
-    <style name="AppAlertDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
+    <!--
+    The main difference between Theme.AppCompat.Light.Dialog.Alert and Theme.AppCompat.DayNight.Dialog.Alert
+    seems to be
+    that Light displays the dialog in full screen height even if its contents are short     [O]
+    while DayNight shows a shorter version                                                  [o]
+    (tested on Android 11)
+     -->
+    <style name="AppAlertDialogTheme" parent="Theme.AppCompat.DayNight.Dialog.Alert">
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:colorForeground">@color/colorDirtyWhite</item>    <!-- white color for dialog title -->
         <item name="android:colorBackground">@color/colorPrimary</item>
