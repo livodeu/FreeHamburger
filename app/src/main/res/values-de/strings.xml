@@ -14,6 +14,7 @@
     <string name="msg_background_active">Hintergrundaktualisierungen sind aktiv und werden etwa alle %1$s Minuten ausgeführt.</string>
     <string name="msg_background_active_short">Hintergrundaktualisierungen aktiv (alle %1$s Min.)</string>
     <string name="msg_background_inactive">Hintergrundaktualisierungen sind deaktiviert.</string>
+    <string name="msg_breaking_only_disabled">Eilmeldungen werden nur in der Kategorie „Übersicht” übermittelt.</string>
     <string name="msg_filters_disabled">Filter sind jetzt deaktiviert.</string>
     <string name="msg_filters_enabled">Filter sind jetzt aktiviert.</string>
     <string name="action_teletext_short">VT</string>
@@ -204,6 +205,9 @@
     <string name="pref_hint_poll_interval">Abfrageintervall</string>
     <string name="pref_hint_poll_interval_night">Abfrageintervall nachts</string>
     <string name="pref_hint_poll_quicksettings">Hintergrundaktualisierungen ein-/ausschalten.</string>
+    <string name="pref_title_poll_customnotification">Benachrichtigungen im App-Stil</string>
+    <string name="pref_summary_poll_customnotification_off">Standarddarstellung</string>
+    <string name="pref_summary_poll_customnotification_on">Ja, bitte</string>
     <string name="pref_title_poll_on">Aktiv.</string>
     <string name="pref_title_poll_off">Inaktiv.</string>
     <string name="error_poll_maximum_interval">Das Intervall darf höchstens %1$d Minuten betragen.</string>

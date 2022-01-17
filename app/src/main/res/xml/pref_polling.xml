@@ -13,6 +13,13 @@
         app:singleLineTitle="false"
         />
 
+    <MultiSelectListPreference
+        android:dependency="pref_poll"
+        android:icon="@drawable/ic_baseline_list_alt_ededed_24"
+        android:key="pref_background_sources"
+        android:title="@string/label_sections"
+        />
+
     <SwitchPreferenceCompat
         android:defaultValue="true"
         android:dependency="pref_poll"
@@ -47,6 +54,17 @@
         android:inputType="text|number"
         android:key="pref_poll_interval_night"
         android:title="@string/pref_hint_poll_interval_night"
+        />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="false"
+        android:dependency="pref_poll"
+        android:icon="@drawable/ic_baseline_topic_ededed_24"
+        android:key="pref_notification_extended"
+        android:summaryOff="@string/pref_summary_poll_customnotification_off"
+        android:summaryOn="@string/pref_summary_poll_customnotification_on"
+        android:title="@string/pref_title_poll_customnotification"
+        app:singleLineTitle="false"
         />
 
     <Preference

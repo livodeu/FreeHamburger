@@ -16,6 +16,8 @@ import android.preference.PreferenceManager;
 
 import androidx.annotation.NonNull;
 
+import de.freehamburger.model.Source;
+
 /**
  * Receives {@link Intent#ACTION_BOOT_COMPLETED}.
  */
@@ -76,11 +78,11 @@ public class BootReceiver extends BroadcastReceiver {
             builder.addAction(new Notification.Action.Builder(
                     Icon.createWithResource(app, R.drawable.ic_notification),
                     app.getString(R.string.action_open_app),
-                    UpdateJobService.makeIntentForMainActivity(app, null))
+                    UpdateJobService.makeIntentForMainActivity(app, null, Source.HOME))
                     .build());
         } else {
             builder.addAction(new Notification.Action(R.drawable.ic_do_not_disturb_alt_ededed_24dp, app.getString(R.string.action_background_disable), UpdateJobService.makeIntentToDisable(app)));
-            builder.addAction(new Notification.Action(R.drawable.ic_notification, app.getString(R.string.action_open_app), UpdateJobService.makeIntentForMainActivity(app, null)));
+            builder.addAction(new Notification.Action(R.drawable.ic_notification, app.getString(R.string.action_open_app), UpdateJobService.makeIntentForMainActivity(app, null, Source.HOME)));
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -91,7 +93,7 @@ public class BootReceiver extends BroadcastReceiver {
             builder.setPriority(Notification.PRIORITY_LOW);
         }
 
-        nm.notify(UpdateJobService.NOTIFICATION_ID, builder.build());
+        nm.notify(1, builder.build());
 
         // invoke the background job once to allow the user to see whether there's anything news on the Rialto
         // note: App.isBackgroundScheduled() would return 0 once the one-off job is scheduled because it does not recur

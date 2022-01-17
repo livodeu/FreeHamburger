@@ -11,12 +11,14 @@ import android.app.job.JobScheduler;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -38,9 +40,11 @@ import com.squareup.picasso.Request;
 import java.io.File;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
+import java.security.Provider;
 import java.security.Security;
 import java.text.DateFormat;
 import java.util.Collections;
@@ -395,12 +399,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
      */
     @SuppressLint("InflateParams")
     @UiThread
-    void createInflatedViewForWebViewActivity(boolean onlyIfNull) {
+    void createInflatedViewForWebViewActivity(Activity activity, boolean onlyIfNull) {
         if (onlyIfNull && this.inflatedViewForWebViewActivity != null) return;
         try {
             // setTheme() is necessary in order to be able to use <this> as context for the inflater
             setTheme(R.style.AppTheme_NoActionBar);
-            this.inflatedViewForWebViewActivity = (ViewGroup) LayoutInflater.from(this).inflate(R.layout.activity_web_view, null);
+            this.inflatedViewForWebViewActivity = (ViewGroup) LayoutInflater.from(activity != null ? activity : this).inflate(R.layout.activity_web_view, null);
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, "While preparing WebView: " + e.toString(), e);
         }
@@ -561,8 +565,16 @@ public class App extends Application implements Application.ActivityLifecycleCal
         this.handler.removeCallbacks(this.scheduleChecker);
         this.currentActivity = activity;
         if (activity instanceof MainActivity) {
-            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            if (nm != null) nm.cancel(UpdateJobService.NOTIFICATION_ID);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                int[] ids = UpdateJobService.getAllNotifications(this);
+                if (ids.length > 0) {
+                    NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                    for (int id : ids) nm.cancel(id);
+                }
+            } else {
+                //TODO is this ok? are there any other notifications apart thosee from UpdateJobService that should not be cancelled here?
+                ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).cancelAll();
+            }
         }
     }
 
@@ -617,11 +629,11 @@ public class App extends Application implements Application.ActivityLifecycleCal
         try {
             // https://github.com/square/okhttp#requirements
             Class<?> conscryptClass = Class.forName("org.conscrypt.Conscrypt");
-            java.lang.reflect.Method newProvider = conscryptClass.getMethod("newProvider");
+            Method newProvider = conscryptClass.getMethod("newProvider");
             // the method might throw UnsatisfiedLinkError
             Object provider = newProvider.invoke(null);
-            if (provider instanceof java.security.Provider) {
-                int installedAt = Security.insertProviderAt((java.security.Provider) provider, 1);
+            if (provider instanceof Provider) {
+                int installedAt = Security.insertProviderAt((Provider) provider, 1);
                 if (BuildConfig.DEBUG) {
                     if (installedAt < 0) Log.e(TAG, "Failed to insert " + provider);
                 }
@@ -777,7 +789,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
             }
         }
         NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        if (nm != null) nm.cancel(UpdateJobService.NOTIFICATION_ID);
+        if (nm != null) nm.cancelAll();
     }
 
     /**

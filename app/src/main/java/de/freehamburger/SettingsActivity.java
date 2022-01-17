@@ -49,6 +49,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.preference.EditTextPreference;
+import androidx.preference.MultiSelectListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
@@ -63,7 +64,9 @@ import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.Date;
+import java.util.Set;
 
+import de.freehamburger.model.Source;
 import de.freehamburger.prefs.ButtonPreference;
 import de.freehamburger.prefs.DisablingValueListPreference;
 import de.freehamburger.prefs.SummarizingEditTextPreference;
@@ -717,6 +720,48 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     prefPoll.setSummaryOn(getString(R.string.pref_title_poll_on) + '\n' + getString(R.string.error_poll_failed, date));
                     prefPoll.setSummaryOff(getString(R.string.pref_title_poll_off) + '\n' + getString(R.string.error_poll_failed, date));
                 }
+            }
+
+            SwitchPreferenceCompat prefPollBreakingOnly = findPreference(App.PREF_POLL_BREAKING_ONLY);
+
+            MultiSelectListPreference prefSources = findPreference(UpdateJobService.PREF_SOURCES);
+            if (prefSources != null) {
+                final Source[] sources = Source.values();
+                final CharSequence[] entries = new CharSequence[sources.length];
+                final CharSequence[] entryValues = new CharSequence[sources.length];
+                for (int i = 0; i < sources.length; i++) {
+                    entries[i] = getString(sources[i].getLabel());
+                    entryValues[i] = sources[i].name();
+                }
+                prefSources.setEntries(entries);
+                prefSources.setEntryValues(entryValues);
+                Set<String> values = prefs.getStringSet(UpdateJobService.PREF_SOURCES, UpdateJobService.PREF_SOURCES_DEFAULT);
+                prefSources.setValues(values);
+                prefSources.setSummary(Source.makeLabel(activity, values));
+                if (!UpdateJobService.PREF_SOURCES_DEFAULT.equals(values) && prefPollBreakingOnly != null) {
+                    prefPollBreakingOnly.setChecked(false);
+                    prefPollBreakingOnly.setEnabled(false);
+                }
+                prefSources.setOnPreferenceChangeListener((preference, newValue) -> {
+                    if (!(newValue instanceof Set) || ((Set<?>)newValue).isEmpty()) {
+                        if (prefPoll != null) prefPoll.setChecked(false);
+                        return false;
+                    }
+                    // the "breaking news only" switch must be switched off and disabled if there is a Source other than HOME enabled
+                    if (prefPollBreakingOnly != null) {
+                        if (!UpdateJobService.PREF_SOURCES_DEFAULT.equals(newValue)) {
+                            if (prefPollBreakingOnly.isChecked()) {
+                                prefPollBreakingOnly.setChecked(false);
+                                Toast.makeText(activity, R.string.msg_breaking_only_disabled, Toast.LENGTH_LONG).show();
+                            }
+                            prefPollBreakingOnly.setEnabled(false);
+                        } else {
+                            prefPollBreakingOnly.setEnabled(true);
+                        }
+                    }
+                    preference.setSummary(Source.makeLabel(activity, (Set<?>)newValue));
+                    return true;
+                });
             }
 
             SwitchPreferenceCompat prefPollOverMobile = findPreference(App.PREF_POLL_OVER_MOBILE);

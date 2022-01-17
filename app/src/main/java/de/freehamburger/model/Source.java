@@ -11,6 +11,7 @@ import androidx.annotation.StringRes;
 import java.io.File;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,18 +26,20 @@ import de.freehamburger.R;
  */
 public enum Source {
 
+    // make sure that the names do not contain a '#' (see UpdateJobService.LATEST_NEWS_SEP)
+
     HOME(R.string.action_section_homepage, App.URL_PREFIX + "homepage/", R.drawable.ic_home_black_24dp, R.drawable.ic_home_search_24dp, false, null),
     NEWS(R.string.action_section_news, App.URL_PREFIX + "news/", R.drawable.ic_local_library_black_24dp, R.drawable.ic_local_library_search_24dp, false, "action_section_news"),
     INLAND(R.string.action_section_inland, App.URL_PREFIX + "news/?ressort=inland", R.drawable.ic_germany, R.drawable.ic_germany_search, false, "action_section_inland"),
     AUSLAND(R.string.action_section_ausland, App.URL_PREFIX + "news/?ressort=ausland", R.drawable.ic_language_black_24dp, R.drawable.ic_language_search_24dp, false, "action_section_ausland"),
-    SPORT(R.string.action_section_sport, App.URL_PREFIX + "news/?ressort=sport", R.drawable.ic_directions_run_black_24dp, R.drawable.ic_directions_run_search_24dp, false, "action_section_sport"),
-    VIDEO(R.string.action_section_video, App.URL_PREFIX + "news/?ressort=video", R.drawable.ic_videocam_black_24dp, false, "action_section_video"),
     WIRTSCHAFT(R.string.action_section_wirtschaft, App.URL_PREFIX + "news/?ressort=wirtschaft", R.drawable.ic_build_black_24dp, R.drawable.ic_build_search_24dp, false, "action_section_wirtschaft"),
-    CHANNELS(R.string.action_section_channels, App.URL_PREFIX + "channels/", R.drawable.ic_tv_black_24dp, false, "action_section_sendungen"),
+    SPORT(R.string.action_section_sport, App.URL_PREFIX + "news/?ressort=sport", R.drawable.ic_directions_run_black_24dp, R.drawable.ic_directions_run_search_24dp, false, "action_section_sport"),
     /** params look like "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16" */
     REGIONAL(R.string.action_section_regional, App.URL_PREFIX + "news/?regions=", R.drawable.ic_place_black_24dp, R.drawable.ic_place_search_24dp,true, "action_section_regional"),
+    IV(R.string.action_section_iv, App.URL_PREFIX + "news/?ressort=investigativ", R.drawable.ic_search_black_24dp, R.drawable.ic_search_search_24dp, false, "action_section_iv"),
     WEATHER(R.string.action_section_weather, App.URL_PREFIX + "weather/index.json", R.drawable.ic_outline_cloud_24, R.drawable.ic_outline_cloud_search_24, false, "action_section_weather"),
-    IV(R.string.action_section_iv, App.URL_PREFIX + "news/?ressort=investigativ", R.drawable.ic_search_black_24dp, R.drawable.ic_search_search_24dp, false, "action_section_iv")
+    VIDEO(R.string.action_section_video, App.URL_PREFIX + "news/?ressort=video", R.drawable.ic_videocam_black_24dp, false, "action_section_video"),
+    CHANNELS(R.string.action_section_channels, App.URL_PREFIX + "channels/", R.drawable.ic_tv_black_24dp, false, "action_section_sendungen")
     ;
 
     public static final String FILE_SUFFIX = ".source";
@@ -54,6 +57,32 @@ public enum Source {
     /** synchronises access from different threads */
     @GuardedBy("lock")
     private volatile Reference<Thread> lockHolder;
+
+    /**
+     * Creates a list of the labels of the given Source names.
+     * @param ctx Context
+     * @param names Source names (Strings)
+     * @return comma-separated list of Source labels
+     */
+    @NonNull
+    public static String makeLabel(@NonNull final Context ctx, final Collection<?> names) {
+        if (names == null || names.isEmpty()) return "";
+        final StringBuilder sb = new StringBuilder(names.size() << 3);
+        try {
+            for (Source source : values()) {
+                for (Object name : names) {
+                    if (source.name().equals(name)) {
+                        sb.append(ctx.getString(source.getLabel())).append(", ");
+                        break;
+                    }
+                }
+            }
+            sb.delete(sb.length() - 2, sb.length());
+        } catch (RuntimeException ignored) {
+            return "?";
+        }
+        return sb.toString();
+    }
 
     /**
      * Constructor.

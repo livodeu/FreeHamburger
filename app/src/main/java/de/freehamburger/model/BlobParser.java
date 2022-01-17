@@ -79,7 +79,7 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
             reader.setLenient(true);
             reporter = new ProgressReporter(files[0].length(), in);
             reporter.start();
-            blob = Blob.parseApi(ctx, reader);
+            blob = Blob.parseApi(ctx, src, reader);
             reporter.stop = true;
         } catch (Exception e) {
             if (reporter != null) reporter.stop = true;

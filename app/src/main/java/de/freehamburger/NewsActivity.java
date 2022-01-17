@@ -13,8 +13,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -100,7 +98,6 @@ import de.freehamburger.model.News;
 import de.freehamburger.model.Related;
 import de.freehamburger.model.StreamQuality;
 import de.freehamburger.model.Video;
-import de.freehamburger.util.Downloader;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.MediaSourceHelper;
 import de.freehamburger.util.PlayerListener;
@@ -119,7 +116,7 @@ import de.freehamburger.util.Util;
  */
 public class NewsActivity extends HamburgerActivity implements AudioManager.OnAudioFocusChangeListener, RelatedAdapter.OnRelatedClickListener, ServiceConnection {
 
-    static final String EXTRA_NEWS = "extra_news";
+    static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
     /** boolean; if true, the ActionBar will not show the home arrow which would lead the user to the MainActivity */
     private static final String EXTRA_NO_HOME_AS_UP = "extra_no_home_as_up";
     private static final String TAG = "NewsActivity";
@@ -133,6 +130,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private final Set<SpannableImageTarget> spannableImageTargets = new HashSet<>();
     /** Listener for the top video */
     private final PlayerListener listenerTop = new PlayerListener(this,false);
+    /** passed with the Intent as extra {@link #EXTRA_NEWS} */
     private News news;
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/PlayerView.html">JavaDoc</a> */
     private PlayerView topVideoView;
@@ -776,7 +774,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     Util.close(reader);
                 }
                 Util.deleteFile(temp);
-            }}), 250L);
+        }), 250L);
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
             if (progress != null) progress.setVisibility(View.GONE);
@@ -811,21 +809,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             playBottomVideo();
         }
     }
-
-    /*
-    @Override
-    public void onConfigurationChanged(@NonNull Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Resources.Theme t = getTheme();
-            Content.setColorBox("#" + Integer.toHexString(getResources().getColor(R.color.colorBox, t)));
-            Content.setColorQuotation("#" + Integer.toHexString(getResources().getColor(R.color.colorQuotation, t)));
-        } else {
-            Content.setColorBox("#" + Integer.toHexString(getResources().getColor(R.color.colorBox)));
-            Content.setColorQuotation("#" + Integer.toHexString(getResources().getColor(R.color.colorQuotation)));
-        }
-    }*/
 
     /** {@inheritDoc} */
     @SuppressLint("ClickableViewAccessibility")
@@ -968,11 +951,9 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             ab.setTitle(topline);
         }
 
-        final String newsExternalId = intent.getStringExtra(UpdateJobService.EXTRA_FROM_NOTIFICATION);
-        if (newsExternalId != null) {
-            intent.removeExtra(UpdateJobService.EXTRA_FROM_NOTIFICATION);
-            NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-            if (nm != null) nm.cancel(UpdateJobService.NOTIFICATION_ID);
+        int notificationId = intent.getIntExtra(UpdateJobService.EXTRA_NOTIFICATION_ID, Integer.MIN_VALUE);
+        if (notificationId != Integer.MIN_VALUE) {
+            ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(notificationId);
         }
 
         if (!Util.TEST && this.news == null) {
@@ -1003,7 +984,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             sendIntent.putExtra(Intent.EXTRA_TEXT, url);
             if (title != null) sendIntent.putExtra(Intent.EXTRA_SUBJECT, title);
             sendIntent.setType("text/plain");
-            //startActivity(Intent.createChooser(sendIntent, getString(R.string.label_select_app, "HTML")));
             startActivity(Intent.createChooser(sendIntent, null));
             return true;
         }

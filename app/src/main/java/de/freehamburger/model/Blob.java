@@ -36,6 +36,14 @@ public class Blob {
     /** a https link to a data structure - not always present */
     @Nullable private String newStoriesCountLink;
     private Date date;
+    private Source source;
+
+    /**
+     * Private constructor.
+     */
+    private Blob() {
+        super();
+    }
 
     /**
      * Entry point for parsing the data that has been received.<br>
@@ -46,13 +54,14 @@ public class Blob {
      * <li>type (String)</li>
      * </ol>
      * @param ctx Context
+     * @param source Source
      * @param reader JsonReader
      * @return Blob
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if {@code ctx} or {@code reader} are {@code null}
      */
     @NonNull
-    static Blob parseApi(@NonNull Context ctx, @NonNull final JsonReader reader) throws IOException {
+    static Blob parseApi(@NonNull Context ctx, @NonNull Source source, @NonNull final JsonReader reader) throws IOException {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         @News.Flag int flags = 0;
         boolean htmlEmbed = prefs.getBoolean(App.PREF_SHOW_EMBEDDED_HTML_LINKS, App.PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT);
@@ -69,6 +78,7 @@ public class Blob {
         }
         //
         final Blob blob = new Blob();
+        blob.source = source;
         String name = null;
         reader.beginObject();
         for (; reader.hasNext(); ) {
@@ -152,13 +162,6 @@ public class Blob {
     }
 
     /**
-     * Private constructor.
-     */
-    private Blob() {
-        super();
-    }
-
-    /**
      * @return Sorted list containing both national news and regional news
      */
     @NonNull
@@ -206,5 +209,10 @@ public class Blob {
     @VisibleForTesting
     public List<News> getRegionalNewsList() {
         return this.regionalNewsList;
+    }
+
+    @NonNull
+    public Source getSource() {
+        return this.source;
     }
 }

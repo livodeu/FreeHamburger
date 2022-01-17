@@ -193,7 +193,7 @@ public class WebViewActivity extends AppCompatActivity {
     @Override
     public void onDetachedFromWindow() {
         // prepare a new instance of the content view for the next time this Acticity is launched
-        ((App)getApplicationContext()).createInflatedViewForWebViewActivity(false);
+        ((App)getApplicationContext()).createInflatedViewForWebViewActivity(this,false);
         //
         ViewGroup content = findViewById(android.R.id.content);
         content.removeAllViews();

@@ -127,13 +127,13 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
     private static final String TAG = "MainActivity";
 
-    private static final String STATE_SOURCE = "de.freehamburger.state.source";
-    private static final String STATE_RECENT_SOURCES = "de.freehamburger.state.recentsources";
-    private static final String STATE_LIST_POS = "de.freehamburger.state.list.pos";
+    private static final String STATE_SOURCE = BuildConfig.APPLICATION_ID + ".state.source";
+    private static final String STATE_RECENT_SOURCES = BuildConfig.APPLICATION_ID + ".state.recentsources";
+    private static final String STATE_LIST_POS = BuildConfig.APPLICATION_ID + ".state.list.pos";
     /** contains a News object if the {@link #quickView} should be restored */
-    private static final String STATE_QUIKVIEW = "de.freehamburger.state.quikview";
-    private static final String ACTION_IMPORT_FONT = "de.freehamburger.action.font_import";
-    private static final String ACTION_DELETE_FONT = "de.freehamburger.action.font_delete";
+    private static final String STATE_QUIKVIEW = BuildConfig.APPLICATION_ID + ".state.quikview";
+    static final String ACTION_SHOW_NEWS = BuildConfig.APPLICATION_ID + ".action.show_news";
+    static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
     /** used when the user has picked a font file to import */
     private static final int REQUEST_CODE_FONT_IMPORT = 815;
     /** ConnectException andSocketTimeoutException messages.toLowerCase() usually start with this (the first one with "Failed", the latter one with "failed") */
@@ -331,14 +331,31 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         return Util.getVisibleKids(this.recyclerView);
     }
 
+    private News newsToLoadWhenServiceConnected = null;
+
     /**
      * Deals with the Intent that the Acticity has received.
      * @param intent Intent
      */
     private void handleIntent(@Nullable Intent intent) {
         if (intent == null) intent = getIntent();
-
         final String action = intent.getAction();
+
+        if (ACTION_SHOW_NEWS.equals(action)) {
+            News news = (News)intent.getSerializableExtra(EXTRA_NEWS);
+            int notificationId = intent.getIntExtra(UpdateJobService.EXTRA_NOTIFICATION_ID, Integer.MIN_VALUE);
+            intent.setAction(Intent.ACTION_MAIN);
+            intent.removeExtra(EXTRA_NEWS);
+            intent.removeExtra(UpdateJobService.EXTRA_NOTIFICATION_ID);
+            if (notificationId != Integer.MIN_VALUE) {
+                NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+                if (nm != null) nm.cancel(notificationId);
+            }
+            if (news == null) return;
+            // loadDetails(news) does not work here because the HamburgerService does not exist yet!
+            this.newsToLoadWhenServiceConnected = news;
+            return;
+        }
 
         if (UpdateJobService.ACTION_NOTIFICATION.equals(action)) {
             final String newsExternalId = intent.getStringExtra(UpdateJobService.EXTRA_FROM_NOTIFICATION);
@@ -350,17 +367,20 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     if (index >= 0) MainActivity.this.recyclerView.smoothScrollToPosition(index);
                 }, 1_000L);
             }
-            this.currentSource = UpdateJobService.SOURCE;
+            String sourceName = intent.getStringExtra(UpdateJobService.EXTRA_SOURCE);
+            if (sourceName != null) {
+                try {
+                    this.currentSource = Source.valueOf(sourceName);
+                } catch (IllegalArgumentException e) {
+                    if (BuildConfig.DEBUG) Log.e(TAG, "Unknown Source: " + sourceName);
+                }
+            } else if (BuildConfig.DEBUG) Log.e(TAG, "Missing EXTRA_SOURCE!");
             this.listPositionToRestore = 0;
             updateTitle();
-            NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-            if (nm != null) {
-                nm.cancel(UpdateJobService.NOTIFICATION_ID);
-            }
             return;
         }
 
-        if (ACTION_DELETE_FONT.equals(action)) {
+        if (getString(R.string.main_action_font_delete).equals(action)) {
             File fontFile = new File(getFilesDir(), App.FONT_FILE);
             if (fontFile.isFile()) {
                 Util.deleteFile(fontFile);
@@ -374,7 +394,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             startActivity(settingsActivityIntent);
             return;
         }
-        if (ACTION_IMPORT_FONT.equals(action)) {
+        if (getString(R.string.main_action_font_import).equals(action)) {
             Intent pickIntent = new Intent(Intent.ACTION_GET_CONTENT);
             pickIntent.setType("*/*");    // Android does not know a suitable mime type for ttf
             pickIntent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -1577,18 +1597,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
         registerReceiver(this.connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
-        // set the background color of the recyclerView
-        /*@App.BackgroundSelection int currentBackground = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
-        switch(currentBackground) {
-            case App.BACKGROUND_NIGHT: this.recyclerView.setBackgroundColor(getResources().getColor(R.color.colorRecyclerBg)); break;
-            case App.BACKGROUND_DAY: this.recyclerView.setBackgroundColor(getResources().getColor(R.color.colorRecyclerBgLight)); break;
-            case App.BACKGROUND_AUTO:
-                boolean nightMode = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-                this.recyclerView.setBackgroundColor(nightMode ? getResources().getColor(R.color.colorRecyclerBg) : getResources().getColor(R.color.colorRecyclerBgLight));
-        }*/
-
         // this prepares the contents for WebViewActivity resp. TeletextActivity - these should start much faster (in the order of 30 ms vs. 350 ms)
-        this.handler.postDelayed(() -> ((App)getApplicationContext()).createInflatedViewForWebViewActivity(true), 2_000L);
+        this.handler.postDelayed(() -> ((App)getApplicationContext()).createInflatedViewForWebViewActivity(this,true), 2_000L);
     }
 
     /** {@inheritDoc} */
@@ -1627,6 +1637,11 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         super.onServiceConnected(name, service);
+        if (this.newsToLoadWhenServiceConnected != null) {
+            loadDetails(this.newsToLoadWhenServiceConnected);
+            this.newsToLoadWhenServiceConnected = null;
+            return;
+        }
         if (this.newsForQuickView != null) {
             viewImage(this.newsForQuickView, true);
         }

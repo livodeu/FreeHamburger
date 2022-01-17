@@ -214,11 +214,16 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      */
     @RequiresPermission(Manifest.permission.INTERNET)
     void loadFile(@NonNull String url, @NonNull File localFile, long mostRecentUpdate, @NonNull Downloader.DownloaderListener listener) {
-        OkHttpDownloader fd = new OkHttpDownloader(this);
+        OkHttpDownloader downloader = new OkHttpDownloader(this);
         try {
-           fd.executeOnExecutor(this.loaderExecutor, new Downloader.Order(url, localFile.getAbsolutePath(), mostRecentUpdate, false, listener));
+            if (this.loaderExecutor != null) {
+                downloader.executeOnExecutor(this.loaderExecutor, new Downloader.Order(url, localFile.getAbsolutePath(), mostRecentUpdate, false, listener));
+            } else {
+                if (BuildConfig.DEBUG) Log.e(TAG, "loadFile(\"" + url + "\", …, …, …): loaderExecutor is null!");
+                downloader.execute(new Downloader.Order(url, localFile.getAbsolutePath(), mostRecentUpdate, false, listener));
+            }
         } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, "loadFile(\"" + url + "\", ..., ...) failed: " + e.toString());
+            if (BuildConfig.DEBUG) Log.e(TAG, "loadFile(\"" + url + "\", …, …, …) failed: " + e.toString(), e);
             listener.downloaded(false, null);
         }
     }

@@ -10,7 +10,6 @@
         app:colors="@array/colors_list_background"
         />
 
-    <!-- FIXME the ListPreference dialog (androidx.preference.ListPreferenceDialogFragmentCompat) is reported to leak memory (at least in Android 9) -->
     <androidx.preference.ListPreference
         android:key="pref_orientation"
         android:title="@string/pref_title_orientation_main"
@@ -41,7 +40,7 @@
         android:key="pref_import_font"
         android:title="@string/action_import_font"
         android:icon="@drawable/ic_text_format_ededed_24dp">
-        <intent android:action="de.freehamburger.action.font_import" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
+        <intent android:action="@string/main_action_font_import" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
     </Preference>
 
     <Preference
@@ -49,7 +48,7 @@
         android:title="@string/action_font_delete"
         android:icon="@drawable/ic_delete_forever_ededed_24dp"
         android:enabled="false">
-        <intent android:action="de.freehamburger.action.font_delete" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
+        <intent android:action="@string/main_action_font_delete" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
     </Preference>
 
     <SwitchPreferenceCompat

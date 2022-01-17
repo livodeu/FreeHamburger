@@ -22,9 +22,10 @@ android {
         // https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/dsl/DefaultConfig
         applicationId "de.freehamburger"
         minSdkVersion 21
+        //noinspection OldTargetApi
         targetSdkVersion 31
-        versionCode 3
-        versionName "1.1"
+        versionCode 4
+        versionName "1.2"
         resConfigs "en", "de"
         buildConfigField("long", "BUILD_TIME", String.valueOf(System.currentTimeMillis()) + "L")
         testApplicationId applicationId + ".test"
@@ -57,6 +58,8 @@ android {
             resValue "string", "app_search_action", defaultConfig.applicationId + applicationIdSuffix + '.ACTION_SEARCH'
             resValue "string", "app_search_auth", defaultConfig.applicationId + applicationIdSuffix + '.SearchContentProvider'
             resValue "string", "app_search_sid", "content://" + defaultConfig.applicationId + applicationIdSuffix + '/sid'
+            resValue "string", "main_action_font_delete", defaultConfig.applicationId + applicationIdSuffix + '.action.font_delete'
+            resValue "string", "main_action_font_import", defaultConfig.applicationId + applicationIdSuffix + '.action.font_import'
             crunchPngs true
             testCoverageEnabled = false
         }
@@ -65,6 +68,8 @@ android {
             resValue "string", "app_search_action", defaultConfig.applicationId + '.ACTION_SEARCH'
             resValue "string", "app_search_auth", defaultConfig.applicationId + '.SearchContentProvider'
             resValue "string", "app_search_sid", "content://" + defaultConfig.applicationId + '/sid'
+            resValue "string", "main_action_font_delete", defaultConfig.applicationId + '.action.font_delete'
+            resValue "string", "main_action_font_import", defaultConfig.applicationId + '.action.font_import'
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             shrinkResources true
