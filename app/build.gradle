@@ -26,7 +26,7 @@ android {
         targetSdkVersion 31
         versionCode 4
         versionName "1.2"
-        resConfigs "en", "de"
+        resConfigs 'en', 'de'
         buildConfigField("long", "BUILD_TIME", String.valueOf(System.currentTimeMillis()) + "L")
         testApplicationId applicationId + ".test"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -41,12 +41,6 @@ android {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']
         }
-    }
-
-    lintOptions {
-        // https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/dsl/LintOptions
-        // UseCompatLoadingForDrawables is misleading for minSdkVersion >= 21
-        ignore("UseCompatLoadingForDrawables")
     }
 
     buildTypes {
@@ -82,6 +76,11 @@ android {
         // https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/dsl/CompileOptions
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        // UseCompatLoadingForDrawables is misleading for minSdkVersion >= 21
+        ignore 'UseCompatLoadingForDrawables'
     }
 
 }
