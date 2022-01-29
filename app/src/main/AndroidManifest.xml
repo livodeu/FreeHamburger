@@ -28,6 +28,7 @@
         android:allowAudioPlaybackCapture="false"
         android:allowBackup="false"
         android:appCategory="news"
+        android:dataExtractionRules="@xml/fyg"
         android:fullBackupContent="false"
         android:hardwareAccelerated="true"
         android:icon="${icon}"
