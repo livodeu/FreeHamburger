@@ -104,6 +104,7 @@ import de.freehamburger.util.PlayerListener;
 import de.freehamburger.util.PositionedSpan;
 import de.freehamburger.util.TextViewImageSpanClickHandler;
 import de.freehamburger.util.Util;
+import okhttp3.Call;
 
 /**
  * Before API 26, the two video views ({@link #topVideoView} and {@link #bottomVideoView}) must belong to <u>different</u> layers (hardware vs. software).<br>
@@ -264,7 +265,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 Uri videoUri = Uri.parse(Util.makeHttps(newsVideo));
                 if (App.isHostAllowed(videoUri.getHost())) {
                     validTopVideo = true;
-                    MediaSource msTopVideo = this.mediaSourceHelper.buildMediaSource(((App) getApplicationContext()).getOkHttpClient(), videoUri);
+                    MediaSource msTopVideo = this.mediaSourceHelper.buildMediaSource((Call.Factory) ((App) getApplicationContext()).getOkHttpClient(), videoUri);
                     this.exoPlayerTopVideo.setMediaSource(msTopVideo, true);
                     this.exoPlayerTopVideo.prepare();
                     this.exoPlayerTopVideo.setVolume(0f);
@@ -331,7 +332,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     this.textViewBottomVideoPeek.setTypeface(Util.getTypefaceForTextView(this.textViewBottomVideoPeek, contentVideoTitle.toString()));
                     this.textViewBottomVideoPeek.setText(contentVideoTitle);
                     this.textViewBottomVideoViewOverlay.setText(contentVideoTitle);
-                    msBottomVideo = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), uris);
+                    msBottomVideo = this.mediaSourceHelper.buildMediaSource((Call.Factory) ((App)getApplicationContext()).getOkHttpClient(), uris);
                     if (this.exoPlayerBottomVideo != null) {
                         this.exoPlayerBottomVideo.setMediaSource(msBottomVideo, true);
                         this.exoPlayerBottomVideo.prepare();
@@ -349,7 +350,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     this.textViewBottomVideoPeek.setTypeface(Util.getTypefaceForTextView(this.textViewBottomVideoPeek, contentVideoTitle));
                     this.textViewBottomVideoPeek.setText(contentVideoTitle);
                     this.textViewBottomVideoViewOverlay.setText(contentVideoTitle);
-                    msBottomVideo = this.mediaSourceHelper.buildMediaSource(((App) getApplicationContext()).getOkHttpClient(), uri);
+                    msBottomVideo = this.mediaSourceHelper.buildMediaSource((Call.Factory) ((App) getApplicationContext()).getOkHttpClient(), uri);
                     if (this.exoPlayerBottomVideo != null) {
                         this.exoPlayerBottomVideo.setMediaSource(msBottomVideo, true);
                         this.exoPlayerBottomVideo.prepare();
@@ -1208,7 +1209,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             return;
         }
         am.setMode(AudioManager.MODE_NORMAL);
-        MediaSource msAudio = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), Uri.parse((String) src));
+        MediaSource msAudio = this.mediaSourceHelper.buildMediaSource((Call.Factory) ((App)getApplicationContext()).getOkHttpClient(), Uri.parse((String) src));
         this.exoPlayerAudio.setMediaSource(msAudio, true);
         this.exoPlayerAudio.prepare();
         this.exoPlayerAudio.setPlayWhenReady(true);
