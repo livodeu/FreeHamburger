@@ -10,6 +10,7 @@
     <string name="action_open_app">App öffnen</string>
     <string name="action_show_weberrors_no">Nicht wieder anzeigen</string>
     <string name="hint_audio_content_play">Audioinhalte abspielen</string>
+    <string name="label_cols_default">Standard</string>
     <string name="pref_title_orientation_main">Ausrichtung</string>
     <string name="msg_background_active">Hintergrundaktualisierungen sind aktiv und werden etwa alle %1$s Minuten ausgeführt.</string>
     <string name="msg_background_active_short">Hintergrundaktualisierungen aktiv (alle %1$s Min.)</string>
@@ -221,6 +222,9 @@
     </plurals>
     <string name="label_poll_stats_none">Es sind keine Hintergrundaktualisierungen registriert.</string>
     <string name="label_reset_q">Zurücksetzen?</string>
+    <string name="pref_cat_cols">Spalten</string>
+    <string name="pref_cat_opts">Optionen</string>
+    <string name="pref_cat_text">Text</string>
     <string name="pref_title_poll_over_mobile">Im Mobilnetz</string>
     <string name="label_related">☛ Mehr zum Thema</string>
     <string name="action_help">Hilfe</string>
@@ -244,6 +248,10 @@
     <string name="pref_title_show_top_video">Illustrierende Videos</string>
     <string name="pref_title_show_top_video_off">Illustrierende Artikelvideos werden nicht gezeigt</string>
     <string name="pref_title_show_top_video_on">Illustrierende Artikelvideos werden ggf. gezeigt</string>
+    <string name="pref_title_cols_landscape">in horizontaler Ausrichtung</string>
+    <string name="pref_title_cols_portrait">in vertikaler Ausrichtung</string>
+    <string name="pref_title_cols_landscape_short">Horizontal: %1$s</string>
+    <string name="pref_title_cols_portrait_short">Vertikal: %1$s</string>
 
     <string name="hint_intro_will_be_played">Die Einführung wird beim nächsten Start angezeigt.</string>
     <string name="hint_intro_will_not_be_played">Die Einführung wird beim nächsten Start nicht angezeigt.</string>

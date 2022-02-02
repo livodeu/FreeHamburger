@@ -1686,13 +1686,15 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 // limit number of RecyclerView columns to number of News items (effect noticeable, for example, in Weather section on tablets in landscape mode)
                 int nItems = sortedJointList.size();
                 RecyclerView.LayoutManager layoutManager = MainActivity.this.recyclerView.getLayoutManager();
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
                 if (layoutManager instanceof GridLayoutManager) {
                     if (nItems >= 1 && nItems < ((GridLayoutManager)layoutManager).getSpanCount()) {
                         // less News items than columns -> reduce number of columns (must be at least 1)
                         ((GridLayoutManager)layoutManager).setSpanCount(nItems);
                     } else {
                         // reset span count
-                        ((GridLayoutManager)layoutManager).setSpanCount(getResources().getInteger(R.integer.num_columns));
+                        selectLayoutManager(prefs);
+                        //((GridLayoutManager)layoutManager).setSpanCount(getResources().getInteger(R.integer.num_columns));
                     }
                 }
                 //
@@ -1715,7 +1717,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 boolean hasTemporaryFilter = MainActivity.this.newsAdapter.hasTemporaryFilter();
                 MainActivity.this.clockView.setTime(blobDate != null ? blobDate.getTime() : file.lastModified());
                 MainActivity.this.clockView.setTint(hasTemporaryFilter ? Util.getColor(MainActivity.this, R.color.colorFilter) : 0);
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
                 if (hasTemporaryFilter) {
                     boolean hintResetSearchShown = prefs.getBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, false);
                     if (!hintResetSearchShown) {
@@ -1973,17 +1974,26 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      * </ul>
      * The aforementioned values are reduced by ca. 50% in one dimension if the app runs in multi-window mode!
      */
-    private void selectLayoutManager() {
+    private void selectLayoutManager(@Nullable SharedPreferences prefs) {
+        Configuration c = getResources().getConfiguration();
         RecyclerView.LayoutManager old = this.recyclerView.getLayoutManager();
-        int numColumns = getResources().getInteger(R.integer.num_columns);
+        if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        int preferredCols = c.orientation == Configuration.ORIENTATION_PORTRAIT ? prefs.getInt(App.PREF_COLS_PORTRAIT, 0) : prefs.getInt(App.PREF_COLS_LANDSCAPE, 0);
+        final int numColumns = preferredCols > 0 ? preferredCols : getResources().getInteger(R.integer.num_columns);
         if (numColumns == 1) {
-            if (old instanceof LinearLayoutManager) return;
+            if (old instanceof LinearLayoutManager && !(old instanceof GridLayoutManager)) return;
             LinearLayoutManager llm = new LinearLayoutManager(this);
             this.recyclerView.setLayoutManager(llm);
+            return;
         }
         if (old instanceof GridLayoutManager && ((GridLayoutManager)old).getSpanCount() == numColumns) return;
         GridLayoutManager glm = new GridLayoutManager(this, numColumns);
         this.recyclerView.setLayoutManager(glm);
+    }
+
+    @Override
+    void onColumnCountChanged(SharedPreferences prefs) {
+        selectLayoutManager(prefs);
     }
 
     /**

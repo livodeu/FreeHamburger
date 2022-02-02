@@ -19,14 +19,38 @@
         app:useSimpleSummaryProvider="true"
         />
 
-    <SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:key="pref_time_mode"
-        android:title="@string/pref_title_time_mode"
-        android:icon="@drawable/ic_schedule_ededed_24dp"
-        android:summaryOn="@string/pref_title_time_mode_on"
-        android:summaryOff="@string/pref_title_time_mode_off"
-        />
+    <PreferenceCategory
+        app:allowDividerBelow="true"
+        app:initialExpandedChildrenCount="0"
+        app:key="pref_cat_cols"
+        app:title="@string/pref_cat_cols"
+        >
+
+        <SeekBarPreference
+            android:defaultValue="0"
+            android:icon="@drawable/ic_baseline_crop_portrait_24"
+            android:key="pref_cols_portrait"
+            android:max="@integer/max_columns"
+            android:title="@string/pref_title_cols_portrait"
+            app:singleLineTitle="false"
+            />
+
+        <SeekBarPreference
+            android:defaultValue="0"
+            android:icon="@drawable/ic_baseline_crop_landscape_24"
+            android:key="pref_cols_landscape"
+            android:max="@integer/max_columns"
+            android:title="@string/pref_title_cols_landscape"
+            app:singleLineTitle="false"
+            />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:allowDividerBelow="true"
+        app:initialExpandedChildrenCount="1"
+        app:key="pref_cat_text"
+        app:title="@string/pref_cat_text"
+        >
 
     <SeekBarPreference
         android:key="pref_font_zoom"
@@ -51,28 +75,29 @@
         <intent android:action="@string/main_action_font_delete" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
     </Preference>
 
-    <SwitchPreferenceCompat
-        android:defaultValue="@bool/showTopVideoDefault"
-        android:key="pref_show_top_video"
-        android:title="@string/pref_title_show_top_video"
-        android:summaryOn="@string/pref_title_show_top_video_on"
-        android:summaryOff="@string/pref_title_show_top_video_off"
-        />
+        <SwitchPreferenceCompat
+            android:defaultValue="@bool/showTopVideoDefault"
+            android:key="pref_show_top_video"
+            android:title="@string/pref_title_show_top_video"
+            android:summaryOn="@string/pref_title_show_top_video_on"
+            android:summaryOff="@string/pref_title_show_top_video_off"
+            />
 
-    <SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:key="pref_topline_marquee"
-        android:title="@string/pref_title_pref_topline_marquee"
-        android:icon="@drawable/ic_compare_arrows_ededed_24dp"
-        android:summaryOn="@string/pref_title_pref_topline_marquee_on"
-        android:summaryOff="@string/pref_title_pref_topline_marquee_off"
-        />
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="pref_topline_marquee"
+            android:title="@string/pref_title_pref_topline_marquee"
+            android:icon="@drawable/ic_compare_arrows_ededed_24dp"
+            android:summaryOn="@string/pref_title_pref_topline_marquee_on"
+            android:summaryOff="@string/pref_title_pref_topline_marquee_off"
+            />
 
-    <SwitchPreferenceCompat
-        android:defaultValue="false"
-        android:key="pref_correct_quotation_marks"
-        android:title="@string/pref_title_quotationmarks_fix"
-        android:summaryOn="@string/pref_title_quotationmarks_fix_on"
-        android:summaryOff="@string/pref_title_quotationmarks_fix_off"
-        />
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="pref_correct_quotation_marks"
+            android:title="@string/pref_title_quotationmarks_fix"
+            android:summaryOn="@string/pref_title_quotationmarks_fix_on"
+            android:summaryOff="@string/pref_title_quotationmarks_fix_off"
+            />
+    </PreferenceCategory>
 </PreferenceScreen>

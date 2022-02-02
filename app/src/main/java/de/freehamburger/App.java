@@ -89,6 +89,10 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final int DEFAULT_MEM_CACHE_MAX_SIZE_MB = Integer.parseInt(DEFAULT_MEM_CACHE_MAX_SIZE);
     /** int: 0 automatic; 1 dark; 2 light; see {@link BackgroundSelection} */
     public static final String PREF_BACKGROUND = "pref_background";
+    /** int: number of columns in landscape orientation - set to 0 to apply defaults */
+    public static final String PREF_COLS_LANDSCAPE = "pref_cols_landscape";
+    /** int: number of columns in portrait orientation - set to 0 to apply defaults */
+    public static final String PREF_COLS_PORTRAIT = "pref_cols_portrait";
     public static final String PREF_LOAD_OVER_MOBILE = "pref_load_over_mobile";
     public static final boolean DEFAULT_LOAD_OVER_MOBILE = true;
     public static final String PREF_LOAD_VIDEOS_OVER_MOBILE = "pref_load_videos_over_mobile";

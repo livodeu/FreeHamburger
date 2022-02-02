@@ -184,6 +184,14 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
      */
     abstract boolean hasMenuOverflowButton();
 
+    /**
+     * The preferred number of columns for either portrait or landscape orientation has changed.
+     * @param prefs SharedPreferences
+     */
+    void onColumnCountChanged(SharedPreferences prefs)  {
+        //NOP
+    }
+
     /** {@inheritDoc} */
     @Override
     @CallSuper
@@ -259,6 +267,8 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
             this.background = applyTheme(this, prefs, true);
         } else if (App.PREF_ORIENTATION.equals(key)) {
             applyOrientation(this, prefs);
+        } else if (App.PREF_COLS_PORTRAIT.equals(key) || App.PREF_COLS_LANDSCAPE.equals(key)) {
+            onColumnCountChanged(prefs);
         }
     }
 

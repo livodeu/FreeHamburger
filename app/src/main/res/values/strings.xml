@@ -105,6 +105,7 @@
 
     <string name="label_ca">ca.</string>
     <string name="label_char_invalid">Invalid</string>
+    <string name="label_cols_default">Default</string>
     <string name="label_current_cache_size">currently %1$d MB out of %2$d MB</string>
     <string name="label_current_cache_size_kb">currently %1$d kB out of %2$d MB</string>
     <string name="label_every_minutes">every %1$s minutes</string>
@@ -198,6 +199,10 @@
     <string name="msg_volume_mute">Audio is muted.</string>
     <string name="msg_website_errors">The website contains errors.</string>
 
+    <string name="pref_cat_cols">Columns</string>
+    <string name="pref_cat_opts">Options</string>
+    <string name="pref_cat_text">Text</string>
+
     <string name="pref_default_proxy_type" translatable="false">DIRECT</string>
 
     <string name="pref_header_appearance">Appearance</string>
@@ -221,6 +226,10 @@
     <string name="pref_title_ask_before_finish_off">do nothing.</string>
     <string name="pref_title_ask_before_finish_on">ask user for confirmation.</string>
     <string name="pref_title_background">Background</string>
+    <string name="pref_title_cols_landscape">in landscape orientation</string>
+    <string name="pref_title_cols_portrait">in portrait orientation</string>
+    <string name="pref_title_cols_landscape_short">Landscape: %1$s</string>
+    <string name="pref_title_cols_portrait_short">Portrait: %1$s</string>
     <string name="pref_title_font_zoom">Text magnification</string>
     <string name="pref_title_show_top_video">Illustrative videos</string>
     <string name="pref_title_show_top_video_off">Illustrative videos will not be shown</string>

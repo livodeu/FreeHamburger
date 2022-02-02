@@ -365,6 +365,19 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             menu.setQwertyMode(true);
         }
 
+        @NonNull
+        private CharSequence makeColumnsSummary(@NonNull SharedPreferences prefs) {
+            int colsLandscape = prefs.getInt(App.PREF_COLS_LANDSCAPE, 0);
+            int colsPortrait = prefs.getInt(App.PREF_COLS_PORTRAIT, 0);
+            if (colsLandscape < 1 && colsPortrait < 1) {
+                return getString(R.string.label_cols_default);
+            }
+            return new StringBuilder(33)
+                    .append(getString(R.string.pref_title_cols_landscape_short, colsLandscape < 1 ? getString(R.string.label_cols_default) : String.valueOf(colsLandscape)))
+                    .append(", ")
+                    .append(getString(R.string.pref_title_cols_portrait_short, colsPortrait < 1 ? getString(R.string.label_cols_default) : String.valueOf(colsPortrait)));
+        }
+
         /** {@inheritDoc} */
         @Override
         public void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey) {
@@ -381,6 +394,33 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             Preference prefDeleteFont = findPreference("pref_delete_font");
             Preference prefShowTopVideo = findPreference(App.PREF_SHOW_TOP_VIDEO);
             SeekBarPreference prefFontZoom = findPreference(App.PREF_FONT_ZOOM);
+
+            PreferenceCategory prefcatCols = findPreference("pref_cat_cols");
+            if (prefcatCols != null) prefcatCols.setSummary(makeColumnsSummary(prefs));
+
+            SeekBarPreference prefColsLandscape = findPreference(App.PREF_COLS_LANDSCAPE);
+            SeekBarPreference prefColsPortrait = findPreference(App.PREF_COLS_PORTRAIT);
+
+            if (prefColsLandscape != null && prefColsPortrait != null) {
+                int colsLandscape = prefs.getInt(App.PREF_COLS_LANDSCAPE, 0);
+                int colsPortrait = prefs.getInt(App.PREF_COLS_PORTRAIT, 0);
+                prefColsLandscape.setTitle(activity.getString(R.string.pref_title_cols_landscape) + ": " + (colsLandscape < 1 ? activity.getString(R.string.label_cols_default) : String.valueOf(colsLandscape)));
+                prefColsPortrait.setTitle(activity.getString(R.string.pref_title_cols_portrait) + ": " + (colsPortrait < 1 ? activity.getString(R.string.label_cols_default) : String.valueOf(colsPortrait)));
+                prefColsLandscape.setOnPreferenceChangeListener((preference, newValue) -> {
+                    if (!(newValue instanceof Integer)) return false;
+                    int c = (int)newValue;
+                    preference.setTitle(activity.getString(R.string.pref_title_cols_landscape) + ": " + (c < 1 ? activity.getString(R.string.label_cols_default) : String.valueOf(c)));
+                    if (prefcatCols != null) handler.postDelayed(() -> prefcatCols.setSummary(makeColumnsSummary(prefs)), 333L);
+                    return true;
+                });
+                prefColsPortrait.setOnPreferenceChangeListener((preference, newValue) -> {
+                    if (!(newValue instanceof Integer)) return false;
+                    int c = (int)newValue;
+                    preference.setTitle(activity.getString(R.string.pref_title_cols_portrait) + ": " + (c < 1 ? activity.getString(R.string.label_cols_default) : String.valueOf(c)));
+                    if (prefcatCols != null) handler.postDelayed(() -> prefcatCols.setSummary(makeColumnsSummary(prefs)), 333L);
+                    return true;
+                });
+            }
 
             if (prefImportFont != null && prefDeleteFont != null) {
                 File fontFile = new File(activity.getFilesDir(), App.FONT_FILE);
