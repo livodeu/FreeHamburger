@@ -12,14 +12,14 @@ import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.google.android.material.snackbar.Snackbar;
-
-import java.util.List;
-
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.preference.PreferenceManager;
+
+import com.google.android.material.snackbar.Snackbar;
+
+import java.util.List;
 
 /**
  * Special version of WebViewActivity for teletext display that can create pinned shortcuts to a teletext page (from API 26 on).
@@ -61,6 +61,9 @@ public class TeletextActivity extends WebViewActivity {
         } else if (zoom > 0 && zoom != App.PREF_FONT_ZOOM_DEFAULT) {
             setFontSize(zoom);
         }
+
+        // the menu item for creating a shortcut should be hidden if the shortcut already exists
+        invalidateOptionsMenu();
     };
 
     /**
@@ -68,6 +71,7 @@ public class TeletextActivity extends WebViewActivity {
      * @param sm ShortcutManager
      * @param id shortcut id
      * @return true / false
+     * @throws NullPointerException if {@code sm} is {@code null}
      */
     @RequiresApi(api = Build.VERSION_CODES.N_MR1)
     private static boolean hasShortcut(@NonNull ShortcutManager sm, @NonNull final String id) {
@@ -84,6 +88,21 @@ public class TeletextActivity extends WebViewActivity {
     @Override
     PageFinishedListener getPageFinishedListener() {
         return this.pfl;
+    }
+
+    /**
+     * Creates the shortcut id (and label) for the currently displayed url.
+     * @return id / label
+     */
+    @NonNull
+    private String makeShortcutIdForCurrentUrl() {
+        Uri currentUri = Uri.parse(this.webView.getUrl());
+        String label = getString(R.string.action_teletext_short);
+        String lps = currentUri.getLastPathSegment();
+        if (!TextUtils.isEmpty(lps)) {
+            label = label + " " + lps;
+        }
+        return label;
     }
 
     /** {@inheritDoc} */
@@ -111,15 +130,7 @@ public class TeletextActivity extends WebViewActivity {
                     Snackbar.make(this.webView, R.string.error_shortcut_fail, Snackbar.LENGTH_LONG).show();
                     return true;
                 }
-                String currentUrl = this.webView.getUrl();
-                Uri currentUri = Uri.parse(currentUrl);
-                String labelLong = getString(R.string.action_teletext);
-                String label = getString(R.string.action_teletext_short);
-                String lps = currentUri.getLastPathSegment();
-                if (!TextUtils.isEmpty(lps)) {
-                    label = label + " " + lps;
-                    labelLong = labelLong + " " + lps;
-                }
+                String label = makeShortcutIdForCurrentUrl();
                 if (hasShortcut(sm, label)) {
                     Snackbar.make(this.webView, R.string.msg_shortcut_exists, Snackbar.LENGTH_LONG).show();
                     return true;
@@ -127,13 +138,13 @@ public class TeletextActivity extends WebViewActivity {
                 //
                 Intent intent = new Intent(this, TeletextActivity.class);
                 intent.setAction(Intent.ACTION_VIEW);
-                intent.putExtra(EXTRA_URL, currentUri.toString());
+                intent.putExtra(EXTRA_URL, Uri.parse(this.webView.getUrl()).toString());
                 intent.putExtra(EXTRA_NO_HOME_AS_UP, true);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 ShortcutInfo pinShortcutInfo = new ShortcutInfo.Builder(this, label)
                         .setActivity(new ComponentName(this, MainActivity.class))
                         .setShortLabel(label)
-                        .setLongLabel(labelLong)
+                        .setLongLabel(getString(R.string.action_teletext))
                         .setIcon(Icon.createWithResource(this, R.mipmap.ic_vt))
                         .setIntent(intent)
                         .build();
@@ -155,10 +166,10 @@ public class TeletextActivity extends WebViewActivity {
                 itemShortcut.setVisible(false);
             } else {
                 ShortcutManager sm = (ShortcutManager) getSystemService(SHORTCUT_SERVICE);
-                itemShortcut.setVisible(sm != null && sm.isRequestPinShortcutSupported());
+                itemShortcut.setVisible(sm != null && sm.isRequestPinShortcutSupported() && !hasShortcut(sm, makeShortcutIdForCurrentUrl()));
             }
         }
-        return super.onPrepareOptionsMenu(menu);
+        return true;
     }
 
     /**

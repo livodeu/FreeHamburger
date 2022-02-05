@@ -1596,9 +1596,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             }
         }
         registerReceiver(this.connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
-
-        // this prepares the contents for WebViewActivity resp. TeletextActivity - these should start much faster (in the order of 30 ms vs. 350 ms)
-        this.handler.postDelayed(() -> ((App)getApplicationContext()).createInflatedViewForWebViewActivity(this,true), 2_000L);
     }
 
     /** {@inheritDoc} */

@@ -20,6 +20,7 @@
     <string name="msg_filters_enabled">Filter sind jetzt aktiviert.</string>
     <string name="action_teletext_short">VT</string>
     <string name="action_shortcut_create">Verknüpfung erstellen</string>
+    <string name="action_shortcut_create_condensed">Verknüpfung</string>
     <string name="error_shortcut_fail">Die Verknüpfung konnte nicht erstellt werden!</string>
     <string name="msg_shortcut_exists">Die Verknüpfung existiert bereits.</string>
     <string name="app_build_date">Erstelldatum: %1$s</string>

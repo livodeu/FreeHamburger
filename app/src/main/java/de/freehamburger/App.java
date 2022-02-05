@@ -223,9 +223,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     private Activity currentActivity;
     @Nullable
     private OkHttpClient client;
-    /** inflated View to be used by {@link WebViewActivity} */
-    @Nullable
-    private ViewGroup inflatedViewForWebViewActivity;
 
     /**
      * Creates an OkHttpClient instance.
@@ -426,11 +423,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
      */
     long getCurrentCacheSize() {
         return Util.getOccupiedSpace(Util.listFiles(getCacheDir()));
-    }
-
-    @Nullable
-    ViewGroup getInflatedViewForWebViewActivity() {
-        return this.inflatedViewForWebViewActivity;
     }
 
     /**
@@ -740,7 +732,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public void onTrimMemory(int level) {
         if (level > android.content.ComponentCallbacks2.TRIM_MEMORY_MODERATE) {
             closeClient();
-            this.inflatedViewForWebViewActivity = null;
         }
         super.onTrimMemory(level);
     }

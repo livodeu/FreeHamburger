@@ -19,7 +19,6 @@ import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
 import android.webkit.MimeTypeMap;
@@ -129,18 +128,11 @@ public class WebViewActivity extends AppCompatActivity {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         HamburgerActivity.applyOrientation(this, prefs);
 
-        // if we can use a View that has been previously inflated, this method takes much less time
-        ViewGroup preInflatedView = ((App)getApplicationContext()).getInflatedViewForWebViewActivity();
-        if (preInflatedView != null) {
-            ViewGroup content = findViewById(android.R.id.content);
-            content.addView(preInflatedView);
-        } else {
-            getDelegate().setContentView(R.layout.activity_web_view);
-        }
+        getDelegate().setContentView(R.layout.activity_web_view);
+        getDelegate().setSupportActionBar(findViewById(R.id.toolbar));
 
-        setSupportActionBar(findViewById(R.id.toolbar));
-
-        this.webView = findViewById(R.id.webView);
+        this.webView = getDelegate().findViewById(R.id.webView);
+        assert this.webView != null;
         this.webView.setBackgroundColor(Util.isNightMode(this) ? Color.BLACK : Color.WHITE);
         this.webView.setWebViewClient(new HamburgerWebViewClient(this));
         this.webView.setWebChromeClient(new HamburgerWebChromeClient(this));
@@ -148,8 +140,7 @@ public class WebViewActivity extends AppCompatActivity {
 
         final WebSettings ws = this.webView.getSettings();
         ws.setUserAgentString(App.USER_AGENT);
-        if (!prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE)
-                && Util.isNetworkMobile(this)) {
+        if (!prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE) && Util.isNetworkMobile(this)) {
             ws.setBlockNetworkLoads(true);
         }
         ws.setJavaScriptEnabled(true);
@@ -167,7 +158,7 @@ public class WebViewActivity extends AppCompatActivity {
             ws.setSafeBrowsingEnabled(false);
         }
 
-        ActionBar ab = getSupportActionBar();
+        ActionBar ab = getDelegate().getSupportActionBar();
         if (ab != null) {
             boolean noHomeAsUp = getIntent().getBooleanExtra(EXTRA_NO_HOME_AS_UP, false);
             if (!noHomeAsUp) ab.setDisplayHomeAsUpEnabled(true);
@@ -191,21 +182,11 @@ public class WebViewActivity extends AppCompatActivity {
 
     /** {@inheritDoc} */
     @Override
-    public void onDetachedFromWindow() {
-        // prepare a new instance of the content view for the next time this Acticity is launched
-        ((App)getApplicationContext()).createInflatedViewForWebViewActivity(this,false);
-        //
-        ViewGroup content = findViewById(android.R.id.content);
-        content.removeAllViews();
-    }
-
-    /** {@inheritDoc} */
-    @Override
     protected void onResume() {
         super.onResume();
         this.webView.clearHistory();
         if (!Util.isNetworkAvailable(this)) {
-            Toast.makeText(getApplicationContext(), R.string.error_no_network, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_no_network, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -213,7 +194,7 @@ public class WebViewActivity extends AppCompatActivity {
             String url = this.news.getDetailsWeb();
             if (TextUtils.isEmpty(url)) url = this.news.getShareUrl();
             if (TextUtils.isEmpty(url)) {
-                Toast.makeText(getApplicationContext(), R.string.error_no_further_details, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, R.string.error_no_further_details, Toast.LENGTH_LONG).show();
                 finish();
                 return;
             }
@@ -281,16 +262,13 @@ public class WebViewActivity extends AppCompatActivity {
          * @param url url of resource to load
          * @return {@code true} if the resource should be passed to the {@link DownloadManager}.
          */
-        private static boolean isDownloadableResource(@NonNull String url) {
-            final String urlToCheck;
-            int q = url.lastIndexOf('?');
-            if (q > 0) {
-                urlToCheck = url.substring(0, q).toLowerCase(Locale.US);
-            } else {
-                urlToCheck = url.toLowerCase(Locale.US);
-            }
+        @VisibleForTesting
+        public static boolean isDownloadableResource(@NonNull String url) {
+            String path = Uri.parse(url).getPath();
+            if (path == null) return false;
+            path = path.toLowerCase(Locale.US);
             for (String ext : DOWNLOADABLE_RESOURCES) {
-                if (urlToCheck.endsWith(ext)) return true;
+                if (path.endsWith(ext)) return true;
             }
             return false;
         }
@@ -490,8 +468,8 @@ public class WebViewActivity extends AppCompatActivity {
             if (BuildConfig.DEBUG) {
                 int line = consoleMessage.lineNumber();
                 switch (consoleMessage.messageLevel()) {
-                    case WARNING: Log.w(getClass().getSimpleName(), consoleMessage.sourceId() + (line > 0 ? " - Line " + line : "") + ": " + consoleMessage.message()); break;
-                    case ERROR: Log.e(getClass().getSimpleName(), consoleMessage.sourceId() + (line > 0 ? " - Line " + line : "") + ": " + consoleMessage.message()); break;
+                    case WARNING: Log.i(getClass().getSimpleName(), consoleMessage.sourceId() + (line > 0 ? " - Line " + line : "") + ": " + consoleMessage.message()); break;
+                    case ERROR: Log.w(getClass().getSimpleName(), consoleMessage.sourceId() + (line > 0 ? " - Line " + line : "") + ": " + consoleMessage.message()); break;
                     default: return true;
                 }
             }

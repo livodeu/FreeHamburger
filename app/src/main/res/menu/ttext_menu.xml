@@ -5,8 +5,8 @@
 
     <item
         android:id="@+id/action_shortcut_create"
-        android:orderInCategory="10"
         android:title="@string/action_shortcut_create"
+        android:titleCondensed="@string/action_shortcut_create_condensed"
         app:showAsAction="never"
         />
 </menu>
