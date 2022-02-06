@@ -30,6 +30,7 @@ sr.de
 swr.de
 swr3.de
 tagesschau24.de
+tagesschau.akamaized.net
 wdr.de
 wdrhf.akamaized.net
 akamaihd.net
