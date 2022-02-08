@@ -428,7 +428,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             }
             dummyNewsView.setNews(follower, service);
         } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.w(TAG, "While trying to preload for pos. " + position + ": " + e.toString());
+            if (BuildConfig.DEBUG) Log.w(TAG, "While trying to preload for pos. " + position + ": " + e);
         }
     }
 
@@ -586,7 +586,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
                 News news = adapter.isFiltered() ? adapter.filteredNews.get(position) : adapter.newsList.get(position);
                 if (news != null) newsAdapterController.onNewsClicked(news, v, this.xPosOfEventActionUp, this.yPosOfEventActionUp);
             } catch (IndexOutOfBoundsException e) {
-                if (BuildConfig.DEBUG) Log.e(TAG, "Click on " + v + " @ position " + position + " -> " + e.toString());
+                if (BuildConfig.DEBUG) Log.e(TAG, "Click on " + v + " @ position " + position + " -> " + e);
             }
         }
 

@@ -164,7 +164,7 @@ public class SearchHelper {
             }
             return true;
         } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, "Failed to delete search suggestions: " + e.toString());
+            if (BuildConfig.DEBUG) Log.e(TAG, "Failed to delete search suggestions: " + e);
         }
         return false;
     }
@@ -183,7 +183,7 @@ public class SearchHelper {
                 setCreationTime(ctx, source, 0L);
             }
         } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, "Failed to delete search suggestion: " + e.toString());
+            if (BuildConfig.DEBUG) Log.e(TAG, "Failed to delete search suggestion: " + e);
         }
     }
 

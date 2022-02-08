@@ -83,7 +83,7 @@ public class Video implements Serializable {
             try {
                 date = News.parseDate(dateString);
             } catch (ParseException e) {
-                if (BuildConfig.DEBUG) android.util.Log.e(getClass().getSimpleName(), "While parsing date: " + e.toString());
+                if (BuildConfig.DEBUG) android.util.Log.e(getClass().getSimpleName(), "While parsing date: " + e);
             }
             if (date != null) return date;
         }

@@ -770,7 +770,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     startActivity(intent);
                     overridePendingTransition(R.anim.grow_from_bottom, R.anim.fadeout);
                 } catch (Exception e) {
-                    if (BuildConfig.DEBUG) Log.e(TAG, "While parsing \"" + url + "\": " + e.toString());
+                    if (BuildConfig.DEBUG) Log.e(TAG, "While parsing \"" + url + "\": " + e);
                 } finally {
                     Util.close(reader);
                 }
@@ -1520,7 +1520,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             try {
                 context.startActivity(chooserIntent);
             } catch (ActivityNotFoundException e) {
-                if (BuildConfig.DEBUG) Log.w(getClass().getSimpleName(), "Actvity was not found for intent " + intent.toString());
+                if (BuildConfig.DEBUG) Log.w(getClass().getSimpleName(), "Actvity was not found for intent " + intent);
             }
         }
 

@@ -203,7 +203,7 @@ public final class News implements Comparable<News>, Serializable {
                             news.streams.put(StreamQuality.valueOf(q), url);
                         }
                     } catch (Exception e) {
-                        if (BuildConfig.DEBUG) Log.w(TAG, "While parsing 'streams': " + e.toString());
+                        if (BuildConfig.DEBUG) Log.w(TAG, "While parsing 'streams': " + e);
                     }
                 }
                 reader.endObject();
@@ -546,7 +546,7 @@ public final class News implements Comparable<News>, Serializable {
                 + "\", Ext.Id: \"" + externalId
                 + "\", Shorttext: " + (shorttext != null ? "\"" + shorttext + "\"" : "<null>")
                 + ", Regional: " + regional
-                + ", Tags:" + tags.toString()
+                + ", Tags:" + tags
                 + ", Content: \"" + content + "\")";
     }
 

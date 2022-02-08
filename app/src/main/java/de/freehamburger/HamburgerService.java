@@ -223,7 +223,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
                 downloader.execute(new Downloader.Order(url, localFile.getAbsolutePath(), mostRecentUpdate, false, listener));
             }
         } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, "loadFile(\"" + url + "\", …, …, …) failed: " + e.toString(), e);
+            if (BuildConfig.DEBUG) Log.e(TAG, "loadFile(\"" + url + "\", …, …, …) failed: " + e, e);
             listener.downloaded(false, null);
         }
     }
@@ -309,7 +309,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
              * java.lang.IllegalStateException:
              * Not allowed to start service Intent { cmp=de.freehamburger.debug/de.freehamburger.HamburgerService }: app is in background uid UidRecord{...}
              */
-            if (BuildConfig.DEBUG) Log.w(TAG, "onCreate() - startService(): " + e.toString(), e, 4);
+            if (BuildConfig.DEBUG) Log.w(TAG, "onCreate() - startService(): " + e, e, 4);
         }
         PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).registerOnSharedPreferenceChangeListener(this);
     }

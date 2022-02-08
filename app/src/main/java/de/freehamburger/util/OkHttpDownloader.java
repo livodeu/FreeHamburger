@@ -178,7 +178,7 @@ public class OkHttpDownloader extends Downloader {
             } else {
                 msg.append(e.getMessage());
             }
-            if (TextUtils.isEmpty(msg)) msg.append(e.toString());
+            if (TextUtils.isEmpty(msg)) msg.append(e);
             publishProgress(1f);
             return new Result(order.url, 500, msg.toString(), f, null, 0L, order.listener);
         } catch (Exception e) {

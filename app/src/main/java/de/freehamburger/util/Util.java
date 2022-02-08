@@ -266,7 +266,7 @@ public class Util {
             ok = true;
         } catch (IOException e) {
             ok = false;
-            if (BuildConfig.DEBUG) Log.e(TAG, "copyFile(): " + e.toString(), e);
+            if (BuildConfig.DEBUG) Log.e(TAG, "copyFile(): " + e, e);
         } finally {
             close(out);
         }
@@ -305,7 +305,7 @@ public class Util {
             ok = copyFile(in, dest, (int)filesize, maxSize);
         } catch (IOException e) {
             ok = false;
-            if (BuildConfig.DEBUG) Log.e(TAG, "While copying file \"" + src + "\" to \"" + dest + "\": " + e.toString());
+            if (BuildConfig.DEBUG) Log.e(TAG, "While copying file \"" + src + "\" to \"" + dest + "\": " + e);
         } finally {
             close(in);
         }
@@ -696,7 +696,7 @@ public class Util {
             space = Os.stat(file.getAbsolutePath()).st_blocks << 9;
         } catch (ErrnoException e) {
             space = 0L;
-            if (BuildConfig.DEBUG) Log.e(TAG, "getOccupiedSpace(\"" + file + "\"): " + e.toString());
+            if (BuildConfig.DEBUG) Log.e(TAG, "getOccupiedSpace(\"" + file + "\"): " + e);
         }
         return space;
     }
@@ -713,7 +713,7 @@ public class Util {
             try {
                 space += Os.stat(file.getAbsolutePath()).st_blocks << 9;
             } catch (ErrnoException e) {
-                if (BuildConfig.DEBUG) Log.e(TAG, "getOccupiedSpace(" + file + "): " + e.toString());
+                if (BuildConfig.DEBUG) Log.e(TAG, "getOccupiedSpace(" + file + "): " + e);
             }
         }
         return space;
@@ -1025,7 +1025,7 @@ public class Util {
                 lines.add(line);
             }
         } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, "loadResourceTextFile(..., " + rawId + ", ...): " + e.toString());
+            if (BuildConfig.DEBUG) Log.e(TAG, "loadResourceTextFile(..., " + rawId + ", ...): " + e);
         } finally {
             close(in);
         }
@@ -1335,7 +1335,7 @@ public class Util {
             }
         } catch (IOException e) {
             ok = false;
-            if (BuildConfig.DEBUG) Log.e(TAG, "sendBitmap(): " + e.toString());
+            if (BuildConfig.DEBUG) Log.e(TAG, "sendBitmap(): " + e);
         } finally {
             close(out);
             if (!ok && temp != null) {

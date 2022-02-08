@@ -8,6 +8,7 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.preference.PreferenceViewHolder;
 import androidx.preference.SwitchPreferenceCompat;
 
@@ -36,7 +37,7 @@ public class NiceSwitchPreference extends SwitchPreferenceCompat {
 
     /** {@inheritDoc} */
     @Override
-    public void onBindViewHolder(PreferenceViewHolder holder) {
+    public void onBindViewHolder(@NonNull PreferenceViewHolder holder) {
         super.onBindViewHolder(holder);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
         View titleView = holder.findViewById(android.R.id.title);

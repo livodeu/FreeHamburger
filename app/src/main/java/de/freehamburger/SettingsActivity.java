@@ -235,7 +235,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
      */
     @SuppressWarnings("deprecation")
     @Override
-    public boolean onPreferenceStartFragment(PreferenceFragmentCompat caller, Preference pref) {
+    public boolean onPreferenceStartFragment(@NonNull PreferenceFragmentCompat caller, Preference pref) {
         // Instantiate the new Fragment
         Bundle args = pref.getExtras();
         FragmentManager fm = getSupportFragmentManager();
@@ -975,7 +975,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
                     /** {@inheritDoc} */
                     @Override
-                    public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                         if (newValue != null) {
                             final String type = newValue.toString();
                             boolean match = false;

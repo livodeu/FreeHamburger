@@ -122,7 +122,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
 
     /** {@inheritDoc} */
     @Override
-    public void onBindViewHolder(PreferenceViewHolder holder) {
+    public void onBindViewHolder(@NonNull PreferenceViewHolder holder) {
         super.onBindViewHolder(holder);
 
         this.button = (Button)holder.findViewById(R.id.button);
@@ -167,7 +167,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
     /** {@inheritDoc} */
     @Override
     protected void onRestoreInstanceState(Parcelable state) {
-        if (!state.getClass().equals(SavedState.class)) {
+        if (state == null || !state.getClass().equals(SavedState.class)) {
             super.onRestoreInstanceState(state);
             return;
         }

@@ -32,7 +32,7 @@ public final class FileDeleter {
                 w = new BufferedWriter(new FileWriter(MORITURI, true));
                 w.write(file.getAbsolutePath() + '\n');
             } catch (Exception e) {
-                if (BuildConfig.DEBUG) Log.e(TAG, "While adding entry to list of deleteable files: " + e.toString());
+                if (BuildConfig.DEBUG) Log.e(TAG, "While adding entry to list of deleteable files: " + e);
             } finally {
                 Util.close(w);
             }
