@@ -948,6 +948,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         setTheme(R.style.AppTheme);
         super.onCreate(savedInstanceState);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) sploosh();
+
         setVolumeControlStream(App.STREAM_TYPE);
 
         this.popupManager = new PopupManager();

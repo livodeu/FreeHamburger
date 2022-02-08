@@ -1,5 +1,9 @@
 package de.freehamburger;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
@@ -8,12 +12,14 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.animation.AccelerateInterpolator;
 import android.widget.Toast;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -22,6 +28,7 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.StyleRes;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
@@ -272,6 +279,28 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
             sb = Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT);
         }
         sb.show();
+    }
+
+    /**
+     * Modifies the splash screen. For Android 12+.
+     */
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    void sploosh() {
+        getSplashScreen().setOnExitAnimationListener(splashScreenView -> {
+            final ObjectAnimator sx = ObjectAnimator.ofFloat(splashScreenView.getIconView(), "scaleX", 1f, 0f);
+            final ObjectAnimator sy = ObjectAnimator.ofFloat(splashScreenView.getIconView(), "scaleY", 1f, 0f);
+            final ObjectAnimator tr = ObjectAnimator.ofFloat(splashScreenView, "alpha", 1f, 0f);
+            final AnimatorSet s = new AnimatorSet().setDuration(500L);
+            s.setInterpolator(new AccelerateInterpolator(1.5f));
+            s.playTogether(sx, sy, tr);
+            s.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    splashScreenView.remove();
+                }
+            });
+            s.start();
+        });
     }
 
 }

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorButtonNormal">@color/colorPrimary</item>
+        <item name="android:navigationBarColor">@color/colorPrimary</item>
+        <item name="android:fastScrollThumbDrawable">@android:drawable/btn_default</item>
+        <item name="android:fastScrollOverlayPosition">atThumb</item>
+        <item name="android:alertDialogTheme">@style/AppAlertDialogTheme</item>
+        <item name="alertDialogTheme">@style/AppAlertDialogTheme</item>
+        <item name="android:windowBackground">@color/colorPrimaryLight</item>
+        <item name="listMenuViewStyle">@style/AppTheme.ListMenuViewStyle</item>
+        <item name="color_bg_news">@color/colorBgNews</item>
+        <item name="color_bg_news_focused">@color/colorBgNewsFocused</item>
+        <item name="snackbarStyle">@style/Widget.App.Snackbar</item>
+        <!-- down here are the differences to the standard styles.xml -->
+        <!-- contextPopupMenuStyle allows a colored context menu (it'd have a white background if this were not here) -->
+        <item name="android:contextPopupMenuStyle">@style/ContextMenu</item>
+        <!-- new for Android 12 aka S -->
+        <item name="android:windowSplashScreenBackground">@color/colorPrimaryDark</item>
+    </style>
+</resources>
