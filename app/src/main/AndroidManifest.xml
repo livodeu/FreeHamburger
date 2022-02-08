@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <permission android:name="${applicationId}.nix" android:protectionLevel="signature"/>
+
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
@@ -217,6 +219,7 @@
             android:name=".supp.SearchContentProvider"
             android:authorities="@string/app_search_auth"
             android:readPermission="android.permission.GLOBAL_SEARCH"
+            android:permission="${applicationId}.nix"
             android:exported="true">
         </provider>
 
