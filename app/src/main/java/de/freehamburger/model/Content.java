@@ -217,7 +217,6 @@ public class Content implements Serializable {
                     String boxTitle = box.getTitle();
                     if (!TextUtils.isEmpty(boxTitle)) {
                         // add the box title
-                        if (BuildConfig.DEBUG) android.util.Log.i(Content.class.getSimpleName(), "Color " + colorBox + " for \"" + boxTitle + "\"");
                         //FIXME apparently, a <h6> causes the background color not being applied because in Html.setSpanFromMark() 'where' equals 'len'…
                         htmlTextBuilder.append("<font color=\"").append(colorBox).append("\">").append(boxTitle).append("</font>");
                     }

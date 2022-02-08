@@ -13,7 +13,6 @@ import android.app.job.JobInfo;
 import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
 import android.app.job.JobService;
-import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -24,7 +23,6 @@ import android.graphics.ColorSpace;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcel;
 import android.os.PersistableBundle;
 import android.preference.PreferenceManager;
 import android.service.notification.StatusBarNotification;
@@ -32,6 +30,7 @@ import android.text.TextUtils;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
+import androidx.annotation.AnyThread;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
 import androidx.annotation.LayoutRes;
@@ -41,15 +40,22 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.VisibleForTesting;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -104,6 +110,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     static final String PREF_STAT_ESTIMATED = "pref_background_estimated";
     /** String Set: sources to load */
     static final String PREF_SOURCES = "pref_background_sources";
+    /** the default sources to load ({@link Source#HOME HOME} only) */
     static final Set<String> PREF_SOURCES_DEFAULT = Collections.singleton(Source.HOME.name());
     /** if set, contains {@link News#getExternalId() News.externalId} - can be used to remove a Notification */
     static final String EXTRA_FROM_NOTIFICATION = BuildConfig.APPLICATION_ID + ".from_notification";
@@ -122,6 +129,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     /** Notification id offset */
     private static final int NOTIFICATION_ID_OFFSET = 123;
     private static final String ACTION_DISABLE_POLLING = "de.freehamburger.action.disable_polling";
+    /** wait this many milliseconds after loading the Source data (for additional images to load and notifications to be shown) */
+    private static final long DELAY_TO_DESTRUCTION = 10_000L;
     /** String set: logs timestamps of all requests */
     private static final String PREF_STAT_ALL = "pref_stat_all";
     /** self-imposed minimum interval of 5 minutes regardless {@link JobInfo#getMinPeriodMillis() what Android says} */
@@ -130,12 +139,11 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private static final BitmapFactory.Options BITMAPFACTORY_OPTIONS = new BitmapFactory.Options();
     /** to be added to values stored in {@link #PREF_STAT_ALL}<br><em>(DEBUG versions only!)</em> */
     private static final long ADD_TO_PREF_STAT_ALL_VALUE = 1_500_000_000_000L;
-    /** String Set: contains the external ids of those News that were shown as a Notification most recently; format: "{@link News#externalId newsexternalid}#{@link Source#name() sourcename}" */
-    private static final String PREF_LATEST_NEWS_IDS = "pref_background_latest_news_ids";
     private static final String NOTIFICATION_GROUP_KEY = "de.freehamburger.bgn";
-    @NonNull private static final Set<String> EMPTY_STRING_SET = new HashSet<>(0);
-    /** separates News id from Source name in the {@link #PREF_LATEST_NEWS_IDS stored latest News set} */
-    private static final char LATEST_NEWS_SEP = '#';
+    /** contains News' external ids plus timestamps for News that have been shown in a notification */
+    private static final String NOTIFIED_NEWS_FILE = "notified.txt";
+    /** separates a News' external id from a timestamp in {@link #NOTIFIED_NEWS_FILE} */
+    private static final char NOTIFIED_NEWS_FILE_SEP = '@';
     private static int nextid = 1;
 
     static {
@@ -145,10 +153,18 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
 
     private final List<Filter> filters = new ArrayList<>();
     private final int id;
+    /** controls access to {@link #NOTIFIED_NEWS_FILE} */
+    private final Object notifiedLock = new Object();
+    /** key: News' {@link News#getExternalId() external id}, value: timestamp of notification */
+    private final Map<String, Long> previouslyShownNews = Collections.synchronizedMap(new HashMap<>());
+    /** {@code true} if the list of previously shown News has been correctly loaded */
+    private volatile boolean previouslyShownNewsLoaded = false;
+    /** {@code true} while the list of previously shown News has not been modified */
+    private volatile boolean previouslyShownNewsStored = true;
     private ThreadPoolExecutor loaderExecutor;
     private JobParameters params;
     private long scheduledAt;
-    private boolean stopJobReceived;
+    private volatile boolean stopJobReceived;
     private int nextNotificationId = NOTIFICATION_ID_OFFSET;
     private NotificationSummary summary = null;
 
@@ -216,14 +232,14 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * Returns all currently visible Notifications issued by {@link UpdateJobService}.
      * @param ctx Context
      * @return array of notification ids
+     * @throws NullPointerException if {@code ctx} is {@code null}
      */
     @RequiresApi(api = Build.VERSION_CODES.M)
     @NonNull
     static int[] getAllNotifications(@NonNull Context ctx) {
-        NotificationManager nm = (NotificationManager)ctx.getSystemService(NOTIFICATION_SERVICE);
-        StatusBarNotification[] sbs = nm.getActiveNotifications();
+        final StatusBarNotification[] sbs = ((NotificationManager)ctx.getSystemService(NOTIFICATION_SERVICE)).getActiveNotifications();
         if (sbs == null || sbs.length == 0) return new int[0];
-        List<Integer> ids = new ArrayList<>(sbs.length);
+        final List<Integer> ids = new ArrayList<>(sbs.length);
         for (StatusBarNotification sb : sbs) {
             if (sb.getId() >= NOTIFICATION_ID_SUMMARY) ids.add(sb.getId());
         }
@@ -257,7 +273,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * Returns the current time of day in hours. For example, at 22:30 (10:30 PM) this method returns 22.5.
      * @return current time of day in hours
      */
-    @FloatRange(from = 0f, to = 24f)
+    @FloatRange(from = 0f, to = 23.999722f)
     private static float getCurrentTimeInHours() {
         final Calendar now = new GregorianCalendar(App.TIMEZONE);
         return now.get(Calendar.HOUR_OF_DAY) + now.get(Calendar.MINUTE) / 60f + now.get(Calendar.SECOND) / 3600f;
@@ -342,7 +358,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * @return PendingIntent
      */
     @NonNull
-    private static PendingIntent makeIntentForStory(@NonNull App app, @NonNull News news, int notificationId) {
+    @VisibleForTesting
+    public static PendingIntent makeIntentForStory(@NonNull App app, @NonNull News news, int notificationId) {
         final Intent showNewsIntent = new Intent(app, MainActivity.class);
         showNewsIntent.setAction(MainActivity.ACTION_SHOW_NEWS);
         showNewsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -407,6 +424,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * Generates a JobInfo that can be used to schedule the periodic job.<br>
      * <em>The returned JobInfo should be used immediately if it contains a timestamp.</em>
      * @param ctx Context
+     * @param expedited true to set the {@link JobInfo.Builder#setExpedited(boolean) expedited} flag (only applies to API S and newer)
      * @return JobInfo
      * @throws NullPointerException if {@code ctx} is {@code null}
      */
@@ -423,6 +441,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 .setPersisted(true);    // <- this one needs RECEIVE_BOOT_COMPLETED permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             jib.setEstimatedNetworkBytes(ESTIMATED_NETWORK_BYTES, 250L);
+            jib.setPrefetch(true);
         }
         PersistableBundle extras = new PersistableBundle(2);
         extras.putLong(EXTRA_TIMESTAMP, System.currentTimeMillis());
@@ -539,7 +558,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             return;
         }
         if (!ok || blob == null || oops != null) {
-            if (BuildConfig.DEBUG && oops != null) Log.e(TAG + id, "Parsing failed: " + oops.toString());
+            if (BuildConfig.DEBUG && oops != null) Log.e(TAG + id, "Parsing failed: " + oops);
             return;
         }
         // get the list of news which is sorted so that the newest news is at the top
@@ -547,8 +566,9 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         if (jointList.isEmpty()) return;
         //
         App app = (App) getApplicationContext();
-        final boolean breakingOnly = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_POLL_BREAKING_ONLY, true);
-        @Nullable final String latestNewsExtId = restoreLatestNews(blob.getSource());
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        final boolean breakingOnly = prefs.getBoolean(App.PREF_POLL_BREAKING_ONLY, true);
+        //@Nullable final String latestNewsExtId = restoreLatestNews(blob.getSource());
         // get the time when the user has updated the news list himself/herself most recently, so that we know what the user has already seen
         final long latestSourceStateSeenByUser = app.getMostRecentManualUpdate(blob.getSource());
 
@@ -584,43 +604,43 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             return;
         }
 
-        String newsExternalId = newsToDisplay.getExternalId();
-        if (newsExternalId == null || !newsExternalId.equals(latestNewsExtId)) {
-            if (newsExternalId != null) {
-                storeLatestNews(blob.getSource(), newsToDisplay);
+        if (newsToDisplay.getExternalId() != null) {
+            if (this.previouslyShownNews.containsKey(newsToDisplay.getExternalId())) {
+                if (BuildConfig.DEBUG) Log.i(TAG + id, "As News \"" + newsToDisplay.getTitle() + "\" has already been shown, it will be skipped now.");
+                return;
             }
+            this.previouslyShownNews.put(newsToDisplay.getExternalId(), System.currentTimeMillis());
+            this.previouslyShownNewsStored = false;
+            if (BuildConfig.DEBUG) Log.i(TAG + id, "News \"" + newsToDisplay.getExternalId() + "\" has now been shown in a notification.");
+        }
 
-            TeaserImage teaserImage = newsToDisplay.getTeaserImage();
-            if (teaserImage != null) {
-                //TODO this does not seem to match the selection made in the app…
-                String imageUrl = Util.isNetworkMobile(this)
-                        ? teaserImage.getImage(TeaserImage.Quality.S, TeaserImage.Quality.P1, TeaserImage.Quality.M)
-                        : teaserImage.getImage(TeaserImage.Quality.M, TeaserImage.Quality.P1);
-                if (imageUrl != null) {
-                    try {
-                        final News finalCopy = newsToDisplay;
-                        final File temp = File.createTempFile("temp", ".jpg");
-                        loadFile(imageUrl, temp, (completed, result) -> {
-                            Bitmap bm = (completed && result != null && result.file != null && result.rc < 400) ? BitmapFactory.decodeFile(result.file.getAbsolutePath(), BITMAPFACTORY_OPTIONS) : null;
-                            notify(finalCopy, blob.getSource(), bm);
-                            if (result != null) Util.deleteFile(result.file);
-                        });
-                        return;
-                    } catch (Exception e) {
-                        if (BuildConfig.DEBUG) Log.e(TAG + id, e.toString(), e);
-                    }
+        TeaserImage teaserImage = newsToDisplay.getTeaserImage();
+        if (teaserImage != null) {
+            TeaserImage.MeasuredImage mi = teaserImage.getBestImageForWidth(Util.getDisplaySize(this).x, News.NEWS_TYPE_VIDEO.equals(newsToDisplay.getType()));
+            String imageUrl = mi != null && mi.url != null ? mi.url : null;
+            if (imageUrl != null && Util.isNetworkAvailable(app)) {
+                try {
+                    final News finalCopy = newsToDisplay;
+                    final File temp = File.createTempFile("temp", ".jpg");
+                    loadFile(imageUrl, temp, (completed, result) -> {
+                        Bitmap bm = (completed && result != null && result.file != null && result.rc < 400) ? BitmapFactory.decodeFile(result.file.getAbsolutePath(), BITMAPFACTORY_OPTIONS) : null;
+                        notify(finalCopy, blob.getSource(), bm);
+                        Util.deleteFile(temp);
+                    });
+                    return;
+                } catch (Exception e) {
+                    if (BuildConfig.DEBUG) Log.e(TAG + id, e.toString());
                 }
             }
-            notify(newsToDisplay, blob.getSource(), null);
-        } else {
-            if (BuildConfig.DEBUG) Log.i(TAG + id, "Got news list in the background and got: \"" + newsToDisplay.getTitle() + "\" that equals latest news for Source " + blob.getSource());
         }
+        notify(newsToDisplay, blob.getSource(), null);
     }
 
     /**
      * Calls {@link #jobFinished(JobParameters, boolean) jobFinished(JobParameters, false)}.
      */
     private void done() {
+        previouslyShownNewsUpdate();
         if (this.params == null) return;
         jobFinished(this.params, false);
         this.params = null;
@@ -690,7 +710,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 downloader.executeOnExecutor(this.loaderExecutor, new Downloader.Order(url, localFile.getAbsolutePath(), 0L, true, listener));
             }
         } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG + id, "loadFile(\"" + url + "\", …, …) failed: " + e.toString(), e);
+            if (BuildConfig.DEBUG) Log.e(TAG + id, "loadFile(\"" + url + "\", …, …) failed: " + e, e);
             listener.downloaded(false, null);
         }
     }
@@ -700,6 +720,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * @param source Source
      * @param listener DownloaderListener to notify about the download
      * @return true if the download has been initiated successfully
+     * @throws NullPointerException if any parameter is {@code null}
      */
     @RequiresPermission(Manifest.permission.INTERNET)
     private boolean loadFile(@NonNull Source source, @NonNull Downloader.DownloaderListener listener) {
@@ -707,14 +728,13 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         String url = source.getUrl();
         if (source == Source.REGIONAL) {
             url = url + Source.getParamsForRegional(this);
-            if (BuildConfig.DEBUG) Log.i(TAG + id, "Source " + source + " needs params: url is " + url);
         }
         OkHttpDownloader downloader = new OkHttpDownloader(this);
         try {
             downloader.executeOnExecutor(this.loaderExecutor,
                     new Downloader.Order(url, app.getLocalFile(source).getAbsolutePath(), app.getMostRecentUpdate(source), true, listener));
         } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG + id, "loadFile(" + source + ", …) failed: " + e.toString());
+            if (BuildConfig.DEBUG) Log.e(TAG + id, "loadFile(" + source + ", …) failed: " + e);
             listener.downloaded(false, null);
             return false;
         }
@@ -782,31 +802,29 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 .setGroup(NOTIFICATION_GROUP_KEY)
                 .setSortKey(String.valueOf((char)('A' + source.ordinal()))) // this assigns 'A' to HOME and ascending chars to the other ones
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
+                // according to the docs, the category is used to determine whether to disturb the user in "Do Not Disturb mode"
                 .setCategory(Notification.CATEGORY_MESSAGE)
                 .setContentIntent(contentIntent)
                 .setAutoCancel(true)
+                // the notification might be updated (see below) when a News is delivered in more than one category; therefore "alert only once"
+                .setOnlyAlertOnce(true)
                 .setOngoing(false);
 
-        boolean extendedStyleApplied = false;
-        if (applyExtendedStyle) {
-            extendedStyleApplied = applyCustomView(builder, news, largeIcon);
-        }
-
+        boolean extendedStyleApplied = applyExtendedStyle && applyCustomView(builder, news, largeIcon);
         if (!extendedStyleApplied) {
-            if (largeIcon != null) {
-                builder.setLargeIcon(largeIcon);
-            }
+            if (largeIcon != null) builder.setLargeIcon(largeIcon);
             if (!TextUtils.isEmpty(bigtext)) {
                 builder.setStyle(new Notification.BigTextStyle()
-                                // .setSummaryText() here affects the same area as setSubText() in the std. notification
-                                .setBigContentTitle(title)
                                 .bigText(bigtext)
+                                .setBigContentTitle(title)
+                                // .setSummaryText() here affects the same area as setSubText() in the std. notification
                                 );
             } else if (largeIcon != null) {
-                builder.setStyle(new Notification.BigPictureStyle().bigPicture(largeIcon)
+                builder.setStyle(new Notification.BigPictureStyle()
                         .bigLargeIcon((Bitmap) null)
-                        .setSummaryText(content)
-                        .setBigContentTitle(title));
+                        .bigPicture(largeIcon)
+                        .setBigContentTitle(title)
+                        .setSummaryText(content));
             }
         }
 
@@ -837,13 +855,29 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             builder.setAllowSystemGeneratedContextualActions(false);
         }
-        nm.notify(this.nextNotificationId++, builder.build());
+        // check existing notifications for one with the same tag (= external id attribute of a News)
+        final StatusBarNotification[] active = nm.getActiveNotifications();
+        for (StatusBarNotification sbn : active) {
+            String extId = sbn.getTag();
+            if (extId != null && extId.equals(news.getExternalId())) {
+                Notification existing = sbn.getNotification();
+                // add source label to existing one, so it will be like "Nachrichten, Sport" or similar
+                existing.extras.putCharSequence(Notification.EXTRA_SUB_TEXT, existing.extras.getCharSequence(Notification.EXTRA_SUB_TEXT) + ", " + getString(source.getLabel()));
+                // update existing notification
+                nm.notify(extId, sbn.getId(), existing);
+                if (BuildConfig.DEBUG) Log.i(TAG + id, "News \"" + news.getTitle() + "\" appears more than once.");
+                // notification updated, nothing else to do here
+                return;
+            }
+        }
+        nm.notify(news.getExternalId(), this.nextNotificationId++, builder.build());
     }
 
     /** {@inheritDoc} */
     @Override
     public void onCreate() {
         super.onCreate();
+        previouslyShownNewsLoad();
         this.loaderExecutor = (ThreadPoolExecutor)Executors.newCachedThreadPool();
         this.loaderExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 
@@ -863,7 +897,10 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     /** {@inheritDoc} */
     @Override
     public void onDestroy() {
-        if (BuildConfig.DEBUG) Log.i(TAG + id, "onDestroy()");
+        if (BuildConfig.DEBUG) {
+            if (previouslyShownNewsLoaded && !previouslyShownNewsStored && id > 1) Log.w(TAG + id, "onDestroy(): previously shown news not stored!");
+        }
+
         if (this.loaderExecutor != null) {
             this.loaderExecutor.shutdown();
             this.loaderExecutor = null;
@@ -899,19 +936,16 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     public boolean onStartJob(JobParameters params) {
         this.params = params;
         App app = (App) getApplicationContext();
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
-        if (!prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)) {
-            done();
-            return false;
-        }
         if (params.getJobId() == JOB_ID && app.hasCurrentActivity()) {
             // app is currently active; nothing to do here for now
             done();
             return false;
         }
-        final boolean loadOverMobile = prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE);
-        final boolean pollOverMobile = prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, false);
-        if ((!loadOverMobile || !pollOverMobile) && Util.isNetworkMobile(app)) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
+        boolean poll = prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT);
+        boolean loadOverMobile = prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE);
+        boolean pollOverMobile = prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, false);
+        if (!poll || (!loadOverMobile || !pollOverMobile) && Util.isNetworkMobile(app)) {
             done();
             return false;
         }
@@ -952,7 +986,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 if (BuildConfig.DEBUG) Log.w(TAG + id, "Skipping Source " + source + " because it is locked!");
                 continue;
             }
-            if (BuildConfig.DEBUG) Log.i(TAG + id, "Loading Source " + source);
             atLeastOneSourceLoading |= loadFile(source, this);
         }
         if (!atLeastOneSourceLoading) {
@@ -964,43 +997,119 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         return true;
     }
 
-    /** {@inheritDoc} */
-    @SuppressLint({"WrongConstant", "ParcelClassLoader"})
+    /** {@inheritDoc}
+     * <hr>
+     * <ul>
+     * <li>This seems to be called on the UI thread.</li>
+     * <li>This seems to be called, if at all, a few (ca. 5) seconds after {@link #onStartJob(JobParameters) onStartJob()}</li>
+     * <li>{@link #onDestroy()} will be called a few ms afterwards</li>
+     * </ul>
+     */
+    @SuppressLint({"WrongConstant", "ParcelClassLoader", "SwitchIntDef"})
     @Override
     public boolean onStopJob(JobParameters params) {
-        if (BuildConfig.DEBUG) Log.i(TAG + id, "onStopJob()");
         this.stopJobReceived = true;
-        if (BuildConfig.DEBUG) {
-            int reason = Integer.MIN_VALUE;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                reason = params.getStopReason();
-            } else {
-                try {
-                    Parcel in = Parcel.obtain();
-                    params.writeToParcel(in, 0);
-                    in.readInt();
-                    in.readPersistableBundle();
-                    in.readBundle();
-                    if (in.readInt() != 0) {
-                        ClipData.CREATOR.createFromParcel(in);
-                        in.readInt();
-                    }
-                    in.readStrongBinder();
-                    in.readInt();
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) in.readBoolean();
-                    in.createTypedArray(Uri.CREATOR);
-                    in.createStringArray();
-                    in.readInt();
-                    reason = in.readInt();
-                    in.readInt();
-                    in.readString();
-                } catch (Throwable e) {
-                    Log.e(TAG + id, e.toString());
-                }
+        if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            int reason = params.getStopReason();
+            String reasonMsg;
+            switch (reason) {
+                case JobParameters.STOP_REASON_APP_STANDBY: reasonMsg = "app standby"; break;
+                case JobParameters.STOP_REASON_BACKGROUND_RESTRICTION: reasonMsg = "background restriction"; break;
+                case JobParameters.STOP_REASON_CANCELLED_BY_APP: reasonMsg = "cancelled by app"; break;
+                case JobParameters.STOP_REASON_DEVICE_STATE: reasonMsg = "device state"; break;
+                case JobParameters.STOP_REASON_CONSTRAINT_CONNECTIVITY: reasonMsg = "connectivity"; break;
+                case JobParameters.STOP_REASON_CONSTRAINT_DEVICE_IDLE: reasonMsg = "device idle"; break;
+                case JobParameters.STOP_REASON_TIMEOUT: reasonMsg = "timeout"; break;
+                default: reasonMsg = String.valueOf(reason);
             }
-            Log.w(TAG + id, "onStopJob(): reason for stopping the job is: " + reason);
+            Log.w(TAG + id, "onStopJob(): reason for stopping the job is: " + reasonMsg);
         }
         return false;
+    }
+
+    /**
+     * Loads all entries from {@link #NOTIFIED_NEWS_FILE}.
+     * Also removes old (and therefore obsolete) entries.
+     */
+    private void previouslyShownNewsLoad() {
+        File file = new File(getFilesDir(), NOTIFIED_NEWS_FILE);
+        if (!file.isFile()) return;
+        synchronized (this.notifiedLock) {
+            final long now = System.currentTimeMillis();
+            // keep all entries that are younger than 48 hours
+            final long maxAge = 48 * 3_600_000L;
+            File tmp = null;
+            BufferedReader reader = null;
+            BufferedWriter writer = null;
+            boolean ok = false;
+            int removed = 0;
+            try {
+                reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+                for (; ; ) {
+                    String line = reader.readLine();
+                    if (line == null) break;
+                    int at = line.lastIndexOf(NOTIFIED_NEWS_FILE_SEP);
+                    long timestamp = Long.parseLong(line.substring(at + 1));
+                    if (now - timestamp < maxAge) {
+                        // News has been shown quite recently -> keep
+                        this.previouslyShownNews.put(line.substring(0, at), timestamp);
+                        if (writer == null) {
+                            tmp = File.createTempFile("tmp", ".txt");
+                            writer = new BufferedWriter(new FileWriter(tmp, false));
+                        }
+                        writer.write(line);
+                        writer.newLine();
+                    } else {
+                        // News had been shown quite some time ago -> discard
+                        removed++;
+                    }
+                }
+                Util.close(writer, reader);
+                writer = null; reader = null;
+                if (removed == 0) {
+                    // should not be necessary, but you never know…
+                    Util.deleteFile(tmp);
+                    ok = true;
+                } else {
+                    ok = tmp != null && tmp.renameTo(file);
+                    if (!ok) throw new RuntimeException("Failed to rename " + tmp + " to " + file);
+                }
+                this.previouslyShownNewsLoaded = true;
+            } catch (Exception e) {
+                if (BuildConfig.DEBUG) Log.e(TAG + id, "While loading/cleaning " + file + ": " + e);
+            } finally {
+                Util.close(writer, reader);
+                if (!ok) Util.deleteFile(tmp);
+            }
+        }
+    }
+
+    /**
+     * Writes {@link #previouslyShownNews} to {@link #NOTIFIED_NEWS_FILE}.
+     */
+    @AnyThread
+    private void previouslyShownNewsUpdate() {
+        if (!this.previouslyShownNewsLoaded || this.previouslyShownNewsStored) return;
+        synchronized (this.notifiedLock) {
+            BufferedWriter writer = null;
+            File file = new File(getFilesDir(), NOTIFIED_NEWS_FILE);
+            File temp = null;
+            try {
+                temp = File.createTempFile("tmp", ".txt");
+                writer = new BufferedWriter(new FileWriter(temp, false));
+                final Set<Map.Entry<String, Long>> entries = this.previouslyShownNews.entrySet();
+                for (Map.Entry<String, Long> entry : entries) {
+                    writer.write(entry.getKey() + NOTIFIED_NEWS_FILE_SEP + entry.getValue());
+                    writer.newLine();
+                }
+                this.previouslyShownNewsStored = temp.renameTo(file);
+            } catch (Exception e) {
+                if (BuildConfig.DEBUG) Log.e(TAG + id, "While storing " + NOTIFIED_NEWS_FILE + ": " + e);
+            } finally {
+                Util.close(writer);
+                Util.deleteFile(temp);
+            }
+        }
     }
 
     /**
@@ -1027,56 +1136,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
-     * Returns the {@link News#externalId "external id"} of a News object that had been stored as the most recently seen News for a given Source.
-     * @param source Source
-     * @return "external id" or {@code null}
-     * @throws NullPointerException if {@code source} is {@code null}
-     */
-    @Nullable
-    private String restoreLatestNews(@NonNull Source source) {
-        final String sourceName = source.name();
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        @NonNull final Set<String> old = Objects.requireNonNull(prefs.getStringSet(PREF_LATEST_NEWS_IDS, EMPTY_STRING_SET));
-        for (String latest : old) {
-            int cross = latest.lastIndexOf(LATEST_NEWS_SEP);
-            if (cross < 1) continue;
-            if (latest.substring(cross + 1).equals(sourceName)) {
-                //if (BuildConfig.DEBUG) Log.i(TAG + id, "Retrieved News ext. id \"" + latest.substring(0, cross) + "\" as latest News for " + sourceName);
-                return latest.substring(0, cross);
-            }
-        }
-        return null;
-    }
-
-    private void storeLatestNews(@NonNull Source source, @NonNull News news) {
-        final String sourceName = source.name();
-        //if (BuildConfig.DEBUG) Log.i(TAG + id, "Storing \"" + news.getTitle() + "\" (ext. id=" + news.getExternalId() + ") as latest News for " + sourceName);
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        @NonNull final Set<String> old = Objects.requireNonNull(prefs.getStringSet(PREF_LATEST_NEWS_IDS, EMPTY_STRING_SET));
-        String overwrite = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            // Seriously! Is the Stream API really an improvement?!?
-            overwrite = old.stream().filter(s -> s.endsWith(sourceName)).findFirst().orElse(null);
-        } else {
-            for (String latest : old) {
-                if (latest.endsWith(sourceName)) {
-                    overwrite = latest;
-                    break;
-                }
-            }
-        }
-        final Set<String> latestNews = new HashSet<>(old);
-        if (overwrite != null) {
-            //if (BuildConfig.DEBUG) Log.i(TAG + id, "Removing \"" + overwrite + "\" from " + PREF_LATEST_NEWS_IDS);
-            latestNews.remove(overwrite);
-        }
-        latestNews.add(news.getExternalId() + LATEST_NEWS_SEP + sourceName);
-        SharedPreferences.Editor ed = prefs.edit();
-        ed.putStringSet(PREF_LATEST_NEWS_IDS, latestNews);
-        ed.apply();
-    }
-
-    /**
      * Holds information about a group summary notification.
      */
     static class NotificationSummary {
@@ -1091,12 +1150,18 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
          */
         @NonNull
         Notification build(@NonNull final App app) {
+            Intent mainIntent = new Intent(app, MainActivity.class);
+            mainIntent.setAction(ACTION_NOTIFICATION);
+            mainIntent.putExtra(EXTRA_SOURCE, Source.HOME.name());
+            @SuppressLint("InlinedApi") int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? (PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE) : PendingIntent.FLAG_UPDATE_CURRENT;
+            PendingIntent contentIntent = PendingIntent.getActivity(app, 0, mainIntent, flags);
             Notification.Builder builder = new Notification.Builder(app)
                     .setDefaults(Notification.DEFAULT_SOUND)
                     .setSmallIcon(R.drawable.ic_notification)
                     .setContentTitle(app.getString(R.string.app_name))
-                    // the content text is apparently never shown…
-                    .setContentText(String.valueOf(this.count))
+                    .setContentText(app.getString(R.string.label_notification_count, this.count))
+                    .setContentIntent(contentIntent)
+                    .setNumber(this.count)
                     .setVisibility(Notification.VISIBILITY_PUBLIC)
                     .setCategory(Notification.CATEGORY_MESSAGE)
                     .setGroup(NOTIFICATION_GROUP_KEY)
@@ -1128,7 +1193,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
-     * Waits for {@link #loaderExecutor} to terminate.
+     * Waits for {@link #loaderExecutor} to terminate.<br>
+     * <em>Note: This might run after {@link #onDestroy()}.</em>
      */
     private class Waiter extends Thread {
         @Override
@@ -1137,28 +1203,25 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 try {
                     UpdateJobService.this.loaderExecutor.shutdown();
                     if (!UpdateJobService.this.loaderExecutor.awaitTermination(10, TimeUnit.MINUTES)) {
-                        if (BuildConfig.DEBUG) Log.e(TAG + id, "Not finished after 10 minutes!");
+                        if (BuildConfig.DEBUG) Log.e(TAG + id + "-W", "Not finished after 10 minutes!");
                         UpdateJobService.this.loaderExecutor.shutdownNow();
                     }
-                    if (BuildConfig.DEBUG) Log.i(TAG + id, "All loaders have finished. Job " + id + " will be stopped in 10 seconds.");
-                    // wait for embedded images to be loaded and notifications to be shown…
-                    Thread.sleep(5_000L);
-                    // Show a notification group summary if there is more than one Notification
-                    if (UpdateJobService.this.summary != null) {
-                        if (UpdateJobService.this.summary.getCount() > 1) {
-                            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                            if (nm != null) nm.notify(NOTIFICATION_ID_SUMMARY, UpdateJobService.this.summary.build((App) getApplicationContext()));
-                        } else {
-                            if (BuildConfig.DEBUG) Log.i(TAG + id, "No summary will be shown. 0 notifications");
-                        }
+                    // All loaders have finished. Job will be stopped in DELAY_TO_DESTRUCTION ms
+                    // wait DELAY_TO_DESTRUCTION/2 ms or embedded images to be loaded and notifications to be shown…
+                    Thread.sleep(DELAY_TO_DESTRUCTION / 2L);
+                    // Show a notification group summary if there is more than one notification
+                    if (UpdateJobService.this.summary != null && UpdateJobService.this.summary.getCount() >= 2) {
+                        ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID_SUMMARY, UpdateJobService.this.summary.build((App) getApplicationContext()));
                         UpdateJobService.this.summary = null;
-                    } else {
-                        if (BuildConfig.DEBUG) Log.i(TAG + id, "No summary will be shown. No notifications");
                     }
-                    if (BuildConfig.DEBUG) Log.i(TAG + id, "All loaders have finished. Job will be stopped in 5 seconds.");
-                    Thread.sleep(5_000L);
+                    // store list of previously displayed notifications
+                    if (!UpdateJobService.this.previouslyShownNewsStored) previouslyShownNewsUpdate();
+                    if (!UpdateJobService.this.stopJobReceived) {
+                        // job will be stopped in DELAY_TO_DESTRUCTION/2 ms
+                        Thread.sleep(DELAY_TO_DESTRUCTION / 2L);
+                    }
                 } catch (InterruptedException e) {
-                    if (BuildConfig.DEBUG) Log.e(TAG + id, "While waiting for the loaders: " + e.toString(), e);
+                    if (BuildConfig.DEBUG) Log.e(TAG + id + "-W", "While waiting for the loaders: " + e, e);
                 }
             }
             done();

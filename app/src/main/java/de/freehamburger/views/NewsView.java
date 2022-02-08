@@ -3,17 +3,12 @@ package de.freehamburger.views;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
-import java.text.DateFormat;
-import java.util.Date;
-import java.util.List;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.LayoutRes;
@@ -22,6 +17,11 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.preference.PreferenceManager;
+
+import java.text.DateFormat;
+import java.util.Date;
+import java.util.List;
+
 import de.freehamburger.App;
 import de.freehamburger.R;
 import de.freehamburger.model.News;

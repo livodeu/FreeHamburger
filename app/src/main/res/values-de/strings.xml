@@ -216,6 +216,7 @@
     <string name="error_poll_minimum_interval">Das Intervall muss mindestens %1$d Minuten betragen.</string>
     <string name="msg_found">„%1$s” wurde %2$dx gefunden.</string>
     <string name="label_every_minutes">alle %1$s Minuten</string>
+    <string name="label_notification_count">%1$d Meldungen</string>
     <string name="pref_title_poll_stats">Datenverbrauch</string>
     <plurals name="label_poll_stats">
         <item quantity="one">Durch %1$s Hintergrundaktualisierung wurden seit %3$s %2$s empfangen.</item>

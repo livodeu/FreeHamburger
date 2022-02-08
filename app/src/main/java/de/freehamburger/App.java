@@ -1,7 +1,6 @@
 package de.freehamburger;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.app.NotificationChannel;
@@ -18,11 +17,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
-import android.view.LayoutInflater;
-import android.view.ViewGroup;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
@@ -31,7 +27,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.StringDef;
-import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatDelegate;
 
@@ -391,26 +386,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
         }
     }
 
-    /**
-     * Creates the inflated content view for {@link WebViewActivity} and {@link TeletextActivity}.
-     * Instead of invoking {@link Activity#setContentView(int)}, which takes quite a long time,
-     * the pre-inflated View can simply be added to the Activity's {@link android.R.id#content content view}.<br>
-     * The startup time of those Activities is reduced considerably.
-     * @param onlyIfNull if {@code true}, the View is inflated only if it did not exist
-     */
-    @SuppressLint("InflateParams")
-    @UiThread
-    void createInflatedViewForWebViewActivity(Activity activity, boolean onlyIfNull) {
-        if (onlyIfNull && this.inflatedViewForWebViewActivity != null) return;
-        try {
-            // setTheme() is necessary in order to be able to use <this> as context for the inflater
-            setTheme(R.style.AppTheme_NoActionBar);
-            this.inflatedViewForWebViewActivity = (ViewGroup) LayoutInflater.from(activity != null ? activity : this).inflate(R.layout.activity_web_view, null);
-        } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, "While preparing WebView: " + e.toString(), e);
-        }
-    }
-
     @Nullable
     @VisibleForTesting
     public Activity getCurrentActivity() {
@@ -432,7 +407,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
      */
     @NonNull
     public File getLocalFile(@NonNull Source source) {
-        return new File(getFilesDir(), source.toString() + Source.FILE_SUFFIX);
+        return new File(getFilesDir(), source + Source.FILE_SUFFIX);
     }
 
     /**
@@ -606,6 +581,14 @@ public class App extends Application implements Application.ActivityLifecycleCal
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) getSystemService(USER_SERVICE);
 
         if (BuildConfig.DEBUG) {
+            //StrictMode.enableDefaults();
+            try {
+                Class.forName("dalvik.system.CloseGuard")
+                        .getMethod("setEnabled", boolean.class)
+                        .invoke(null, true);
+            } catch (ReflectiveOperationException e) {
+                Log.e(TAG, e.toString());
+            }
             com.google.android.exoplayer2.util.Log.setLogLevel(com.google.android.exoplayer2.util.Log.LOG_LEVEL_WARNING);
             com.google.android.exoplayer2.util.Log.setLogStackTraces(true);
         } else {
@@ -637,7 +620,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         } catch (ClassNotFoundException cnfe) {
             if (BuildConfig.DEBUG) Log.i(TAG, "Running without Conscrypt.");
         } catch (Throwable t) {
-            if (BuildConfig.DEBUG) Log.e(TAG, "Failed to instantiate Conscrypt: " + t.toString());
+            if (BuildConfig.DEBUG) Log.e(TAG, "Failed to instantiate Conscrypt: " + t);
         }
 
         // loading the permitted hosts asynchronously saves ca. 10 to 20 ms
@@ -653,7 +636,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
             if (BuildConfig.DEBUG) {
                 Activity activity = getCurrentActivity();
                 boolean isCurrentThread = Thread.currentThread().equals(t);
-                Log.wtf(TAG, "*** Uncaught Exception in " + (activity != null ? activity.getClass().getSimpleName() : "no activity") + " in "  + (isCurrentThread ? "current thread: " : "another thread: ") + e.toString(), e);
+                Log.wtf(TAG, "*** Uncaught Exception in " + (activity != null ? activity.getClass().getSimpleName() : "no activity") + " in "  + (isCurrentThread ? "current thread: " : "another thread: ") + e, e);
             }
             System.exit(-1);
         });
@@ -672,13 +655,14 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 this.notificationChannel.setShowBadge(false);
                 nm.createNotificationChannel(this.notificationChannel);
 
+                AudioAttributes aa = new AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).setUsage(AudioAttributes.USAGE_NOTIFICATION).build();
                 Uri ringtone = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_NOTIFICATION);
                 this.notificationChannelHiPri = new NotificationChannel(channelHiPri, channelHiPri, NotificationManager.IMPORTANCE_HIGH);
                 this.notificationChannelHiPri.setDescription(getString(R.string.label_notification_channel_desc_hipri));
                 this.notificationChannelHiPri.enableLights(true);
                 this.notificationChannelHiPri.setLightColor(getResources().getColor(R.color.colorAccent, getTheme()));
                 this.notificationChannelHiPri.enableVibration(true);
-                this.notificationChannelHiPri.setSound(ringtone, null);
+                this.notificationChannelHiPri.setSound(ringtone, aa);
                 this.notificationChannelHiPri.setShowBadge(false);
                 nm.createNotificationChannel(this.notificationChannelHiPri);
             }

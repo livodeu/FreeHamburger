@@ -141,23 +141,6 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         // determine whether a light or a dark background is applicable
         if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(activity);
         @App.BackgroundSelection int background = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
-        if (BuildConfig.DEBUG) {
-            String s;
-            switch (background) {
-                case App.BACKGROUND_NIGHT:
-                    s = "dark";
-                    break;
-                case App.BACKGROUND_AUTO:
-                    s = "auto";
-                    break;
-                case App.BACKGROUND_DAY:
-                    s = "light";
-                    break;
-                default:
-                    s = "?";
-            }
-            Log.i(TAG, "Preferred background is " + s + "; night mode: " + Util.isNightMode(activity));
-        }
         // select theme based on the background
         if (background == App.BACKGROUND_AUTO) background = Util.isNightMode(activity) ? App.BACKGROUND_NIGHT : App.BACKGROUND_DAY;
         applyTheme(activity, background, again);
@@ -224,7 +207,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
             try {
                 unbindService(this);
             } catch (Throwable e) {
-                if (BuildConfig.DEBUG) Log.e(TAG, "While unbinding from service: " + e.toString());
+                if (BuildConfig.DEBUG) Log.e(TAG, "While unbinding from service: " + e);
             }
         }
         super.onPause();

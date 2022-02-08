@@ -127,6 +127,7 @@
     <string name="label_notification_channel_hipri">Breaking news</string>
     <string name="label_notification_channel_desc">Hamburger news of standard priority</string>
     <string name="label_notification_channel_desc_hipri">Hamburger news of superior priority</string>
+    <string name="label_notification_count">%1$d notes</string>
     <plurals name="label_poll_stats">
         <item quantity="one">%1$s background update has received %2$s since %3$s.</item>
         <item quantity="other">%1$s background updates have received %2$s since %3$s.</item>

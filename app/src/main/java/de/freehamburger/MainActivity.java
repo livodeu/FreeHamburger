@@ -606,19 +606,20 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private void loadDetails(@NonNull News news) {
         String url = news.getDetails();
         // check that url is non-null
-        if (url == null) return;
+        if (url == null) {
+            Snackbar.make(this.coordinatorLayout, R.string.error_news_not_found, Snackbar.LENGTH_LONG).show();
+            return;
+        }
         try {
             File tempFile = File.createTempFile("details", ".json");
             this.service.loadFile(url, tempFile, (completed, result) -> {
                 if (!completed || result == null) {
+                    Snackbar.make(this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_LONG).show();
                     return;
                 }
                 if (result.rc >= 400) {
-                    if (result.rc == 404) {
-                        Snackbar.make(this.coordinatorLayout, R.string.error_news_not_found, Snackbar.LENGTH_LONG).show();
-                    } else {
-                        Snackbar.make(this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
-                    }
+                    if (result.rc == 404) Snackbar.make(this.coordinatorLayout, R.string.error_news_not_found, Snackbar.LENGTH_LONG).show();
+                    else Snackbar.make(this.coordinatorLayout, getString(R.string.error_download_failed, result.toString()), Snackbar.LENGTH_LONG).show();
                     return;
                 }
                 JsonReader reader = null;
@@ -1001,7 +1002,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         this.quickView.setOnClickListener(this::onQuickViewClicked);
         this.recyclerView = findViewById(R.id.recyclerView);
         this.recyclerView.setHasFixedSize(true);
-        selectLayoutManager();
+        selectLayoutManager(null);
         // enable context menus for news items
         this.recyclerView.setOnCreateContextMenuListener(this);
         //
@@ -1967,6 +1968,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      * <ul>
      * <li>10"-tablet avd is 1280 dp x 648 dp in landscape mode and 720 dp x 1208 dp in portrait mode</li>
      * <li>7"-tablet avd is 1024 dp x 528 dp in landscape mode and 600 dp x 952 dp in portrait mode</li>
+     * <li>6.5" phone with 2400 px x 1080 px is 774 dp x 359 dp in landscape mode and 384 dp x 774 dp in portrait mode</li>
      * <li>5.2" phone with 1920 px x 1080 px is 592 dp x 336 dp in landscape mode and 360 dp x 568 dp in portrait mode</li>
      * </ul>
      * The aforementioned values are reduced by ca. 50% in one dimension if the app runs in multi-window mode!
