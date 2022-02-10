@@ -45,6 +45,7 @@ import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -296,26 +297,33 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
     /** {@inheritDoc} */
     @Override
     public void startActivity(Intent intent) {
-        if (BuildConfig.DEBUG) {
-            android.util.Log.i(getClass().getSimpleName(), "startActivity(" + intent + ")");
-            String bai = intent.getStringExtra("com.android.browser.application_id");
-            if (BuildConfig.APPLICATION_ID.equals(bai)) {
-                // the user has tapped a link in a WebView
-                if (this.helpDialog != null && this.helpDialog.isShowing()) {
-                    this.helpDialog.dismiss();
-                    this.helpDialog = null;
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT);
-                } else {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                }
-                super.startActivity(intent);
-                return;
+        if (BuildConfig.DEBUG) android.util.Log.i(getClass().getSimpleName(), "startActivity(" + intent + ")");
+
+        String bai = intent.getStringExtra("com.android.browser.application_id");
+        if (BuildConfig.APPLICATION_ID.equals(bai)) {
+            // the user has tapped a link in a WebView
+            if (this.helpDialog != null && this.helpDialog.isShowing()) {
+                this.helpDialog.dismiss();
+                this.helpDialog = null;
             }
-            ComponentName cn = intent.getComponent();
-            if (cn != null) intent.setClassName(BuildConfig.APPLICATION_ID, cn.getClassName());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT);
+            } else {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            }
+            intent.removeCategory(Intent.CATEGORY_BROWSABLE);
+            if (getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                super.startActivity(intent);
+            } else {
+                CoordinatorLayout cl = findViewById(R.id.coordinator_layout);
+                if (cl != null) Snackbar.make(cl, R.string.error_no_app, Snackbar.LENGTH_SHORT).show();
+                else Toast.makeText(this, R.string.error_no_app, Toast.LENGTH_SHORT).show();
+            }
+            return;
         }
+        ComponentName cn = intent.getComponent();
+        if (cn != null) intent.setClassName(BuildConfig.APPLICATION_ID, cn.getClassName());
+
         if (this.isManageStorageActivity) {
             intent.putExtra(EXTRA_STORAGE_ACTIVITY, true);
         }
@@ -360,13 +368,6 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
     public static class AppearancePreferenceFragment extends PreferenceFragmentCompat {
         private final Handler handler = new Handler();
 
-        /** {@inheritDoc} */
-        @Override
-        public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
-            menuInflater.inflate(R.menu.settings_menu, menu);
-            menu.setQwertyMode(true);
-        }
-
         @NonNull
         private CharSequence makeColumnsSummary(@NonNull SharedPreferences prefs) {
             int colsLandscape = prefs.getInt(App.PREF_COLS_LANDSCAPE, 0);
@@ -378,6 +379,13 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     .append(getString(R.string.pref_title_cols_landscape_short, colsLandscape < 1 ? getString(R.string.label_cols_default) : String.valueOf(colsLandscape)))
                     .append(", ")
                     .append(getString(R.string.pref_title_cols_portrait_short, colsPortrait < 1 ? getString(R.string.label_cols_default) : String.valueOf(colsPortrait)));
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+            menuInflater.inflate(R.menu.settings_menu, menu);
+            menu.setQwertyMode(true);
         }
 
         /** {@inheritDoc} */
@@ -924,6 +932,46 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             }
         }
 
+    }
+
+    //******************************************************************************************************************
+
+    @Keep
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static class VideoPreferenceFragment extends PreferenceFragmentCompat {
+
+        /** {@inheritDoc} */
+        @Override
+        public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+            menuInflater.inflate(R.menu.settings_menu, menu);
+            menu.setQwertyMode(true);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void onCreatePreferences(Bundle savedInstanceState, String rootXml) {
+            setPreferencesFromResource(R.xml.pref_video, rootXml);
+            setHasOptionsMenu(true);
+
+            SwitchPreferenceCompat prefPipEnabled = findPreference(VideoActivity.PREF_PIP_ENABLED);
+            if (prefPipEnabled != null) {
+                boolean pipSupported = VideoActivity.isPipSupported(getContext());
+                if (!pipSupported) prefPipEnabled.setChecked(false);
+                prefPipEnabled.setEnabled(pipSupported);
+            }
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public boolean onOptionsItemSelected(MenuItem item) {
+            int id = item.getItemId();
+            if (id == R.id.action_help) {
+                SettingsActivity sa = (SettingsActivity)getActivity();
+                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_video_de, sa.webViewForHelp);
+                return true;
+            }
+            return super.onOptionsItemSelected(item);
+        }
     }
 
     //******************************************************************************************************************

@@ -27,6 +27,7 @@ import de.freehamburger.BuildConfig;
 public class Log {
 
     private static final String FILENAME = "log.txt";
+    private static final String TEMPFILE_PREFIX = "templog";
     private static final DateFormat DF = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     /** max. log file size */
@@ -88,6 +89,13 @@ public class Log {
         File filesDir = new File(new File(tmpdir).getParentFile(), "files");
         if (filesDir.isDirectory()) {
             file = new File(filesDir, FILENAME);
+            // as there once was some residue, a little light housekeeping ⛯
+            java.util.List<File> files = Util.listFiles(filesDir);
+            for (File file : files) {
+                if (file.isFile() && file.getName().startsWith(TEMPFILE_PREFIX)) {
+                    Util.deleteFile(file);
+                }
+            }
         }
         new Writer().start();
     }
@@ -110,7 +118,7 @@ public class Log {
         File temp = null;
         try {
             synchronized (FILE_LOCK) {
-                temp = File.createTempFile("templog", ".tmp", file.getParentFile());
+                temp = File.createTempFile(TEMPFILE_PREFIX, ".tmp", file.getParentFile());
                 in = new FileInputStream(file);
                 if (in.skip(toCut) < toCut) {
                     Util.close(in);
@@ -130,9 +138,9 @@ public class Log {
             }
         } catch (IOException e) {
             android.util.Log.e(Log.class.getSimpleName(), e.toString(), e);
-            Util.deleteFile(temp);
         } finally {
             Util.close(in);
+            Util.deleteFile(temp);
         }
     }
 
@@ -227,6 +235,7 @@ public class Log {
         public void run() {
             for (;;) {
                 try {
+                    //noinspection BusyWait
                     sleep(10_000L);
                 } catch (Throwable t) {
                     if (BuildConfig.DEBUG) android.util.Log.w(Log.class.getSimpleName(), t.toString());

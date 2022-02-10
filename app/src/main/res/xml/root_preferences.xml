@@ -27,6 +27,12 @@
         android:fragment="de.freehamburger.SettingsActivity$DataPreferenceFragment"/>
 
     <Preference
+        android:title="@string/pref_header_video"
+        app:icon="@drawable/ic_videocam_ededed_24dp"
+        android:key="video_category"
+        android:fragment="de.freehamburger.SettingsActivity$VideoPreferenceFragment" />
+
+    <Preference
         android:title="@string/pref_header_polling"
         app:icon="@drawable/ic_notifications_ededed_24dp"
         android:key="polling_category"

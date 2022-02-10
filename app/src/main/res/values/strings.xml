@@ -213,6 +213,7 @@
     <string name="pref_header_data">Data</string>
     <string name="pref_header_polling">Polling</string>
     <string name="pref_header_other">Other</string>
+    <string name="pref_header_video">Video</string>
 
     <string name="pref_hint_pref_cache_max_size">Max. cache size in MB</string>
     <string name="pref_hint_poll_interval">Interval</string>
@@ -220,6 +221,8 @@
     <string name="pref_hint_poll_quicksettings">Toggle background updates.</string>
     <string name="pref_hint_proxy_server">Server:Port</string>
     <string name="pref_summary_font_import_replace">Replace \"%1$s\"</string>
+    <string name="pref_summary_pip_off">Picture-in-picture mode will not be used.</string>
+    <string name="pref_summary_pip_on">Picture-in-picture mode will be used for full-screen videos.</string>
     <string name="pref_summary_poll_customnotification_off">Standard looks</string>
     <string name="pref_summary_poll_customnotification_on">Yes, please</string>
     <string name="pref_summary_proxy_server">None</string>
@@ -240,6 +243,7 @@
     <string name="pref_title_open_links_internally_off">will be opened in the browser</string>
     <string name="pref_title_open_links_internally_on">will be opened internally</string>
     <string name="pref_title_orientation_main">Orientation</string>
+    <string name="pref_title_pip_enabled"> Use Picture-in-picture mode</string>
     <string name="pref_title_poll">Poll</string>
     <string name="pref_title_poll_customnotification">Custom style notifications</string>
     <string name="pref_title_poll_on">Active.</string>

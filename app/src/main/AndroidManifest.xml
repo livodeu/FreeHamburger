@@ -52,9 +52,9 @@
 
         <activity
             android:name=".MainActivity"
+            android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/AppTheme.Launcher"
-            android:exported="true">
+            android:theme="@style/AppTheme.Launcher">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -146,9 +146,11 @@
         </activity>
         <activity
             android:name=".VideoActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
+            android:launchMode="singleTask"
             android:parentActivityName=".MainActivity"
+            android:supportsPictureInPicture="true"
             android:theme="@style/AppTheme.Black">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -206,10 +208,10 @@
 
         <service
             android:name=".BackgroundTile"
+            android:exported="true"
             android:icon="@drawable/ic_launcher_qs"
             android:label="@string/pref_title_poll"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:exported="true">
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
@@ -218,9 +220,9 @@
         <provider
             android:name=".supp.SearchContentProvider"
             android:authorities="@string/app_search_auth"
-            android:readPermission="android.permission.GLOBAL_SEARCH"
+            android:exported="true"
             android:permission="${applicationId}.nix"
-            android:exported="true">
+            android:readPermission="android.permission.GLOBAL_SEARCH">
         </provider>
 
         <provider

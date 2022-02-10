@@ -2,6 +2,11 @@ package de.freehamburger;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.app.PictureInPictureParams;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Rect;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
@@ -9,6 +14,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Rational;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -20,6 +26,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NavUtils;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.PlaybackException;
@@ -36,11 +43,17 @@ import de.freehamburger.util.Log;
 import de.freehamburger.util.MediaSourceHelper;
 import de.freehamburger.util.PlayerListener;
 import de.freehamburger.util.Util;
+import okhttp3.Call;
 
 /**
  * Plays a video.
  */
 public class VideoActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener {
+    /** boolean: enable picture-in-picture playback */
+    public static final String PREF_PIP_ENABLED = "pref_pip_enabled";
+    public static final boolean PREF_PIP_ENABLED_DEFAULT = true;
+    /** See <a href=" https://developer.android.com/about/versions/oreo/android-8.0#opip"> https://developer.android.com/about/versions/oreo/android-8.0#opip</a> */
+    public static final int PIP_MIN_API = Build.VERSION_CODES.O;
     static final String EXTRA_NEWS = "extra_news";
     private static final String TAG = "VideoActivity";
     /** the number of milliseconds to wait after user interaction before hiding the system UI */
@@ -63,6 +76,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
     private final AudioAttributes aa = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setLegacyStreamType(App.STREAM_TYPE).setContentType(AudioAttributes.CONTENT_TYPE_MOVIE).build();
     private final MediaSourceHelper mediaSourceHelper = new MediaSourceHelper();
 
+    private boolean pipSupported;
     private boolean hasAudioFocus;
     private AudioFocusRequest afr;
     private int audioVolumeBeforeDucking;
@@ -72,6 +86,14 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
     @Nullable
     private ExoPlayer exoPlayerVideo;
 
+    /**
+     * Determines whether Picture-in-picture mode is supported.
+     * @param ctx Context
+     * @return true / false
+     */
+    static boolean isPipSupported(@Nullable Context ctx) {
+        return Build.VERSION.SDK_INT >= PIP_MIN_API && ctx != null && ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE);
+    }
 
     private void abandonAudioFocus(@Nullable AudioManager am) {
         int requestResult;
@@ -113,7 +135,6 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
                         VideoActivity.this.progressBar.setAlpha(1f);
                     }
                 });
-
     }
 
     /**
@@ -210,6 +231,9 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
 
         setVolumeControlStream(App.STREAM_TYPE);
 
+        // note: PIP is still flagged as supported even if the user denied the permission to use it
+        this.pipSupported = isPipSupported(this);
+
         this.news = (News) getIntent().getSerializableExtra(EXTRA_NEWS);
 
         this.playerView = findViewById(R.id.playerView);
@@ -220,6 +244,13 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
                 this.handler.postDelayed(this::hide, AUTO_HIDE_DELAY_MILLIS);
             }
         });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        this.news = (News) getIntent().getSerializableExtra(EXTRA_NEWS);
     }
 
     /** {@inheritDoc} */
@@ -250,6 +281,17 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
 
     /** {@inheritDoc} */
     @Override
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
+        if (isInPictureInPictureMode) {
+            this.playerView.hideController();
+        } else {
+            if (this.exoPlayerVideo != null && this.exoPlayerVideo.getPlaybackState() != Player.STATE_READY) this.playerView.showController();
+        }
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         this.handler.removeCallbacks(this.hideRunnable);
@@ -260,6 +302,10 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
     @Override
     protected void onResume() {
         super.onResume();
+
+        // don't do anything if resuming from PIP mode
+        if (this.exoPlayerVideo != null && this.exoPlayerVideo.getPlaybackState() == Player.STATE_READY) return;
+
         // see https://codelabs.developers.google.com/codelabs/exoplayer-intro/#2
         if (Build.VERSION.SDK_INT <= 23 || this.exoPlayerVideo == null) {
             initPlayer();
@@ -275,7 +321,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
         if (newsVideo != null) {
             if (this.exoPlayerVideo != null) {
                 newsVideo = Util.makeHttps(newsVideo);
-                MediaSource ms = this.mediaSourceHelper.buildMediaSource(((App)getApplicationContext()).getOkHttpClient(), Uri.parse(newsVideo));
+                MediaSource ms = this.mediaSourceHelper.buildMediaSource((Call.Factory)((App)getApplicationContext()).getOkHttpClient(), Uri.parse(newsVideo));
                 requestAudioFocus();
                 this.exoPlayerVideo.setMediaSource(ms, true);
                 this.exoPlayerVideo.prepare();
@@ -305,6 +351,32 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
             releasePlayer();
         }
         super.onStop();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void onUserLeaveHint() {
+        if (Build.VERSION.SDK_INT < PIP_MIN_API) return;
+        // https://developer.android.com/about/versions/oreo/android-8.0#opip
+        // https://developer.android.com/guide/topics/ui/picture-in-picture?hl=en#java
+        if (this.pipSupported
+                && this.exoPlayerVideo != null
+                && this.exoPlayerVideo.getPlaybackState() == Player.STATE_READY
+                && PreferenceManager.getDefaultSharedPreferences(this).getBoolean(PREF_PIP_ENABLED, PREF_PIP_ENABLED_DEFAULT)) {
+            final PictureInPictureParams.Builder pb = new PictureInPictureParams.Builder();
+            if (this.playerView != null) {
+                View surface = this.playerView.getVideoSurfaceView();
+                if (surface != null) {
+                    Rect r = new Rect();
+                    surface.getGlobalVisibleRect(r);
+                    int width = r.right - r.left;
+                    int height = r.bottom - r.top;
+                    if (width > 0 && height > 0) pb.setSourceRectHint(r).setAspectRatio(new Rational(width, height));
+                }
+            }
+            // PIP fails if the user denied the permission
+            if (!enterPictureInPictureMode(pb.build())) this.pipSupported = false;
+        }
     }
 
     /**
