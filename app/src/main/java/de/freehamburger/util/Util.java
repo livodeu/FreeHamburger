@@ -661,23 +661,31 @@ public class Util {
      * Gets the height of the display in pixels. The height is adjusted based on the current rotation of the display
      * @param ctx Context
      * @return display height
-     * @throws NullPointerException if {@code ctx} is {@code null}
      */
     public static int getDisplayHeight(@NonNull Context ctx) {
         return getDisplaySize(ctx).y;
     }
 
     /**
-     * Gets the size of the display in pixels. The size is adjusted based on the current rotation of the display.
+     * Gets the size of the display in pixels.
+     * The size is adjusted based on the current rotation of the display.
      * @param ctx Context
      * @return Point
-     * @throws NullPointerException if {@code ctx} is {@code null}
      */
     @NonNull
     public static Point getDisplaySize(@NonNull Context ctx) {
-        WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
-        Point size = new Point();
-        if (wm != null) wm.getDefaultDisplay().getSize(size);
+        final Point size = new Point();
+        try {
+            WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
+            wm.getDefaultDisplay().getSize(size);
+        } catch (Exception e) {
+            DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
+            if (dm != null) {
+                size.x = dm.widthPixels;
+                size.y = dm.heightPixels;
+            }
+            if (BuildConfig.DEBUG) Log.e(TAG, "While getting display size: " + e + "; returning " + size, e);
+        }
         return size;
     }
 
