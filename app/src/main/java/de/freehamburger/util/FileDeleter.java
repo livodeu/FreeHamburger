@@ -1,6 +1,7 @@
 package de.freehamburger.util;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -16,7 +17,8 @@ import de.freehamburger.BuildConfig;
  */
 public final class FileDeleter {
     /** the text file that contains the paths of the files that resisted deletion in the first place (resides in the cache dir) */
-    static final File MORITURI = new File(System.getProperty("java.io.tmpdir"), "morituri.txt");
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    public static final File MORITURI = new File(System.getProperty("java.io.tmpdir"), "morituri.txt");
 
     private static final String TAG = "FileDeleter";
 

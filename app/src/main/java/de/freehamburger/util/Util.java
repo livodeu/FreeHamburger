@@ -80,13 +80,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -324,8 +322,7 @@ public class Util {
     public static boolean createShortcut(@NonNull Context ctx, @NonNull Source source, @Nullable ShortcutManager shortcutManager) {
         if (shortcutManager == null) shortcutManager = (ShortcutManager)ctx.getSystemService(Context.SHORTCUT_SERVICE);
         if (shortcutManager == null) return false;
-        boolean test = isTest(ctx);
-        if (!shortcutManager.isRequestPinShortcutSupported() || (!test && hasShortcut(ctx, source, shortcutManager))) {
+        if (!shortcutManager.isRequestPinShortcutSupported() || (!TEST && hasShortcut(ctx, source, shortcutManager))) {
             return false;
         }
         String label = ctx.getString(source.getLabel());
@@ -339,7 +336,7 @@ public class Util {
                 .setIcon(Icon.createWithResource(ctx, source.getIcon()))
                 .setIntent(intent)
                 .build();
-         if (test) {
+         if (TEST) {
             return true;
         }
         return shortcutManager.requestPinShortcut(pinShortcutInfo, null);
@@ -408,17 +405,13 @@ public class Util {
         }
         // sort: oldest first, newest last
         try {
-            Collections.sort(c, new Comparator<File>() {
-                /** {@inheritDoc} */
-                @Override
-                public int compare(File o1, File o2) {
-                    if (o1.equals(o2)) return 0;
-                    Long lm1 = lm.get(o1);
-                    if (lm1 == null) return -1;
-                    Long lm2 = lm.get(o2);
-                    if (lm2 == null) return 1;
-                    return Long.compare(lm1, lm2);
-                }
+            Collections.sort(c, (o1, o2) -> {
+                if (o1.equals(o2)) return 0;
+                Long lm1 = lm.get(o1);
+                if (lm1 == null) return -1;
+                Long lm2 = lm.get(o2);
+                if (lm2 == null) return 1;
+                return Long.compare(lm1, lm2);
             });
         } catch (Throwable ignored) {
             return;
@@ -966,11 +959,6 @@ public class Util {
      */
     public static boolean isNightMode(@NonNull Context ctx) {
         return (ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-    }
-
-    private static boolean isTest(@NonNull Context ctx) {
-        // Contexts for unit tests are android.app.ContextImpl
-        return BuildConfig.DEBUG && !ctx.getClass().getName().startsWith(Objects.requireNonNull(MainActivity.class.getPackage()).getName());
     }
 
     /**

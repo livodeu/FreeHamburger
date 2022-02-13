@@ -54,14 +54,12 @@ public class InstalledAppsTest {
         assertTrue(apps.size() > 0);
         boolean documentsuiFound = false;
         boolean dialerFound = false;
-        int missing = 2;
+        int missing = 1;
         for (ApplicationInfo ai : apps) {
             if ("com.google.android.documentsui".equals(ai.packageName) || "com.android.documentsui".equals(ai.packageName)) {documentsuiFound = true; missing--;}
-            if ("com.google.android.dialer".equals(ai.packageName) || "com.android.dialer".equals(ai.packageName)) {dialerFound = true; missing--;}
         }
         StringBuilder err = new StringBuilder();
         if (!documentsuiFound) err.append("com.*.android.documentsui not found!");
-        if (!dialerFound) err.append(" com.*.android.dialer not found!");
         assertEquals(err.toString(),0, missing);
     }
 

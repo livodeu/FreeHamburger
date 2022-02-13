@@ -8,7 +8,10 @@ import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertNull;
 
 import android.app.Activity;
+import android.app.KeyguardManager;
+import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.Context;
@@ -16,19 +19,23 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ShortcutManager;
+import android.graphics.Point;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.security.NetworkSecurityPolicy;
 import android.service.notification.StatusBarNotification;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.StyleRes;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.MediumTest;
 import androidx.test.filters.SmallTest;
@@ -44,11 +51,17 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.List;
 
+import de.freehamburger.model.Blob;
+import de.freehamburger.model.BlobParser;
+import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
+import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.MediaSourceHelper;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
+import okhttp3.Call;
 import okhttp3.OkHttpClient;
 
 /**
@@ -126,6 +139,37 @@ public class AppTest {
         assertFalse("Cleartext traffic is allowed", nsp.isCleartextTrafficPermitted());
         assertFalse("Cleartext traffic to www.tagesschau.de is allowed", nsp.isCleartextTrafficPermitted("www.tagesschau.de"));
         assertFalse("Cleartext traffic to www.google.com is allowed", nsp.isCleartextTrafficPermitted("www.google.com"));
+    }
+
+    @Test
+    @SmallTest
+    public void testCurrentActivity() {
+        KeyguardManager km = (KeyguardManager) ctx.getSystemService(Context.KEYGUARD_SERVICE);
+        Assume.assumeFalse("Device is locked.", km.isDeviceLocked());
+        App app = (App)ctx.getApplicationContext();
+        assertNull(app.getCurrentActivity());
+        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
+        asn.moveToState(Lifecycle.State.RESUMED);
+        asn.onActivity(activity -> {
+            assertNotNull(activity);
+            assertNotNull(app.getCurrentActivity());
+            activity.finish();
+        });
+    }
+
+    @Test
+    @SmallTest
+    public void testFileDeleter() {
+        try {
+            File tmp1 = File.createTempFile("tmp",".tmp");
+            assertTrue(tmp1.isFile());
+            FileDeleter.add(tmp1);
+            assertTrue(FileDeleter.MORITURI.isFile());
+            FileDeleter.run();
+            assertFalse(tmp1.isFile());
+        } catch (Exception e) {
+            fail(e.toString());
+        }
     }
 
     @Test
@@ -210,13 +254,34 @@ public class AppTest {
         final MediaSourceHelper msh = new MediaSourceHelper();
         Uri uri;
         uri = Uri.parse("http://tagesschau-lh.akamaihd.net/i/tagesschau_3@66339/master.m3u8");
-        MediaSource ms = msh.buildMediaSource(okHttpClient, uri);
+        MediaSource ms = msh.buildMediaSource((Call.Factory) okHttpClient, uri);
         assertNotNull(ms);
         assertTrue("Not a HlsMediaSource: " + ms, ms instanceof HlsMediaSource);
         uri = Uri.parse("https://media.tagesschau.de/video/2021/0910/TV-20210910-0717-4200.webm.h264.mp4");
-        ms = msh.buildMediaSource(okHttpClient, uri);
+        ms = msh.buildMediaSource((Call.Factory) okHttpClient, uri);
         assertNotNull(ms);
         assertTrue("Not a ProgressiveMediaSource: " + ms, ms instanceof ProgressiveMediaSource);
+    }
+
+    @Test
+    @SmallTest
+    public void testNightMode() {
+        @App.BackgroundSelection int background = PreferenceManager.getDefaultSharedPreferences(ctx).getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
+        final int n = AppCompatDelegate.getDefaultNightMode();
+        switch (background) {
+            case App.BACKGROUND_DAY:
+                assertEquals(AppCompatDelegate.MODE_NIGHT_NO, n);
+                break;
+            case App.BACKGROUND_NIGHT:
+                assertEquals(AppCompatDelegate.MODE_NIGHT_YES, n);
+                break;
+            case App.BACKGROUND_AUTO:
+                assertEquals(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM, n);
+                break;
+            default:
+                fail("Undefined background value of " + background);
+        }
+
     }
 
     /**
@@ -306,20 +371,23 @@ public class AppTest {
     }
 
     /**
-     * Tests {@link HamburgerActivity#applyTheme(AppCompatActivity, boolean, boolean)}.
+     *
      */
     @Test
     @LargeTest
     public void testTheme() {
+        KeyguardManager km = (KeyguardManager) ctx.getSystemService(Context.KEYGUARD_SERVICE);
+        Assume.assumeFalse("Device is locked.", km.isDeviceLocked());
         ActivityScenario<NewsActivity> asn = ActivityScenario.launch(NewsActivity.class);
         asn.moveToState(Lifecycle.State.RESUMED);
         asn.onActivity(activity -> {
             assertNotNull(activity);
             boolean overflowButton = activity.hasMenuOverflowButton();
-            @StyleRes int resid = HamburgerActivity.applyTheme(activity, true, false);
-            assertEquals("Unexpected theme: " + styleIdToString(resid), overflowButton ? R.style.AppTheme_NoActionBar_Light : R.style.AppTheme_NoActionBar_Light_NoOverflowButton, resid);
-            resid = HamburgerActivity.applyTheme(activity, false, true);
-            assertEquals("Unexpected theme: " + styleIdToString(resid), overflowButton ? R.style.AppTheme_NoActionBar : R.style.AppTheme_NoActionBar_NoOverflowButton, resid);
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+            @App.BackgroundSelection int backgroundSelection = HamburgerActivity.applyTheme(activity, prefs,false);
+            assertTrue(backgroundSelection == App.BACKGROUND_AUTO || backgroundSelection == App.BACKGROUND_DAY || backgroundSelection == App.BACKGROUND_NIGHT);
+            int resid = HamburgerActivity.applyTheme(activity, backgroundSelection, true);
+            assertTrue(resid != 0);
             activity.finish();
         });
     }
@@ -343,14 +411,25 @@ public class AppTest {
         }
     }
 
+    @Test
+    @SmallTest
+    public void testUncaughtEx() {
+        Thread.UncaughtExceptionHandler ue = Thread.getDefaultUncaughtExceptionHandler();
+        assertNotNull("UncaughtExceptionHandler not set", ue);
+        assertTrue(ue.getClass().getName().startsWith("de.freehamburger."));
+    }
+
     /**
      * Tests scheduling the background update service.
      */
     @Test
     @SmallTest
+    @FlakyTest(detail = "The last part (App.hasCurrentActivity()) succeeds on some devices (APIs 23,31) and fails on others (API 28)")
     public void testUpdateService() {
         JobInfo jobInfo = UpdateJobService.makeJobInfo(ctx);
         assertNotNull(jobInfo);
+        assertTrue(jobInfo.isPeriodic());
+        if (Build.VERSION.SDK_INT >= 28) assertNotNull(jobInfo.getRequiredNetwork());
         JobScheduler js = (JobScheduler)ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE);
         assertNotNull(js);
         int result = js.schedule(jobInfo);
@@ -358,6 +437,44 @@ public class AppTest {
         assertTrue(app.isBackgroundJobScheduled() != 0L);
         js.cancel(jobInfo.getId());
         assertEquals(result, JobScheduler.RESULT_SUCCESS);
+
+        // parse the (presumably existing) json file for the HOME category
+        File existing = new File(ctx.getFilesDir(), Source.HOME.name() + Source.FILE_SUFFIX);
+        Assume.assumeTrue("To fully test the " + UpdateJobService.class + ", the HOME source must have been downloaded at least once!", existing.isFile());
+        Assume.assumeTrue("Source.HOME is locked", Source.HOME.getLockHolder() == null);
+        BlobParser bp = new BlobParser(ctx, null);
+        Blob blob = bp.doInBackground(new File[] {existing});
+        assertNotNull("BlobParser returned null for " + existing, blob);
+        List<News> list = blob.getAllNews();
+        assertNotNull(list);
+        assertFalse(list.isEmpty());
+
+        // make a notification summary
+        UpdateJobService.NotificationSummary un = new UpdateJobService.NotificationSummary();
+        un.increase();
+        assertEquals(2, un.getCount());
+        Notification summary = un.build(app);
+        assertEquals(un.getCount(), summary.number);
+        assertNotNull(summary);
+        assertTrue((summary.flags & Notification.FLAG_GROUP_SUMMARY) > 0);
+        assertNotNull(summary.extras);
+
+        // get the first News element and show it in the app as if it had been the subject of a notification
+        News news = list.get(0);
+        PendingIntent pi = UpdateJobService.makeIntentForStory(app, news, 4567);
+        assertNotNull(pi);
+        assertTrue(pi.isActivity());
+        try {
+            pi.send();
+        } catch (PendingIntent.CanceledException e) {
+            fail(e.toString());
+        }
+        // MainActivity should start now (but this will fail if the device is locked)…
+        KeyguardManager km = (KeyguardManager) app.getSystemService(Context.KEYGUARD_SERVICE);
+        Assume.assumeFalse("Device is locked.", km.isDeviceLocked());
+        try {Thread.sleep(2_000L);} catch (Exception ignored) {}
+        assertTrue(app.hasCurrentActivity());
+        try {Thread.sleep(2_000L);} catch (Exception ignored) {}
     }
 
     /**
@@ -366,9 +483,53 @@ public class AppTest {
     @Test
     @SmallTest
     public void testUtil() {
+        assertTrue(Util.TEST);
+        //
         Throwable t = new IllegalArgumentException(new ArithmeticException());
         Throwable causeFound = Util.getSpecificCause(t, ArithmeticException.class);
         assertNotNull(causeFound);
+        //
+        Point ds = Util.getDisplaySize(ctx);
+        assertNotNull(ds);
+        assertTrue(ds.x > 0);
+        assertTrue(ds.y > 0);
+        //
+        File[] files = ctx.getFilesDir().listFiles();
+        assertNotNull(files);
+        for (File file : files) {
+            long fs = file.length();
+            long os = Util.getOccupiedSpace(file);
+            assertTrue(os >= fs);
+        }
+        //
+        File fontFile = new File(ctx.getFilesDir(), App.FONT_FILE);
+        Typeface typeface = Util.loadFont(ctx);
+        if (fontFile.isFile()) assertNotNull(typeface); else assertNull(typeface);
+        //
+        assertTrue(Util.makeHttps("http://www.example.com").startsWith("https://"));
+        assertTrue(Util.makeHttps("ftp://www.example.com").startsWith("ftp://"));
+        //
+        String htmlList = "<ul><li>Item 1</li><li>Item 2</li></ul>";
+        StringBuilder nonHtmlList = Util.removeHtmlLists(htmlList);
+        assertNotNull(nonHtmlList);
+        assertTrue(nonHtmlList.indexOf("<br>") >= 0);
+        assertTrue(nonHtmlList.indexOf("•") >= 0);
+        //
+        StringBuilder linked = new StringBuilder("Click here: <a href=\"https://www.example.com\">Example</a>!");
+        StringBuilder unlinked = Util.removeLinks(linked);
+        assertNotNull(unlinked);
+        assertTrue(unlinked.indexOf("<a") < 0);
+        assertTrue(unlinked.indexOf("</a>") < 0);
+        //
+        String r = "Example hjelpText\t";
+        SpannableStringBuilder replaced = Util.replaceAll(r, new CharSequence [] {"hjelp", "\t"}, new CharSequence[] {"help", " "});
+        assertNotNull(replaced);
+        assertEquals("Example helpText ", replaced.toString());
+        //
+        List<String> split = Util.splitString("0123456789", 5);
+        assertNotNull(split);
+        assertEquals(2, split.size());
+        assertEquals("01234", split.get(0));
     }
 
 }

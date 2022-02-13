@@ -7,6 +7,7 @@ import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.JsonReader;
 import android.util.JsonToken;
+import android.util.MalformedJsonException;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -152,13 +153,17 @@ public class Blob {
 
     @NonNull
     private static Collection<News> parseNewsList(@NonNull final JsonReader reader, final boolean regional, @News.Flag final int flags) throws IOException {
-        final Set<News> newsList = new HashSet<>(16);
-        reader.beginArray();
-        for (; reader.hasNext(); ) {
-            newsList.add(News.parseNews(reader, regional, flags));
+        try {
+            final Set<News> newsList = new HashSet<>(16);
+            reader.beginArray();
+            for (; reader.hasNext(); ) {
+                newsList.add(News.parseNews(reader, regional, flags));
+            }
+            reader.endArray();
+            return newsList;
+        } catch (MalformedJsonException e) {
+            throw new InformativeJsonException(e, reader);
         }
-        reader.endArray();
-        return newsList;
     }
 
     /**

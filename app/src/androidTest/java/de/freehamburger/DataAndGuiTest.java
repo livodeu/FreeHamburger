@@ -160,8 +160,8 @@ public class DataAndGuiTest {
             assertTrue("News has empty title", news.getTitle().length() > 0);
             Date date = news.getDate();
             assertNotNull("News has null date", date);
-            assertTrue("News has invalid date (a)", date.getTime() > 0L);
-            assertTrue("News has invalid date (b)", date.before(now));
+            assertTrue("News has invalid date (a): " + date, date.getTime() > 0L);
+            assertTrue("News has invalid date (b): " + date + " not before now (" + now + ")", date.before(now));
             assertNotNull("News has null regions", news.getRegions());
             if (PREFERRED_REGION.toString().equals(news.getTopline())) {
                 assertTrue("News with top line '" + PREFERRED_REGION.toString() + "' is not regional", news.isRegional());

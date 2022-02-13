@@ -71,56 +71,20 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         }
     }
 
-    /**
-     * Applies a theme to the given activity.
-     * @param activity  AppCompatActivity
-     * @param lightBackground true / false
-     * @param again true / false
-     * @throws NullPointerException if {@code activity} is {@code null}
-     */
-    @VisibleForTesting
-    @StyleRes
-    @Deprecated
-    public static int applyTheme(@NonNull AppCompatActivity activity, boolean lightBackground, boolean again) {
-        @StyleRes int resid;
-        if (activity instanceof HamburgerActivity) {
-            HamburgerActivity ha = (HamburgerActivity) activity;
-            if (lightBackground) {
-                resid = ha.hasMenuOverflowButton() ? R.style.AppTheme_NoActionBar_Light : R.style.AppTheme_NoActionBar_Light_NoOverflowButton;
-            } else {
-                resid = ha.hasMenuOverflowButton() ? R.style.AppTheme_NoActionBar : R.style.AppTheme_NoActionBar_NoOverflowButton;
-            }
-        } else {
-            if (lightBackground) {
-                resid = R.style.AppTheme_NoActionBar_Light;
-            } else {
-                resid = R.style.AppTheme_NoActionBar;
-            }
-        }
-        if (again) {
-            activity.getTheme().applyStyle(resid, true);
-        } else {
-            activity.setTheme(resid);
-        }
-        return resid;
-    }
-
     @VisibleForTesting
     @SuppressLint("SwitchIntDef")
-    public static void applyTheme(@NonNull final AppCompatActivity activity, @App.BackgroundSelection final int bg, final boolean again) {
+    public static int applyTheme(@NonNull final AppCompatActivity activity, @App.BackgroundSelection final int bg, final boolean again) {
         @StyleRes final int resid;
         final boolean overflowButton = (!(activity instanceof HamburgerActivity) || ((HamburgerActivity) activity).hasMenuOverflowButton());
         if (!overflowButton) {
             switch (bg) {
                 case App.BACKGROUND_DAY: resid = R.style.AppTheme_NoActionBar_Light_NoOverflowButton; break;
-                //case App.BACKGROUND_VDARK: resid = R.style.AppTheme_NoActionBar_Vdark_NoOverflowButton; break;
                 case App.BACKGROUND_NIGHT:
                 default: resid = R.style.AppTheme_NoActionBar_NoOverflowButton;
             }
         } else {
             switch (bg) {
                 case App.BACKGROUND_DAY: resid = R.style.AppTheme_NoActionBar_Light; break;
-                //case App.BACKGROUND_VDARK: resid = R.style.AppTheme_NoActionBar_Vdark; break;
                 case App.BACKGROUND_NIGHT:
                 default: resid = R.style.AppTheme_NoActionBar;
             }
@@ -130,6 +94,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         } else {
             activity.setTheme(resid);
         }
+        return resid;
     }
 
     /**

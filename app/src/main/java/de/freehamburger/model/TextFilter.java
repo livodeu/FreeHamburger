@@ -233,6 +233,16 @@ public class TextFilter implements Filter {
     }
 
     /**
+     * Searches the given News'
+     * <ul>
+     * <li>{@link News#getFirstSentenceLowerCase() first sentence}</li>
+     * <li>{@link News#getToplineLowerCase() top line}</li>
+     * <li>{@link News#getTitleLowerCase() title}</li>
+     * <li>{@link News#getContent() content}</li>
+     * <li>{@link News#getTags() tags}</li>
+     * <li>{@link News#getGeotags() geo tags}</li>
+     * </ul>
+     * for occurrences of {@link #phrase}
      * @param news News
      * @return true if this Filter accepts the News
      */

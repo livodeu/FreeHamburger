@@ -13,6 +13,7 @@ import androidx.annotation.Size;
 import androidx.annotation.VisibleForTesting;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -81,6 +82,31 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
             reporter.start();
             blob = Blob.parseApi(ctx, src, reader);
             reporter.stop = true;
+        } catch (InformativeJsonException e) {
+            reporter.stop = true;
+            this.thrown = e;
+            String s = e.toString();
+            if (BuildConfig.DEBUG) Log.e(getClass().getSimpleName(), s, e);
+            BufferedReader r2 = null;
+            try {
+                int lineStart = s.indexOf("at line ");
+                int lineEnd = s.indexOf(' ', lineStart + 9);
+                final int line = Integer.parseInt(s.substring(lineStart + 8, lineEnd).trim());
+                Util.close(reader);
+                reader = null;
+                r2 = new BufferedReader(new InputStreamReader(new java.io.FileInputStream(files[0]), StandardCharsets.UTF_8));
+                for (int linecounter = 0;; linecounter++) {
+                    s = r2.readLine();
+                    if (s == null) break;
+                    if (linecounter >= line - 3 && linecounter <= line + 3) {
+                        if (linecounter == line) Log.e(getClass().getSimpleName(), linecounter + ": " + s);
+                        else Log.w(getClass().getSimpleName(), linecounter + ": " + s);
+                    }
+                }
+            } catch (Exception ignored) {
+            } finally {
+                Util.close(r2);
+            }
         } catch (Exception e) {
             if (reporter != null) reporter.stop = true;
             this.thrown = e;
