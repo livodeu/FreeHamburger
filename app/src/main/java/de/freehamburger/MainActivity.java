@@ -130,6 +130,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private static final String STATE_SOURCE = BuildConfig.APPLICATION_ID + ".state.source";
     private static final String STATE_RECENT_SOURCES = BuildConfig.APPLICATION_ID + ".state.recentsources";
     private static final String STATE_LIST_POS = BuildConfig.APPLICATION_ID + ".state.list.pos";
+    /** stores {@link #msgFoundShown} */
+    private static final String STATE_MSG_FOUND_SHOWN = BuildConfig.APPLICATION_ID + ".state.msgfoundshown";
     /** contains a News object if the {@link #quickView} should be restored */
     private static final String STATE_QUIKVIEW = BuildConfig.APPLICATION_ID + ".state.quikview";
     static final String ACTION_SHOW_NEWS = BuildConfig.APPLICATION_ID + ".action.show_news";
@@ -169,6 +171,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     @VisibleForTesting public DrawerLayout drawerLayout;
     private ClockView clockView;
     private Filter searchFilter = null;
+    /** {@code true} when the message given in {@link R.string#msg_found msg_found} or {@link R.string#msg_not_found msg_not_found} has been shown */
+    private boolean msgFoundShown = false;
     @IntRange(from = -1) private int listPositionToRestore = RecyclerView.NO_POSITION;
     @NonNull private Source currentSource = Source.HOME;
     private Snackbar snackbarMaybeQuit;
@@ -224,6 +228,12 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         this.searchFilter = null;
         if (this.newsAdapter != null) this.newsAdapter.clearTemporaryFilters();
         this.clockView.setTint(Color.TRANSPARENT);
+        this.msgFoundShown = false;
+        // clean the Intent
+        Intent intent = getIntent();
+        if (intent == null) return;
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.removeExtra(SearchManager.QUERY);
     }
 
     /** {@inheritDoc} */
@@ -406,6 +416,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return;
         }
         if (Intent.ACTION_SEARCH.equals(action) || getString(R.string.app_search_action).equals(action)) {
+            // R.string.app_search_action is set in searchable.xml
             /*
             if the user has picked a suggestion, intent.getData().getLastPathSegment() will contain "suggestion#source" (something like "a61#NEWS",
             see SearchContentProvider.SUGGESTION_PROJECTION, from SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID)
@@ -413,7 +424,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             String selectedSuggestion = intent.getData() != null ? intent.getData().getLastPathSegment() : null;
             String query = selectedSuggestion != null ? selectedSuggestion : intent.getStringExtra(SearchManager.QUERY);
             if (query == null) return;
-            CharSequence userQuery = intent.getCharSequenceExtra(SearchManager.USER_QUERY);
             int sep = query.lastIndexOf(SearchHelper.WORD_SOURCE_SEPARATOR);
             String queryString = sep > 0 ? query.substring(0, sep) : query;
             @Nullable Source source = null;
@@ -944,6 +954,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             }
             this.listPositionToRestore = savedInstanceState.getInt(STATE_LIST_POS, RecyclerView.NO_POSITION);
             this.newsForQuickView = (News)savedInstanceState.getSerializable(STATE_QUIKVIEW);
+            this.msgFoundShown = savedInstanceState.getBoolean(STATE_MSG_FOUND_SHOWN);
         }
         setTheme(R.style.AppTheme);
         super.onCreate(savedInstanceState);
@@ -1258,9 +1269,13 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
     /** {@inheritDoc} */
     @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        handleIntent(intent);
+    protected void onNewIntent(final Intent newIntent) {
+        super.onNewIntent(newIntent);
+        if (newIntent == null) return;
+        // copy relevant data to our "real" intent (the one accessible via getIntent())
+        getIntent().fillIn(newIntent, Intent.FILL_IN_ACTION | Intent.FILL_IN_DATA);
+        //
+        handleIntent(newIntent);
     }
 
     /** {@inheritDoc} */
@@ -1613,6 +1628,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         //
         outState.putSerializable(STATE_QUIKVIEW, this.quickView != null && this.quickView.getVisibility() == View.VISIBLE ? this.newsForQuickView : null);
         //
+        outState.putBoolean(STATE_MSG_FOUND_SHOWN, this.msgFoundShown);
+        //
         RecyclerView.LayoutManager rlm = this.recyclerView.getLayoutManager();
         int top = RecyclerView.NO_POSITION;
         if (rlm instanceof LinearLayoutManager) {
@@ -1736,13 +1753,15 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 }
 
                 MainActivity.this.swipeRefreshLayout.setRefreshing(false);
-                //
-                if (hasTemporaryFilter) {
-                    if (MainActivity.this.newsAdapter.getItemCount() == 0) {
-                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_not_found, searchFilter.getText()), Snackbar.LENGTH_LONG).show();
+                if (hasTemporaryFilter && !MainActivity.this.msgFoundShown) {
+                    CharSequence searchFilterText = MainActivity.this.searchFilter.getText();
+                    int found = MainActivity.this.newsAdapter.getItemCount();
+                    if (found == 0) {
+                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_not_found, searchFilterText), Snackbar.LENGTH_LONG).show();
                     } else {
-                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_found, MainActivity.this.searchFilter.getText(), MainActivity.this.newsAdapter.getItemCount()), Snackbar.LENGTH_SHORT).show();
+                        Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_found, searchFilterText, found), Snackbar.LENGTH_SHORT).show();
                     }
+                    MainActivity.this.msgFoundShown = true;
                 }
 
                 App app = (App)getApplicationContext();
