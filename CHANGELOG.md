@@ -29,3 +29,21 @@ _2021-12_
     * okhttp 4.9.0 → 4.9.2 [change log](https://github.com/square/okhttp/blob/master/CHANGELOG.md)
     * picasso 2.71828 → 2.8 [release](https://github.com/square/picasso/releases/tag/2.8)
     * recyclerview 1.1.0 → 1.2.1 [release](https://developer.android.com/jetpack/androidx/releases/recyclerview?hl=en#recyclerview-1.2.1)
+
+## 1.2
+
+_2022-02_
+
+* Changed: Better visibility in dark/night mode
+* New: Integration into "global search" (if supported by the device)
+* Changed: Menu drawer uses space better on larger/modern phones
+* New: Notification contents can now be styled as in the app's news list
+* New: Background updates may now load news from a selection of categories
+* New: Number of columns in the app's news list can be adjusted  
+* Changed: Added a further host to the whitelist
+* New: Picture-in-picture playback mode added for fullscreen videos (Android 8 and newer) 
+* Upgrade: Several libraries have been updated:
+    * appcompat 1.4.0 → 1.4.1 [release](https://developer.android.com/jetpack/androidx/releases/appcompat?hl=en#1.4.1)
+    * material 1.4.0 → 1.5.0 [release](https://github.com/material-components/material-components-android/releases/tag/1.5.0)
+    * okhttp 4.9.2 → 4.9.3 [change log](https://github.com/square/okhttp/blob/master/CHANGELOG.md)
+    * preference 1.1.1 → 1.2.0 [change log](https://developer.android.com/jetpack/androidx/releases/preference?hl=en#1.2.0)
