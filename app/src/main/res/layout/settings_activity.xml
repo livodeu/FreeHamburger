@@ -1,19 +1,36 @@
-<LinearLayout
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/coordinator_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:animateLayoutChanges="false"
+    tools:context=".SettingsActivity">
 
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:id="@+id/coordinator_layout"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:animateLayoutChanges="false"
-        >
+        android:orientation="vertical">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appbar_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:theme="@style/AppTheme.AppBarOverlay">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="?attr/colorPrimary" />
+
+        </com.google.android.material.appbar.AppBarLayout>
 
         <FrameLayout
             android:id="@+id/settings"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
-</LinearLayout>
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

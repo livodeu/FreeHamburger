@@ -2,8 +2,13 @@
 
     <!-- https://developer.android.com/guide/topics/ui/look-and-feel/darktheme -->
     <!-- https://medium.com/androiddevelopers/appcompat-v23-2-daynight-d10f90c83e94 -->
+    <!-- https://github.com/material-components/material-components-android/blob/master/docs/getting-started.md -->
     <!-- Does not work without other modifications: <style name="AppTheme" parent="Theme.MaterialComponents.DayNight"> -->
-    <style name="AppTheme" parent="Theme.AppCompat.DayNight">
+    <!-- Base.V21.Theme.MaterialComponents -->
+
+    <style name="Base" parent="Theme.Material3.DayNight.NoActionBar" />
+
+    <style name="AppTheme" parent="Base">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
@@ -19,6 +24,17 @@
         <item name="color_bg_news_focused">@color/colorBgNewsFocused</item>
         <!-- https://www.material.io/develop/android/components/snackbars/#theming-snackbars -->
         <item name="snackbarStyle">@style/Widget.App.Snackbar</item>
+        <item name="actionBarStyle">@style/AppTheme.ActionBar</item>
+        <item name="actionOverflowMenuStyle">@style/OverflowMenuStyle</item>
+    </style>
+
+    <style name="OverflowMenuStyle" parent="Widget.Material3.PopupMenu.Overflow">
+        <item name="android:popupBackground">@drawable/bg_button</item>
+    </style>
+
+    <style name="AppTheme.ActionBar" parent="Widget.MaterialComponents.ActionBar.Surface">
+        <item name="background">?attr/colorPrimaryDark</item>
+        <item name="elevation">8dp</item>
     </style>
 
     <style name="Widget.App.Snackbar" parent="Widget.Design.Snackbar">

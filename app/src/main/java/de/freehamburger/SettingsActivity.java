@@ -45,6 +45,7 @@ import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
@@ -192,6 +193,9 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         setTheme(R.style.AppTheme);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings_activity);
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        if (toolbar != null) setSupportActionBar(toolbar);
 
         if (!this.isManageStorageActivity && !this.fromBackgroundTile) {
             ActionBar actionBar = getSupportActionBar();

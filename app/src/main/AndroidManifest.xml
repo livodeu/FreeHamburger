@@ -116,8 +116,7 @@
             android:name=".NewsActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize"
             android:exported="false"
-            android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:parentActivityName=".MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="de.freehamburger.MainActivity" />
@@ -126,8 +125,7 @@
             android:name=".WebViewActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize"
             android:exported="false"
-            android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:parentActivityName=".MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="de.freehamburger.MainActivity" />
@@ -138,8 +136,7 @@
             android:exported="false"
             android:icon="@mipmap/ic_vt"
             android:label="@string/action_teletext"
-            android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:parentActivityName=".MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="de.freehamburger.MainActivity" />
@@ -161,7 +158,6 @@
             android:exported="false"
             android:label="@string/action_filter"
             android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="stateHidden|adjustPan">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
