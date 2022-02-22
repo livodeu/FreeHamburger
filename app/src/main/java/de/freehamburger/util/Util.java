@@ -61,6 +61,7 @@ import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.exoplayer2.PlaybackException;
+import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.xml.sax.XMLReader;
@@ -114,6 +115,9 @@ public class Util {
      * </pre>
      */
     private static final char[] WRONG_QUOTES = new char[] {'\u0022', '\u201d', '\u201f'};
+
+    /** Throwables that might carry important information about a playback failure */
+    private static final Collection<Class<? extends Throwable>> POSSIBLE_PLAYBACK_ERROR_CAUSES = Arrays.asList(UnknownHostException.class, SSLPeerUnverifiedException.class, HttpDataSource.InvalidResponseCodeException.class);
 
     static {
         boolean found = false;
@@ -1098,11 +1102,21 @@ public class Util {
         if (error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED) {
             msg = ctx.getString(R.string.error_connection_interrupted);
         } else {
-            Collection<Class<? extends Throwable>> possibleCauses = Arrays.asList(UnknownHostException.class, SSLPeerUnverifiedException.class);
-            for (Class<? extends Throwable> possibleCause : possibleCauses) {
+            for (Class<? extends Throwable> possibleCause : POSSIBLE_PLAYBACK_ERROR_CAUSES) {
                 Throwable cause = getSpecificCause(error, possibleCause);
                 if (cause != null) {
-                    msg = cause.getMessage();
+                    if (cause instanceof HttpDataSource.InvalidResponseCodeException) {
+                        int rc = ((HttpDataSource.InvalidResponseCodeException)cause).responseCode;
+                        switch (rc) {
+                            case 403:
+                            case 451: msg = ctx.getString(R.string.error_http_403); break;
+                            case 404: msg = ctx.getString(R.string.error_http_404); break;
+                            case 410: msg = ctx.getString(R.string.error_http_410); break;
+                            default: msg = cause.getMessage();
+                        }
+                    } else {
+                        msg = cause.getMessage();
+                    }
                     break;
                 }
             }

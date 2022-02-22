@@ -264,4 +264,8 @@
 
     <string name="url_wikipedia_http_streaming">https://de.m.wikipedia.org/wiki/HTTP-Streaming</string>
 
+    <string name="error_http_403">Der Zugriff auf die Ressource wurde verweigert!</string>
+    <string name="error_http_404">Die Ressource wurde nicht gefunden!</string>
+    <string name="error_http_410">Die Ressource ist nicht mehr verfügbar!</string>
+
 </resources>

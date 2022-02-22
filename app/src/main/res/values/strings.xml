@@ -80,6 +80,9 @@
     <string name="error_download_failed">Download failed:\n%1$s</string>
     <string name="error_download_failed2">Download failed.</string>
     <string name="error_filter_not_added">Filter has not been added.</string>
+    <string name="error_http_403">Access to the resource has been denied!</string>
+    <string name="error_http_404">The resource has not been found!</string>
+    <string name="error_http_410">The resource is no longer available!</string>
     <string name="error_invalid_not_a_number">Invalid. Must be a number.</string>
     <string name="error_link_not_supported">This app does not support %1$s.</string>
     <string name="error_no_app">No installed app can handle this!</string>
