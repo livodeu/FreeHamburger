@@ -8,7 +8,7 @@ import com.google.android.exoplayer2.extractor.mp3.Mp3Extractor;
 import com.google.android.exoplayer2.extractor.mp4.Mp4Extractor;
 
 /**
- * See <a href="https://google.github.io/ExoPlayer/shrinking.html>here</a>.
+ * See <a href="https://google.github.io/ExoPlayer/shrinking.html">here</a>.
  */
 class Mp34ExtractorsFactory implements ExtractorsFactory {
 

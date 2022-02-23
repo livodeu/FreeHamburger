@@ -52,7 +52,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
     /** boolean: enable picture-in-picture playback */
     public static final String PREF_PIP_ENABLED = "pref_pip_enabled";
     public static final boolean PREF_PIP_ENABLED_DEFAULT = true;
-    /** See <a href=" https://developer.android.com/about/versions/oreo/android-8.0#opip"> https://developer.android.com/about/versions/oreo/android-8.0#opip</a> */
+    /** See <a href="https://developer.android.com/about/versions/oreo/android-8.0#opip"> https://developer.android.com/about/versions/oreo/android-8.0#opip</a> */
     public static final int PIP_MIN_API = Build.VERSION_CODES.O;
     static final String EXTRA_NEWS = "extra_news";
     private static final String TAG = "VideoActivity";
