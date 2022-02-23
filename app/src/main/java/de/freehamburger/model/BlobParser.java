@@ -148,6 +148,7 @@ public class BlobParser extends AsyncTask<File, Float, Blob> {
     /**
      * Implemented by classes that wish to convert json data into Blobs.
      */
+    @FunctionalInterface
     public interface BlobParserListener {
 
         /**

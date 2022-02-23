@@ -126,6 +126,7 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.ViewHold
         }
     }
 
+    @FunctionalInterface
     public interface OnRelatedClickListener {
         /**
          * The user has tapped one {@link Related Related} item.

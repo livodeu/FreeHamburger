@@ -219,6 +219,7 @@ public class WebViewActivity extends AppCompatActivity {
         super.onTrimMemory(level);
     }
 
+    @FunctionalInterface
     interface PageFinishedListener {
 
         /**

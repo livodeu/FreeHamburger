@@ -78,6 +78,7 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
     /**
      *
      */
+    @FunctionalInterface
     public interface DownloaderListener {
 
         /**
