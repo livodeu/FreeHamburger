@@ -21,6 +21,8 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.util.List;
 
+import de.freehamburger.util.Util;
+
 /**
  * Special version of WebViewActivity for teletext display that can create pinned shortcuts to a teletext page (from API 26 on).
  */
@@ -169,7 +171,7 @@ public class TeletextActivity extends WebViewActivity {
                 itemShortcut.setVisible(sm != null && sm.isRequestPinShortcutSupported() && !hasShortcut(sm, makeShortcutIdForCurrentUrl()));
             }
         }
-        return true;
+        return Util.isAnyMenuItemEnabled(menu);
     }
 
     /**

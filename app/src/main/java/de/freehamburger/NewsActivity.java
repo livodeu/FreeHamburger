@@ -1061,7 +1061,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             menuItemRead.setTitle(R.string.action_read);
             this.fab.hide();
         }
-        return true;
+        // hide menu completely if no item is enabled
+        return Util.isAnyMenuItemEnabled(menu);
     }
 
     /** {@inheritDoc} */

@@ -922,6 +922,22 @@ public class Util {
     }
 
     /**
+     * Determines whether the given menu has at least one item that is visible and enabled.
+     * @param menu Menu to inspect
+     * @return true / false
+     */
+    public static boolean isAnyMenuItemEnabled(@Nullable final Menu menu) {
+        if (menu == null) return false;
+        final int n = menu.size();
+        for (int i = 0; i < n; i++) {
+            MenuItem item = menu.getItem(i);
+            if (item == null) continue;
+            if (item.isVisible() && item.isEnabled()) return true;
+        }
+        return false;
+    }
+
+    /**
      * Determines whether a network connection is available.<br>
      * Takes the user's preference as to whether loading via mobile is allowed into account.
      * @param ctx Context
