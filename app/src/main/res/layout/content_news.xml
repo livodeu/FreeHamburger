@@ -39,7 +39,7 @@
             android:visibility="gone"
             />
 
-        <com.google.android.exoplayer2.ui.PlayerView
+        <com.google.android.exoplayer2.ui.StyledPlayerView
             android:id="@+id/topVideoView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

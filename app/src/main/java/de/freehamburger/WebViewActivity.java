@@ -485,7 +485,7 @@ public class WebViewActivity extends AppCompatActivity {
                 if (!this.errors.contains(consoleMessage.message())) this.errors.add(consoleMessage.message());
                 AppCompatActivity activity = this.refactivity.get();
                 if (activity == null) return true;
-                boolean showErrors = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_SHOW_WEB_ERRORS, App.PREF_SHOW_WEB_ERRORS_DEFAULT);
+                boolean showErrors = BuildConfig.DEBUG || PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_SHOW_WEB_ERRORS, App.PREF_SHOW_WEB_ERRORS_DEFAULT);
                 if (showErrors && (this.sb == null || !this.sb.isShown())) {
                     Snackbar sb = Snackbar.make(activity.findViewById(R.id.coordinator_layout), R.string.msg_website_errors, Snackbar.LENGTH_INDEFINITE);
                     Util.setSnackbarFont(sb, Util.CONDENSED, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? -1 : 12));

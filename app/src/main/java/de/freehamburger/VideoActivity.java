@@ -33,7 +33,7 @@ import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.ui.PlayerView;
+import com.google.android.exoplayer2.ui.StyledPlayerView;
 
 import java.lang.ref.WeakReference;
 
@@ -80,7 +80,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
     private boolean hasAudioFocus;
     private AudioFocusRequest afr;
     private int audioVolumeBeforeDucking;
-    private PlayerView playerView;
+    private StyledPlayerView playerView;
     private ProgressBar progressBar;
     private News news;
     @Nullable

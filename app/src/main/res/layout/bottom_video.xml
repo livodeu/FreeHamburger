@@ -37,7 +37,7 @@
         android:animateLayoutChanges="true"
         >
 
-        <com.google.android.exoplayer2.ui.PlayerView
+        <com.google.android.exoplayer2.ui.StyledPlayerView
             android:id="@+id/bottomVideoView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

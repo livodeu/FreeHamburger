@@ -71,7 +71,7 @@ import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.ui.PlayerView;
+import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -133,8 +133,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private final PlayerListener listenerTop = new PlayerListener(this,false);
     /** passed with the Intent as extra {@link #EXTRA_NEWS} */
     private News news;
-    /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/PlayerView.html">JavaDoc</a> */
-    private PlayerView topVideoView;
+    /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
+    private StyledPlayerView topVideoView;
     private TextView textViewTitle;
     private ViewGroup /*RelativeLayout*/ audioBlock;
     private ImageButton buttonAudio;
@@ -168,8 +168,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     };
     // located at the bottom edge, contains the video title
     private TextView textViewBottomVideoPeek;
-    /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/PlayerView.html">JavaDoc</a> */
-    private PlayerView bottomVideoView;
+    /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
+    private StyledPlayerView bottomVideoView;
     private TextView textViewBottomVideoViewOverlay;
     private BottomSheetBehavior<? extends LinearLayout> bottomSheetBehavior;
     private boolean loadVideo;
