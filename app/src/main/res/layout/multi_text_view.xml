@@ -15,7 +15,6 @@
             android:layout_gravity="start|top"
             android:layout_margin="8dp"
             android:fontFamily="monospace"
-            android:textColor="@android:color/black"
             tools:text="@tools:sample/lorem/random"/>
 
     </HorizontalScrollView>
