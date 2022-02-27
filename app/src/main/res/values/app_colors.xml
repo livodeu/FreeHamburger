@@ -20,7 +20,9 @@
     <color name="colorToggling">#eebb33</color>
     <color name="colorIntro">#77ff0000</color>
     <color name="colorToplineShadow">#33064a91</color>
+
     <color name="colorBottomSheetBackground">#ee0f70aa</color>
+    <color name="colorBottomSheetText">#ededed</color>
 
     <color name="colorToolbarText">@color/color_onPrimary</color>
 

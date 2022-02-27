@@ -24,10 +24,10 @@
         android:gravity="center_vertical"
         android:singleLine="true"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
-        android:textColor="@color/colorDirtyWhite"
+        android:textColor="@color/colorBottomSheetText"
         android:textSize="@dimen/text_size_news_bottom_video"
         tools:text="Video title"
-        app:drawableStartCompat="@drawable/ic_videocam_content_24dp" />
+        app:drawableStartCompat="@drawable/ic_videocam_bottomsheet_24dp" />
 
     <RelativeLayout
         android:id="@+id/bottomVideoViewWrapper"
