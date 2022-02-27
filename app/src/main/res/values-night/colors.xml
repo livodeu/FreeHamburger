@@ -1,22 +1,30 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimaryDark">#0f70aa</color>
-    <color name="colorPrimaryDarkSemiTrans">#770f70aa</color>
-    <color name="colorPrimary">#1288cc</color>
-    <color name="colorPrimarySemiTrans">#771288cc</color>
+    <color name="color_primary">#90CCFF</color>
+    <color name="color_onPrimary">#003352</color>
+    <color name="color_primaryContainer">#004B75</color>
+    <color name="color_onPrimaryContainer">#CBE5FF</color>
+    <color name="color_secondary">#92CCFF</color>
+    <color name="color_onSecondary">#003353</color>
+    <color name="color_secondaryContainer">#004A75</color>
+    <color name="color_onSecondaryContainer">#CBE5FF</color>
+    <color name="color_tertiary">#91CCFF</color>
+    <color name="color_onTertiary">#003353</color>
+    <color name="color_tertiaryContainer">#004A75</color>
+    <color name="color_onTertiaryContainer">#CBE5FF</color>
+    <color name="color_error">#FFB4A9</color>
+    <color name="color_errorContainer">#930006</color>
+    <color name="color_onError">#680003</color>
+    <color name="color_onErrorContainer">#FFDAD4</color>
+    <color name="color_background">#1A1C1E</color>
+    <color name="color_onBackground">#E2E2E6</color>
+    <color name="color_surface">#1A1C1E</color>
+    <color name="color_onSurface">#E2E2E6</color>
+    <color name="color_surfaceVariant">#41474D</color>
+    <color name="color_onSurfaceVariant">#C2C7CE</color>
+    <color name="color_outline">#8C9198</color>
+    <color name="color_inverseOnSurface">#1A1C1E</color>
+    <color name="color_inverseSurface">#E2E2E6</color>
 
-    <color name="colorPrimaryLight">#0E6699</color>
-    <color name="colorPrimaryLightSemiTrans">#aa0E6699</color>
+    <color name="colorPrimarySemiTrans">#7790CCFF</color>
 
-    <color name="colorBox">#7ED2FC</color>
-    <color name="colorQuotation">#7ED2FC</color>
-
-    <!-- background color for the RecyclerView -->
-    <color name="colorRecyclerBg">#ff083854</color>
-
-    <color name="colorContent">#ffededed</color>
-    <!-- title text color for regional news -->
-    <color name="colorRegionalNews">#1CD5E6</color>
-    <!-- title text color for "breaking" (whatever that possibly means) news -->
-    <color name="colorBreakingNews">#ffff0000</color>
 </resources>

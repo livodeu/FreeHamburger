@@ -17,6 +17,6 @@
         android:layout_height="wrap_content"
         android:text="@string/label_sections"
         android:textAlignment="center"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body2.White"/>
+        android:textAppearance="@style/TextAppearance.Navigation"/>
 
 </LinearLayout>

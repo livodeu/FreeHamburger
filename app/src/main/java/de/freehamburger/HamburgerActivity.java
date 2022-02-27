@@ -73,37 +73,27 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
 
     @VisibleForTesting
     @SuppressLint("SwitchIntDef")
-    public static int applyTheme(@NonNull final AppCompatActivity activity, @App.BackgroundSelection final int bg, final boolean again) {
-        @StyleRes final int resid;
-        final boolean overflowButton = (!(activity instanceof HamburgerActivity) || ((HamburgerActivity) activity).hasMenuOverflowButton());
-        if (!overflowButton) {
-            switch (bg) {
-                case App.BACKGROUND_DAY: resid = R.style.AppTheme_NoActionBar_Light_NoOverflowButton; break;
-                case App.BACKGROUND_NIGHT:
-                default: resid = R.style.AppTheme_NoActionBar_NoOverflowButton;
-            }
-        } else {
-            switch (bg) {
-                case App.BACKGROUND_DAY: resid = R.style.AppTheme_NoActionBar_Light; break;
-                case App.BACKGROUND_NIGHT:
-                default: resid = R.style.AppTheme_NoActionBar;
-            }
-        }
+    public static int applyTheme(@NonNull final AppCompatActivity activity, @App.ResolvedBackgroundSelection final int bg, final boolean again) {
+        // determine whether the Activity should display a ⁝ menu item
+        boolean overflowButton = (!(activity instanceof HamburgerActivity) || ((HamburgerActivity) activity).hasMenuOverflowButton());
+        @StyleRes final int resid = overflowButton ? R.style.AppTheme : R.style.AppTheme_NoOverflowButton;
         if (again) {
             activity.getTheme().applyStyle(resid, true);
         } else {
             activity.setTheme(resid);
         }
+        if (BuildConfig.DEBUG) Log.i(TAG, "Set theme: " + Util.getResourceName(activity, resid));
         return resid;
     }
 
     /**
      * Selects and applies a theme according to the preferences.<br>
      * Returns the selected background, too ({@link App#BACKGROUND_DAY light} or {@link App#BACKGROUND_NIGHT dark}),
-     * so that information can be used to style Views.
+     * so that information can be used to style Views.<br>
+     * Note: The system-provided "default night mode" is set independently in {@link App#setNightMode(SharedPreferences)}.
      * @param activity AppCompatActivity
      * @param prefs SharedPreferences
-     * @param again true / false
+     * @param again true / false to determine whether to call {@link android.content.res.Resources.Theme#applyStyle(int, boolean) applyStyle()} or {@link android.app.Activity#setTheme(int) setTheme()}
      * @return {@link App#BACKGROUND_DAY} or {@link App#BACKGROUND_NIGHT}
      * @throws NullPointerException if {@code activity} is {@code null}
      */

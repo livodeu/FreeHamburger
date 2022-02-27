@@ -5,7 +5,7 @@
     <SwitchPreferenceCompat
         android:defaultValue="true"
         android:key="pref_load_over_mobile"
-        android:icon="@drawable/ic_network_cell_ededed_24dp"
+        android:icon="@drawable/ic_network_cell_content_24dp"
         android:title="@string/pref_title_pref_load_over_mobile"
         android:summaryOn="@string/pref_title_pref_load_over_mobile_on"
         android:summaryOff="@string/pref_title_pref_load_over_mobile_off"/>
@@ -14,7 +14,7 @@
         android:defaultValue="false"
         android:key="pref_load_videos_over_mobile"
         android:dependency="pref_load_over_mobile"
-        android:icon="@drawable/ic_network_cell_ededed_24dp"
+        android:icon="@drawable/ic_network_cell_content_24dp"
         android:title="@string/pref_title_pref_load_videos_over_mobile"
         android:summaryOn="@string/pref_title_pref_load_videos_over_mobile_on"
         android:summaryOff="@string/pref_title_pref_load_videos_over_mobile_off"/>
@@ -26,8 +26,8 @@
         android:key="pref_proxy_type"
         android:summary="@string/pref_summary_proxy_type"
         android:title="@string/pref_title_proxy_type"
-        android:icon="@drawable/ic_http_ededed_24dp"
-        android:dialogIcon="@drawable/ic_http_ededed_24dp"
+        android:icon="@drawable/ic_http_content_24dp"
+        android:dialogIcon="@drawable/ic_http_content_24dp"
         android:negativeButtonText="@null"/>
 
     <de.freehamburger.prefs.SummarizingEditTextPreference
@@ -37,8 +37,8 @@
         android:hint="@string/pref_hint_proxy_server"
         android:dependency="pref_proxy_type"
         android:inputType="textUri"
-        android:icon="@drawable/ic_http_ededed_24dp"
-        android:dialogIcon="@drawable/ic_http_ededed_24dp"
+        android:icon="@drawable/ic_http_content_24dp"
+        android:dialogIcon="@drawable/ic_http_content_24dp"
         />
 
 </PreferenceScreen>

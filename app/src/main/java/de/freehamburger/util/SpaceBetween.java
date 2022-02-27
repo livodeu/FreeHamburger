@@ -37,7 +37,7 @@ public class SpaceBetween extends RecyclerView.ItemDecoration {
     public SpaceBetween(@NonNull Context ctx, int distance) {
         this.space = Math.abs(distance);
         this.halfSpace = this.space >> 1;
-        this.paint.setColor(ctx.getResources().getColor(R.color.colorPrimaryLightSemiTrans));
+        this.paint.setColor(ctx.getResources().getColor(R.color.colorSpaceBetween));
         this.paint.setTextSize(space);
         this.paint.getTextBounds(DEKO_LEFT, 0, DEKO_LEFT.length(), this.leftTextRect);
         this.paint.getTextBounds(DEKO_RITE, 0, DEKO_RITE.length(), this.riteTextRect);

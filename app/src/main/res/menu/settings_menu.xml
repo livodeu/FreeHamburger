@@ -5,6 +5,6 @@
         android:id="@+id/action_help"
         android:alphabeticShortcut="h"
         android:title="@string/action_help"
-        android:icon="@drawable/ic_help_outline_ededed_24dp"
+        android:icon="@drawable/ic_help_outline_toolbar_24dp"
         app:showAsAction="ifRoom"/>
 </menu>

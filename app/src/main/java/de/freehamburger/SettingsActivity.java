@@ -11,10 +11,12 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -35,7 +37,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
 
-import androidx.annotation.ColorInt;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -59,6 +60,7 @@ import androidx.preference.PreferenceManager;
 import androidx.preference.SeekBarPreference;
 import androidx.preference.SwitchPreferenceCompat;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
@@ -117,32 +119,21 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         } finally {
             Util.close(in);
         }
-        @ColorInt final int textColor;
-        @ColorInt final int bgColor;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            textColor = activity.getResources().getColor(R.color.colorContent, activity.getTheme());
-            bgColor = activity.getResources().getColor(R.color.colorPrimaryLight, activity.getTheme());
-        } else {
-            textColor = activity.getResources().getColor(R.color.colorContent);
-            bgColor = activity.getResources().getColor(R.color.colorPrimaryLight);
-        }
-        String textColorForCss = Integer.toHexString(textColor & ~0xff000000);
-        String bgColorForCss = Integer.toHexString(bgColor & ~0xff000000);
+        String textColorForCss = Util.makeCssColor(activity, R.color.color_onPrimaryContainer);
+        String bgColorForCss = Util.makeCssColor(activity, R.color.color_primaryContainer);
         CharSequence cs = TextUtils.replace(sb,
                 new String[] {"<style></style>"},
                 new CharSequence[] {"<style>body{color:#" + textColorForCss + ";background:#" + bgColorForCss + "}</style>"}
                 );
         webView.loadDataWithBaseURL("about:blank", cs.toString(), "text/html", "UTF-8", null);
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity, R.style.AppAlertDialogTheme)
+        AlertDialog.Builder builder = new MaterialAlertDialogBuilder(activity)
                 .setTitle(R.string.action_help)
                 .setView(webView)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
                 ;
         AlertDialog ad = builder.create();
         Window w = ad.getWindow();
-        if (w != null) {
-            w.setBackgroundDrawableResource(R.drawable.bg_dialog);
-        }
+
         ad.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
         ad.setCanceledOnTouchOutside(true);
         ad.setOnCancelListener(dialog -> {
@@ -157,7 +148,11 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 ((ViewGroup)p).removeView(webView);
             }
         });
-        ad.show();
+        try {
+            ad.show();
+        } catch (Exception e) {
+            if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+        }
         return ad;
     }
 
@@ -178,6 +173,32 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             return;
         }
         super.onBackPressed();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // we are assuming here that the background preference 3-state-button has been rotated
+        getDelegate().applyDayNight();
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        // for some cool reason, this works and appears to be necessary
+        fragmentManager.popBackStack();
+        // re-create the assumedly current fragment
+        //TODO a way to determine the current fragment?
+        fragmentManager
+                .beginTransaction()
+                .replace(R.id.settings, new AppearancePreferenceFragment())
+                .commit();
+        getWindow().getDecorView().setBackgroundColor(getResources().getColor(R.color.colorWindowBackground));
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            // update the navigation icon color and the toolbar text color
+            int toolbarTextColor = getResources().getColor(R.color.colorToolbarText);
+            toolbar.setTitleTextColor(toolbarTextColor);
+            Drawable icon = toolbar.getNavigationIcon();
+            if (icon != null) icon.setTint(toolbarTextColor);
+        }
     }
 
     /** {@inheritDoc} */
@@ -240,7 +261,8 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
      */
     @SuppressWarnings("deprecation")
     @Override
-    public boolean onPreferenceStartFragment(@NonNull PreferenceFragmentCompat caller, Preference pref) {
+    public boolean onPreferenceStartFragment(@NonNull PreferenceFragmentCompat caller, @NonNull Preference pref) {
+        if (BuildConfig.DEBUG) Log.i(TAG, "onPreferenceStartFragment(" + caller + ", " + pref + ")");
         // Instantiate the new Fragment
         Bundle args = pref.getExtras();
         FragmentManager fm = getSupportFragmentManager();
@@ -480,7 +502,6 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
             if (prefBackground != null) {
                 prefBackground.setOnPreferenceChangeListener((preference, newValue) -> {
-                    if (BuildConfig.DEBUG) Log.i(TAG, "Selected background " + newValue);
                     if (Integer.valueOf(App.BACKGROUND_AUTO).equals(newValue)) {
                         boolean granted = ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
                         if (!granted) {
@@ -510,7 +531,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 // 0x1f918 -> https://en.wikibooks.org/wiki/Unicode/Character_reference/1F000-1FFFF
                 prefShowTopVideo.setIcon(new BitmapDrawable(activity.getResources(),
                         Util.makeCharBitmap("\uD83C\uDFA5", 0f, iconSize, iconSize, Color.BLACK, Color.TRANSPARENT,
-                                new PorterDuffColorFilter(getResources().getColor(R.color.colorDirtyWhite), PorterDuff.Mode.SRC_ATOP))));
+                                new PorterDuffColorFilter(getResources().getColor(R.color.colorContent), PorterDuff.Mode.SRC_ATOP))));
             }
 
             if (prefCorrectQuotationMarks != null) {
@@ -518,7 +539,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 // 0x1f918 -> https://en.wikibooks.org/wiki/Unicode/Character_reference/1F000-1FFFF
                 prefCorrectQuotationMarks.setIcon(new BitmapDrawable(activity.getResources(),
                         Util.makeCharBitmap("\uD83E\uDD18", 0f, iconSize, iconSize, Color.BLACK, Color.TRANSPARENT,
-                                new PorterDuffColorFilter(getResources().getColor(R.color.colorDirtyWhite), PorterDuff.Mode.SRC_ATOP))));
+                                new PorterDuffColorFilter(getResources().getColor(R.color.colorContent), PorterDuff.Mode.SRC_ATOP))));
             }
         }
 
@@ -908,7 +929,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     });
                     activity.snackbar.setActionTextColor(getResources().getColor(R.color.colorAccent));
                     activity.snackbar.show();
-                    Util.fadeSnackbar(activity.snackbar, 4_900L);
+                    Util.fadeSnackbar(activity.snackbar, null,4_900L);
                     return false;
                 });
             }

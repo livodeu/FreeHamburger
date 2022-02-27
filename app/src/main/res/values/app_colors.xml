@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorBgNews">#ffffffff</color>
+    <color name="colorBgNewsFocused">#c0208bc9</color>
+    <color name="colorBgNewsPressed">#c0208bc9</color>
+    <!-- title text color for regional news -->
+    <color name="colorRegionalNews">#4c0918</color>
+    <!-- title text color for "breaking" (whatever that possibly means) news -->
+    <color name="colorBreakingNews">#ff0000</color>
+    <!-- background color for Snackbars -->
+    <color name="colorSnackbarBg">@color/color_primaryContainer</color>
+    <!-- background color for the RecyclerView -->
+    <color name="colorRecyclerBg">#ffffffff</color>
+
+    <color name="colorBox">#064a91</color>
+    <color name="colorBoxBackground">#111288cc</color>
+    <color name="colorQuotation">#064a91</color>
+    <!-- Do NOT overwrite colorSearchIcon in the night colors! The search icons will not be updated when there is a uiMode change! -->
+    <color name="colorSearchIcon">#ff1288cc</color>
+    <color name="colorToggling">#eebb33</color>
+    <color name="colorIntro">#77ff0000</color>
+    <color name="colorToplineShadow">#33064a91</color>
+    <color name="colorBottomSheetBackground">#ee0f70aa</color>
+
+    <color name="colorToolbarText">@color/color_onPrimary</color>
+
+    <color name="colorDirtyWhite">#ededed</color>
+    <color name="colorWindowBackground">@color/colorDirtyWhite</color>
+
+    <color name="colorNavigationViewBackground">#770f70aa</color>
+    <color name="colorSpaceBetween">#aaBFE6FA</color>
+
+    <color name="colorPressed">#FFC599</color>
+    <color name="colorLinkInternal">#ffa866</color>
+    <color name="colorLinkExternal">#fe8b35</color>
+    <color name="colorFilter">#55ffdd00</color>
+
+    <color name="colorContent">#ff000000</color>
+
+</resources>

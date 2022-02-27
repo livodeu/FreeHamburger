@@ -2,7 +2,7 @@
 
     <SwitchPreferenceCompat
         app:defaultValue="true"
-        app:icon="@drawable/ic_baseline_picture_in_picture_alt_24"
+        app:icon="@drawable/ic_baseline_picture_in_picture_alt_content_24"
         app:key="pref_pip_enabled"
         app:singleLineTitle="false"
         app:summaryOff="@string/pref_summary_pip_off"

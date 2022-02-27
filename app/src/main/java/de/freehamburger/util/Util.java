@@ -24,6 +24,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.system.ErrnoException;
@@ -449,23 +450,31 @@ public class Util {
      * Displays a Snackbar and fades it over a given period of time.<br>
      * <b>The Snackbar will not be dismissed after the time is up, though!</b>
      * @param sb Snackbar <em>which is not shown yet</em>
+     * @param handler Handler to use to hide the {@link Snackbar#getView() Snackbar View} after it has been faded out
      * @param duration duration in ms
      * @throws NullPointerException if {@code sb} is {@code null}
      * @throws IllegalArgumentException if {@code duration} is less than 0
      */
-    public static void fadeSnackbar(@NonNull final Snackbar sb, @IntRange(from = 0) long duration) {
-        float durationScale = Settings.Global.getFloat(sb.getContext().getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 0f);
+    public static void fadeSnackbar(@NonNull final Snackbar sb, @Nullable Handler handler, @IntRange(from = 0) long duration) {
+        float durationScale = Settings.Global.getFloat(sb.getContext().getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 1f);
         if (durationScale < 0.1f) {
             // make sure the animation does not happen if the animator scale is 0! (the Snackbar would be gone immediately)
             sb.setDuration((int)duration).show();
             return;
         }
         if (durationScale < 1f) duration = (long)(duration / durationScale);
-        Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) sb.getView();
+        final Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) sb.getView();
         ObjectAnimator oa = ObjectAnimator.ofFloat(snackLayout, "alpha", 1f, 0f).setDuration(duration);
         oa.setInterpolator(new AccelerateInterpolator(2f));
         sb.show();
         oa.start();
+        /*
+        the Snackbar must be hidden when the fadeout period has elapsed;
+        otherwise BaseTransientBottomBar.startFadeOutAnimation() would be called (from BaseTransientBottomBar.animateViewOut())
+        and startFadeOutAnimation() starts anew from an alpha value of 1…
+         */
+        if (handler == null) handler = new Handler();
+        handler.postDelayed(() -> snackLayout.setVisibility(View.GONE), duration - 50L);
     }
 
     /**
@@ -771,7 +780,6 @@ public class Util {
         }
         return out.toString();
     }
-
 
     /**
      * Attempts to find a specific Throwable among the causes of the given Throwable.
@@ -1079,6 +1087,18 @@ public class Util {
     }
 
     /**
+     * Converts a color resource to a css value.
+     * @param ctx Context
+     * @param color color resource
+     * @return css value
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
+    public static String makeCssColor(@NonNull final Context ctx, @ColorRes final int color) {
+        @ColorInt int value = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? ctx.getResources().getColor(color, ctx.getTheme()) : ctx.getResources().getColor(color);
+        return String.format("%06X", value & ~0xff000000);
+    }
+
+    /**
      * Makes sure that the given url uses https and not http.
      * @param url http(s) url
      * @return https url
@@ -1381,20 +1401,6 @@ public class Util {
                 Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_LONG).show();
             }
         }
-    }
-
-    public static void setBackground(View view, @App.BackgroundSelection final int background) {
-        if (view == null) return;
-        switch (background) {
-            case App.BACKGROUND_NIGHT:
-                view.setBackgroundResource(R.drawable.bg_news);
-            case App.BACKGROUND_AUTO:
-                break;
-            case App.BACKGROUND_DAY:
-                view.setBackgroundResource(R.drawable.bg_news_light);
-                break;
-        }
-        view.setBackgroundResource(background == App.BACKGROUND_DAY ? R.drawable.bg_news_light :R.drawable.bg_news);
     }
 
     /**

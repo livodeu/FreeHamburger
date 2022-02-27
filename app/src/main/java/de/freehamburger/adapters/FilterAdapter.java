@@ -3,20 +3,19 @@ package de.freehamburger.adapters;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.RecyclerView;
 import android.text.Editable;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import de.freehamburger.App;
 import de.freehamburger.FilterActivity;
-import de.freehamburger.R;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.TextFilter;
 import de.freehamburger.views.FilterView;
@@ -28,7 +27,6 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
     private final List<Filter> filters = new ArrayList<>(4);
     @NonNull private final FilterActivity filterActivity;
-    @App.BackgroundSelection private int background;
     @Nullable private Filter focusMe;
 
     /**
@@ -80,7 +78,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         FilterView filterView = (FilterView) holder.itemView;
-        filterView.setBackgroundResource(this.background == App.BACKGROUND_DAY ? R.drawable.bg_news_light : R.drawable.bg_news);
+        //
         Filter filter = this.filters.get(position);
         filterView.setFilter(filter);
         filterView.setListener(new FilterView.Listener() {
@@ -137,10 +135,6 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
         if (position < 0 || position >= this.filters.size()) return;
         this.filters.remove(position);
         notifyItemRemoved(position);
-    }
-
-    public void setBackground(@App.BackgroundSelection int background) {
-        this.background = background;
     }
 
     @SuppressLint("NotifyDataSetChanged")

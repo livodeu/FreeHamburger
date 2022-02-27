@@ -27,7 +27,7 @@
         android:textColor="@color/colorDirtyWhite"
         android:textSize="@dimen/text_size_news_bottom_video"
         tools:text="Video title"
-        app:drawableStartCompat="@drawable/ic_videocam_ededed_24dp" />
+        app:drawableStartCompat="@drawable/ic_videocam_content_24dp" />
 
     <RelativeLayout
         android:id="@+id/bottomVideoViewWrapper"

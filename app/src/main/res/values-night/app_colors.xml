@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorBgNews">#ff1a75aa</color>
+    <color name="colorBgNewsFocused">#c01e83bd</color>
+    <color name="colorBgNewsPressed">#c01e83bd</color>
+    <!-- title text color for regional news -->
+    <color name="colorRegionalNews">#1CD5E6</color>
+    <!-- title text color for "breaking" (whatever that possibly means) news -->
+    <color name="colorBreakingNews">#ffff0000</color>
+    <!-- background color for Snackbars -->
+    <color name="colorSnackbarBg">@color/color_primaryContainer</color>
+    <!-- background color for the RecyclerView -->
+    <color name="colorRecyclerBg">#ff083854</color>
+
+    <color name="colorToolbarText">@color/color_onPrimary</color>
+
+    <color name="colorBox">#7ED2FC</color>
+    <color name="colorBoxBackground">#111288cc</color>
+    <color name="colorQuotation">#7ED2FC</color>
+
+    <color name="colorWindowBackground">#1a75aa</color>
+
+    <color name="colorContent">#ffededed</color>
+
+</resources>

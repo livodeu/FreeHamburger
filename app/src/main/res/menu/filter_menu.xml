@@ -4,7 +4,7 @@
     <item
         android:id="@+id/action_add_filter"
         android:alphabeticShortcut="a"
-        android:icon="@drawable/ic_add_ededed_24dp"
+        android:icon="@drawable/ic_add_toolbartext_24dp"
         android:title="@string/action_add_filter"
         app:showAsAction="ifRoom"/>
     <item

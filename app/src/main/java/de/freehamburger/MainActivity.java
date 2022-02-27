@@ -77,6 +77,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
@@ -678,7 +679,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             // ask user whether (s)he had enough
             this.snackbarMaybeQuit = Snackbar.make(this.coordinatorLayout, R.string.action_quit, 5_000);
             this.snackbarMaybeQuit.setAction(R.string.label_yes, v -> finish());
-            Util.fadeSnackbar(this.snackbarMaybeQuit, 4_900L);
+            Util.fadeSnackbar(this.snackbarMaybeQuit, this.handler,5_001L);
         } else {
             finish();
         }
@@ -734,9 +735,9 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 } else {
                     tv = new TextView(MainActivity.this);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        tv.setTextAppearance(R.style.TextAppearance_AppCompat_Body2_White);
+                        tv.setTextAppearance(R.style.TextAppearance_Menu);
                     } else {
-                        tv.setTextAppearance(MainActivity.this, R.style.TextAppearance_AppCompat_Body2_White);
+                        tv.setTextAppearance(MainActivity.this, R.style.TextAppearance_Menu);
                     }
                     tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16); // standard seems to be 14 which is a wee bit small
                     tv.setMaxLines(1);
@@ -747,7 +748,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 return tv;
             }
         };
-        AlertDialog ad = new AlertDialog.Builder(this)
+        AlertDialog ad = new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.label_recent_sources)
                 .setAdapter(adapter, (dialog, which) -> {
                     Source selected = (Source)adapter.getItem(which);
@@ -766,10 +767,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     finish();
                 })
                 .create();
-        Window dw = ad.getWindow();
-        if (dw != null) {
-            dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
-        }
         if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_SWIPE_TO_DISMISS, false)) {
             ad.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
         }
@@ -875,7 +872,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     int width = q.getWidth();
                     items[i++] = labelRes > -1 ? (width > 0 ? getString(labelRes, width) : getString(labelRes)) : q.name();
                 }
-                AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this)
                         .setTitle(R.string.action_quality_select)
                         .setItems(items, (dialog, which) -> {
                             StreamQuality selectedQuality = qualities.get(which);
@@ -895,8 +892,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     }
                 }
                 AlertDialog d = builder.create();
-                Window dw = d.getWindow();
-                if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
                 if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_SWIPE_TO_DISMISS, false)) {
                     d.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
                 }
@@ -1156,7 +1151,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             info.append(title).append(' ').append(version);
             info.append("\n\n").append(getString(R.string.app_build_date, DateFormat.getDateTimeInstance().format(new Date(BuildConfig.BUILD_TIME))));
             info.append("\n\n").append(getString(R.string.app_license));
-            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppAlertDialogTheme)
+            AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.action_info)
                     .setMessage(info)
                     .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
@@ -1175,7 +1170,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                         tv.setText(sb);
                         tv.setContentDescription(getString(R.string.label_license));
                         ClipboardManager cm = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
-                        AlertDialog.Builder lb = new AlertDialog.Builder(MainActivity.this, R.style.AppAlertDialogTheme)
+                        AlertDialog.Builder lb = new MaterialAlertDialogBuilder(MainActivity.this)
                                 .setTitle(R.string.label_license)
                                 .setView(sv)
                                 .setPositiveButton(android.R.string.ok, (dialog1, which1) -> dialog1.dismiss());
@@ -1186,15 +1181,11 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                             });
                         }
                         this.infoDialog = lb.create();
-                        Window dw = this.infoDialog.getWindow();
-                        if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
                         if (swipeToDismiss) this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
                         this.infoDialog.show();
                     })
                     ;
             this.infoDialog = builder.create();
-            Window dw = this.infoDialog.getWindow();
-            if (dw != null) dw.setBackgroundDrawableResource(R.drawable.bg_dialog);
             if (swipeToDismiss) this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
             this.infoDialog.show();
         }
@@ -1219,7 +1210,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             } else {
                 sb.append("1: ").append(df.format(new Date(latest))).append('\n');
             }
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this);
             builder.setTitle(R.string.pref_title_background);
             builder.setMessage(sb);
             builder.setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
@@ -1458,7 +1449,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             // let's remember the Source that we are loading now - in case the user changes it while we are loading...
             private final Source sourceToSetOnSuccess = MainActivity.this.currentSource;
             @ColorInt
-            private final int c = Util.getColor(MainActivity.this, R.color.colorPrimary);
+            private final int c = Util.getColor(MainActivity.this, R.color.color_primary);
 
             /** {@inheritDoc} */
             @Override
@@ -1684,7 +1675,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (file == null) return;
         BlobParser blobParser = new BlobParser(this, new BlobParser.BlobParserListener() {
             @ColorInt
-            private final int c = Util.getColor(MainActivity.this, R.color.colorPrimary);
+            private final int c = Util.getColor(MainActivity.this, R.color.color_primary);
 
             @Override
             public void blobParsed(@Nullable Blob blob, boolean ok, @Nullable Throwable oops) {
@@ -1693,7 +1684,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     if (BuildConfig.DEBUG) Log.e(TAG, "Parsing failed: " + oops, oops);
                     Snackbar sb = Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_INDEFINITE);
                     sb.setAction("↻", v -> handler.postDelayed(MainActivity.this::onRefresh, 500L));
-                    sb.setActionTextColor(Util.getColor(MainActivity.this, R.color.colorPrimaryLight));
+                    //sb.setActionTextColor(Util.getColor(MainActivity.this, R.color.colorPrimaryLight));
                     Util.setSnackbarActionFont(sb, Typeface.DEFAULT_BOLD, getResources().getInteger(R.integer.snackbar_action_font_size));
                     sb.show();
                     MainActivity.this.swipeRefreshLayout.setRefreshing(false);
@@ -2060,7 +2051,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
         String s = getString(this.currentSource.getLabel());
         this.clockView.setText(s);
-        setTaskDescription(new ActivityManager.TaskDescription(getString(R.string.app_task_description, s), null, Util.getColor(this, R.color.colorPrimary)));
+        setTaskDescription(new ActivityManager.TaskDescription(getString(R.string.app_task_description, s), null, Util.getColor(this, R.color.color_primary)));
     }
 
     /**

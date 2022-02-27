@@ -3,7 +3,6 @@ package de.freehamburger;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
@@ -41,6 +40,7 @@ import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.ByteArrayInputStream;
@@ -503,8 +503,9 @@ public class WebViewActivity extends AppCompatActivity {
                         TextView tv = view.findViewById(R.id.textView);
                         tv.setTypeface(Util.CONDENSED);
                         tv.setTextSize(14f);
+                        tv.setWidth((int)(Util.getDisplaySize(activity).x * 0.75));
                         tv.setText(msg);
-                        AlertDialog.Builder b = new AlertDialog.Builder(activity)
+                        new MaterialAlertDialogBuilder(activity)
                                 .setTitle(R.string.label_website_errors)
                                 .setView(view)
                                 .setNeutralButton(R.string.action_show_weberrors_no, (dialog, which) -> {
@@ -513,8 +514,8 @@ public class WebViewActivity extends AppCompatActivity {
                                     ed.apply();
                                     dialog.dismiss();
                                 })
-                                .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss());
-                        b.show();
+                                .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
+                                .show();
                     });
                     sb.show();
                 }

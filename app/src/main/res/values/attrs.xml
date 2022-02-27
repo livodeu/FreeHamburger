@@ -7,10 +7,10 @@
         <attr name="metaButtonBarButtonStyle" format="reference"/>
     </declare-styleable>
 
-    <declare-styleable name="AppTheme" >
+    <!--<declare-styleable name="AppTheme" >
         <attr name="color_bg_news" format="reference|color"/>
         <attr name="color_bg_news_focused" format="reference|color"/>
-    </declare-styleable>
+    </declare-styleable>-->
 
     <declare-styleable name="ButtonPreference">
         <attr name="entries"/>

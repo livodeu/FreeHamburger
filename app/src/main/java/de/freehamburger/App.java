@@ -31,6 +31,7 @@ import androidx.annotation.StringDef;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatDelegate;
 
+import com.google.android.material.color.DynamicColors;
 import com.squareup.picasso.Request;
 
 import java.io.File;
@@ -625,6 +626,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
             if (BuildConfig.DEBUG) Log.e(TAG, "Failed to instantiate Conscrypt: " + t);
         }
 
+        DynamicColors.applyToActivitiesIfAvailable(this);
+
         // loading the permitted hosts asynchronously saves ca. 10 to 20 ms
         new Thread() {
             @Override
@@ -823,9 +826,19 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @IntDef({USE_BACK_FINISH, USE_BACK_HOME, USE_BACK_BACK})
     @interface BackButtonBehaviour {}
 
+    /**
+     * The possible values of the {@link #PREF_BACKGROUND background preference}.
+     */
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({BACKGROUND_AUTO, BACKGROUND_NIGHT, BACKGROUND_DAY})
     public @interface BackgroundSelection {}
+
+    /**
+     * The possible values of the {@link #PREF_BACKGROUND background preference} after BACKGROUND_AUTO has been resolved.
+     */
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({BACKGROUND_NIGHT, BACKGROUND_DAY})
+    public @interface ResolvedBackgroundSelection {}
 
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({ORIENTATION_AUTO, ORIENTATION_LANDSCAPE, ORIENTATION_PORTRAIT})

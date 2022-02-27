@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Set;
 
 import androidx.preference.PreferenceManager;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 import de.freehamburger.App;
 import de.freehamburger.R;
 import de.freehamburger.adapters.RegionsAdapter;
@@ -107,7 +110,7 @@ public enum Region {
             }
         }
         final RegionsAdapter adapter = new RegionsAdapter(activity, regions, checked);
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity)
+        AlertDialog.Builder builder = new MaterialAlertDialogBuilder(activity)
                 .setTitle(R.string.label_regions)
                 .setSingleChoiceItems(adapter, -1, (dialog, which) -> adapter.toggle(which))
                 .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel())
@@ -133,10 +136,6 @@ public enum Region {
                 })
                 ;
         AlertDialog ad = builder.create();
-        Window w = ad.getWindow();
-        if (w != null) {
-            w.setBackgroundDrawableResource(R.drawable.bg_dialog);
-        }
         if (prefs.getBoolean(App.PREF_SWIPE_TO_DISMISS, false)) {
             ad.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
         }

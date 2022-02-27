@@ -1037,7 +1037,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         MenuItem menuItemRead = menu.findItem(R.id.action_read);
         if (this.tts != null && this.ttsInitialised) {
             menuItemRead.setEnabled(true);
-            menuItemRead.setIcon(this.ttsSpeaking ? R.drawable.ic_hearing_ff0000_24dp : R.drawable.ic_hearing_ededed_24dp);
+            menuItemRead.setIcon(this.ttsSpeaking ? R.drawable.ic_hearing_ff0000_24dp : R.drawable.ic_hearing_content_24dp);
             menuItemRead.setTitle(this.ttsSpeaking ? R.string.action_read_stop : R.string.action_read);
             if (this.ttsSpeaking) {
                 this.fab.setImageResource(R.drawable.ic_hearing_ff0000_24dp);
@@ -1057,7 +1057,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             }
         } else {
             menuItemRead.setEnabled(false);
-            menuItemRead.setIcon(R.drawable.ic_hearing_ededed_24dp);
+            menuItemRead.setIcon(R.drawable.ic_hearing_content_24dp);
             menuItemRead.setTitle(R.string.action_read);
             this.fab.hide();
         }

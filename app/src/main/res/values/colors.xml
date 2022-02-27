@@ -1,42 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimaryDark">#0f70aa</color>
-    <color name="colorPrimaryDarkSemiTrans">#770f70aa</color>
-    <color name="colorPrimary">#1288cc</color>
+    <color name="color_primary">#006399</color>
+    <color name="color_onPrimary">#FFFFFF</color>
+    <color name="color_primaryContainer">#CBE5FF</color>
+    <color name="color_onPrimaryContainer">#121D26</color>
+    <color name="color_secondary">#00639B</color>
+    <color name="color_onSecondary">#FFFFFF</color>
+    <color name="color_secondaryContainer">#CBE5FF</color>
+    <color name="color_onSecondaryContainer">#001D32</color>
+    <color name="color_tertiary">#00639A</color>
+    <color name="color_onTertiary">#FFFFFF</color>
+    <color name="color_tertiaryContainer">#CBE5FF</color>
+    <color name="color_onTertiaryContainer">#001D32</color>
+    <color name="color_error">#BA1B1B</color>
+    <color name="color_errorContainer">#FFDAD4</color>
+    <color name="color_onError">#FFFFFF</color>
+    <color name="color_onErrorContainer">#410001</color>
+    <color name="color_background">#FDFCFF</color>
+    <color name="color_onBackground">#1A1C1E</color>
+    <color name="color_surface">#FDFCFF</color>
+    <color name="color_onSurface">#1A1C1E</color>
+    <color name="color_surfaceVariant">#DEE3EB</color>
+    <color name="color_onSurfaceVariant">#41474D</color>
+    <color name="color_outline">#72777E</color>
+    <color name="color_inverseOnSurface">#F1F0F4</color>
+    <color name="color_inverseSurface">#2F3033</color>
+
+    <color name="colorPrimarySemiTrans">#77006399</color>
+
+    <!--<color name="colorPrimary">#1288cc</color>
     <color name="colorPrimarySemiTrans">#771288cc</color>
-    <color name="colorPrimaryLight">#1599e6</color>
-    <color name="colorPrimaryLightSemiTrans">#aa1599e6</color>
-    <color name="colorAccent">#fe8b35</color>
-    <color name="colorPressed">#FFC599</color>
-    <color name="colorLinkInternal">#ffa866</color>
-    <color name="colorLinkExternal">#fe8b35</color>
-    <color name="colorFilter">#55ffdd00</color>
-    <color name="colorContent">#ff000000</color>
-    <color name="colorBottomSheetBackground">#ee0f70aa</color>
-    <color name="colorDirtyWhite">#ededed</color>
-    <color name="colorIntro">#77ff0000</color>
-    <color name="colorToplineShadow">#33064a91</color>
-    <color name="colorBox">#064a91</color>
-    <color name="colorBoxBackground">#111288cc</color>
-    <color name="colorQuotation">#064a91</color>
-    <!-- Do NOT overwrite colorSearchIcon in the night colors! The search icons will not be updated when there is a uiMode change! -->
-    <color name="colorSearchIcon">#ff1288cc</color>
-    <color name="colorToggling">#eebb33</color>
+    <color name="colorPrimaryContainer">#BFE6FA</color>
+    <color name="colorOnPrimaryContainer">#000000</color>
 
-    <!-- background color for the RecyclerView -->
-    <color name="colorRecyclerBg">#ffffffff</color>
+    <color name="colorPrimaryDark">#0f70aa</color>
 
-    <!-- dark background color for news -->
-    <color name="colorBgNews">#5c26a6f0</color>
-    <color name="colorBgNewsFocused">#c01e83bd</color>
-    <color name="colorBgNewsPressed">#c01e83bd</color>
-    <!-- light background color for news -->
-    <color name="colorBgNewsLight">#ffffffff</color>
-    <color name="colorBgNewsPressedLight">#c0208bc9</color>
-    <color name="colorBgNewsFocusedLight">#c0208bc9</color>
+    <color name="colorPrimaryLight">#BFE6FA</color>
 
-    <!-- title text color for regional news -->
-    <color name="colorRegionalNews">#4c0918</color>
-    <!-- title text color for "breaking" (whatever that possibly means) news -->
-    <color name="colorBreakingNews">#ff0000</color>
+    <color name="colorOnPrimary">#ededed</color>
+    <color name="colorPrimaryInverse">#ed7733</color>
+    <color name="colorSecondary">#123acc</color>
+    <color name="colorOnSecondary">#ededed</color>
+    <color name="colorTertiary">#00cc88</color>
+    <color name="colorOnTertiary">#ededed</color>-->
+
+    <color name="colorAccent">#E67F30</color>
+    <color name="colorAccentInverse">#1980cf</color>
+
 </resources>

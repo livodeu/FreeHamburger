@@ -234,19 +234,17 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
     @Override
     protected void onResume() {
         super.onResume();
-        @App.BackgroundSelection int background = HamburgerActivity.applyTheme(this, null, false);
-        this.coordinatorLayout.setBackgroundResource(background == App.BACKGROUND_DAY ? R.drawable.bg_news_light :R.drawable.bg_news);
+        HamburgerActivity.applyTheme(this, null, false);
         @SuppressWarnings("rawtypes") RecyclerView.Adapter adapter = this.recyclerView.getAdapter();
         if (adapter != null) {
-            if (adapter instanceof FilterAdapter) ((FilterAdapter) adapter).setBackground(background);
             this.filterCountOnResume = adapter.getItemCount();
         } else {
             this.filterCountOnResume = 0;
         }
-        if (this.filterCountOnResume == 0) {
+        if (BuildConfig.DEBUG || this.filterCountOnResume == 0) {
             this.sb = Snackbar.make(this.coordinatorLayout, R.string.hint_filter_add, Snackbar.LENGTH_INDEFINITE);
-            this.sb.setActionTextColor(getResources().getColor(R.color.colorDirtyWhite));
-            // the "+" action text corresponds to the + icon ic_add_ededed_24dp in the menu - they should look the same so that the snackbar text refers to both
+            this.sb.setActionTextColor(getResources().getColor(R.color.colorToolbarText));
+            // the "+" action text corresponds to the + icon ic_add_toolbartext_24dp in the menu - they should look the same so that the snackbar text refers to both
             this.sb.setAction("+", v -> {
                 if (!addFilter()) {
                     Snackbar.make(this.coordinatorLayout, R.string.error_filter_not_added, Snackbar.LENGTH_SHORT).show();

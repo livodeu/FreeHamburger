@@ -126,7 +126,7 @@
             android:layout_height="1px"
             android:layout_below="@+id/textViewContent"
             android:layout_marginTop="16dp"
-            android:background="@color/colorPrimaryDark"
+            android:background="@color/color_secondary"
             />
 
         <TextView

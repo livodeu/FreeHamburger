@@ -32,7 +32,7 @@
         android:elevation="8dp"
         android:visibility="gone"
         tools:visibility="visible"
-        tools:src="@drawable/ic_videocam_ededed_24dp"
+        tools:src="@drawable/ic_videocam_content_24dp"
         tools:ignore="ContentDescription"
         />
 

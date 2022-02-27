@@ -14,7 +14,7 @@
         android:defaultValue="true"
         android:key="pref_ask_before_finish"
         android:title="@string/pref_title_ask_before_finish"
-        android:icon="@drawable/ic_clear_ededed_24dp"
+        android:icon="@drawable/ic_clear_content_24dp"
         android:summaryOff="@string/pref_title_ask_before_finish_off"
         android:summaryOn="@string/pref_title_ask_before_finish_on"
         />
@@ -22,7 +22,7 @@
     <SwitchPreferenceCompat
         android:defaultValue="true"
         android:key="pref_open_links_internally"
-        android:icon="@drawable/ic_share_ededed_24dp"
+        android:icon="@drawable/ic_share_content_24dp"
         android:summaryOff="@string/pref_title_open_links_internally_off"
         android:summaryOn="@string/pref_title_open_links_internally_on"
         android:title="@string/pref_title_open_links_internally"
@@ -31,7 +31,7 @@
     <SwitchPreferenceCompat
         android:defaultValue="true"
         android:key="pref_warn_mute"
-        android:icon="@drawable/ic_hearing_ededed_24dp"
+        android:icon="@drawable/ic_hearing_content_24dp"
         android:summaryOff="@string/pref_title_warn_mute_off"
         android:summaryOn="@string/pref_title_warn_mute_on"
         android:title="@string/pref_title_warn_mute"
@@ -39,9 +39,9 @@
 
     <EditTextPreference
         android:defaultValue="20"
-        android:dialogIcon="@drawable/ic_memory_ededed_24dp"
+        android:dialogIcon="@drawable/ic_memory_content_24dp"
         android:hint="@string/pref_hint_pref_cache_max_size"
-        android:icon="@drawable/ic_memory_ededed_24dp"
+        android:icon="@drawable/ic_memory_content_24dp"
         android:inputType="number"
         android:key="pref_mem_cache_max_size"
         android:maxLength="2"

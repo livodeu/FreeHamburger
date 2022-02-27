@@ -5,7 +5,7 @@
 
     <de.freehamburger.prefs.NiceSwitchPreference
         android:defaultValue="false"
-        android:icon="@drawable/ic_notifications_ededed_24dp"
+        android:icon="@drawable/ic_notifications_content_24dp"
         android:key="pref_poll"
         android:summaryOff="@string/pref_title_poll_off"
         android:summaryOn="@string/pref_title_poll_on"
@@ -15,7 +15,7 @@
 
     <MultiSelectListPreference
         android:dependency="pref_poll"
-        android:icon="@drawable/ic_baseline_list_alt_ededed_24"
+        android:icon="@drawable/ic_baseline_list_alt_content_24"
         android:key="pref_background_sources"
         android:title="@string/label_sections"
         />
@@ -23,23 +23,23 @@
     <SwitchPreferenceCompat
         android:defaultValue="true"
         android:dependency="pref_poll"
-        android:icon="@drawable/ic_whatshot_ededed_24dp"
+        android:icon="@drawable/ic_whatshot_content_24dp"
         android:key="pref_poll_breaking_only"
         android:title="@string/pref_title_poll_breaking_only"/>
 
     <SwitchPreferenceCompat
         android:defaultValue="false"
         android:dependency="pref_poll"
-        android:icon="@drawable/ic_network_cell_ededed_24dp"
+        android:icon="@drawable/ic_network_cell_content_24dp"
         android:key="pref_poll_over_mobile"
         android:title="@string/pref_title_poll_over_mobile"/>
 
     <de.freehamburger.prefs.SummarizingEditTextPreference
         android:defaultValue="15"
         android:dependency="pref_poll"
-        android:dialogIcon="@drawable/ic_schedule_ededed_24dp"
+        android:dialogIcon="@drawable/ic_schedule_content_24dp"
         android:hint="@string/pref_hint_poll_interval"
-        android:icon="@drawable/ic_schedule_ededed_24dp"
+        android:icon="@drawable/ic_schedule_content_24dp"
         android:inputType="text|number"
         android:key="pref_poll_interval"
         android:title="@string/pref_hint_poll_interval"
@@ -48,9 +48,9 @@
     <de.freehamburger.prefs.SummarizingEditTextPreference
         android:defaultValue="15"
         android:dependency="pref_poll"
-        android:dialogIcon="@drawable/ic_schedule_dedede_24dp"
+        android:dialogIcon="@drawable/ic_schedule_content_24dp"
         android:hint="@string/pref_hint_poll_interval_night"
-        android:icon="@drawable/ic_schedule_dedede_24dp"
+        android:icon="@drawable/ic_schedule_content_24dp"
         android:inputType="text|number"
         android:key="pref_poll_interval_night"
         android:title="@string/pref_hint_poll_interval_night"
@@ -59,7 +59,7 @@
     <SwitchPreferenceCompat
         android:defaultValue="false"
         android:dependency="pref_poll"
-        android:icon="@drawable/ic_baseline_topic_ededed_24"
+        android:icon="@drawable/ic_baseline_topic_content_24"
         android:key="pref_notification_extended"
         android:summaryOff="@string/pref_summary_poll_customnotification_off"
         android:summaryOn="@string/pref_summary_poll_customnotification_on"

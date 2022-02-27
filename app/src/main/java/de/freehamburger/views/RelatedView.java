@@ -102,7 +102,7 @@ public class RelatedView extends RelativeLayout {
             if (url == null) return;
             if ("video".equals(related.getType())) {
                 imageViewType.setVisibility(View.VISIBLE);
-                imageViewType.setImageResource(R.drawable.ic_videocam_ededed_24dp);
+                imageViewType.setImageResource(R.drawable.ic_videocam_content_24dp);
             } else {
                 imageViewType.setVisibility(View.GONE);
             }

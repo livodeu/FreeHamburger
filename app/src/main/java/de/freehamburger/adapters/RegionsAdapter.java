@@ -25,6 +25,7 @@ public class RegionsAdapter extends BaseAdapter {
     private final Context ctx;
     private final boolean[] checked;
     @ColorInt private final int colorAccent;
+    @ColorInt private final int colorText;
 
     /**
      * Constructor.
@@ -37,6 +38,7 @@ public class RegionsAdapter extends BaseAdapter {
         this.ctx = ctx;
         this.regions = regions != null ? regions : Region.getValidRegions();
         this.checked = checked != null ? checked : new boolean[this.regions.size()];
+        this.colorText = ctx.getResources().getColor(R.color.color_onBackground);
         this.colorAccent = ctx.getResources().getColor(R.color.colorAccent);
     }
 
@@ -72,16 +74,16 @@ public class RegionsAdapter extends BaseAdapter {
         } else {
             tv = new TextView(this.ctx);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                tv.setTextAppearance(R.style.TextAppearance_AppCompat_Body2);
+                tv.setTextAppearance(R.style.TextAppearance_Material3_BodyMedium);
             } else {
-                tv.setTextAppearance(this.ctx, R.style.TextAppearance_AppCompat_Body2);
+                tv.setTextAppearance(this.ctx, R.style.TextAppearance_Material3_BodyMedium);
             }
             tv.setMaxLines(1);
             tv.setPadding(32, 4, 8, 4);
             tv.setFocusable(false);
         }
         tv.setText(getItem(position).toString());
-        tv.setTextColor(this.checked[position] ? this.colorAccent : 0xffffffff);
+        tv.setTextColor(this.checked[position] ? this.colorAccent : this.colorText);
         return tv;
     }
 

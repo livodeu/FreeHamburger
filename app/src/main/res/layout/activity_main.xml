@@ -20,7 +20,7 @@
             android:id="@+id/appbar_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:theme="@style/AppTheme.AppBarOverlay">
+            >
 
             <com.google.android.material.appbar.CollapsingToolbarLayout
                 android:id="@+id/collapsingToolbarLayout"
@@ -36,7 +36,7 @@
                     android:id="@+id/toolbar"
                     android:layout_width="match_parent"
                     android:layout_height="?attr/actionBarSize"
-                    android:background="@color/colorPrimary"
+                    android:background="?attr/colorPrimary"
                     >
 
                     <de.freehamburger.views.ClockView
@@ -60,10 +60,7 @@
             android:layout_margin="@dimen/fab_margin"
             android:contentDescription="@string/action_scroll_to_top"
             android:elevation="16dp"
-            android:tint="@color/colorContent"
             android:visibility="gone"
-            app:backgroundTint="@color/colorPrimaryLight"
-            app:rippleColor="@color/colorPrimary"
             app:srcCompat="@drawable/ic_arrow_upward_black_24dp"
             tools:visibility="visible" />
 
@@ -74,14 +71,13 @@
         android:layout_width="@dimen/width_navigation_drawer"
         android:layout_height="match_parent"
         android:layout_gravity="end"
-        android:background="@color/colorPrimaryDarkSemiTrans"
+        android:background="@color/colorNavigationViewBackground"
         android:fitsSystemWindows="true"
         android:paddingTop="@dimen/menu_padding_top"
         app:headerLayout="@layout/nav_header"
-        app:itemBackground="@drawable/bg_button"
-        app:itemIconTint="@color/colorPrimary"
-        app:itemTextAppearance="@style/TextAppearance.AppCompat.Body2.White"
-        app:itemTextColor="@color/nav_item"
+        app:itemBackground="@drawable/bg_menuitem"
+        app:itemTextAppearance="@style/TextAppearance.Navigation"
+        app:itemTextColor="@color/textcolor_nav_item"
         app:menu="@menu/drawer_menu" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

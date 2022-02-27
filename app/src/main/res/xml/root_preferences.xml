@@ -4,43 +4,43 @@
 
     <Preference
         android:title="@string/pref_header_general"
-        app:icon="@drawable/ic_settings_ededed_24dp"
+        app:icon="@drawable/ic_settings_content_24dp"
         android:key="general_category"
         android:fragment="de.freehamburger.SettingsActivity$GeneralPreferenceFragment"/>
 
     <Preference
         android:title="@string/pref_header_appearance"
-        app:icon="@drawable/ic_format_paint_ededed_24dp"
+        app:icon="@drawable/ic_format_paint_content_24dp"
         android:key="appearance_category"
         android:fragment="de.freehamburger.SettingsActivity$AppearancePreferenceFragment"/>
 
     <Preference
         android:title="@string/pref_header_storage"
-        app:icon="@drawable/ic_storage_ededed_24dp"
+        app:icon="@drawable/ic_storage_content_24dp"
         android:key="storage_category"
         android:fragment="de.freehamburger.SettingsActivity$StoragePreferenceFragment"/>
 
     <Preference
         android:title="@string/pref_header_data"
-        app:icon="@drawable/ic_http_ededed_24dp"
+        app:icon="@drawable/ic_http_content_24dp"
         android:key="data_category"
         android:fragment="de.freehamburger.SettingsActivity$DataPreferenceFragment"/>
 
     <Preference
         android:title="@string/pref_header_video"
-        app:icon="@drawable/ic_videocam_ededed_24dp"
+        app:icon="@drawable/ic_videocam_content_24dp"
         android:key="video_category"
         android:fragment="de.freehamburger.SettingsActivity$VideoPreferenceFragment" />
 
     <Preference
         android:title="@string/pref_header_polling"
-        app:icon="@drawable/ic_notifications_ededed_24dp"
+        app:icon="@drawable/ic_notifications_content_24dp"
         android:key="polling_category"
         android:fragment="de.freehamburger.SettingsActivity$PollingPreferenceFragment"/>
 
     <Preference
         android:title="@string/pref_header_other"
-        app:icon="@drawable/ic_more_horiz_ededed_24dp"
+        app:icon="@drawable/ic_more_horiz_content_24dp"
         android:key="other_category"
         android:fragment="de.freehamburger.SettingsActivity$OtherPreferenceFragment"/>
 

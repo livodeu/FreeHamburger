@@ -1,51 +1,103 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- https://developer.android.com/guide/topics/ui/look-and-feel/darktheme -->
     <!-- https://medium.com/androiddevelopers/appcompat-v23-2-daynight-d10f90c83e94 -->
     <!-- https://github.com/material-components/material-components-android/blob/master/docs/getting-started.md -->
-    <!-- Does not work without other modifications: <style name="AppTheme" parent="Theme.MaterialComponents.DayNight"> -->
-    <!-- Base.V21.Theme.MaterialComponents -->
 
-    <style name="Base" parent="Theme.Material3.DayNight.NoActionBar" />
+    <style name="Base" parent="Theme.Material3.DynamicColors.DayNight" />
 
-    <style name="AppTheme" parent="Base">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+    <style name="AppTheme.21" parent="Base">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <!-- colors -->
+        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorOnPrimary">@color/color_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/color_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/color_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/color_secondary</item>
+        <item name="colorOnSecondary">@color/color_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/color_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/color_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/color_tertiary</item>
+        <item name="colorOnTertiary">@color/color_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/color_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/color_onTertiaryContainer</item>
+        <item name="colorError">@color/color_error</item>
+        <item name="colorErrorContainer">@color/color_errorContainer</item>
+        <item name="colorOnError">@color/color_onError</item>
+        <item name="colorOnErrorContainer">@color/color_onErrorContainer</item>
+        <item name="android:colorBackground">@color/color_background</item>
+        <item name="colorOnBackground">@color/color_onBackground</item>
+        <item name="colorSurface">@color/color_surface</item>
+        <item name="colorOnSurface">@color/color_onSurface</item>
+        <item name="colorSurfaceVariant">@color/color_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/color_onSurfaceVariant</item>
+        <item name="colorOutline">@color/color_outline</item>
+        <item name="colorOnSurfaceInverse">@color/color_inverseOnSurface</item>
+        <item name="colorSurfaceInverse">@color/color_inverseSurface</item>
+
         <item name="colorAccent">@color/colorAccent</item>
-        <item name="colorButtonNormal">@color/colorPrimary</item> <!-- the background color of a button -->
-        <item name="android:navigationBarColor">@color/colorPrimary</item>
+        <item name="colorButtonNormal">@color/color_primary</item> <!-- the background color of a button -->
+
+        <item name="android:textColorPrimary">@color/colorContent</item>
+
+        <item name="android:textColorLink">@color/colorAccent</item>
+        <item name="android:textColorLinkInverse">@color/colorAccentInverse</item>
+
         <item name="android:fastScrollThumbDrawable">@android:drawable/btn_default</item>
         <item name="android:fastScrollOverlayPosition">atThumb</item>
-        <item name="android:alertDialogTheme">@style/AppAlertDialogTheme</item>
-        <item name="alertDialogTheme">@style/AppAlertDialogTheme</item>
-        <item name="android:windowBackground">@color/colorPrimaryLight</item>
+        <item name="android:navigationBarColor">@color/color_primary</item>
+        <item name="android:windowBackground">@color/colorWindowBackground</item>
+
+        <!-- menus -->
+        <!--
+        defaults from material-1.5.0/res/values/values.xml
+        <item name="popupMenuBackground">@drawable/m3_popupmenu_background_overlay</item>
+        <item name="listPopupWindowStyle">@style/Widget.Material3.PopupMenu.ListPopupWindow</item>
+        <item name="popupMenuStyle">@style/Widget.Material3.PopupMenu</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.Material3.PopupMenu.Overflow</item>
+
+        <item name="textAppearanceLargePopupMenu">?attr/textAppearanceBodyLarge</item>
+        <item name="textAppearanceSmallPopupMenu">?attr/textAppearanceBodyLarge</item>
+
+        <item name="android:contextPopupMenuStyle" ns1:targetApi="n">@style/Widget.MaterialComponents.PopupMenu.ContextMenu</item>
+        -->
         <item name="listMenuViewStyle">@style/AppTheme.ListMenuViewStyle</item>
-        <item name="color_bg_news">@color/colorBgNews</item>
-        <item name="color_bg_news_focused">@color/colorBgNewsFocused</item>
-        <!-- https://www.material.io/develop/android/components/snackbars/#theming-snackbars -->
-        <item name="snackbarStyle">@style/Widget.App.Snackbar</item>
-        <item name="actionBarStyle">@style/AppTheme.ActionBar</item>
         <item name="actionOverflowMenuStyle">@style/OverflowMenuStyle</item>
+        <item name="listPreferredItemHeightSmall">?android:attr/listPreferredItemHeightSmall</item>
+        <item name="textAppearanceLargePopupMenu">@style/TextAppearance.Menu</item>
+        <item name="android:textAppearanceLargePopupMenu">@style/TextAppearance.Menu</item>
+        <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.Menu</item>
+        <item name="android:textAppearanceSmallPopupMenu">@style/TextAppearance.Menu</item>
+
+        <!-- https://www.material.io/develop/android/components/snackbars/#theming-snackbars -->
+        <item name="snackbarStyle">@style/AppTheme.Snackbar</item>
+        <item name="snackbarButtonStyle">@style/AppTheme.SnackbarButton</item>
+        <item name="snackbarTextViewStyle">@style/AppTheme.SnackbarTextView</item>
+
+        <item name="toolbarStyle">@style/AppTheme.Toolbar</item>
+        <item name="toolbarNavigationButtonStyle">@style/ToolbarNavigationButton</item>
+        <!-- the toolbar background is set to colorPrimary - see activity_xxx layout files -->
+        <item name="navigationIconTint">@color/color_onPrimary</item>
+        <!-- color of the 3-dot-icon should match the toolbar text color -->
+        <item name="actionOverflowButtonStyle">@style/ActionOverflowButton</item>
+        <item name="android:actionOverflowButtonStyle">@style/ActionOverflowButton</item>
+
+        <item name="alertDialogTheme">@style/Dialog</item>
+        <item name="materialAlertDialogTheme">@style/MaterialDialog</item>
+
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
-    <style name="OverflowMenuStyle" parent="Widget.Material3.PopupMenu.Overflow">
-        <item name="android:popupBackground">@drawable/bg_button</item>
-    </style>
+    <!-- overall themes start -->
 
-    <style name="AppTheme.ActionBar" parent="Widget.MaterialComponents.ActionBar.Surface">
-        <item name="background">?attr/colorPrimaryDark</item>
-        <item name="elevation">8dp</item>
-    </style>
-
-    <style name="Widget.App.Snackbar" parent="Widget.Design.Snackbar">
-        <item name="android:background">@drawable/bg_button</item>
-    </style>
+    <style name="AppTheme" parent="AppTheme.21"/>
 
     <style name="AppTheme.Black">
         <item name="android:windowBackground">@android:color/black</item>
     </style>
 
-    <style name="AppTheme.Launcher" parent="AppTheme">
+    <style name="AppTheme.Launcher">
         <item name="colorPrimary">@android:color/transparent</item>
         <item name="colorPrimaryDark">@android:color/transparent</item>
         <item name="colorAccent">@android:color/transparent</item>
@@ -53,46 +105,79 @@
         <item name="android:windowBackground">@drawable/color_primary_to_grey_gradient</item>
     </style>
 
-    <style name="AppTheme.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-    </style>
-
-    <style name="AppTheme.NoActionBar.NoOverflowButton">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+    <style name="AppTheme.NoOverflowButton">
         <item name="actionOverflowButtonStyle">@null</item>
     </style>
 
-    <style name="AppTheme.NoActionBar.Light">
-        <item name="android:windowBackground">@color/colorDirtyWhite</item>
-        <item name="colorPrimary">@color/colorPrimaryLight</item>
-        <item name="colorPrimaryDark">@color/colorPrimary</item>
-        <item name="colorButtonNormal">@color/colorPrimaryLight</item>
-        <item name="color_bg_news">@color/colorBgNewsLight</item>
-        <item name="color_bg_news_focused">@color/colorBgNewsFocusedLight</item>
+    <!-- overall themes end -->
+
+    <!-- toolbars start -->
+
+    <style name="AppTheme.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/AppTheme.ToolbarText</item>
     </style>
 
-    <style name="AppTheme.NoActionBar.Light.NoOverflowButton">
-        <item name="android:windowBackground">@color/colorDirtyWhite</item>
-        <item name="colorPrimary">@color/colorPrimaryLight</item>
-        <item name="colorPrimaryDark">@color/colorPrimary</item>
-        <item name="colorButtonNormal">@color/colorPrimaryLight</item>
-        <item name="actionOverflowButtonStyle">@null</item>
+    <style name="ToolbarNavigationButton" parent="Widget.AppCompat.Toolbar.Button.Navigation">
+        <item name="srcCompat">@drawable/ic_vt_foreground</item>
     </style>
+
+    <style name="AppTheme.ToolbarText" parent="TextAppearance.Material3.ActionBar.Title">
+        <item name="fontFamily">@font/vera</item>
+        <item name="android:fontFamily">@font/vera</item>
+        <item name="android:textColor">@color/colorToolbarText</item>
+        <item name="android:textSize">@dimen/text_size_clockview_title</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="OverflowMenuStyle" parent="Widget.Material3.PopupMenu.Overflow">
+        <item name="android:popupBackground">@drawable/bg_menu</item>
+    </style>
+
+    <style name="ActionOverflowButton" parent="Widget.AppCompat.ActionButton.Overflow">
+        <item name="android:src">@null</item>
+        <item name="srcCompat">@drawable/ic_baseline_more_vert_toolbartext_24</item>
+    </style>
+
+    <!-- toolbars end -->
+
+    <!-- snackbars start -->
+
+    <style name="AppTheme.Snackbar" parent="Widget.Material3.Snackbar">
+        <item name="android:background">@drawable/bg_snackbar</item>
+        <item name="backgroundTint">@null</item>
+    </style>
+
+    <style name="AppTheme.SnackbarButton" parent="Widget.Material3.Button.TextButton.Snackbar">
+        <item name="android:textColor">@color/colorAccent</item>
+    </style>
+
+    <style name="AppTheme.SnackbarTextView" parent="Widget.Material3.Snackbar.TextView">
+        <item name="android:textColor">@color/colorContent</item>
+    </style>
+
+    <!-- snackbars end -->
+
+    <!-- menus start -->
 
     <style name="AppTheme.ListMenuViewStyle" parent="Widget.AppCompat.ListMenuView">
-        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Body2.White</item>
-        <item name="android:itemTextAppearance">@style/TextAppearance.AppCompat.Body2.White</item>
-        <item name="android:itemBackground">@drawable/bg_menuitem</item>
-        <item name="subMenuArrow">@drawable/ic_arrow_right_ededed_24dp</item>
+        <!-- this is indeed used for items in the overflow menu (the one in the toolbar) -->
+        <item name="android:textAppearance">@style/TextAppearance.Menu</item>
+        <item name="android:itemTextAppearance">@style/TextAppearance.Menu</item>
+        <item name="android:itemBackground">@drawable/bg_menu</item>
+        <item name="subMenuArrow">@drawable/ic_arrow_right_opc_24dp</item>
     </style>
 
-    <style name="TextAppearance.AppCompat.Body2.White" parent="TextAppearance.AppCompat.Body2">
-        <item name="android:textColor">@color/colorDirtyWhite</item>
+    <style name="TextAppearance.Menu" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">@color/textcolor_menu_item</item>
         <item name="android:textSize">@dimen/text_size_menu</item>
         <item name="fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- menus end -->
+
+    <style name="TextAppearance.Navigation" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">@dimen/text_size_menu</item>
+        <item name="fontFamily">sans-serif-condensed-medium</item>
     </style>
 
     <style name="TextAppearance.Xsm" parent="TextAppearance.AppCompat.Small">
@@ -101,20 +186,31 @@
         <item name="android:lineSpacingMultiplier">0.75</item>
     </style>
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
+    <!-- dialogs start -->
 
-    <!--
-    The main difference between Theme.AppCompat.Light.Dialog.Alert and Theme.AppCompat.DayNight.Dialog.Alert
-    seems to be
-    that Light displays the dialog in full screen height even if its contents are short     [O]
-    while DayNight shows a shorter version                                                  [o]
-    (tested on Android 11)
-     -->
-    <style name="AppAlertDialogTheme" parent="Theme.AppCompat.DayNight.Dialog.Alert">
-        <item name="colorAccent">@color/colorAccent</item>
-        <item name="android:colorForeground">@color/colorDirtyWhite</item>    <!-- white color for dialog title -->
-        <item name="android:colorBackground">@color/colorPrimary</item>
-        <item name="android:windowBackground">@color/colorPrimaryLight</item>
+    <style name="Dialog" parent="ThemeOverlay.Material3.Dialog.Alert">
+        <item name="android:colorBackground">?attr/colorPrimary</item>
+        <item name="android:windowTitleStyle">@style/AppTheme.DialogTitleText</item>
     </style>
+
+    <style name="MaterialDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="android:colorBackground">?attr/colorPrimary</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/MaterialDialogTitleText</item>
+        <item name="android:dialogCornerRadius" tools:ignore="NewApi">16dp</item>
+    </style>
+
+    <style name="AppTheme.DialogTitleText" parent="AppTheme.ToolbarText">
+        <item name="fontFamily">@font/vera</item>
+        <item name="android:fontFamily">@font/vera</item>
+        <item name="android:textColor">@color/colorToolbarText</item>
+        <item name="android:textSize">@dimen/text_size_clockview_title</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="MaterialDialogTitleText" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textColor">@color/color_onSecondaryContainer</item>
+    </style>
+
+    <!-- dialogs end -->
 
 </resources>

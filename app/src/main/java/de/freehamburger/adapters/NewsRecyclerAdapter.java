@@ -18,12 +18,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
 import androidx.annotation.LayoutRes;
@@ -32,6 +26,13 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.HamburgerService;
@@ -41,7 +42,6 @@ import de.freehamburger.model.Filter;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
 import de.freehamburger.util.Log;
-import de.freehamburger.util.Util;
 import de.freehamburger.views.NewsView;
 import de.freehamburger.views.NewsViewNoContent;
 import de.freehamburger.views.NewsViewNoContentNoTitle;
@@ -307,12 +307,6 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         this.handler.removeCallbacks(this.preloader);
         final NewsView newsView = (NewsView) holder.itemView;
-        switch (this.background) {
-            case App.BACKGROUND_NIGHT: newsView.setBackgroundResource(R.drawable.bg_news); break;
-            case App.BACKGROUND_DAY: newsView.setBackgroundResource(R.drawable.bg_news_light); break;
-            case App.BACKGROUND_AUTO: newsView.setBackgroundResource(Util.isNightMode(this.activity) ? R.drawable.bg_news : R.drawable.bg_news_light);
-        }
-
         final Resources res = this.activity.getResources();
 
         // apply the desired typeface magnification
