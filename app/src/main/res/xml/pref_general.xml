@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <de.freehamburger.prefs.ButtonPreference
-        android:icon="@drawable/ic_backbutton"
+        android:icon="@drawable/ic_outline_arrow_back_ios_content_24"
         android:title="@string/pref_title_use_back"
         android:key="pref_use_back"
         app:entries="@array/entries_list_back_button"

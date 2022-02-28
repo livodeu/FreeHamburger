@@ -32,7 +32,7 @@
             android:maxWidth="48dp"
             android:minWidth="48dp"
             tools:ignore="ContentDescription"
-            tools:src="@drawable/ic_backbutton" />
+            tools:src="@drawable/ic_outline_arrow_back_ios_content_24" />
     </LinearLayout>
 
     <RelativeLayout

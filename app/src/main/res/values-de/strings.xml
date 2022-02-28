@@ -51,6 +51,7 @@
     <string name="error_download_failed2">Ladevorgang fehlgeschlagen.</string>
     <string name="pref_header_appearance">Darstellung</string>
     <string name="hint_search_reset">Zum Zurücksetzen ◀ drücken.</string>
+    <string name="hint_search_reset_gesture">Zum Zurücksetzen die „Zurück”-Geste verwenden.</string>
     <string name="error_filter_not_added">Filter wurde nicht hinzugefügt.</string>
     <string name="error_poll_failed">Dies ist am %1$s ohne Angabe einer Ursache fehlgeschlagen.</string>
     <string name="pref_title_pref_cache_max_size">Max. Cachegröße</string>

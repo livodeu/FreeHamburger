@@ -716,6 +716,27 @@ public class Util {
     }
 
     /**
+     * Returns the mode that the navigation bar is operating under.
+     * <ul>
+     * <li>0: 3-button-mode</li>
+     * <li>1: 2-button-mode</li>
+     * <li>2: gesture mode</li>
+     * </ul>
+     * <hr>
+     * Btw., on a device this can be set under Settings -> System -> Gestures -> System navigation.
+     * @param ctx Context
+     * @return navigation mode or -1
+     */
+    @IntRange(from = -1, to = 2)
+    public static int getNavigationMode(@NonNull Context ctx) {
+        try {
+            return Settings.Secure.getInt(ctx.getContentResolver(), "navigation_mode", -1);
+        } catch (Exception ignored) {
+        }
+        return -1;
+    }
+
+    /**
      * Returns the Space occupied by several files. Directories are not skipped.
      * @param files Collection of files
      * @return space occupied in bytes

@@ -67,6 +67,7 @@
     <string name="hint_pic">The illustration for this story</string>
     <string name="hint_search">Search</string>
     <string name="hint_search_reset">Press ◀ to reset.</string>
+    <string name="hint_search_reset_gesture">Use the \"back\" gesture to reset.</string>
 
     <string name="intro_1">Select a category in the right-hand drawer.</string>
     <string name="intro_2">Search, apply filters and change other settings here.</string>

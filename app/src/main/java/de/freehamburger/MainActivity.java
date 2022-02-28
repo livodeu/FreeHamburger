@@ -21,7 +21,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Typeface;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -34,7 +33,6 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
-import android.text.style.ImageSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.JsonReader;
@@ -1728,14 +1726,9 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 if (hasTemporaryFilter) {
                     boolean hintResetSearchShown = prefs.getBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, false);
                     if (!hintResetSearchShown) {
-                        String orig = getString(R.string.hint_search_reset);
+                        int navigationMode = Util.getNavigationMode(MainActivity.this);
+                        String orig = getString(navigationMode == 2 ? R.string.hint_search_reset_gesture : R.string.hint_search_reset);
                         SpannableString ss = new SpannableString(orig);
-                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-                            BitmapDrawable bb = (BitmapDrawable)getResources().getDrawable(R.drawable.ic_backbutton, getTheme());
-                            ImageSpan is = new ImageSpan(MainActivity.this, Bitmap.createScaledBitmap(bb.getBitmap(), bb.getIntrinsicWidth() * 3 / 4, bb.getIntrinsicHeight() * 3 / 4, true));
-                            int i = orig.indexOf('◀');
-                            ss.setSpan(is, i, i + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        }
                         MainActivity.this.popupManager.showPopup(MainActivity.this.clockView, ss, 5_000L);
                         SharedPreferences.Editor ed = prefs.edit();
                         ed.putBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, true);
