@@ -83,7 +83,7 @@
         <item name="actionOverflowButtonStyle">@style/ActionOverflowButton</item>
         <item name="android:actionOverflowButtonStyle">@style/ActionOverflowButton</item>
 
-        <item name="alertDialogTheme">@style/Dialog</item>
+        <item name="alertDialogTheme">@style/MaterialDialog</item>
         <item name="materialAlertDialogTheme">@style/MaterialDialog</item>
 
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
@@ -188,23 +188,9 @@
 
     <!-- dialogs start -->
 
-    <style name="Dialog" parent="ThemeOverlay.Material3.Dialog.Alert">
-        <item name="android:colorBackground">?attr/colorPrimary</item>
-        <item name="android:windowTitleStyle">@style/AppTheme.DialogTitleText</item>
-    </style>
-
     <style name="MaterialDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="android:colorBackground">?attr/colorPrimary</item>
         <item name="materialAlertDialogTitleTextStyle">@style/MaterialDialogTitleText</item>
         <item name="android:dialogCornerRadius" tools:ignore="NewApi">16dp</item>
-    </style>
-
-    <style name="AppTheme.DialogTitleText" parent="AppTheme.ToolbarText">
-        <item name="fontFamily">@font/vera</item>
-        <item name="android:fontFamily">@font/vera</item>
-        <item name="android:textColor">@color/colorToolbarText</item>
-        <item name="android:textSize">@dimen/text_size_clockview_title</item>
-        <item name="android:textStyle">bold</item>
     </style>
 
     <style name="MaterialDialogTitleText" parent="MaterialAlertDialog.Material3.Title.Text">
