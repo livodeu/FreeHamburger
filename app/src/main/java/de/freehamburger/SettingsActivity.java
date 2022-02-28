@@ -134,7 +134,6 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         AlertDialog ad = builder.create();
         Window w = ad.getWindow();
 
-        ad.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
         ad.setCanceledOnTouchOutside(true);
         ad.setOnCancelListener(dialog -> {
             ViewParent p = webView.getParent();
