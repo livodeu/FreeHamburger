@@ -10,7 +10,7 @@
         app:colors="@array/colors_list_background"
         />
 
-    <androidx.preference.ListPreference
+    <de.freehamburger.prefs.NiceDropDownPreference
         android:key="pref_orientation"
         android:title="@string/pref_title_orientation_main"
         android:icon="@drawable/ic_screen_rotation_content_24dp"
