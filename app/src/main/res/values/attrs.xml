@@ -7,15 +7,13 @@
         <attr name="metaButtonBarButtonStyle" format="reference"/>
     </declare-styleable>
 
-    <!--<declare-styleable name="AppTheme" >
-        <attr name="color_bg_news" format="reference|color"/>
-        <attr name="color_bg_news_focused" format="reference|color"/>
-    </declare-styleable>-->
-
     <declare-styleable name="ButtonPreference">
         <attr name="entries"/>
         <attr name="soundeffect" format="reference"/>
         <attr name="colors" format="color"/>
     </declare-styleable>
+
+    <attr name="backgroundRadius" format="dimension" />
+    <attr name="backgroundRadiusHalf" format="dimension" />
 
 </resources>

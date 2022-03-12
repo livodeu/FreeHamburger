@@ -53,6 +53,7 @@
     <string name="action_quality_select">Select video quality</string>
     <string name="action_quit">Quit the app?</string>
     <string name="action_view_picture">View picture</string>
+    <string name="action_widget_configure">Select Widget Source</string>
 
     <string name="hint_audio_content_play">Play audio content</string>
     <string name="hint_filter">The phrase to filter</string>
@@ -68,6 +69,7 @@
     <string name="hint_search">Search</string>
     <string name="hint_search_reset">Press ◀ to reset.</string>
     <string name="hint_search_reset_gesture">Use the \"back\" gesture to reset.</string>
+    <string name="hint_widget_source">Widget source: %1$s</string>
 
     <string name="intro_1">Select a category in the right-hand drawer.</string>
     <string name="intro_2">Search, apply filters and change other settings here.</string>
@@ -107,6 +109,7 @@
     <string name="error_tts_fail_service">Speaking failed because there was a malfunction in the text-to-speech service.</string>
     <string name="error_tts_fail_synthesis">Speaking failed because the text-to-speech engine could not pronounce it.</string>
     <string name="error_unknown_host">has not been found</string>
+    <string name="msg_widget_no_news">No contents at the moment.</string>
 
     <string name="label_ca">ca.</string>
     <string name="label_char_invalid">Invalid</string>
@@ -122,6 +125,7 @@
     <string name="label_link">(External link)</string>
     <string name="label_sections">Categories</string>
     <string name="label_service">This is the background service for Hamburger that is required to load data from the network</string>
+    <string name="label_service_frequentupdates">This is the service for Hamburger that is required to refresh data frequently</string>
     <string name="label_streamquality_adaptive">Adaptive Streaming</string>
     <string name="label_streamquality_s">Small (%1$d px wide)</string>
     <string name="label_streamquality_m">Medium (%1$d px wide)</string>
@@ -129,8 +133,10 @@
     <string name="label_streamquality_xl">XLarge (%1$d px wide)</string>
     <string name="label_notification_channel">News</string>
     <string name="label_notification_channel_hipri">Breaking news</string>
-    <string name="label_notification_channel_desc">Hamburger news of standard priority</string>
-    <string name="label_notification_channel_desc_hipri">Hamburger news of superior priority</string>
+    <string name="label_notification_channel_updates">Frequent updates</string>
+    <string name="label_notification_channel_desc">This category comprises notifications about Hamburger news of standard priority</string>
+    <string name="label_notification_channel_desc_hipri">This category comprises notifications about Hamburger news of superior priority</string>
+    <string name="label_notification_channel_desc_updates">This category represents the notification about frequent updates</string>
     <string name="label_notification_count">%1$d notes</string>
     <plurals name="label_poll_stats">
         <item quantity="one">%1$s background update has received %2$s since %3$s.</item>
@@ -171,6 +177,7 @@
         <item quantity="other">%1$d days ago</item>
     </plurals>
     <string name="label_website_errors">Web site errors</string>
+    <string name="label_widget_desc">Hamburger News</string>
     <string name="label_yes">Yes</string>
 
     <string name="msg_background_active">Background queries are scheduled to occur every %1$s minutes.</string>
@@ -190,6 +197,12 @@
     <string name="msg_font_import_failed">Font import failed!</string>
     <string name="msg_font_none">There is no imported font.</string>
     <string name="msg_found">\"%1$s\" has been found %2$d times.</string>
+    <string name="msg_frequent_updates_next">Next update: %1$s</string>
+    <plurals name="msg_frequent_updates">
+        <item quantity="one">Updates every minute.</item>
+        <item quantity="other">Updates every %1$d minutes.</item>
+    </plurals>
+    <string name="msg_justamoment">Just a moment, please…</string>
     <string name="msg_not_found">Not found: \"%1$s\"</string>
     <string name="msg_not_modified">Not modified.</string>
     <plurals name="msg_regions_selected">
@@ -204,9 +217,12 @@
     <string name="msg_text_copied">The text has been copied to the clipboard.</string>
     <string name="msg_volume_mute">Audio is muted.</string>
     <string name="msg_website_errors">The website contains errors.</string>
+    <string name="msg_widget_source_changed">The source has been changed to \"%1$s\".</string>
+    <string name="msg_widget_source_notchanged">The source has not been changed.</string>
 
     <string name="pref_cat_cols">Columns</string>
     <string name="pref_cat_opts">Options</string>
+    <string name="pref_cat_pollinterval">Interval</string>
     <string name="pref_cat_text">Text</string>
 
     <string name="pref_default_proxy_type" translatable="false">DIRECT</string>
@@ -240,6 +256,8 @@
     <string name="pref_title_cols_landscape_short">Landscape: %1$s</string>
     <string name="pref_title_cols_portrait_short">Portrait: %1$s</string>
     <string name="pref_title_font_zoom">Text magnification</string>
+    <string name="pref_title_frequent_updates">Frequent updates</string>
+    <string name="pref_title_frequent_updates_interval">Frequent updates interval in min.</string>
     <string name="pref_title_show_top_video">Illustrative videos</string>
     <string name="pref_title_show_top_video_off">Illustrative videos will not be shown</string>
     <string name="pref_title_show_top_video_on">Illustrative videos will be shown</string>

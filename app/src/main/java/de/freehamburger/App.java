@@ -141,8 +141,10 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final boolean PREF_POLL_DEFAULT = false;
     /** boolean */
     public static final String PREF_POLL_BREAKING_ONLY = "pref_poll_breaking_only";
+    public static final boolean PREF_POLL_BREAKING_ONLY_DEFAULT = true;
     /** boolean */
     public static final String PREF_POLL_OVER_MOBILE = "pref_poll_over_mobile";
+    public static final boolean PREF_POLL_OVER_MOBILE_DEFAULT = false;
     /** String: polling interval in minutes */
     public static final String PREF_POLL_INTERVAL = "pref_poll_interval";
     /** String: polling interval during the night in minutes */
@@ -218,9 +220,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Nullable
     private NotificationChannel notificationChannelHiPri;
     @Nullable
+    private NotificationChannel notificationChannelUpdates;
+    @Nullable
     private Activity currentActivity;
     @Nullable
     private OkHttpClient client;
+    public long appStart = 0L;
 
     /**
      * Creates an OkHttpClient instance.
@@ -353,26 +358,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     }
 
     /**
-     * Sets the app's background mode according to the preferences.
-     * @param prefs SharedPreferences
-     * @throws NullPointerException if {@code prefs} is {@code null}
-     */
-    void setNightMode(@NonNull SharedPreferences prefs) {
-        @BackgroundSelection int background = prefs.getInt(PREF_BACKGROUND, BACKGROUND_AUTO);
-        switch (background) {
-            case BACKGROUND_DAY:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                break;
-            case BACKGROUND_NIGHT:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                break;
-            case BACKGROUND_AUTO:
-            default:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-        }
-    }
-
-    /**
      * Closes the {@link #client OkHttpClient}.
      */
     private void closeClient() {
@@ -462,7 +447,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
      * @return timestamp
      */
     @IntRange(from = 0)
-    long getMostRecentUpdate(@NonNull Source source) {
+    public long getMostRecentUpdate(@NonNull Source source) {
         return PreferenceManager.getDefaultSharedPreferences(this).getLong(PREFS_PREFIX_MOST_RECENT_UPDATE + source, 0L);
     }
 
@@ -480,6 +465,11 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Nullable
     NotificationChannel getNotificationChannelHiPri() {
         return this.notificationChannelHiPri;
+    }
+
+    @Nullable
+    NotificationChannel getNotificationChannelUpdates() {
+        return this.notificationChannelUpdates;
     }
 
     /**
@@ -578,9 +568,29 @@ public class App extends Application implements Application.ActivityLifecycleCal
         /* no-op */
     }
 
+    /*
+    Die Original-App löst auch folgende Anfrage aus:  https://www.tagesschau.de/app/config/app3-versions.json
+    Antwort z.B.:
+    {
+"android": {
+"minVersion": 2016112201,
+"minOSVersion": 19
+},
+"iOS": {
+"minVersion": 145,
+"minOSVersion": "10.0"
+},
+"appStartCount": 10,
+"gATrackingRate": 0.5,
+"firebaseTrackingRate": 1.0,
+"pushTestEnabled": true
+}
+     */
+
     /** {@inheritDoc} */
     @Override
     public void onCreate() {
+        this.appStart = System.currentTimeMillis();
         super.onCreate();
 
         /*
@@ -652,6 +662,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
             if (nm != null) {
                 String channelStandard = getString(R.string.label_notification_channel);
                 String channelHiPri = getString(R.string.label_notification_channel_hipri);
+                String channelFrequentUpdates = getString(R.string.label_notification_channel_updates);
 
                 this.notificationChannel = new NotificationChannel(channelStandard, channelStandard, NotificationManager.IMPORTANCE_DEFAULT);
                 this.notificationChannel.setDescription(getString(R.string.label_notification_channel_desc));
@@ -659,6 +670,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 this.notificationChannel.setSound(null, null);
                 this.notificationChannel.setShowBadge(false);
                 nm.createNotificationChannel(this.notificationChannel);
+
+                this.notificationChannelUpdates = new NotificationChannel(channelFrequentUpdates, channelFrequentUpdates, NotificationManager.IMPORTANCE_LOW);
+                this.notificationChannelUpdates.setDescription(getString(R.string.label_notification_channel_desc_updates));
+                this.notificationChannelUpdates.enableLights(false);
+                this.notificationChannelUpdates.setSound(null, null);
+                this.notificationChannelUpdates.setShowBadge(false);
+                nm.createNotificationChannel(this.notificationChannelUpdates);
 
                 AudioAttributes aa = new AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).setUsage(AudioAttributes.USAGE_NOTIFICATION).build();
                 Uri ringtone = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_NOTIFICATION);
@@ -708,6 +726,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
             } else {
                 scheduleStop();
             }
+        } else if (FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED.equals(key)) {
+            boolean on = prefs.getBoolean(key, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT);
+            if (on) {
+                scheduleStop();
+            } else {
+                if (prefs.getBoolean(PREF_POLL, PREF_POLL_DEFAULT)) scheduleStart();
+            }
         } else if (PREF_PROXY_SERVER.equals(key) || PREF_PROXY_TYPE.equals(key)) {
             // OkHttpClient needs to be rebuilt next time
             closeClient();
@@ -732,6 +757,10 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @AnyThread
     void scheduleStart() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT)) {
+            if (BuildConfig.DEBUG) Log.i(TAG, "Skipping periodic background job because frequent updates are enabled");
+            return;
+        }
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
         if (js == null) {
             SharedPreferences.Editor ed = prefs.edit();
@@ -760,7 +789,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /**
      * Cancels the background update if it is currently scheduled. Also removes the notification.
      */
-    private void scheduleStop() {
+    void scheduleStop() {
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
         if (js == null) return;
         List<JobInfo> pending = js.getAllPendingJobs();
@@ -799,6 +828,26 @@ public class App extends Application implements Application.ActivityLifecycleCal
             }
         }
         ed.apply();
+    }
+
+    /**
+     * Sets the app's background mode according to the preferences.
+     * @param prefs SharedPreferences
+     * @throws NullPointerException if {@code prefs} is {@code null}
+     */
+    void setNightMode(@NonNull SharedPreferences prefs) {
+        @BackgroundSelection int background = prefs.getInt(PREF_BACKGROUND, BACKGROUND_AUTO);
+        switch (background) {
+            case BACKGROUND_DAY:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                break;
+            case BACKGROUND_NIGHT:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                break;
+            case BACKGROUND_AUTO:
+            default:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        }
     }
 
     /**

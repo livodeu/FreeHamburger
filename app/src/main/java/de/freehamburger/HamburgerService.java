@@ -18,6 +18,11 @@ import android.text.Html;
 import android.util.TypedValue;
 import android.widget.ImageView;
 
+import androidx.annotation.MainThread;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
+
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
@@ -36,10 +41,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 
-import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresPermission;
 import de.freehamburger.util.BitmapTarget;
 import de.freehamburger.util.Downloader;
 import de.freehamburger.util.Log;
@@ -310,6 +311,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
              * Not allowed to start service Intent { cmp=de.freehamburger.debug/de.freehamburger.HamburgerService }: app is in background uid UidRecord{...}
              */
             if (BuildConfig.DEBUG) Log.w(TAG, "onCreate() - startService(): " + e, e, 4);
+            new Handler().postDelayed(() -> startService(new Intent(this, getClass())), 5000);
         }
         PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).registerOnSharedPreferenceChangeListener(this);
     }

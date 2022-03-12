@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.NotificationManager;
 import android.app.SearchManager;
+import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -121,6 +122,7 @@ import de.freehamburger.util.SpaceBetween;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
 import de.freehamburger.views.ClockView;
+import de.freehamburger.widget.WidgetProvider;
 
 public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLayout.OnRefreshListener {
 
@@ -133,8 +135,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private static final String STATE_MSG_FOUND_SHOWN = BuildConfig.APPLICATION_ID + ".state.msgfoundshown";
     /** contains a News object if the {@link #quickView} should be restored */
     private static final String STATE_QUIKVIEW = BuildConfig.APPLICATION_ID + ".state.quikview";
-    static final String ACTION_SHOW_NEWS = BuildConfig.APPLICATION_ID + ".action.show_news";
-    static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
+    public static final String ACTION_SHOW_NEWS = BuildConfig.APPLICATION_ID + ".action.show_news";
+    public static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
     /** used when the user has picked a font file to import */
     private static final int REQUEST_CODE_FONT_IMPORT = 815;
     /** ConnectException andSocketTimeoutException messages.toLowerCase() usually start with this (the first one with "Failed", the latter one with "failed") */
@@ -351,18 +353,22 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         final String action = intent.getAction();
 
         if (ACTION_SHOW_NEWS.equals(action)) {
-            News news = (News)intent.getSerializableExtra(EXTRA_NEWS);
+            // to not invite jerks, don't cast to News here just yet
+            Object potentialNews = intent.getSerializableExtra(EXTRA_NEWS);
             int notificationId = intent.getIntExtra(UpdateJobService.EXTRA_NOTIFICATION_ID, Integer.MIN_VALUE);
+            int appWidgetId = intent.getIntExtra(WidgetProvider.EXTRA_FROM_WIDGET, AppWidgetManager.INVALID_APPWIDGET_ID);
             intent.setAction(Intent.ACTION_MAIN);
             intent.removeExtra(EXTRA_NEWS);
             intent.removeExtra(UpdateJobService.EXTRA_NOTIFICATION_ID);
+            intent.removeExtra(WidgetProvider.EXTRA_FROM_WIDGET);
             if (notificationId != Integer.MIN_VALUE) {
                 NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
                 if (nm != null) nm.cancel(notificationId);
             }
-            if (news == null) return;
+            if (!(potentialNews instanceof News)) return;
             // loadDetails(news) does not work here because the HamburgerService does not exist yet!
-            this.newsToLoadWhenServiceConnected = news;
+            Snackbar.make(this.coordinatorLayout, R.string.msg_justamoment, 1_000).show();
+            this.newsToLoadWhenServiceConnected = (News)potentialNews;
             return;
         }
 
@@ -1592,6 +1598,9 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     protected void onResume() {
         super.onResume();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT)) {
+            startService(new Intent(this, FrequentUpdatesService.class));
+        }
         boolean hasTemporaryFilter = this.newsAdapter.setFilters(TextFilter.createTextFiltersFromPreferences(this));
         this.clockView.setTint(hasTemporaryFilter ? Util.getColor(this, R.color.colorFilter) : Color.TRANSPARENT);
         // if the adapter is already filled, we are able to show the intro now (playIntro will return quickly if the adapter is empty)
@@ -1641,25 +1650,27 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
     /** {@inheritDoc} */
     @Override
-    public void onServiceConnected(ComponentName name, IBinder service) {
-        super.onServiceConnected(name, service);
-        if (this.newsToLoadWhenServiceConnected != null) {
-            loadDetails(this.newsToLoadWhenServiceConnected);
-            this.newsToLoadWhenServiceConnected = null;
-            return;
-        }
-        if (this.newsForQuickView != null) {
-            viewImage(this.newsForQuickView, true);
-        }
-        // refresh data only if there is currently no search filter
-        if (this.searchFilter == null) {
-            // check whether we need to refresh (if the data is too old or if the adapter is empty or if it displays the wrong data)
-            boolean adapterIsEmpty = this.newsAdapter.getItemCount() == 0;
-            boolean adapterDataIsOld = System.currentTimeMillis() - this.newsAdapter.getUpdated() >= App.LOCAL_FILE_MAXAGE;
-            boolean wrongSource = this.currentSource != this.newsAdapter.getSource();
-            boolean missingImages = NewsRecyclerAdapter.hasMissingImages(this);
-            if (adapterDataIsOld || adapterIsEmpty || wrongSource || missingImages) {
-                onRefreshUseCache(false);
+    public void onServiceConnected(ComponentName name, IBinder binder) {
+        super.onServiceConnected(name, binder);
+        if (HamburgerService.class.getName().equals(name.getClassName())) {
+            if (this.newsToLoadWhenServiceConnected != null) {
+                loadDetails(this.newsToLoadWhenServiceConnected);
+                this.newsToLoadWhenServiceConnected = null;
+                return;
+            }
+            if (this.newsForQuickView != null) {
+                viewImage(this.newsForQuickView, true);
+            }
+            // refresh data only if there is currently no search filter
+            if (this.searchFilter == null) {
+                // check whether we need to refresh (if the data is too old or if the adapter is empty or if it displays the wrong data)
+                boolean adapterIsEmpty = this.newsAdapter.getItemCount() == 0;
+                boolean adapterDataIsOld = System.currentTimeMillis() - this.newsAdapter.getUpdated() >= App.LOCAL_FILE_MAXAGE;
+                boolean wrongSource = this.currentSource != this.newsAdapter.getSource();
+                boolean missingImages = NewsRecyclerAdapter.hasMissingImages(this);
+                if (adapterDataIsOld || adapterIsEmpty || wrongSource || missingImages) {
+                    onRefreshUseCache(false);
+                }
             }
         }
     }

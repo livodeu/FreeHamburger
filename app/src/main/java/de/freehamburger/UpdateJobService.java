@@ -27,6 +27,7 @@ import android.os.PersistableBundle;
 import android.preference.PreferenceManager;
 import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
+import android.util.SparseArray;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
@@ -75,6 +76,7 @@ import de.freehamburger.util.Log;
 import de.freehamburger.util.OkHttpDownloader;
 import de.freehamburger.util.Util;
 import de.freehamburger.views.NewsView;
+import de.freehamburger.widget.WidgetProvider;
 
 /**
  * Performs periodic updates in the background.<br>
@@ -90,6 +92,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     /** int: {@link #JOB_SCHEDULE_DAY} or {@link #JOB_SCHEDULE_NIGHT} */
     @VisibleForTesting
     public static final String EXTRA_NIGHT = "night";
+    /** int: contains a value other than 0 if the job is a "one-off" job, that is a non-repeating job */
     public static final String EXTRA_ONE_OFF = "once";
     @VisibleForTesting
     public static final int JOB_SCHEDULE_DAY = 0;
@@ -108,10 +111,10 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     static final String PREF_STAT_COUNT = "pref_background_count";
     /** boolean: at least once we did not receive a Content-Length; therefore the byte count is just an estimation */
     static final String PREF_STAT_ESTIMATED = "pref_background_estimated";
-    /** String Set: sources to load */
-    static final String PREF_SOURCES = "pref_background_sources";
-    /** the default sources to load ({@link Source#HOME HOME} only) */
-    static final Set<String> PREF_SOURCES_DEFAULT = Collections.singleton(Source.HOME.name());
+    /** String Set: sources to load and display in notifications */
+    static final String PREF_SOURCES_FOR_NOTIFICATIONS = "pref_background_sources";
+    /** the default sources to load for notifications ({@link Source#HOME HOME} only) */
+    static final Set<String> PREF_SOURCES_FOR_NOTIFICATIONS_DEFAULT = Collections.singleton(Source.HOME.name());
     /** if set, contains {@link News#getExternalId() News.externalId} - can be used to remove a Notification */
     static final String EXTRA_FROM_NOTIFICATION = BuildConfig.APPLICATION_ID + ".from_notification";
     /** if set, contains a Notification id (int) that can be used to {@link NotificationManager#cancel(int) cancel a Notification} */
@@ -422,9 +425,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
 
     /**
      * Generates a JobInfo that can be used to schedule the periodic job.<br>
-     * <em>The returned JobInfo should be used immediately if it contains a timestamp.</em>
+     * <em>The returned JobInfo should be used immediately as it contains a timestamp.</em>
      * @param ctx Context
-     * @param expedited true to set the {@link JobInfo.Builder#setExpedited(boolean) expedited} flag (only applies to API S and newer)
      * @return JobInfo
      * @throws NullPointerException if {@code ctx} is {@code null}
      */
@@ -450,18 +452,55 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         return jib.build();
     }
 
+    /**
+     * Generates a JobInfo that can be used to schedule a one-time job.
+     * @param ctx Context
+     * @param expedited the {@link JobInfo.Builder#setExpedited(boolean) expedited} flag, ignored below Android S
+     * @return JobInfo
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
     @NonNull
-    static JobInfo makeOneOffJobInfo(@NonNull Context ctx) {
+    public static JobInfo makeOneOffJobInfo(@NonNull Context ctx, boolean expedited) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) expedited = false;
         final JobInfo.Builder jib = new JobInfo.Builder(JOB_ID, new ComponentName(ctx, UpdateJobService.class))
                 // JobInfo.NETWORK_TYPE_UNMETERED is not a reliable equivalent for Wifi => decision whether to actually poll is deferred to onStartJob()
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                .setOverrideDeadline(10_000L);
+                ;
+        if (!expedited) jib.setOverrideDeadline(10_000L);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            if (!expedited) jib.setImportantWhileForeground(true);
             jib.setEstimatedNetworkBytes(ESTIMATED_NETWORK_BYTES, 250L);
         }
-        PersistableBundle extras = new PersistableBundle(3);
-        extras.putLong(EXTRA_TIMESTAMP, System.currentTimeMillis());
-        extras.putInt(EXTRA_NIGHT, hasNightFallenOverBerlin() ? JOB_SCHEDULE_NIGHT : JOB_SCHEDULE_DAY);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            jib.setExpedited(expedited);
+        }
+        PersistableBundle extras = new PersistableBundle(1);
+        extras.putInt(EXTRA_ONE_OFF, 1);
+        jib.setExtras(extras);
+        return jib.build();
+    }
+
+    /**
+     * Generates a JobInfo that can be used to schedule a one-time job.
+     * @param ctx Context
+     * @param delayMin minimum delay in ms
+     * @param delayMax maximum deldy in ms
+     * @return JobInfo
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
+    @NonNull
+    public static JobInfo makeOneOffJobInfoWithDelay(@NonNull Context ctx, long delayMin, long delayMax) {
+        final JobInfo.Builder jib = new JobInfo.Builder(JOB_ID, new ComponentName(ctx, UpdateJobService.class))
+                // JobInfo.NETWORK_TYPE_UNMETERED is not a reliable equivalent for Wifi => decision whether to actually poll is deferred to onStartJob()
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                ;
+        if (delayMin > delayMax) {long h = delayMin; delayMin = delayMax; delayMax = h;}
+        jib.setMinimumLatency(delayMin).setOverrideDeadline(delayMax);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            jib.setImportantWhileForeground(true);
+            jib.setEstimatedNetworkBytes(ESTIMATED_NETWORK_BYTES, 250L);
+        }
+        PersistableBundle extras = new PersistableBundle(1);
         extras.putInt(EXTRA_ONE_OFF, 1);
         jib.setExtras(extras);
         return jib.build();
@@ -475,6 +514,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      */
     @VisibleForTesting()
     public static boolean needsReScheduling(@NonNull Context ctx, @NonNull JobParameters params) {
+        if (params.getExtras().getInt(EXTRA_ONE_OFF, 0) != 0) return false;
         final boolean jobWasScheduledForNight = params.getExtras().getInt(EXTRA_NIGHT, JOB_SCHEDULE_DAY) == JOB_SCHEDULE_NIGHT;
         final boolean isNight = hasNightFallenOverBerlin();
         boolean yes = (isNight != jobWasScheduledForNight);
@@ -567,11 +607,12 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         //
         App app = (App) getApplicationContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        final boolean breakingOnly = prefs.getBoolean(App.PREF_POLL_BREAKING_ONLY, true);
+        final boolean breakingOnly = prefs.getBoolean(App.PREF_POLL_BREAKING_ONLY, App.PREF_POLL_BREAKING_ONLY_DEFAULT);
         //@Nullable final String latestNewsExtId = restoreLatestNews(blob.getSource());
         // get the time when the user has updated the news list himself/herself most recently, so that we know what the user has already seen
         final long latestSourceStateSeenByUser = app.getMostRecentManualUpdate(blob.getSource());
 
+        // let it all run even if the Blob's source is meant to be displayed in a widget instead of a notification - notify(News, Source, Bitmap) will take care of that
         News newsToDisplay = null;
         for (News n : jointList) {
             // decision: skip weather (at the time of writing this, weather is the only news with no 'externalId' set)
@@ -619,6 +660,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             TeaserImage.MeasuredImage mi = teaserImage.getBestImageForWidth(Util.getDisplaySize(this).x, News.NEWS_TYPE_VIDEO.equals(newsToDisplay.getType()));
             String imageUrl = mi != null && mi.url != null ? mi.url : null;
             if (imageUrl != null && Util.isNetworkAvailable(app)) {
+                if (BuildConfig.DEBUG) Log.i(TAG + id, "News " + newsToDisplay + " does have an image");
                 try {
                     final News finalCopy = newsToDisplay;
                     final File temp = File.createTempFile("temp", ".jpg");
@@ -633,6 +675,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 }
             }
         }
+        if (BuildConfig.DEBUG) Log.w(TAG + id, "News " + newsToDisplay + " does not have an image");
         notify(newsToDisplay, blob.getSource(), null);
     }
 
@@ -665,17 +708,17 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         long now = System.currentTimeMillis();
         App app = (App) getApplicationContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
-        long statStart = prefs.getLong(PREF_STAT_START, 0L);
-        int jobsSoFar = prefs.getInt(PREF_STAT_COUNT, 0);
-        long receivedSoFar = prefs.getLong(PREF_STAT_RECEIVED, 0L);
+        long tsStatisticsStart = prefs.getLong(PREF_STAT_START, 0L);
+        int numberOfJobsSoFar = prefs.getInt(PREF_STAT_COUNT, 0);
+        long bytesReceivedSoFar = prefs.getLong(PREF_STAT_RECEIVED, 0L);
         SharedPreferences.Editor editor = prefs.edit();
-        if (statStart == 0L) editor.putLong(PREF_STAT_START, now);
-        editor.putInt(PREF_STAT_COUNT, jobsSoFar + 1);
+        if (tsStatisticsStart == 0L) editor.putLong(PREF_STAT_START, now);
+        editor.putInt(PREF_STAT_COUNT, numberOfJobsSoFar + 1);
         if (result.contentLength <= 0L) {
             editor.putBoolean(PREF_STAT_ESTIMATED, true);
-            editor.putLong(PREF_STAT_RECEIVED, receivedSoFar + ESTIMATED_NETWORK_BYTES);
+            editor.putLong(PREF_STAT_RECEIVED, bytesReceivedSoFar + ESTIMATED_NETWORK_BYTES);
         } else {
-            editor.putLong(PREF_STAT_RECEIVED, receivedSoFar + result.contentLength);
+            editor.putLong(PREF_STAT_RECEIVED, bytesReceivedSoFar + result.contentLength);
         }
         editor.apply();
         Source source = Source.getSourceFromFile(result.file);
@@ -746,16 +789,26 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * @param news News
      * @param source Source that the News originated from
      * @param largeIcon optional picture
+     * @throws NullPointerException if {@code news} or {@code source} are {@code null}
      */
     @SuppressLint("NewApi")
     private void notify(@NonNull final News news, @NonNull final Source source, @Nullable Bitmap largeIcon) {
+        if (BuildConfig.DEBUG) Log.i(TAG + id, "notify(" + news + ", " + source + ", " + largeIcon + ")");
         App app = (App) getApplicationContext();
         NotificationManager nm = (NotificationManager) app.getSystemService(NOTIFICATION_SERVICE);
         if (nm == null) return;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
+        // check whether a News from the given Source should be displayed in a Notification
+        Set<String> sourcesForNotifications = prefs.getStringSet(PREF_SOURCES_FOR_NOTIFICATIONS, PREF_SOURCES_FOR_NOTIFICATIONS_DEFAULT);
+        if (sourcesForNotifications == null || !sourcesForNotifications.contains(source.name())) {
+            // at this point, the teaserImage may be passed on to the Waiter, "who" could pass it on to the WidgetProvider
+            // if (news.getExternalId() != null && largeIcon != null) this.waiter.bitmapCache.put(news.getExternalId(), largeIcon);
+            return;
+        }
         // prepare notification summary
         if (this.summary == null) this.summary = new NotificationSummary(); else this.summary.increase();
         // show extended notification?
-        boolean applyExtendedStyle = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && PreferenceManager.getDefaultSharedPreferences(app).getBoolean(PREF_NOTIFICATION_EXTENDED, PREF_NOTIFICATION_EXTENDED_DEFAULT);
+        boolean applyExtendedStyle = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && prefs.getBoolean(PREF_NOTIFICATION_EXTENDED, PREF_NOTIFICATION_EXTENDED_DEFAULT);
         //
         long when = news.getDate() != null ? news.getDate().getTime() : 0L;
         String title, content, bigtext;
@@ -934,35 +987,36 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     /** {@inheritDoc} */
     @Override
     public boolean onStartJob(JobParameters params) {
+        if (BuildConfig.DEBUG) Log.i(TAG, "onStartJob(…)");
         this.params = params;
         App app = (App) getApplicationContext();
-        if (params.getJobId() == JOB_ID && app.hasCurrentActivity()) {
+        // determine whether this is the periodic job or a one-time job
+        final boolean oneOff = params.getExtras().getInt(EXTRA_ONE_OFF, 0) != 0;
+        if (params.getJobId() == JOB_ID && app.hasCurrentActivity() && !oneOff) {
             // app is currently active; nothing to do here for now
+            if (BuildConfig.DEBUG) Log.i(TAG, "onStartJob(…) bailing out due to current activity");
             done();
             return false;
         }
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
         boolean poll = prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT);
         boolean loadOverMobile = prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE);
-        boolean pollOverMobile = prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, false);
+        boolean pollOverMobile = prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, App.PREF_POLL_OVER_MOBILE_DEFAULT);
         if (!poll || (!loadOverMobile || !pollOverMobile) && Util.isNetworkMobile(app)) {
+            if (BuildConfig.DEBUG) Log.i(TAG, "onStartJob(…) bailing out due to mobile network");
             done();
             return false;
         }
         //
-        boolean oneOff = params.getExtras().getInt(EXTRA_ONE_OFF, 0) != 0;
         if (!oneOff) {
             long ts = params.getExtras().getLong(EXTRA_TIMESTAMP, 0L);
             if (ts > 0L) this.scheduledAt = ts;
-            if (this.scheduledAt == 0L) {
-                if (BuildConfig.DEBUG) Log.w(TAG + id, "This job had got no timestamp!");
-                this.scheduledAt = System.currentTimeMillis();
-            }
+            if (this.scheduledAt == 0L) this.scheduledAt = System.currentTimeMillis();
         }
         //
         if (BuildConfig.DEBUG) {
             if (oneOff) {
-                Log.i(TAG + id, "Hamburger update by one-off job");
+                Log.i(TAG + id, "Hamburger update by one-time job");
             } else {
                 //noinspection ConstantConditions
                 Set<String> allRequests = new HashSet<>(prefs.getStringSet(PREF_STAT_ALL, new HashSet<>(0)));
@@ -979,7 +1033,14 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancelAll();
         //
         boolean atLeastOneSourceLoading = false;
-        @NonNull final Set<String> sourceNames = Objects.requireNonNull(prefs.getStringSet(PREF_SOURCES, PREF_SOURCES_DEFAULT));
+        // get sources for notifications
+        @NonNull final Set<String> sourceNames = new HashSet<>(Objects.requireNonNull(prefs.getStringSet(PREF_SOURCES_FOR_NOTIFICATIONS, PREF_SOURCES_FOR_NOTIFICATIONS_DEFAULT)));
+        // add sources for widgets
+        SparseArray<Source> widgetSources = WidgetProvider.loadWidgetSources(this);
+        for (int i = 0; i < widgetSources.size(); i++) {
+            sourceNames.add(widgetSources.valueAt(i).name());
+        }
+        //
         for (String sourceName : sourceNames) {
             Source source = Source.valueOf(sourceName);
             if (source.getLockHolder() != null) {
@@ -993,7 +1054,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             done();
             return false;
         }
-        new Waiter().start();
+        Waiter waiter = new Waiter();
+        waiter.start();
         return true;
     }
 
@@ -1197,18 +1259,23 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * <em>Note: This might run after {@link #onDestroy()}.</em>
      */
     private class Waiter extends Thread {
+        private final long wid = System.currentTimeMillis() - 1647000000000L;
+
         @Override
         public void run() {
             if (UpdateJobService.this.loaderExecutor != null) {
                 try {
                     UpdateJobService.this.loaderExecutor.shutdown();
+                    //TODO the maximum wait time should be shorter if frequent updates are enabled
                     if (!UpdateJobService.this.loaderExecutor.awaitTermination(10, TimeUnit.MINUTES)) {
-                        if (BuildConfig.DEBUG) Log.e(TAG + id + "-W", "Not finished after 10 minutes!");
+                        if (BuildConfig.DEBUG) Log.e(TAG + id + "-W-" + wid, "Not finished after 10 minutes!");
                         UpdateJobService.this.loaderExecutor.shutdownNow();
                     }
                     // All loaders have finished. Job will be stopped in DELAY_TO_DESTRUCTION ms
                     // wait DELAY_TO_DESTRUCTION/2 ms or embedded images to be loaded and notifications to be shown…
                     Thread.sleep(DELAY_TO_DESTRUCTION / 2L);
+                    if (BuildConfig.DEBUG) Log.i(TAG + id + "-W-" + wid, "Updating widgets");
+                    WidgetProvider.updateWidgets(UpdateJobService.this, WidgetProvider.loadWidgetSources(UpdateJobService.this));
                     // Show a notification group summary if there is more than one notification
                     if (UpdateJobService.this.summary != null && UpdateJobService.this.summary.getCount() >= 2) {
                         ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID_SUMMARY, UpdateJobService.this.summary.build((App) getApplicationContext()));
@@ -1221,8 +1288,10 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                         Thread.sleep(DELAY_TO_DESTRUCTION / 2L);
                     }
                 } catch (InterruptedException e) {
-                    if (BuildConfig.DEBUG) Log.e(TAG + id + "-W", "While waiting for the loaders: " + e, e);
+                    if (BuildConfig.DEBUG) Log.e(TAG + id + "-W-" + wid, "While waiting: " + e, e);
                 }
+            } else {
+                if (BuildConfig.DEBUG) Log.e(TAG + id + "-W-" + wid, "No LoaderExecutor!");
             }
             done();
         }

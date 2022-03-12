@@ -18,7 +18,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.animation.AccelerateInterpolator;
 import android.widget.Toast;
 
@@ -34,6 +33,8 @@ import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+
+import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
 
 /**
@@ -46,6 +47,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
 
     @NonNull final Handler handler = new Handler();
     HamburgerService service;
+    FrequentUpdatesService frequentUpdatesService;
     CoordinatorLayout coordinatorLayout;
     @App.BackgroundSelection private int background;
 
@@ -82,7 +84,6 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         } else {
             activity.setTheme(resid);
         }
-        if (BuildConfig.DEBUG) Log.i(TAG, "Set theme: " + Util.getResourceName(activity, resid));
         return resid;
     }
 
@@ -180,9 +181,13 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @Override
     protected void onResume() {
         try {
-            //App.setNightMode(PreferenceManager.getDefaultSharedPreferences(this));
             super.onResume();
             bindService(new Intent(this, HamburgerService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            if (prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT)
+                    && prefs.getInt(FrequentUpdatesService.PREF_FREQUENT_UPDATES, FrequentUpdatesService.PREF_FREQUENT_UPDATES_DEFAULT) > 0) {
+                bindService(new Intent(this, FrequentUpdatesService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
+            }
         } catch (Throwable e) {
             if (BuildConfig.DEBUG) {
                 Log.e(TAG, e.toString(), e);
@@ -195,14 +200,25 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @CallSuper
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
-        this.service = ((HamburgerService.HamburgerServiceBinder) service).getHamburgerService();
+        if (service instanceof HamburgerService.HamburgerServiceBinder) {
+            this.service = ((HamburgerService.HamburgerServiceBinder) service).getHamburgerService();
+        } else if (service instanceof FrequentUpdatesService.FrequentUpdatesServiceBinder) {
+            this.frequentUpdatesService = ((FrequentUpdatesService.FrequentUpdatesServiceBinder) service).getFrequentUpdatesService();
+            if (this.frequentUpdatesService != null) this.frequentUpdatesService.foregroundStart();
+        }
     }
 
     /** {@inheritDoc} */
     @CallSuper
     @Override
     public void onServiceDisconnected(ComponentName name) {
-        this.service = null;
+        if (name == null) return;
+        String clazz = name.getClassName();
+        if (HamburgerService.class.getName().equals(clazz)) {
+            this.service = null;
+        } else if (FrequentUpdatesService.class.getName().equals(clazz)) {
+            this.frequentUpdatesService = null;
+        }
     }
 
     /** {@inheritDoc} */

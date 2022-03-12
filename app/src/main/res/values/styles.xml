@@ -86,6 +86,9 @@
         <item name="alertDialogTheme">@style/MaterialDialog</item>
         <item name="materialAlertDialogTheme">@style/MaterialDialog</item>
 
+        <item name="backgroundRadius">@dimen/widget_radius</item>
+        <item name="backgroundRadiusHalf">@dimen/widget_radius_half</item>
+
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 

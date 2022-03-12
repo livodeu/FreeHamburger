@@ -54,6 +54,7 @@ android {
             resValue "string", "app_search_sid", "content://" + defaultConfig.applicationId + applicationIdSuffix + '/sid'
             resValue "string", "main_action_font_delete", defaultConfig.applicationId + applicationIdSuffix + '.action.font_delete'
             resValue "string", "main_action_font_import", defaultConfig.applicationId + applicationIdSuffix + '.action.font_import'
+            resValue "string", "leak_canary_display_activity_label", "Hamburger Leaks"
             crunchPngs true
             testCoverageEnabled = false
         }
@@ -104,6 +105,8 @@ dependencies {
     implementation 'com.google.android.exoplayer:exoplayer-ui:2.17.0'
     implementation 'com.google.android.exoplayer:exoplayer-hls:2.17.0'
     implementation 'com.google.android.exoplayer:extension-okhttp:2.17.0'
+
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.8.1'
 
     androidTestImplementation 'androidx.test:core:1.4.0'
     androidTestImplementation 'androidx.test:runner:1.4.0'

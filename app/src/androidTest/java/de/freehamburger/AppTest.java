@@ -6,7 +6,9 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assume.assumeTrue;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.app.Notification;
@@ -14,11 +16,19 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProviderInfo;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.FeatureInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ShortcutManager;
+import android.content.res.XmlResourceParser;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -27,6 +37,8 @@ import android.security.NetworkSecurityPolicy;
 import android.service.notification.StatusBarNotification;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.util.SparseArray;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -47,11 +59,13 @@ import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.xmlpull.v1.XmlPullParser;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Set;
 
 import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
@@ -61,6 +75,7 @@ import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.MediaSourceHelper;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
+import de.freehamburger.widget.WidgetProvider;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 
@@ -95,13 +110,23 @@ public class AppTest {
         return null;
     }
 
-
     /**
      * Tests {@link BootReceiver}.
      */
     @Test
     @LargeTest
     public void testBootReceiver() {
+        // test presence of BootReceiver in manifest
+        PackageManager pm = ctx.getPackageManager();
+        try {
+            ActivityInfo ri = pm.getReceiverInfo(new ComponentName(ctx, BootReceiver.class), 0);
+            assertNotNull(ri);
+            assertTrue(ri.enabled);
+            assertTrue(ri.exported);
+        } catch (PackageManager.NameNotFoundException e) {
+            fail(e.toString());
+        }
+
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         boolean pollWasEnabled = prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT);
         if (!pollWasEnabled) {
@@ -122,7 +147,11 @@ public class AppTest {
         }
         SharedPreferences.Editor ed = prefs.edit();
         ed.putBoolean(App.PREF_POLL, pollWasEnabled);
-        ed.apply();
+        ed.commit();
+        try {
+            Thread.sleep(1_000L);
+        } catch (Exception ignored) {
+        }
     }
 
     /**
@@ -134,7 +163,7 @@ public class AppTest {
     @RequiresApi(24)
     @SmallTest
     public void testCleartextTraffic() {
-        Assume.assumeTrue("This test needs API 24 (N)", Build.VERSION.SDK_INT >= 24);
+        assumeTrue("This test needs API 24 (N)", Build.VERSION.SDK_INT >= 24);
         NetworkSecurityPolicy nsp = NetworkSecurityPolicy.getInstance();
         assertFalse("Cleartext traffic is allowed", nsp.isCleartextTrafficPermitted());
         assertFalse("Cleartext traffic to www.tagesschau.de is allowed", nsp.isCleartextTrafficPermitted("www.tagesschau.de"));
@@ -213,11 +242,61 @@ public class AppTest {
         }
     }
 
-    /*
+    @Test
+    public void testFrequentUpdates() {
+        JobInfo jobInfo = UpdateJobService.makeOneOffJobInfo(ctx, false);
+        assertNotNull(jobInfo);
+        assertFalse(jobInfo.isPeriodic());
+        if (Build.VERSION.SDK_INT >= 28) assertNotNull(jobInfo.getRequiredNetwork());
 
-    "\"Du willst Deinen Teil zur Bekämpfung der Pandemie beitragen?“, fragen deshalb die Berliner Malteser <a href=\"https://www.malteser-berlin.de/\" type=\"extern\">auf ihrer Internet-Seite [malteser-berlin.de]</a>. Dort zeigt ein Verkehrsschild in Richtung \"Impfzentrum\", und in einem roten Kasten ist die Mail-Adresse für die Bewerbung als Impfhelfer angegeben.<br /> <br />\"Es fehlen Impfhelfer\", bestätigt auch Diana Bade, Sprecherin der Malteser in Berlin auf rbb-Anfrage. Die Malteser betreiben das Impfzentrum Messezentrum, vor dem es immer wieder Schlangen gibt. In den vergangenen zwei Wochen hat sich die Zahl der Impfungen Bade zufolge verdoppelt – auf jetzt bis zu 2.500 täglich."
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        final boolean pollingEnabled = prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT);
+        if (!pollingEnabled) {
+            SharedPreferences.Editor ed = prefs.edit();
+            ed.putBoolean(App.PREF_POLL, true);
+            ed.apply();
+        }
+        final boolean frequentUpdatesEnabled = prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT);
+        if (!frequentUpdatesEnabled) {
+            SharedPreferences.Editor ed = prefs.edit();
+            ed.putBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, true);
+            ed.apply();
+        }
 
-     */
+        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
+        asn.moveToState(Lifecycle.State.RESUMED);
+        asn.onActivity(activity -> {
+            try {
+                Thread.sleep(3_000L);
+            } catch (Exception ignored) {
+            }
+            assertNotNull(activity.frequentUpdatesService);
+            assertTrue(activity.frequentUpdatesService.isEnabled(prefs));
+            assertTrue(activity.frequentUpdatesService.isForeground());
+            assertNotNull(activity.frequentUpdatesService.ticker);
+            NotificationManager nm = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            assertNotNull(nm);
+            StatusBarNotification[] sbs = nm.getActiveNotifications();
+            assertNotNull(sbs);
+            assertTrue(sbs.length > 0);
+            boolean notificationIdFound = false;
+            for (StatusBarNotification sb : sbs) {
+                if (FrequentUpdatesService.NOTIFICATION_ID == sb.getId()) {
+                    notificationIdFound = true;
+                    break;
+                }
+            }
+            assertTrue(notificationIdFound);
+        });
+
+        if (!frequentUpdatesEnabled) {
+            SharedPreferences.Editor ed = prefs.edit();
+            ed.putBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, false);
+            ed.putBoolean(App.PREF_POLL, pollingEnabled);
+            ed.commit();
+        }
+        asn.moveToState(Lifecycle.State.DESTROYED);
+    }
 
     /**
      * Tests {@link App#isHostAllowed(String)}.
@@ -242,6 +321,69 @@ public class AppTest {
             assertNotNull(host);
             assertEquals("Host " + host + " is allowed", allowed[i], App.isHostAllowed(host));
         }
+    }
+
+    @Test
+    public void testManifest() {
+        PackageManager pm = ctx.getPackageManager();
+        try {
+            PackageInfo pi = pm.getPackageInfo(ctx.getPackageName(), PackageManager.GET_PERMISSIONS);
+            assertNotNull(pi);
+            assertNotNull(pi.permissions);
+            boolean permInternet = false;
+            boolean permNetworkState = false;
+            for (String permission : pi.requestedPermissions) {
+                if (Manifest.permission.INTERNET.equals(permission)) permInternet = true;
+                if (Manifest.permission.ACCESS_NETWORK_STATE.equals(permission)) permNetworkState = true;
+            }
+            assertTrue(permInternet);
+            assertTrue(permNetworkState);
+
+            ApplicationInfo ai = pm.getApplicationInfo(ctx.getPackageName(), PackageManager.GET_META_DATA);
+            assertNotNull(ai);
+            ai.dump(new android.util.LogPrinter(android.util.Log.INFO, getClass().getSimpleName()), "");
+            assertEquals("de.freehamburger.App", ai.name);
+            assertEquals("de.freehamburger.App", ai.className);
+            assertTrue(ai.minSdkVersion >= 21);
+            assertTrue("No app label", ai.labelRes != 0);
+            assertTrue("No app icon", ai.icon != 0);
+            assertEquals(ApplicationInfo.CATEGORY_NEWS, ai.category);
+            assertEquals(SettingsActivity.class.getName(), ai.manageSpaceActivityName);
+            try {
+                @SuppressWarnings("JavaReflectionMemberAccess")
+                Field fpf = ApplicationInfo.class.getDeclaredField("privateFlags");
+                fpf.setAccessible(true);
+                @SuppressWarnings("ConstantConditions")
+                int privateFlags = (int)fpf.get(ai);
+                // 1 << 27 is ApplicationInfo.PRIVATE_FLAG_ALLOW_AUDIO_PLAYBACK_CAPTURE
+                assertFalse("allowAudioPlaybackCapture is set to true", (privateFlags & (1 << 27)) != 0);
+            } catch (Exception e) {
+                fail(e.toString());
+            }
+
+            assertNotNull(ai.metaData);
+            Set<String> metaKeys = ai.metaData.keySet();
+            assertNotNull(metaKeys);
+            assertTrue(metaKeys.size() > 0);
+            boolean metricsOptOutFound = false;
+            boolean enableSafeBrowsingFound = false;
+            for (String metaKey : metaKeys) {
+                if ("android.webkit.WebView.MetricsOptOut".equals(metaKey)) {
+                    metricsOptOutFound = true;
+                    Object value = ai.metaData.get(metaKey);
+                    assertEquals(Boolean.TRUE, value);
+                } else if ("android.webkit.WebView.EnableSafeBrowsing".equals(metaKey)) {
+                    enableSafeBrowsingFound = true;
+                    Object value = ai.metaData.get(metaKey);
+                    assertEquals(Boolean.FALSE, value);
+                }
+            }
+            assertTrue(metricsOptOutFound);
+            assertTrue(enableSafeBrowsingFound);
+        } catch (PackageManager.NameNotFoundException e) {
+            fail(e.toString());
+        }
+
     }
 
     /**
@@ -291,7 +433,7 @@ public class AppTest {
     @RequiresApi(26)
     @SmallTest
     public void testNotificationChannel() {
-        Assume.assumeTrue("This test needs API 26 (O)", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O);
+        assumeTrue("This test needs API 26 (O)", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O);
         App app = (App)ctx.getApplicationContext();
         assertNotNull(app.getNotificationChannel());
         assertNotNull(app.getNotificationChannelHiPri());
@@ -320,10 +462,10 @@ public class AppTest {
     @RequiresApi(26)
     @MediumTest
     public void testShortcutInvocation() {
-        Assume.assumeTrue("This test needs API 26 (O)", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O);
+        assumeTrue("This test needs API 26 (O)", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O);
         ShortcutManager shortcutManager = (ShortcutManager)ctx.getSystemService(Context.SHORTCUT_SERVICE);
         assertNotNull(shortcutManager);
-        Assume.assumeTrue("ShortcutManager does not support pinned shortcuts", shortcutManager.isRequestPinShortcutSupported());
+        assumeTrue("ShortcutManager does not support pinned shortcuts", shortcutManager.isRequestPinShortcutSupported());
         try {
             App app = (App)ctx.getApplicationContext();
             final Source[] sources = Source.values();
@@ -399,7 +541,7 @@ public class AppTest {
     @SmallTest
     public void testTtf() {
         File file = new File("/system/fonts/DroidSans.ttf");
-        Assume.assumeTrue("Not a file: " + file.getAbsolutePath(), file.isFile());
+        assumeTrue("Not a file: " + file.getAbsolutePath(), file.isFile());
         try {
             TtfInfo tti = TtfInfo.getTtfInfo(file);
             assertNotNull(tti);
@@ -440,8 +582,8 @@ public class AppTest {
 
         // parse the (presumably existing) json file for the HOME category
         File existing = new File(ctx.getFilesDir(), Source.HOME.name() + Source.FILE_SUFFIX);
-        Assume.assumeTrue("To fully test the " + UpdateJobService.class + ", the HOME source must have been downloaded at least once!", existing.isFile());
-        Assume.assumeTrue("Source.HOME is locked", Source.HOME.getLockHolder() == null);
+        assumeTrue("To fully test the " + UpdateJobService.class + ", the HOME source must have been downloaded at least once!", existing.isFile());
+        assumeTrue("Source.HOME is locked", Source.HOME.getLockHolder() == null);
         BlobParser bp = new BlobParser(ctx, null);
         Blob blob = bp.doInBackground(new File[] {existing});
         assertNotNull("BlobParser returned null for " + existing, blob);
@@ -530,6 +672,83 @@ public class AppTest {
         assertNotNull(split);
         assertEquals(2, split.size());
         assertEquals("01234", split.get(0));
+    }
+
+    @Test
+    @MediumTest
+    public void testWidgets() {
+        PackageManager pm = ctx.getPackageManager();
+        // check that 'uses-feature android:name="android.software.app_widgets"' is declared
+        try {
+            PackageInfo pi = pm.getPackageInfo(ctx.getPackageName(), PackageManager.GET_CONFIGURATIONS);
+            assertNotNull(pi);
+            assertNotNull(pi.reqFeatures);
+            boolean appWidgetsFeatureDeclared = false;
+            for (FeatureInfo fi : pi.reqFeatures) {
+                if (PackageManager.FEATURE_APP_WIDGETS.equals(fi.name)) {appWidgetsFeatureDeclared = true; break;}
+            }
+            assertTrue(appWidgetsFeatureDeclared);
+        } catch (PackageManager.NameNotFoundException e) {
+            fail(e.toString());
+        }
+
+        // test presence of WidgetProvider in manifest
+        try {
+            ActivityInfo ri = pm.getReceiverInfo(new ComponentName(ctx, WidgetProvider.class), 0);
+            assertNotNull(ri);
+            assertTrue(ri.enabled);
+            assertFalse(ri.exported);
+        } catch (PackageManager.NameNotFoundException e) {
+            fail(e.toString());
+        }
+
+        // test widget_info xml resource
+        XmlResourceParser p = ctx.getResources().getXml(R.xml.widget_info);
+        assertNotNull(p);
+        try {
+            boolean configureFound = false;
+            int eventType = p.getEventType();
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                if (eventType == XmlPullParser.START_TAG) {
+                    assertEquals("appwidget-provider", p.getName());
+                    int nattributes = p.getAttributeCount();
+                    assertTrue(nattributes > 0);
+                    for (int i = 0; i < nattributes; i++) {
+                        String attrName = p.getAttributeName(i);
+                        String attrValue = p.getAttributeValue(i);
+                        if ("configure".equals(attrName)) {
+                            assertEquals(WidgetActivity.class.getName(), attrValue);
+                            configureFound = true;
+                        }
+                    }
+                }
+                eventType = p.next();
+            }
+            p.close();
+            assertTrue(configureFound);
+        } catch (Exception e) {
+            fail(e.toString());
+        }
+
+        // test WidgetProvider class
+        AppWidgetManager aw = AppWidgetManager.getInstance(ctx);
+        assertNotNull(aw);
+        ComponentName provider = new ComponentName(ctx, WidgetProvider.class);
+        final int[] widgetIds = aw.getAppWidgetIds(provider);
+        assumeTrue("This test needs at least one existing app widget",widgetIds != null && widgetIds.length > 0);
+        SparseArray<Source> widgetSources = WidgetProvider.loadWidgetSources(ctx);
+        assertNotNull(widgetSources);
+        assertEquals(widgetSources.size(), widgetIds.length);
+        for (int widgetId : widgetIds) {
+            AppWidgetProviderInfo info = aw.getAppWidgetInfo(widgetId);
+            assertNotNull(info);
+            assertEquals(provider, info.provider);
+            assertNotNull(widgetSources.get(widgetId));
+            assertTrue(WidgetProvider.fillWidget(ctx, aw, widgetId, null, new RuntimeException("TEST")));
+            // the widget should display the Exception's message now
+        }
+        boolean textViewSetGravityRemotable = WidgetProvider.isRemotable(TextView.class,"setGravity", int.class);
+        if (Build.VERSION.SDK_INT >= 31) assertTrue(textViewSetGravityRemotable); else assertFalse(textViewSetGravityRemotable);
     }
 
 }

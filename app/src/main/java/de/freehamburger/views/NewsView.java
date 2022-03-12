@@ -217,7 +217,7 @@ public class NewsView extends RelativeLayout {
         boolean titleReplacesTopline = !hasTopline;
         if (!hasTopline) newsTopline = news.getTitle();
         if (newsTopline != null) newsTopline = newsTopline.trim();
-       this.textViewTopline.setText(newsTopline);
+        this.textViewTopline.setText(newsTopline);
         if (prefs.getBoolean(App.PREF_TOPLINE_MARQUEE, false)) {
             this.textViewTopline.setEllipsize(TextUtils.TruncateAt.MARQUEE);
             this.textViewTopline.setMarqueeRepeatLimit(-1);

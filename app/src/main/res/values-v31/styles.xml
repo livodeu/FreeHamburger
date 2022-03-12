@@ -6,5 +6,9 @@
         <item name="android:contextPopupMenuStyle">@style/ContextMenu</item>
         <!-- new for Android 12 aka S -->
         <item name="android:windowSplashScreenBackground">@color/color_secondary</item>
+
+        <!-- https://developer.android.com/guide/topics/appwidgets/layouts?hl=en#java -->
+        <item name="backgroundRadius">@android:dimen/system_app_widget_background_radius</item>
+        <item name="backgroundRadiusHalf">@android:dimen/system_app_widget_inner_radius</item>
     </style>
 </resources>

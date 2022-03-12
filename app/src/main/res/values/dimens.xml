@@ -36,4 +36,10 @@
     <dimen name="related_view_padding">4dp</dimen>
     <dimen name="related_view_width">160dp</dimen>
 
+    <dimen name="widget_radius">16dp</dimen>
+    <dimen name="widget_radius_half">8dp</dimen>
+    <dimen name="widget_inner_padding">4dp</dimen>
+    <dimen name="widget_max_textsize">18sp</dimen>
+    <dimen name="widget_min_textsize">10sp</dimen>
+
 </resources>

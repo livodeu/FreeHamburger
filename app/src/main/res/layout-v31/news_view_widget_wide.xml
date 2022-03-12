@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Widget for S and newer versions without buttonConfigure as Android has learned to reconfigure widgets on its own -->
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:focusable="true"
+    android:focusableInTouchMode="false"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:orientation="vertical"
+    android:padding="?attr/backgroundRadiusHalf"
+    android:theme="@style/AppTheme"
+    tools:ignore="UnusedAttribute"
+    tools:layout_height="50dp"
+    tools:layout_width="500dp"
+    >
+
+    <include layout="@layout/widget_error" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
+        <TextView
+            android:id="@+id/textViewTopline"
+            android:layout_width="0sp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:elegantTextHeight="false"
+            android:ellipsize="marquee"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:paddingEnd="@dimen/widget_inner_padding"
+            android:shadowColor="@color/colorToplineShadow"
+            android:shadowDx="@dimen/topline_shadow_size"
+            android:shadowDy="@dimen/topline_shadow_size"
+            android:shadowRadius="@dimen/topline_shadow_size"
+            android:singleLine="true"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textColor="@color/colorContent"
+            tools:ignore="RtlSymmetry"
+            tools:text="@tools:sample/lorem/random">
+            <requestFocus />
+        </TextView>
+
+        <TextView
+            android:id="@+id/textViewDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:elegantTextHeight="false"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-condensed"
+            android:minWidth="40dp"
+            android:singleLine="true"
+            android:textAlignment="viewEnd"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textColor="@color/colorContent"
+            tools:ignore="RtlSymmetry"
+            tools:text="12:34"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/textViewFirstSentence"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:autoSizeMaxTextSize="@dimen/widget_max_textsize"
+        android:autoSizeMinTextSize="@dimen/widget_min_textsize"
+        android:autoSizeTextType="uniform"
+        android:breakStrategy="high_quality"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-condensed"
+        android:gravity="center_horizontal|center_vertical"
+        android:hint="@string/msg_widget_no_news"
+        android:hyphenationFrequency="full"
+        android:justificationMode="inter_word"
+        android:lineSpacingMultiplier="0.8"
+        android:maxLines="@integer/max_lines_textview_firstsentence"
+        android:scrollHorizontally="false"
+        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+        android:textColor="@color/colorContent"
+        android:textSize="@dimen/text_size_list_news_firstsentence"
+        tools:ignore="RtlSymmetry,UnusedAttribute"
+        tools:text="@tools:sample/lorem/random"
+        />
+
+</LinearLayout>
+

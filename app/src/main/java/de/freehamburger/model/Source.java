@@ -202,6 +202,8 @@ public enum Source {
     }
 
     /**
+     * Returns the icon resource id.<br>
+     * <i>The icon will be the same in both day and night modes!</i>
      * @return icon for this Source
      */
     @DrawableRes

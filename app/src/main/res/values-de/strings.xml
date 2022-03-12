@@ -9,6 +9,10 @@
     <string name="action_filters_enabled">Aktiv</string>
     <string name="action_open_app">App öffnen</string>
     <string name="action_show_weberrors_no">Nicht wieder anzeigen</string>
+    <string name="action_widget_configure">Bitte die Quelle auswählen</string>
+    <string name="msg_widget_source_changed">Die Quelle wurde zu „%1$s” geändert.</string>
+    <string name="msg_widget_source_notchanged">Die Quelle wurde nicht geändert.</string>
+    <string name="label_widget_desc">Hamburger Nachrichten</string>
     <string name="hint_audio_content_play">Audioinhalte abspielen</string>
     <string name="label_cols_default">Standard</string>
     <string name="pref_title_orientation_main">Ausrichtung</string>
@@ -37,8 +41,10 @@
     <string name="label_yes">Ja</string>
     <string name="label_notification_channel">Meldungen</string>
     <string name="label_notification_channel_hipri">Eilmeldungen</string>
+    <string name="label_notification_channel_updates">Häufige Aktualisierungen</string>
     <string name="label_notification_channel_desc">Diese Kategorie betrifft Hamburger Nachrichten mit Standardpriorität</string>
     <string name="label_notification_channel_desc_hipri">Diese Kategorie betrifft Hamburger Nachrichten hoher Priorität (Eilmeldungen)</string>
+    <string name="label_notification_channel_desc_updates">Diese Kategorie betrifft nur die Benachrichtigung, dass häufige Aktualisierungen erfolgen</string>
     <string name="error_news_not_found">Der Artikel wurde nicht gefunden.</string>
     <string name="error_no_network">Kein Datennetz.</string>
     <string name="error_no_network_ext">Für eine sinnvolle Verwendung sollten Sie das Gerät mit dem Internet verbinden.</string>
@@ -61,6 +67,7 @@
     <string name="pref_hint_pref_cache_max_size">Max. Cachegröße in MB</string>
     <string name="label_current_cache_size_kb">momentan %1$d kB von %2$d MB genutzt</string>
     <string name="msg_not_modified">Die Daten sind noch aktuell.</string>
+    <string name="msg_justamoment">Einen Moment, bitte…</string>
     <string name="action_search">Suche</string>
     <string name="action_share">Teilen</string>
     <string name="action_scroll_to_top">Nach oben</string>
@@ -140,6 +147,7 @@
     <string name="pref_title_proxy_type">Proxytyp</string>
     <string name="msg_search_sugg_deleted_locale">Die Suchvorschläge wurden wegen der Sprachänderung zurückgesetzt!</string>
     <string name="action_filter">Filter</string>
+    <string name="hint_widget_source">Quelle für Widget: %1$s</string>
     <string name="hint_filter">zu filternder Text</string>
     <string name="hint_filter_add">Mit + fügen Sie einen neuen Filter hinzu</string>
     <string name="hint_filter_button_clear">Antippen um den Text zu löschen</string>    <!-- https://de.wikipedia.org/wiki/Infinitivgruppe -->
@@ -186,6 +194,7 @@
     <string name="label_filter_at_end">am Ende</string>
     <string name="action_view_picture">Bild ansehen</string>
     <string name="label_service">Dies ist der Hintergrunddienst für Hamburger, der für das Laden der Nachrichten verantwortlich ist.</string>
+    <string name="label_service_frequentupdates">Dies ist der Dienst für Hamburger der für häufige Aktualisierungen erforderlich ist.</string>
     <string name="error_tts_fail">Sprachausgabe fehlgeschlagen!</string>
     <string name="error_tts_fail_network">Sprachausgabe fehlgeschlagen wegen Netzproblemen.</string>
     <string name="error_tts_fail_not_downloaded">Sprachausgabe fehlgeschlagen: Daten noch nicht geladen.</string>
@@ -259,6 +268,15 @@
     <string name="pref_title_pip_enabled">Bild-in-Bild-Modus verwenden</string>
     <string name="pref_summary_pip_off">Der Bild-in-Bild-Modus wird nicht verwendet.</string>
     <string name="pref_summary_pip_on">Der Bild-in-Bild-Modus wird bei Vollbildvideos verwendet.</string>
+    <string name="pref_title_frequent_updates">Häufige Aktualisierungen</string>
+    <string name="pref_title_frequent_updates_interval">Aktualisierungsintervall in Min.</string>
+    <string name="pref_cat_pollinterval">Intervall</string>
+    <string name="msg_widget_no_news">Zur Zeit keine Inhalte.</string>
+    <string name="msg_frequent_updates_next">Nächste Aktualisierung: %1$s</string>
+    <plurals name="msg_frequent_updates">
+        <item quantity="one">Aktualisierung jede Minute.</item>
+        <item quantity="other">Aktualisierung alle %1$d Minuten.</item>
+    </plurals>
 
     <string name="hint_intro_will_be_played">Die Einführung wird beim nächsten Start angezeigt.</string>
     <string name="hint_intro_will_not_be_played">Die Einführung wird beim nächsten Start nicht angezeigt.</string>

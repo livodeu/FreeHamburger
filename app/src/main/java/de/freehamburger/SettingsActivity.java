@@ -87,6 +87,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
     private static final String TAG = "SettingsActivity";
     private static final String EXTRA_STORAGE_ACTIVITY = "de.freehamburger.extra.storage.activity";
+    static final String ACTION_CONFIGURE_BACKGROUND_UPDATES = "de.freehamburger.configure.backgroundupdates";
     @Nullable
     private HamburgerService service;
     /** {@code true} if the user has clicked "Manage Storage" in the system settings for this app - identified by:<ol><li>{@link Intent} action is {@link Intent#ACTION_VIEW ACTION_VIEW},</li><li>Intent data is {@code null}</li></ol> */
@@ -131,7 +132,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 .setView(webView)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
                 ;
-        AlertDialog ad = builder.create();
+        final AlertDialog ad = builder.create();
         Window w = ad.getWindow();
 
         ad.setCanceledOnTouchOutside(true);
@@ -300,6 +301,13 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             // hide the back arrow in the action bar because we don't want to navigate within the app (only exit)
             ActionBar actionBar = getSupportActionBar();
             if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(false);
+        } else if (ACTION_CONFIGURE_BACKGROUND_UPDATES.equals(intent.getAction())) {
+            FragmentManager fm = getSupportFragmentManager();
+            Fragment fragment = fm.getFragmentFactory().instantiate(getClassLoader(), PollingPreferenceFragment.class.getName());
+            fm.beginTransaction()
+                    .replace(R.id.settings, fragment)
+                    .addToBackStack(null)
+                    .commit();
         }
         if (this.service == null) {
             bindService(new Intent(this, HamburgerService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
@@ -604,6 +612,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 }
                 return true;
             });
+            //noinspection ConstantConditions
             this.prefMaxCacheSize.getOnPreferenceChangeListener().onPreferenceChange(this.prefMaxCacheSize, this.prefs.getString(App.PREF_CACHE_MAX_SIZE, App.DEFAULT_CACHE_MAX_SIZE));
 
             if (prefClearCache != null) {
@@ -686,6 +695,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     }
                     return true;
                 });
+                //noinspection ConstantConditions
                 prefMaxMemCacheSize.getOnPreferenceChangeListener().onPreferenceChange(prefMaxMemCacheSize, this.originalMaxMemCacheSize);
             }
         }
@@ -798,7 +808,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
             SwitchPreferenceCompat prefPollBreakingOnly = findPreference(App.PREF_POLL_BREAKING_ONLY);
 
-            MultiSelectListPreference prefSources = findPreference(UpdateJobService.PREF_SOURCES);
+            MultiSelectListPreference prefSources = findPreference(UpdateJobService.PREF_SOURCES_FOR_NOTIFICATIONS);
             if (prefSources != null) {
                 final Source[] sources = Source.values();
                 final CharSequence[] entries = new CharSequence[sources.length];
@@ -809,10 +819,10 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 }
                 prefSources.setEntries(entries);
                 prefSources.setEntryValues(entryValues);
-                Set<String> values = prefs.getStringSet(UpdateJobService.PREF_SOURCES, UpdateJobService.PREF_SOURCES_DEFAULT);
+                Set<String> values = prefs.getStringSet(UpdateJobService.PREF_SOURCES_FOR_NOTIFICATIONS, UpdateJobService.PREF_SOURCES_FOR_NOTIFICATIONS_DEFAULT);
                 prefSources.setValues(values);
                 prefSources.setSummary(Source.makeLabel(activity, values));
-                if (!UpdateJobService.PREF_SOURCES_DEFAULT.equals(values) && prefPollBreakingOnly != null) {
+                if (!UpdateJobService.PREF_SOURCES_FOR_NOTIFICATIONS_DEFAULT.equals(values) && prefPollBreakingOnly != null) {
                     prefPollBreakingOnly.setChecked(false);
                     prefPollBreakingOnly.setEnabled(false);
                 }
@@ -823,7 +833,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     }
                     // the "breaking news only" switch must be switched off and disabled if there is a Source other than HOME enabled
                     if (prefPollBreakingOnly != null) {
-                        if (!UpdateJobService.PREF_SOURCES_DEFAULT.equals(newValue)) {
+                        if (!UpdateJobService.PREF_SOURCES_FOR_NOTIFICATIONS_DEFAULT.equals(newValue)) {
                             if (prefPollBreakingOnly.isChecked()) {
                                 prefPollBreakingOnly.setChecked(false);
                                 Toast.makeText(activity, R.string.msg_breaking_only_disabled, Toast.LENGTH_LONG).show();
@@ -840,7 +850,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
             SwitchPreferenceCompat prefPollOverMobile = findPreference(App.PREF_POLL_OVER_MOBILE);
             if (prefPollOverMobile != null) {
-                if (prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, false)) {
+                if (prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, App.PREF_POLL_OVER_MOBILE_DEFAULT)) {
                     prefPollOverMobile.setEnabled(true);
                 } else {
                     prefPollOverMobile.setChecked(false);
@@ -849,8 +859,14 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 }
             }
 
+            SwitchPreferenceCompat prefFrequentPoll = findPreference(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED);
             SummarizingEditTextPreference prefPollInterval = findPreference(App.PREF_POLL_INTERVAL);
+            SummarizingEditTextPreference prefPollIntervalNight = findPreference(App.PREF_POLL_INTERVAL_NIGHT);
+            SeekBarPreference prefFrequentUpdates = findPreference(FrequentUpdatesService.PREF_FREQUENT_UPDATES);
+            boolean frequentPollingEnabled = prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT);
+
             if (prefPollInterval != null) {
+                prefPollInterval.setVisible(!frequentPollingEnabled);
                 prefPollInterval.setStringRes(R.string.label_every_minutes);
                 prefPollInterval.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
                 prefPollInterval.setOnPreferenceChangeListener((preference, o) -> {
@@ -870,8 +886,8 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 });
             }
 
-            SummarizingEditTextPreference prefPollIntervalNight = findPreference(App.PREF_POLL_INTERVAL_NIGHT);
             if (prefPollIntervalNight != null) {
+                prefPollIntervalNight.setVisible(!frequentPollingEnabled);
                 prefPollIntervalNight.setStringRes(R.string.label_every_minutes);
                 prefPollIntervalNight.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
                 prefPollIntervalNight.setOnPreferenceChangeListener((preference, o) -> {
@@ -892,6 +908,24 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     }
                     return interval >= SettingsActivity.PollingPreferenceFragment.this.min && interval <= SettingsActivity.PollingPreferenceFragment.this.maxNightInterval;
                 });
+            }
+
+            if (prefFrequentPoll != null) {
+                prefFrequentPoll.setOnPreferenceChangeListener((preference, newValue) -> {
+                    if (!(newValue instanceof Boolean)) return false;
+                    boolean frequentUpdatesEnabled = (boolean)newValue;
+                    if (prefPollInterval != null) prefPollInterval.setVisible(!frequentUpdatesEnabled);
+                    if (prefPollIntervalNight != null) prefPollIntervalNight.setVisible(!frequentUpdatesEnabled);
+                    if (prefFrequentUpdates != null) prefFrequentUpdates.setVisible(frequentUpdatesEnabled);
+                    if (frequentUpdatesEnabled) {
+                        activity.startService(new Intent(activity, FrequentUpdatesService.class));
+                    }
+                    // no need to stop FrequentUpdatesService when frequentUpdatesEnabled is false because FrequentUpdatesService does that by itself
+                    return true;
+                });
+                // initialise the visibilities of the 3 interval prefs
+                //noinspection ConstantConditions
+                prefFrequentPoll.getOnPreferenceChangeListener().onPreferenceChange(prefFrequentPoll, prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT));
             }
 
             long statStart = prefs.getLong(UpdateJobService.PREF_STAT_START, 0L);
@@ -1063,6 +1097,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                         return true;
                     }
                 });
+                //noinspection ConstantConditions
                 prefProxyType.getOnPreferenceChangeListener().onPreferenceChange(prefProxyType, prefs.getString(App.PREF_PROXY_TYPE, getString(R.string.pref_default_proxy_type)));
             }
 
@@ -1080,6 +1115,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     }
                     return true;
                 });
+                //noinspection ConstantConditions
                 prefProxyServer.getOnPreferenceChangeListener().onPreferenceChange(prefProxyServer, prefs.getString(App.PREF_PROXY_SERVER, null));
             }
         }

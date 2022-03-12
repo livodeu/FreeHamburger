@@ -34,27 +34,55 @@
         android:key="pref_poll_over_mobile"
         android:title="@string/pref_title_poll_over_mobile"/>
 
-    <de.freehamburger.prefs.SummarizingEditTextPreference
-        android:defaultValue="15"
-        android:dependency="pref_poll"
-        android:dialogIcon="@drawable/ic_schedule_content_24dp"
-        android:hint="@string/pref_hint_poll_interval"
-        android:icon="@drawable/ic_schedule_content_24dp"
-        android:inputType="text|number"
-        android:key="pref_poll_interval"
-        android:title="@string/pref_hint_poll_interval"
-        />
+    <PreferenceCategory
+        app:allowDividerBelow="true"
+        app:initialExpandedChildrenCount="1"
+        app:key="pref_cat_pollinterval"
+        app:title="@string/pref_cat_pollinterval"
+        >
 
-    <de.freehamburger.prefs.SummarizingEditTextPreference
-        android:defaultValue="15"
-        android:dependency="pref_poll"
-        android:dialogIcon="@drawable/ic_schedule_content_24dp"
-        android:hint="@string/pref_hint_poll_interval_night"
-        android:icon="@drawable/ic_schedule_content_24dp"
-        android:inputType="text|number"
-        android:key="pref_poll_interval_night"
-        android:title="@string/pref_hint_poll_interval_night"
-        />
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:dependency="pref_poll"
+            android:key="pref_frequent_updates_enabled"
+            android:summaryOff="@string/pref_title_poll_off"
+            android:summaryOn="@string/pref_title_poll_on"
+            android:title="@string/pref_title_frequent_updates"
+            />
+
+        <de.freehamburger.prefs.SummarizingEditTextPreference
+            android:defaultValue="15"
+            android:dependency="pref_poll"
+            android:dialogIcon="@drawable/ic_schedule_content_24dp"
+            android:hint="@string/pref_hint_poll_interval"
+            android:icon="@drawable/ic_schedule_content_24dp"
+            android:inputType="text|number"
+            android:key="pref_poll_interval"
+            android:title="@string/pref_hint_poll_interval"
+            />
+
+        <de.freehamburger.prefs.SummarizingEditTextPreference
+            android:defaultValue="15"
+            android:dependency="pref_poll"
+            android:dialogIcon="@drawable/ic_schedule_content_24dp"
+            android:hint="@string/pref_hint_poll_interval_night"
+            android:icon="@drawable/ic_schedule_content_24dp"
+            android:inputType="text|number"
+            android:key="pref_poll_interval_night"
+            android:title="@string/pref_hint_poll_interval_night"
+            />
+
+        <SeekBarPreference
+            android:dependency="pref_frequent_updates_enabled"
+            android:icon="@drawable/ic_schedule_content_24dp"
+            android:key="pref_frequent_updates"
+            android:max="14"
+            android:title="@string/pref_title_frequent_updates_interval"
+            app:min="1"
+            app:showSeekBarValue="true"
+            />
+
+    </PreferenceCategory>
 
     <SwitchPreferenceCompat
         android:defaultValue="false"
@@ -64,12 +92,14 @@
         android:summaryOff="@string/pref_summary_poll_customnotification_off"
         android:summaryOn="@string/pref_summary_poll_customnotification_on"
         android:title="@string/pref_title_poll_customnotification"
+        app:allowDividerAbove="true"
         app:singleLineTitle="false"
         />
 
     <Preference
         android:key="pref_poll_stats"
         android:title="@string/pref_title_poll_stats"
+        app:allowDividerAbove="true"
         />
 
 </PreferenceScreen>

@@ -6,8 +6,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission-sdk-23 android:name="android.permission.FOREGROUND_SERVICE" />
 
     <permission android:name="${applicationId}.nix" android:protectionLevel="signature"/>
+
+    <uses-feature android:name="android.software.app_widgets" android:required="false"/>
 
     <queries>
         <intent>
@@ -186,6 +189,18 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".WidgetActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+            android:exported="false"
+            android:label="@string/action_widget_configure"
+            android:noHistory="true"
+            >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
+        </activity>
+
         <receiver android:name=".BootReceiver"
             android:exported="true">
             <intent-filter>
@@ -193,14 +208,35 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".widget.WidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE_OPTIONS"/>
+                <action android:name="android.appwidget.action.APPWIDGET_DELETED"/>
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info"/>
+        </receiver>
+
         <service
             android:name=".HamburgerService"
             android:description="@string/label_service"
             android:exported="false" />
+
         <service
             android:name=".UpdateJobService"
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <service
+            android:name=".FrequentUpdatesService"
+            android:description="@string/label_service_frequentupdates"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <service
             android:name=".BackgroundTile"

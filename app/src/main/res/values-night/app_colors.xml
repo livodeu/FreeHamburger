@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorBgNews">#ff1a75aa</color>
+    <color name="colorBgNewsGradient">#147199</color>
     <color name="colorBgNewsFocused">#c01e83bd</color>
     <color name="colorBgNewsPressed">#c01e83bd</color>
     <!-- title text color for regional news -->

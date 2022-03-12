@@ -17,6 +17,7 @@ import android.preference.PreferenceManager;
 import androidx.annotation.NonNull;
 
 import de.freehamburger.model.Source;
+import de.freehamburger.util.Log;
 
 /**
  * Receives {@link Intent#ACTION_BOOT_COMPLETED}.
@@ -39,13 +40,27 @@ public class BootReceiver extends BroadcastReceiver {
         App app = (App)ctx.getApplicationContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
         if (!prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)) return;
-        long scheduled = app.isBackgroundJobScheduled();
-        if (scheduled == 0L) {
-            app.scheduleStart();
+        boolean frequentUpdates = prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT);
+
+        long scheduled;
+        if (frequentUpdates) {
+            // According to https://developer.android.com/guide/components/foreground-services#background-start-restriction-exemptions, a foreground service may be started here
+            scheduled = prefs.getInt(FrequentUpdatesService.PREF_FREQUENT_UPDATES, FrequentUpdatesService.PREF_FREQUENT_UPDATES_DEFAULT) * 60_000L;
+            Intent intentFrequentUpdates = new Intent(ctx, FrequentUpdatesService.class);
+            try {
+                ctx.startService(intentFrequentUpdates);
+            } catch (Exception e) {
+                if (BuildConfig.DEBUG) Log.e(getClass().getSimpleName(), "While starting " + intentFrequentUpdates + ": " + e);
+            }
+        } else {
             scheduled = app.isBackgroundJobScheduled();
             if (scheduled == 0L) {
-                logFailed(prefs);
-                return;
+                app.scheduleStart();
+                scheduled = app.isBackgroundJobScheduled();
+                if (scheduled == 0L) {
+                    logFailed(prefs);
+                    return;
+                }
             }
         }
 
@@ -70,23 +85,25 @@ public class BootReceiver extends BroadcastReceiver {
                         );
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            builder.addAction(new Notification.Action.Builder(
-                    Icon.createWithResource(app, R.drawable.ic_do_not_disturb_alt_ededed_24dp),
-                    app.getString(R.string.action_background_disable),
-                    UpdateJobService.makeIntentToDisable(app))
-                    .build());
+            if (!frequentUpdates) {
+                builder.addAction(new Notification.Action.Builder(
+                        Icon.createWithResource(app, R.drawable.ic_do_not_disturb_alt_ededed_24dp),
+                        app.getString(R.string.action_background_disable),
+                        UpdateJobService.makeIntentToDisable(app))
+                        .build());
+            }
             builder.addAction(new Notification.Action.Builder(
                     Icon.createWithResource(app, R.drawable.ic_notification),
                     app.getString(R.string.action_open_app),
                     UpdateJobService.makeIntentForMainActivity(app, null, Source.HOME))
                     .build());
         } else {
-            builder.addAction(new Notification.Action(R.drawable.ic_do_not_disturb_alt_ededed_24dp, app.getString(R.string.action_background_disable), UpdateJobService.makeIntentToDisable(app)));
+            if (!frequentUpdates) builder.addAction(new Notification.Action(R.drawable.ic_do_not_disturb_alt_ededed_24dp, app.getString(R.string.action_background_disable), UpdateJobService.makeIntentToDisable(app)));
             builder.addAction(new Notification.Action(R.drawable.ic_notification, app.getString(R.string.action_open_app), UpdateJobService.makeIntentForMainActivity(app, null, Source.HOME)));
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setTimeoutAfter(10_000L);
+            if (!BuildConfig.DEBUG) builder.setTimeoutAfter(10_000L);
             NotificationChannel nc = app.getNotificationChannel();
             if (nc != null) builder.setChannelId(nc.getId());
         } else {
@@ -99,7 +116,7 @@ public class BootReceiver extends BroadcastReceiver {
         // note: App.isBackgroundScheduled() would return 0 once the one-off job is scheduled because it does not recur
         JobScheduler js = (JobScheduler) app.getSystemService(Context.JOB_SCHEDULER_SERVICE);
         if (js != null) {
-            int result = js.schedule(UpdateJobService.makeOneOffJobInfo(app));
+            int result = js.schedule(UpdateJobService.makeOneOffJobInfo(app, false));
             if (result != JobScheduler.RESULT_SUCCESS) {
                 logFailed(prefs);
             }
