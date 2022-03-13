@@ -48,8 +48,8 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     public static final String PREF_FREQUENT_UPDATES = "pref_frequent_updates";
     /** default interval in <b>minutes</b> */
     public static final int PREF_FREQUENT_UPDATES_DEFAULT = BuildConfig.DEBUG ? 1 : 10;
-    private static final long INTERVAL_MIN_MS = 60_000L;
     @VisibleForTesting static final int NOTIFICATION_ID = 10_000;
+    private static final long INTERVAL_MIN_MS = 60_000L;
     private static final String TAG = "FrequentUpdatesService";
 
     private final FrequentUpdatesServiceBinder binder;
@@ -101,7 +101,6 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
      * Invokes {@link #startForeground(int, Notification)}.<br>
      * Also registers to {@link Intent#ACTION_TIME_TICK ACTION_TIME_TICK} broadcasts.
      */
-    @SuppressWarnings("ConstantConditions")
     void foregroundStart() {
         if (BuildConfig.DEBUG) Log.i(TAG, "foregroundStart()");
         registerReceiver(this.ticker, new IntentFilter(Intent.ACTION_TIME_TICK));
@@ -112,27 +111,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
             if (BuildConfig.DEBUG) Log.e(TAG, "While checking foreground state: " + e);
         }
         try {
-            int intervalInMinutes = (int)(this.requestedInterval / 60_000L);
-            String msg = getResources().getQuantityString(R.plurals.msg_frequent_updates, intervalInMinutes, intervalInMinutes);
-            this.builder
-                    .setCategory(Notification.CATEGORY_SERVICE)
-                    .setContentTitle(msg)
-                    .setLocalOnly(true)
-                    .setOnlyAlertOnce(true)
-                    .setShowWhen(BuildConfig.DEBUG)
-                    .setSmallIcon(R.drawable.ic_updates)
-            ;
-            //if (BuildConfig.DEBUG) builder.setSubText("\uD83D\uDE80 " + DateFormat.getTimeInstance(DateFormat.MEDIUM).format(new Date(((App)getApplicationContext()).appStart)));
-            Intent contentIntent = new Intent(this, SettingsActivity.class);
-            contentIntent.setAction(SettingsActivity.ACTION_CONFIGURE_BACKGROUND_UPDATES);
-            this.builder.setContentIntent(PendingIntent.getActivity(this, 0, contentIntent, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT));
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                this.builder.setChannelId(((App) getApplicationContext()).getNotificationChannelUpdates().getId());
-            } else {
-                this.builder.setPriority(Notification.PRIORITY_LOW);
-            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                this.builder.setAllowSystemGeneratedContextualActions(false);
                 startForeground(NOTIFICATION_ID, this.builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
             } else {
                 startForeground(NOTIFICATION_ID, this.builder.build());
@@ -194,7 +173,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     public void onCreate() {
         if (BuildConfig.DEBUG) Log.i(TAG, "onCreate()");
         super.onCreate();
-        this.builder = new Notification.Builder(this);
+        setupNotification();
         try {
             startService(new Intent(this, getClass()));
         } catch (IllegalStateException e) {
@@ -222,6 +201,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         if (PREF_FREQUENT_UPDATES.equals(key)) {
             this.requestedInterval = Math.max(INTERVAL_MIN_MS, prefs.getInt(PREF_FREQUENT_UPDATES, PREF_FREQUENT_UPDATES_DEFAULT) * 60_000L);
             if (BuildConfig.DEBUG) Log.i(TAG, "onSharedPreferenceChanged(…, " + key + ") - interval: " + this.requestedInterval);
+            this.enabled = isEnabled(prefs);
             if (this.enabled) updateNotification();
         } else if (PREF_FREQUENT_UPDATES_ENABLED.equals(key)) {
             this.enabled = isEnabled(prefs);
@@ -252,16 +232,51 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     }
 
     /**
+     * Prepares {@link #builder}.
+     */
+    @SuppressWarnings("ConstantConditions")
+    private void setupNotification() {
+        int intervalInMinutes = (int)(this.requestedInterval / 60_000L);
+        String msg = getResources().getQuantityString(R.plurals.msg_frequent_updates, intervalInMinutes, intervalInMinutes);
+        this.builder = new Notification.Builder(this)
+                .setCategory(Notification.CATEGORY_SERVICE)
+                .setContentTitle(msg)
+                .setLocalOnly(true)
+                .setOnlyAlertOnce(true)
+                .setShowWhen(BuildConfig.DEBUG)
+                .setSmallIcon(R.drawable.ic_updates)
+        ;
+        Intent contentIntent = new Intent(this, SettingsActivity.class);
+        contentIntent.setAction(SettingsActivity.ACTION_CONFIGURE_BACKGROUND_UPDATES);
+        this.builder.setContentIntent(PendingIntent.getActivity(this, 0, contentIntent, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            this.builder.setChannelId(((App) getApplicationContext()).getNotificationChannelUpdates().getId());
+        } else {
+            this.builder.setPriority(Notification.PRIORITY_LOW);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            this.builder.setAllowSystemGeneratedContextualActions(false);
+        }
+    }
+
+    /**
      * Updates the notification message.
      */
     private void updateNotification() {
-        NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        String msg = getString(R.string.msg_frequent_updates_next, DateFormat.getTimeInstance(DateFormat.SHORT).format(new java.util.Date(this.latestUpdate + this.requestedInterval)));
-        if (BuildConfig.DEBUG) Log.i(TAG, "updateNotification() - " + msg + " - latest: "
-                + DateFormat.getTimeInstance(DateFormat.SHORT).format(new java.util.Date(this.latestUpdate))
-                + ", interval: " + this.requestedInterval + " ms");
-        this.builder.setContentTitle(msg);
-        nm.notify(NOTIFICATION_ID, this.builder.build());
+        try {
+            NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+            String msg = getString(R.string.msg_frequent_updates_next, DateFormat.getTimeInstance(DateFormat.SHORT).format(new java.util.Date(this.latestUpdate + this.requestedInterval)));
+            if (BuildConfig.DEBUG) Log.i(TAG, "updateNotification() - " + msg + " - latest: "
+                    + DateFormat.getTimeInstance(DateFormat.SHORT).format(new java.util.Date(this.latestUpdate))
+                    + ", interval: " + this.requestedInterval + " ms");
+            // now, this should not happen, but better check instead of having a NPE…
+            if (this.builder == null) setupNotification();
+            //
+            this.builder.setContentTitle(msg);
+            nm.notify(NOTIFICATION_ID, this.builder.build());
+        } catch (RuntimeException e) {
+            if (BuildConfig.DEBUG) Log.e(TAG, "While updating notification: " + e);
+        }
     }
 
     /**
