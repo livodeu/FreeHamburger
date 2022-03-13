@@ -83,6 +83,9 @@ import de.freehamburger.widget.WidgetProvider;
  * If a News is encountered that was previously unbeknownst to us, it is shown in a Notification.<br>
  * The size of the (unpacked, Content-Encoding gzip) json file will be about 400 to 500 kB while the actual amount of data transmitted will be around 70 kB.<br>
  * See <a href="https://medium.com/google-developers/scheduling-jobs-like-a-pro-with-jobscheduler-286ef8510129">here</a>.
+ * <hr>
+ * Note: This class may reveal (not cause!) a memory leak under Android 23;
+ * see <a href="https://github.com/square/leakcanary/issues/2175">Leakcanary issue 2175</a>)
  */
 public class UpdateJobService extends JobService implements Downloader.DownloaderListener, BlobParser.BlobParserListener {
 
