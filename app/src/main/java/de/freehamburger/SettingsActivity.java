@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.job.JobInfo;
 import android.app.usage.UsageStatsManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -879,10 +880,10 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     } catch (Exception ignored) {
                         return false;
                     }
-                    if (interval < SettingsActivity.PollingPreferenceFragment.this.min) {
+                    if (interval < PollingPreferenceFragment.this.min) {
                         Toast.makeText(getActivity(), getResources().getString(R.string.error_poll_minimum_interval, min), Toast.LENGTH_LONG).show();
                     }
-                    return interval >= SettingsActivity.PollingPreferenceFragment.this.min;
+                    return interval >= PollingPreferenceFragment.this.min;
                 });
             }
 
@@ -900,13 +901,13 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     } catch (Exception ignored) {
                         return false;
                     }
-                    if (interval < SettingsActivity.PollingPreferenceFragment.this.min) {
-                        Toast.makeText(getActivity(), getResources().getString(R.string.error_poll_minimum_interval, SettingsActivity.PollingPreferenceFragment.this.min), Toast.LENGTH_LONG).show();
-                    } else if (interval > SettingsActivity.PollingPreferenceFragment.this.maxNightInterval) {
+                    if (interval < PollingPreferenceFragment.this.min) {
+                        Toast.makeText(getActivity(), getResources().getString(R.string.error_poll_minimum_interval, PollingPreferenceFragment.this.min), Toast.LENGTH_LONG).show();
+                    } else if (interval > PollingPreferenceFragment.this.maxNightInterval) {
                         Toast.makeText(getActivity(), getResources()
-                                .getString(R.string.error_poll_maximum_interval, SettingsActivity.PollingPreferenceFragment.this.maxNightInterval), Toast.LENGTH_LONG).show();
+                                .getString(R.string.error_poll_maximum_interval, PollingPreferenceFragment.this.maxNightInterval), Toast.LENGTH_LONG).show();
                     }
-                    return interval >= SettingsActivity.PollingPreferenceFragment.this.min && interval <= SettingsActivity.PollingPreferenceFragment.this.maxNightInterval;
+                    return interval >= PollingPreferenceFragment.this.min && interval <= PollingPreferenceFragment.this.maxNightInterval;
                 });
             }
 
@@ -926,6 +927,17 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 // initialise the visibilities of the 3 interval prefs
                 //noinspection ConstantConditions
                 prefFrequentPoll.getOnPreferenceChangeListener().onPreferenceChange(prefFrequentPoll, prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT));
+            }
+
+            // set min, max and default values for the frequent updates interval
+            if (prefFrequentUpdates != null) {
+                prefFrequentUpdates.setDefaultValue(FrequentUpdatesService.PREF_FREQUENT_UPDATES_DEFAULT);
+                prefFrequentUpdates.setMin(FrequentUpdatesService.PREF_FREQUENT_UPDATES_MIN);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    prefFrequentUpdates.setMax((int) (JobInfo.getMinPeriodMillis() / 60_000L) - 1);
+                } else {
+                    prefFrequentUpdates.setMax(14);
+                }
             }
 
             long statStart = prefs.getLong(UpdateJobService.PREF_STAT_START, 0L);
@@ -957,8 +969,8 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     activity.snackbar = Snackbar.make(v, R.string.label_reset_q, 5_000);
                     activity.snackbar.setAction(android.R.string.ok, v1 -> {
                         UpdateJobService.resetStatistics(activity);
-                        SettingsActivity.PollingPreferenceFragment.this.prefPollStats.setSummary(R.string.label_poll_stats_none);
-                        SettingsActivity.PollingPreferenceFragment.this.prefPollStats.setEnabled(false);
+                        PollingPreferenceFragment.this.prefPollStats.setSummary(R.string.label_poll_stats_none);
+                        PollingPreferenceFragment.this.prefPollStats.setEnabled(false);
                     });
                     activity.snackbar.setActionTextColor(getResources().getColor(R.color.colorAccent));
                     activity.snackbar.show();

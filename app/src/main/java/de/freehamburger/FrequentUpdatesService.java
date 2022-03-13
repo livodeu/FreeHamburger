@@ -46,10 +46,12 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     public static final boolean PREF_FREQUENT_UPDATES_ENABLED_DEFAULT = false;
     /** int: update every x <b>minutes</b> */
     public static final String PREF_FREQUENT_UPDATES = "pref_frequent_updates";
+    /** minimum interval in <b>minutes</b> */
+    public static final int PREF_FREQUENT_UPDATES_MIN = 1;
     /** default interval in <b>minutes</b> */
-    public static final int PREF_FREQUENT_UPDATES_DEFAULT = BuildConfig.DEBUG ? 1 : 10;
+    public static final int PREF_FREQUENT_UPDATES_DEFAULT = BuildConfig.DEBUG ? PREF_FREQUENT_UPDATES_MIN : 10;
     @VisibleForTesting static final int NOTIFICATION_ID = 10_000;
-    private static final long INTERVAL_MIN_MS = 60_000L;
+    private static final long INTERVAL_MIN_MS = PREF_FREQUENT_UPDATES_MIN * 60_000L;
     private static final String TAG = "FrequentUpdatesService";
 
     private final FrequentUpdatesServiceBinder binder;
