@@ -919,7 +919,11 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     if (prefPollIntervalNight != null) prefPollIntervalNight.setVisible(!frequentUpdatesEnabled);
                     if (prefFrequentUpdates != null) prefFrequentUpdates.setVisible(frequentUpdatesEnabled);
                     if (frequentUpdatesEnabled) {
-                        activity.startService(new Intent(activity, FrequentUpdatesService.class));
+                        try {
+                            activity.startService(new Intent(activity, FrequentUpdatesService.class));
+                        } catch (RuntimeException e) {
+                            if (BuildConfig.DEBUG) Log.e(TAG, "While launching FrequentUpdatesService: " + e);
+                        }
                     }
                     // no need to stop FrequentUpdatesService when frequentUpdatesEnabled is false because FrequentUpdatesService does that by itself
                     return true;

@@ -126,8 +126,9 @@ import de.freehamburger.widget.WidgetProvider;
 
 public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLayout.OnRefreshListener {
 
+    public static final String ACTION_SHOW_NEWS = BuildConfig.APPLICATION_ID + ".action.show_news";
+    public static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
     private static final String TAG = "MainActivity";
-
     private static final String STATE_SOURCE = BuildConfig.APPLICATION_ID + ".state.source";
     private static final String STATE_RECENT_SOURCES = BuildConfig.APPLICATION_ID + ".state.recentsources";
     private static final String STATE_LIST_POS = BuildConfig.APPLICATION_ID + ".state.list.pos";
@@ -135,8 +136,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private static final String STATE_MSG_FOUND_SHOWN = BuildConfig.APPLICATION_ID + ".state.msgfoundshown";
     /** contains a News object if the {@link #quickView} should be restored */
     private static final String STATE_QUIKVIEW = BuildConfig.APPLICATION_ID + ".state.quikview";
-    public static final String ACTION_SHOW_NEWS = BuildConfig.APPLICATION_ID + ".action.show_news";
-    public static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
     /** used when the user has picked a font file to import */
     private static final int REQUEST_CODE_FONT_IMPORT = 815;
     /** ConnectException andSocketTimeoutException messages.toLowerCase() usually start with this (the first one with "Failed", the latter one with "failed") */
@@ -164,12 +163,12 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private final Stack<Source> recentSources = new Stack<>();
     private final SparseArray<Source> sourceForMenuItem = new SparseArray<>();
     private final ConnectivityReceiver connectivityReceiver = new ConnectivityReceiver();
+    @VisibleForTesting public DrawerLayout drawerLayout;
     private CoordinatorLayout coordinatorLayout;
     private SwipeRefreshLayout swipeRefreshLayout;
     private FloatingActionButton fab;
     private RecyclerView recyclerView;
     private NewsRecyclerAdapter newsAdapter;
-    @VisibleForTesting public DrawerLayout drawerLayout;
     private ClockView clockView;
     private Filter searchFilter = null;
     /** {@code true} when the message given in {@link R.string#msg_found msg_found} or {@link R.string#msg_not_found msg_not_found} has been shown */
@@ -193,6 +192,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private Map<String, ?> recentPreferences = null;
     /** used to remember the font before SettingsActivity is invoked (separate from recentPreferences because, {@link SharedPreferences#getAll() according to docs}, they must not be modified) */
     private long recentFontTimestamp = 0L;
+    private News newsToLoadWhenServiceConnected = null;
 
     /**
      * Switches to another {@link Source}.<br>
@@ -341,8 +341,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     public Set<View> getVisibleNewsViews() {
         return Util.getVisibleKids(this.recyclerView);
     }
-
-    private News newsToLoadWhenServiceConnected = null;
 
     /**
      * Deals with the Intent that the Acticity has received.
@@ -615,6 +613,21 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     }
 
     /**
+     * Starts {@link FrequentUpdatesService} if {@link FrequentUpdatesService#PREF_FREQUENT_UPDATES_ENABLED} is set to {@code true}.
+     * @param prefs SharedPreferences (optional)
+     */
+    private void launchFrequentUpdatesService(@Nullable SharedPreferences prefs) {
+        if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (!prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT)) return;
+        try {
+            startService(new Intent(this, FrequentUpdatesService.class));
+        } catch (RuntimeException e) {
+            if (BuildConfig.DEBUG) Log.w(TAG, "While launching FrequentUpdatesService: " + e);
+            this.handler.postDelayed(() -> launchFrequentUpdatesService(null), 5_000L);
+        }
+    }
+
+    /**
      * Displays the News' details in a {@link NewsActivity}.
      * @param news News
      */
@@ -822,6 +835,11 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
 
         super.onBackPressed();
+    }
+
+    @Override
+    void onColumnCountChanged(SharedPreferences prefs) {
+        selectLayoutManager(prefs);
     }
 
     /** {@inheritDoc} <br><br>
@@ -1598,9 +1616,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     protected void onResume() {
         super.onResume();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if (prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT)) {
-            startService(new Intent(this, FrequentUpdatesService.class));
-        }
+        launchFrequentUpdatesService(prefs);
         boolean hasTemporaryFilter = this.newsAdapter.setFilters(TextFilter.createTextFiltersFromPreferences(this));
         this.clockView.setTint(hasTemporaryFilter ? Util.getColor(this, R.color.colorFilter) : Color.TRANSPARENT);
         // if the adapter is already filled, we are able to show the intro now (playIntro will return quickly if the adapter is empty)
@@ -2004,11 +2020,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (old instanceof GridLayoutManager && ((GridLayoutManager)old).getSpanCount() == numColumns) return;
         GridLayoutManager glm = new GridLayoutManager(this, numColumns);
         this.recyclerView.setLayoutManager(glm);
-    }
-
-    @Override
-    void onColumnCountChanged(SharedPreferences prefs) {
-        selectLayoutManager(prefs);
     }
 
     /**
