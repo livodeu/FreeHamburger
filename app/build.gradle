@@ -101,10 +101,10 @@ dependencies {
     //noinspection GradleDependency
     implementation 'com.squareup.picasso:picasso:2.8'
     // https://github.com/google/ExoPlayer
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.17.0'
-    implementation 'com.google.android.exoplayer:exoplayer-ui:2.17.0'
-    implementation 'com.google.android.exoplayer:exoplayer-hls:2.17.0'
-    implementation 'com.google.android.exoplayer:extension-okhttp:2.17.0'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.17.1'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.17.1'
+    implementation 'com.google.android.exoplayer:exoplayer-hls:2.17.1'
+    implementation 'com.google.android.exoplayer:extension-okhttp:2.17.1'
 
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.8.1'
 
