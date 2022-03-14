@@ -145,8 +145,11 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private static final BitmapFactory.Options BITMAPFACTORY_OPTIONS = new BitmapFactory.Options();
     /** to be added to values stored in {@link #PREF_STAT_ALL}<br><em>(DEBUG versions only!)</em> */
     private static final long ADD_TO_PREF_STAT_ALL_VALUE = 1_500_000_000_000L;
-    private static final String NOTIFICATION_GROUP_KEY = "de.freehamburger.bgn";
-    /** contains News' external ids plus timestamps for News that have been shown in a notification */
+    /** remember that a particular News item has been shown in a notification for this period of time - if its {@link News#getExternalId() external id} should be reused after that, the News will be displayed again */
+    private static final int REMEMBER_NOTIFICATIONS_FOR_THIS_MANY_HOURS = 48;
+    /** goes into {@link Notification.Builder#setGroup(String)} */
+    private static final String NOTIFICATION_GROUP_KEY = BuildConfig.APPLICATION_ID + ".bgn";
+    /** contains News' external ids plus timestamps for News that have been shown in a notification - obsolete entries will be discarded in {@link #previouslyShownNewsLoad()} */
     private static final String NOTIFIED_NEWS_FILE = "notified.txt";
     /** separates a News' external id from a timestamp in {@link #NOTIFIED_NEWS_FILE} */
     private static final char NOTIFIED_NEWS_FILE_SEP = '@';
@@ -163,9 +166,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private final Object notifiedLock = new Object();
     /** key: News' {@link News#getExternalId() external id}, value: timestamp of notification */
     private final Map<String, Long> previouslyShownNews = Collections.synchronizedMap(new HashMap<>());
-    /** {@code true} if the list of previously shown News has been correctly loaded */
-    private volatile boolean previouslyShownNewsLoaded = false;
-    /** {@code true} while the list of previously shown News has not been modified */
+    /** {@code true} while the list of previously shown News has not been modified, {@code false} if the list needs to be stored */
     private volatile boolean previouslyShownNewsStored = true;
     private ThreadPoolExecutor loaderExecutor;
     private JobParameters params;
@@ -650,7 +651,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
 
         if (newsToDisplay.getExternalId() != null) {
             if (this.previouslyShownNews.containsKey(newsToDisplay.getExternalId())) {
-                if (BuildConfig.DEBUG) Log.i(TAG + id, "As News \"" + newsToDisplay.getTitle() + "\" has already been shown, it will be skipped now.");
+                if (BuildConfig.DEBUG) Log.i(TAG + id, "As News \"" + newsToDisplay.getExternalId() + "\" has already been shown, it will be skipped now.");
                 return;
             }
             this.previouslyShownNews.put(newsToDisplay.getExternalId(), System.currentTimeMillis());
@@ -663,7 +664,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             TeaserImage.MeasuredImage mi = teaserImage.getBestImageForWidth(Util.getDisplaySize(this).x, News.NEWS_TYPE_VIDEO.equals(newsToDisplay.getType()));
             String imageUrl = mi != null && mi.url != null ? mi.url : null;
             if (imageUrl != null && Util.isNetworkAvailable(app)) {
-                if (BuildConfig.DEBUG) Log.i(TAG + id, "News " + newsToDisplay + " does have an image");
                 try {
                     final News finalCopy = newsToDisplay;
                     final File temp = File.createTempFile("temp", ".jpg");
@@ -678,7 +678,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 }
             }
         }
-        if (BuildConfig.DEBUG) Log.w(TAG + id, "News " + newsToDisplay + " does not have an image");
         notify(newsToDisplay, blob.getSource(), null);
     }
 
@@ -796,7 +795,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      */
     @SuppressLint("NewApi")
     private void notify(@NonNull final News news, @NonNull final Source source, @Nullable Bitmap largeIcon) {
-        if (BuildConfig.DEBUG) Log.i(TAG + id, "notify(" + news + ", " + source + ", " + largeIcon + ")");
+        if (BuildConfig.DEBUG) Log.i(TAG + id, "notify(\"" + news.getTitle()  + "\" (" + news.getExternalId() + "), " + source + ", …)");
         App app = (App) getApplicationContext();
         NotificationManager nm = (NotificationManager) app.getSystemService(NOTIFICATION_SERVICE);
         if (nm == null) return;
@@ -885,7 +884,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         }
 
         if (when > 0L) {
-            builder.setWhen(when).setShowWhen(true);//.setSortKey(String.valueOf(when))
+            builder.setWhen(when).setShowWhen(true);
         }
 
         NotificationChannel nc = null;
@@ -954,7 +953,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     @Override
     public void onDestroy() {
         if (BuildConfig.DEBUG) {
-            if (previouslyShownNewsLoaded && !previouslyShownNewsStored && id > 1) Log.w(TAG + id, "onDestroy(): previously shown news not stored!");
+            if (!previouslyShownNewsStored && id > 1) Log.w(TAG + id, "onDestroy(): previously shown news not stored!");
         }
 
         if (this.loaderExecutor != null) {
@@ -990,7 +989,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     /** {@inheritDoc} */
     @Override
     public boolean onStartJob(JobParameters params) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "onStartJob(…)");
+        if (BuildConfig.DEBUG) Log.i(TAG + id, "onStartJob(…)");
         this.params = params;
         App app = (App) getApplicationContext();
         // determine whether this is the periodic job or a one-time job
@@ -1098,11 +1097,13 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      */
     private void previouslyShownNewsLoad() {
         File file = new File(getFilesDir(), NOTIFIED_NEWS_FILE);
-        if (!file.isFile()) return;
+        if (!file.isFile()) {
+            return;
+        }
         synchronized (this.notifiedLock) {
             final long now = System.currentTimeMillis();
             // keep all entries that are younger than 48 hours
-            final long maxAge = 48 * 3_600_000L;
+            final long maxAge = REMEMBER_NOTIFICATIONS_FOR_THIS_MANY_HOURS * 3_600_000L;
             File tmp = null;
             BufferedReader reader = null;
             BufferedWriter writer = null;
@@ -1139,7 +1140,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                     ok = tmp != null && tmp.renameTo(file);
                     if (!ok) throw new RuntimeException("Failed to rename " + tmp + " to " + file);
                 }
-                this.previouslyShownNewsLoaded = true;
             } catch (Exception e) {
                 if (BuildConfig.DEBUG) Log.e(TAG + id, "While loading/cleaning " + file + ": " + e);
             } finally {
@@ -1154,7 +1154,9 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      */
     @AnyThread
     private void previouslyShownNewsUpdate() {
-        if (!this.previouslyShownNewsLoaded || this.previouslyShownNewsStored) return;
+        if (this.previouslyShownNewsStored) {
+            return;
+        }
         synchronized (this.notifiedLock) {
             BufferedWriter writer = null;
             File file = new File(getFilesDir(), NOTIFIED_NEWS_FILE);

@@ -95,7 +95,11 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
             Log.i(TAG, "foregroundEnd()");
             Toast.makeText(this, "Stopping frequent updates", Toast.LENGTH_LONG).show();
         }
-        unregisterReceiver(this.ticker);
+        try {
+            unregisterReceiver(this.ticker);
+        } catch (Exception e) {
+            if (BuildConfig.DEBUG) Log.e(TAG, "While unregistering: " + e);
+        }
         stopForeground(true);
     }
 
@@ -192,7 +196,11 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     @Override
     public void onDestroy() {
         if (BuildConfig.DEBUG) Log.w(TAG, "onDestroy()");
-        unregisterReceiver(this.ticker);
+        try {
+            unregisterReceiver(this.ticker);
+        } catch (Exception e) {
+            if (BuildConfig.DEBUG) Log.e(TAG, "While unregistering: " + e);
+        }
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
         super.onDestroy();
     }
