@@ -47,3 +47,13 @@ _2022-02_
     * material 1.4.0 → 1.5.0 [release](https://github.com/material-components/material-components-android/releases/tag/1.5.0)
     * okhttp 4.9.2 → 4.9.3 [change log](https://github.com/square/okhttp/blob/master/CHANGELOG.md)
     * preference 1.1.1 → 1.2.0 [change log](https://developer.android.com/jetpack/androidx/releases/preference?hl=en#1.2.0)
+
+## 1.3
+
+_2022-0x_
+
+* Changed: Theme based on Material3 flavour
+* New: App widgets are now available
+* New: News can be updated more frequently  
+* Upgrade: A library has been updated:
+  * exoplayer 2.16.1 → 2.17.0 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)

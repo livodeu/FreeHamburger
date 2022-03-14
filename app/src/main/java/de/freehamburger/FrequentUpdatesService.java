@@ -175,7 +175,6 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     public void onCreate() {
         if (BuildConfig.DEBUG) Log.i(TAG, "onCreate()");
         super.onCreate();
-        setupNotification();
         try {
             startService(new Intent(this, getClass()));
         } catch (IllegalStateException e) {
@@ -184,6 +183,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         this.enabled = isEnabled(prefs);
         this.requestedInterval = Math.max(INTERVAL_MIN_MS, prefs.getInt(PREF_FREQUENT_UPDATES, PREF_FREQUENT_UPDATES_DEFAULT) * 60_000L);
+        setupNotification();
         prefs.registerOnSharedPreferenceChangeListener(this);
         this.ticker = new Ticker();
     }
