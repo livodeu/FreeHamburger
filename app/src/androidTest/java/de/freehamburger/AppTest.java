@@ -535,6 +535,24 @@ public class AppTest {
     }
 
     /**
+     * Tests that {@link BackgroundTile} is referred to in the manifest.
+     */
+    @Test
+    @SmallTest
+    public void testTiles() {
+        PackageManager pm = ctx.getPackageManager();
+        try {
+            ServiceInfo serviceInfo = pm.getServiceInfo(new ComponentName(ctx, BackgroundTile.class), 0);
+            assertNotNull(serviceInfo);
+            assertTrue(serviceInfo.enabled);
+            assertTrue(serviceInfo.exported);
+            assertEquals(Manifest.permission.BIND_QUICK_SETTINGS_TILE, serviceInfo.permission);
+        } catch (PackageManager.NameNotFoundException e) {
+            fail(e.toString());
+        }
+    }
+
+    /**
      * Tests {@link TtfInfo}. Relies on the presence of "DroidSans.ttf" in "/system/fonts".
      */
     @Test
