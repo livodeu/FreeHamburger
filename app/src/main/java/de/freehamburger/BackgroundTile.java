@@ -11,6 +11,8 @@ import androidx.preference.PreferenceManager;
 
 /**
  * Lets the user toggle background updates.
+ * Note: there seems to be a memory leak in the super class.<br>
+ * See <a href="https://github.com/square/leakcanary/issues/2207">https://github.com/square/leakcanary/issues/2207</a>.
  */
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class BackgroundTile extends TileService implements SharedPreferences.OnSharedPreferenceChangeListener {
