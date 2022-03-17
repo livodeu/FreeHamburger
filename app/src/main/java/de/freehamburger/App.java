@@ -3,6 +3,7 @@ package de.freehamburger;
 import android.Manifest;
 import android.app.Activity;
 import android.app.Application;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.job.JobInfo;
@@ -10,7 +11,6 @@ import android.app.job.JobScheduler;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.RingtoneManager;
 import android.net.TrafficStats;
@@ -52,6 +52,7 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import de.freehamburger.model.Source;
+import de.freehamburger.prefs.PrefsHelper;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
@@ -145,9 +146,10 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** boolean */
     public static final String PREF_POLL_OVER_MOBILE = "pref_poll_over_mobile";
     public static final boolean PREF_POLL_OVER_MOBILE_DEFAULT = false;
-    /** String: polling interval in minutes */
+    /** <b>String</b>: polling interval in minutes */
     public static final String PREF_POLL_INTERVAL = "pref_poll_interval";
-    /** String: polling interval during the night in minutes */
+    public static final int PREF_POLL_INTERVAL_DEFAULT = 15;
+    /** <b>String</b>: polling interval during the night in minutes */
     public static final String PREF_POLL_INTERVAL_NIGHT = "pref_poll_interval_night";
     /** long: set to the current timestamp if scheduling the background job had failed */
     public static final String PREF_POLL_FAILED = "pref_poll_failed";
@@ -678,14 +680,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 this.notificationChannelUpdates.setShowBadge(false);
                 nm.createNotificationChannel(this.notificationChannelUpdates);
 
-                AudioAttributes aa = new AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).setUsage(AudioAttributes.USAGE_NOTIFICATION).build();
                 Uri ringtone = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_NOTIFICATION);
                 this.notificationChannelHiPri = new NotificationChannel(channelHiPri, channelHiPri, NotificationManager.IMPORTANCE_HIGH);
                 this.notificationChannelHiPri.setDescription(getString(R.string.label_notification_channel_desc_hipri));
                 this.notificationChannelHiPri.enableLights(true);
                 this.notificationChannelHiPri.setLightColor(getResources().getColor(R.color.colorAccent, getTheme()));
                 this.notificationChannelHiPri.enableVibration(true);
-                this.notificationChannelHiPri.setSound(ringtone, aa);
+                this.notificationChannelHiPri.setSound(ringtone, Notification.AUDIO_ATTRIBUTES_DEFAULT);
                 this.notificationChannelHiPri.setShowBadge(false);
                 nm.createNotificationChannel(this.notificationChannelHiPri);
             }
@@ -718,20 +719,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     /** {@inheritDoc} */
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-        if (PREF_POLL.equals(key)) {
-            boolean on = prefs.getBoolean(key, PREF_POLL_DEFAULT);
-            if (on) {
+    public void onSharedPreferenceChanged(final SharedPreferences prefs, final String key) {
+        if (PREF_POLL.equals(key) || PREF_POLL_INTERVAL.equals(key) || PREF_POLL_INTERVAL_NIGHT.equals(key)) {
+            boolean on = prefs.getBoolean(PREF_POLL, PREF_POLL_DEFAULT);
+            if (on && !FrequentUpdatesService.shouldBeEnabled(this, prefs)) {
                 scheduleStart();
             } else {
                 scheduleStop();
-            }
-        } else if (FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED.equals(key)) {
-            boolean on = prefs.getBoolean(key, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT);
-            if (on) {
-                scheduleStop();
-            } else {
-                if (prefs.getBoolean(PREF_POLL, PREF_POLL_DEFAULT)) scheduleStart();
             }
         } else if (PREF_PROXY_SERVER.equals(key) || PREF_PROXY_TYPE.equals(key)) {
             // OkHttpClient needs to be rebuilt next time
@@ -756,9 +750,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @RequiresPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED)
     @AnyThread
     void scheduleStart() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if (prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT)) {
-            if (BuildConfig.DEBUG) Log.i(TAG, "Skipping periodic background job because frequent updates are enabled");
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (PrefsHelper.getStringAsInt(prefs, UpdateJobService.hasNightFallenOverBerlin() ? PREF_POLL_INTERVAL_NIGHT : PREF_POLL_INTERVAL, PREF_POLL_INTERVAL_DEFAULT) < UpdateJobService.getMinimumIntervalInMinutes()) {
+            if (BuildConfig.DEBUG) Log.i(TAG, "Skipping periodic background job because the interval is less than 15 minutes");
             return;
         }
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
@@ -774,8 +768,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
             ed.putLong(PREF_POLL_FAILED, System.currentTimeMillis());
             ed.apply();
         } else {
-            long failedBefore = prefs.getLong(PREF_POLL_FAILED, 0L);
-            if (failedBefore != 0L) {
+            if (prefs.getLong(PREF_POLL_FAILED, 0L) != 0L) {
                 SharedPreferences.Editor ed = prefs.edit();
                 ed.remove(PREF_POLL_FAILED);
                 ed.apply();
@@ -792,7 +785,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     void scheduleStop() {
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
         if (js == null) return;
-        List<JobInfo> pending = js.getAllPendingJobs();
+        final List<JobInfo> pending = js.getAllPendingJobs();
         for (JobInfo job : pending) {
             int id = job.getId();
             if (id == UpdateJobService.JOB_ID) {

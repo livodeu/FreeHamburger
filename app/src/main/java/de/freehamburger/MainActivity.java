@@ -548,7 +548,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             in = getContentResolver().openInputStream(uri);
             if (in == null) {
                 if (showMsgUponFail) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
                 }
                 return null;
             }
@@ -564,7 +564,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             if (TextUtils.isEmpty(fontName)) {
                 if (BuildConfig.DEBUG) Log.w(TAG, "The data apparently does not belong to a ttf file!");
                 if (showMsgUponFail) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
                 }
                 Util.deleteFile(tempFile);
                 return null;
@@ -574,7 +574,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             if (!tempFile.renameTo(fontFile)) {
                 if (BuildConfig.DEBUG) Log.e(TAG, "Could not rename temp file to \"" + fontFile.getName() + "\"!");
                 if (showMsgUponFail) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
                 }
                 Util.deleteFile(tempFile);
                 return null;
@@ -583,14 +583,14 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             if (tf != null) {
                 Snackbar sb;
                 if (!TextUtils.isEmpty(fontName)) {
-                    sb = Snackbar.make(MainActivity.this.coordinatorLayout, getString(R.string.msg_font_import_done_ext, fontName), Snackbar.LENGTH_LONG);
+                    sb = Snackbar.make(this.coordinatorLayout, getString(R.string.msg_font_import_done_ext, fontName), Snackbar.LENGTH_LONG);
                 } else {
-                    sb = Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_done, Snackbar.LENGTH_LONG);
+                    sb = Snackbar.make(this.coordinatorLayout, R.string.msg_font_import_done, Snackbar.LENGTH_LONG);
                 }
                 sb.show();
             } else {
                 if (showMsgUponFail) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
                 }
                 Util.deleteFile(fontFile);
             }
@@ -601,9 +601,9 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             if (showMsgUponFail) {
                 //noinspection ConstantConditions
                 if (msg.contains("EACCES")) {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.error_permission_denied, Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(this.coordinatorLayout, R.string.error_permission_denied, Snackbar.LENGTH_LONG).show();
                 } else {
-                    Snackbar.make(MainActivity.this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(this.coordinatorLayout, R.string.msg_font_import_failed, Snackbar.LENGTH_LONG).show();
                 }
             }
         } finally {
@@ -613,12 +613,12 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     }
 
     /**
-     * Starts {@link FrequentUpdatesService} if {@link FrequentUpdatesService#PREF_FREQUENT_UPDATES_ENABLED} is set to {@code true}.
+     * Starts {@link FrequentUpdatesService} if the polling interval is less than 15 minutes.
      * @param prefs SharedPreferences (optional)
      */
     private void launchFrequentUpdatesService(@Nullable SharedPreferences prefs) {
         if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if (!prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT)) return;
+        if (!FrequentUpdatesService.shouldBeEnabled(this, prefs)) return;
         try {
             startService(new Intent(this, FrequentUpdatesService.class));
         } catch (RuntimeException e) {

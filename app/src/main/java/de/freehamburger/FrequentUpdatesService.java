@@ -1,5 +1,6 @@
 package de.freehamburger;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -17,6 +18,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.widget.Toast;
 
@@ -31,8 +33,11 @@ import java.io.PrintWriter;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.text.DateFormat;
+import java.text.NumberFormat;
+import java.util.Date;
 import java.util.List;
 
+import de.freehamburger.prefs.PrefsHelper;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
 
@@ -41,27 +46,24 @@ import de.freehamburger.util.Util;
  */
 public class FrequentUpdatesService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-    /** boolean: enable frequent (&lt; 15 minutes) updates */
-    public static final String PREF_FREQUENT_UPDATES_ENABLED = "pref_frequent_updates_enabled";
-    public static final boolean PREF_FREQUENT_UPDATES_ENABLED_DEFAULT = false;
-    /** int: update every x <b>minutes</b> */
-    public static final String PREF_FREQUENT_UPDATES = "pref_frequent_updates";
-    /** minimum interval in <b>minutes</b> */
-    public static final int PREF_FREQUENT_UPDATES_MIN = 1;
-    /** default interval in <b>minutes</b> */
-    public static final int PREF_FREQUENT_UPDATES_DEFAULT = BuildConfig.DEBUG ? PREF_FREQUENT_UPDATES_MIN : 10;
     @VisibleForTesting static final int NOTIFICATION_ID = 10_000;
-    private static final long INTERVAL_MIN_MS = PREF_FREQUENT_UPDATES_MIN * 60_000L;
+    private static final long INTERVAL_MIN_MS = App.PREF_POLL_INTERVAL_DEFAULT * 60_000L;
     private static final String TAG = "FrequentUpdatesService";
+    /** 0x1f31e: sun with face */
+    private static final String SYMBOL_DAY = "\uD83C\uDF1E";
+    /** 0x1f31b: 1st quarter half moon */
+    private static final String SYMBOL_NIGHT = "\uD83C\uDF1B";
 
     private final FrequentUpdatesServiceBinder binder;
     @VisibleForTesting Ticker ticker;
     private Notification.Builder builder;
-    private boolean enabled = PREF_FREQUENT_UPDATES_ENABLED_DEFAULT;
+    private boolean enabled;
+    /** flag indicating whether the daytime or nighttime interval should be applied */
+    private boolean night;
     private long latestUpdate = 0L;
     /** requested interval in milliseconds */
     @IntRange(from = INTERVAL_MIN_MS)
-    private long requestedInterval = Math.max(INTERVAL_MIN_MS, PREF_FREQUENT_UPDATES_DEFAULT * 60_000L);
+    private long requestedInterval = Math.max(INTERVAL_MIN_MS, App.PREF_POLL_INTERVAL_DEFAULT * 60_000L);
 
     /**
      * Constructor.
@@ -69,6 +71,39 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     public FrequentUpdatesService() {
         super();
         this.binder = new FrequentUpdatesServiceBinder(this);
+    }
+
+    /**
+     * Starts this service after a given delay, provided that the conditions (as in {@link #shouldBeEnabled(Context, SharedPreferences)}) are met.
+     * @param activity Activity
+     * @param prefs SharedPreferences
+     * @param handler Handler
+     * @param delay delay in ms
+     */
+    public static void possiblyStart(@NonNull final Activity activity, @NonNull final SharedPreferences prefs, @NonNull Handler handler, long delay) {
+        handler.postDelayed(() -> {
+            if (shouldBeEnabled(activity, prefs)) {
+                try {
+                    activity.startService(new Intent(activity, FrequentUpdatesService.class));
+                } catch (Exception e) {
+                    if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+                }
+            }
+        }, delay);
+    }
+
+    /**
+     * Determines whether this Service should run (in the foreground).
+     * @param prefs SharedPreferences
+     * @return true / false
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    static boolean shouldBeEnabled(Context ctx, @NonNull final SharedPreferences prefs) {
+        boolean should = prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)
+                && (!Util.isNetworkMobile(ctx) || prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, App.PREF_POLL_OVER_MOBILE_DEFAULT))
+                && PrefsHelper.getStringAsInt(prefs, UpdateJobService.hasNightFallenOverBerlin() ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT) < UpdateJobService.getMinimumIntervalInMinutes();
+        if (BuildConfig.DEBUG) Log.i(TAG, "shouldBeEnabled() returns " + should + " (from " + new Throwable().getStackTrace()[1] + ")");
+        return should;
     }
 
     /** {@inheritDoc} */
@@ -108,11 +143,14 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
      * Also registers to {@link Intent#ACTION_TIME_TICK ACTION_TIME_TICK} broadcasts.
      */
     void foregroundStart() {
-        if (BuildConfig.DEBUG) Log.i(TAG, "foregroundStart()");
+        if (BuildConfig.DEBUG) Log.i(TAG, "foregroundStart() - from " + new Throwable().getStackTrace()[1]);
         registerReceiver(this.ticker, new IntentFilter(Intent.ACTION_TIME_TICK));
         // skipping the rest if getForegroundServiceType() returns something other than ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE does not work
         try {
-            if (isForeground()) return;
+            if (isForeground()) {
+                if (BuildConfig.DEBUG) Log.i(TAG, "foregroundStart(): Already in foreground.");
+                return;
+            }
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, "While checking foreground state: " + e);
         }
@@ -129,18 +167,6 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
                 Toast.makeText(this, "Foreground: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
         }
-    }
-
-    /**
-     * Determines whether this Service should run (in the foreground).
-     * @param prefs SharedPreferences
-     * @return true / false
-     */
-    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-    boolean isEnabled(@NonNull SharedPreferences prefs) {
-        return prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)
-                && (!Util.isNetworkMobile(this) || prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, App.PREF_POLL_OVER_MOBILE_DEFAULT))
-                && prefs.getBoolean(PREF_FREQUENT_UPDATES_ENABLED, PREF_FREQUENT_UPDATES_ENABLED_DEFAULT);
     }
 
     /**
@@ -185,8 +211,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
             if (BuildConfig.DEBUG) Log.w(TAG, "onCreate() - startService(): " + e);
         }
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        this.enabled = isEnabled(prefs);
-        this.requestedInterval = Math.max(INTERVAL_MIN_MS, prefs.getInt(PREF_FREQUENT_UPDATES, PREF_FREQUENT_UPDATES_DEFAULT) * 60_000L);
+        updateState(prefs);
         setupNotification();
         prefs.registerOnSharedPreferenceChangeListener(this);
         this.ticker = new Ticker();
@@ -208,28 +233,10 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     /** {@inheritDoc} */
     @Override
     public void onSharedPreferenceChanged(final SharedPreferences prefs, final String key) {
-        if (PREF_FREQUENT_UPDATES.equals(key)) {
-            this.requestedInterval = Math.max(INTERVAL_MIN_MS, prefs.getInt(PREF_FREQUENT_UPDATES, PREF_FREQUENT_UPDATES_DEFAULT) * 60_000L);
-            if (BuildConfig.DEBUG) Log.i(TAG, "onSharedPreferenceChanged(…, " + key + ") - interval: " + this.requestedInterval);
-            this.enabled = isEnabled(prefs);
-            if (this.enabled) updateNotification();
-        } else if (PREF_FREQUENT_UPDATES_ENABLED.equals(key)) {
-            this.enabled = isEnabled(prefs);
-            if (BuildConfig.DEBUG) Log.i(TAG, "onSharedPreferenceChanged(…, " + key + ") - enabled: " + this.enabled);
+        if (App.PREF_POLL.equals(key) || App.PREF_POLL_INTERVAL.equals(key) || App.PREF_POLL_INTERVAL_NIGHT.equals(key) || App.PREF_POLL_OVER_MOBILE.equals(key)) {
+            updateState(prefs);
+            if (BuildConfig.DEBUG) Log.i(TAG, "onSharedPreferenceChanged(…, " + key + ") - enabled: " + enabled + ", req. interval: " + requestedInterval);
             if (this.enabled) foregroundStart(); else foregroundEnd();
-        } else if (App.PREF_POLL.equals(key)) {
-            this.enabled = isEnabled(prefs);
-            boolean poll = prefs.getBoolean(key, App.PREF_POLL_DEFAULT);
-            if (BuildConfig.DEBUG) Log.i(TAG, "onSharedPreferenceChanged(…, " + key + ") - poll: " + poll);
-            if (poll) foregroundStart(); else foregroundEnd();
-        } else if (App.PREF_POLL_OVER_MOBILE.equals(key)) {
-            this.enabled = isEnabled(prefs);
-            if (Util.isNetworkMobile(this)) {
-                boolean poll = prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT);
-                boolean pollOverMobile = prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, App.PREF_POLL_OVER_MOBILE_DEFAULT);
-                if (BuildConfig.DEBUG) Log.i(TAG, "onSharedPreferenceChanged(…, " + key + ") - pollOverMobile: " + pollOverMobile);
-                if (poll && pollOverMobile) foregroundStart(); else foregroundEnd();
-            }
         }
     }
 
@@ -247,14 +254,14 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     @SuppressWarnings("ConstantConditions")
     private void setupNotification() {
         int intervalInMinutes = (int)(this.requestedInterval / 60_000L);
-        String msg = getResources().getQuantityString(R.plurals.msg_frequent_updates, intervalInMinutes, intervalInMinutes);
         this.builder = new Notification.Builder(this)
                 .setCategory(Notification.CATEGORY_SERVICE)
-                .setContentTitle(msg)
+                .setContentTitle(getResources().getQuantityString(R.plurals.msg_frequent_updates, intervalInMinutes, intervalInMinutes))
                 .setLocalOnly(true)
                 .setOnlyAlertOnce(true)
                 .setShowWhen(BuildConfig.DEBUG)
                 .setSmallIcon(R.drawable.ic_updates)
+                .setSubText(this.night ? SYMBOL_NIGHT : SYMBOL_DAY)
         ;
         Intent contentIntent = new Intent(this, SettingsActivity.class);
         contentIntent.setAction(SettingsActivity.ACTION_CONFIGURE_BACKGROUND_UPDATES);
@@ -267,6 +274,9 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             this.builder.setAllowSystemGeneratedContextualActions(false);
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            this.builder.setFlag(Notification.FLAG_FOREGROUND_SERVICE, true);
+        }
     }
 
     /**
@@ -275,18 +285,29 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     private void updateNotification() {
         try {
             NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-            String msg = getString(R.string.msg_frequent_updates_next, DateFormat.getTimeInstance(DateFormat.SHORT).format(new java.util.Date(this.latestUpdate + this.requestedInterval)));
+            String msg = getString(R.string.msg_frequent_updates_next, DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date(this.latestUpdate + this.requestedInterval)));
             if (BuildConfig.DEBUG) Log.i(TAG, "updateNotification() - " + msg + " - latest: "
-                    + DateFormat.getTimeInstance(DateFormat.SHORT).format(new java.util.Date(this.latestUpdate))
-                    + ", interval: " + this.requestedInterval + " ms");
+                    + DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date(this.latestUpdate))
+                    + ", interval: " + NumberFormat.getIntegerInstance().format(this.requestedInterval) + " ms, night: " + this.night);
             // now, this should not happen, but better check instead of having a NPE…
             if (this.builder == null) setupNotification();
-            //
-            this.builder.setContentTitle(msg);
+            // 0x1f31b: 1st quarter half moon, 0x1f31e: sun with face
+            this.builder.setContentTitle(msg).setSubText(this.night ? SYMBOL_NIGHT : SYMBOL_DAY);
             nm.notify(NOTIFICATION_ID, this.builder.build());
         } catch (RuntimeException e) {
             if (BuildConfig.DEBUG) Log.e(TAG, "While updating notification: " + e);
         }
+    }
+
+    /**
+     * Updates the internal state of this service.
+     * @param prefs SharedPreferences
+     */
+    private void updateState(@Nullable SharedPreferences prefs) {
+        if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        this.night = UpdateJobService.hasNightFallenOverBerlin();
+        this.enabled = shouldBeEnabled(this, prefs);
+        this.requestedInterval = PrefsHelper.getStringAsInt(prefs, this.night ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT) * 60_000L;
     }
 
     /**
@@ -337,6 +358,8 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
                 if (BuildConfig.DEBUG) Log.e(TAG, "TIME_TICK - no JobScheduler!");
                 return;
             }
+            // refresh the state because we might have moved from day to night or vice versa
+            updateState(null);
             if (!FrequentUpdatesService.this.enabled) {
                 if (BuildConfig.DEBUG) Log.w(TAG, "TIME_TICK - disabled");
                 return;

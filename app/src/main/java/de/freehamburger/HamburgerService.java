@@ -302,6 +302,15 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         super.onCreate();
         buildPicasso();
         // make sure this service is started; otherwise each activity would create its own instance
+        start(1);
+        PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).registerOnSharedPreferenceChangeListener(this);
+    }
+
+    /**
+     * Invokes {@link #startService(Intent)}
+     * @param attempt attempt counter
+     */
+    private void start(int attempt) {
         try {
             startService(new Intent(this, getClass()));
         } catch (IllegalStateException e) {
@@ -310,10 +319,14 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
              * java.lang.IllegalStateException:
              * Not allowed to start service Intent { cmp=de.freehamburger.debug/de.freehamburger.HamburgerService }: app is in background uid UidRecord{...}
              */
+            if (attempt > 5) {
+                if (BuildConfig.DEBUG) Log.e(TAG, "onCreate() - startService(): " + e);
+                System.exit(1);
+                return;
+            }
             if (BuildConfig.DEBUG) Log.w(TAG, "onCreate() - startService(): " + e, e, 4);
-            new Handler().postDelayed(() -> startService(new Intent(this, getClass())), 5000);
+            new Handler().postDelayed(() -> start(attempt + 1), 5_000L);
         }
-        PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).registerOnSharedPreferenceChangeListener(this);
     }
 
     /** {@inheritDoc} */

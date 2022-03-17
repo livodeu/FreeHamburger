@@ -17,6 +17,7 @@ import android.preference.PreferenceManager;
 import androidx.annotation.NonNull;
 
 import de.freehamburger.model.Source;
+import de.freehamburger.prefs.PrefsHelper;
 import de.freehamburger.util.Log;
 
 /**
@@ -40,12 +41,13 @@ public class BootReceiver extends BroadcastReceiver {
         App app = (App)ctx.getApplicationContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
         if (!prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)) return;
-        boolean frequentUpdates = prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT);
+        int intervalMinutes = PrefsHelper.getStringAsInt(prefs, UpdateJobService.hasNightFallenOverBerlin() ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT);
+        boolean frequentUpdates = FrequentUpdatesService.shouldBeEnabled(ctx, prefs);//intervalMinutes < UpdateJobService.getMinimumIntervalInMinutes();
 
-        long scheduled;
+        long intervalMs;
         if (frequentUpdates) {
             // According to https://developer.android.com/guide/components/foreground-services#background-start-restriction-exemptions, a foreground service may be started here
-            scheduled = prefs.getInt(FrequentUpdatesService.PREF_FREQUENT_UPDATES, FrequentUpdatesService.PREF_FREQUENT_UPDATES_DEFAULT) * 60_000L;
+            intervalMs = intervalMinutes * 60_000L;
             Intent intentFrequentUpdates = new Intent(ctx, FrequentUpdatesService.class);
             try {
                 ctx.startService(intentFrequentUpdates);
@@ -53,11 +55,11 @@ public class BootReceiver extends BroadcastReceiver {
                 if (BuildConfig.DEBUG) Log.e(getClass().getSimpleName(), "While starting " + intentFrequentUpdates + ": " + e);
             }
         } else {
-            scheduled = app.isBackgroundJobScheduled();
-            if (scheduled == 0L) {
+            intervalMs = app.isBackgroundJobScheduled();
+            if (intervalMs == 0L) {
                 app.scheduleStart();
-                scheduled = app.isBackgroundJobScheduled();
-                if (scheduled == 0L) {
+                intervalMs = app.isBackgroundJobScheduled();
+                if (intervalMs == 0L) {
                     logFailed(prefs);
                     return;
                 }
@@ -72,7 +74,7 @@ public class BootReceiver extends BroadcastReceiver {
         final Notification.Builder builder = new Notification.Builder(app)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(app.getString(R.string.app_name))
-                .setContentText(app.getString(R.string.msg_background_active_short, String.valueOf(scheduled / 60_000L)))
+                .setContentText(app.getString(R.string.msg_background_active_short, String.valueOf(intervalMs / 60_000L)))
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setCategory(Notification.CATEGORY_STATUS)
                 .setAutoCancel(true)
@@ -81,7 +83,7 @@ public class BootReceiver extends BroadcastReceiver {
                         (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? (PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE) : PendingIntent.FLAG_ONE_SHOT))
                 .setStyle(new Notification.BigTextStyle()
                         .setBigContentTitle(app.getString(R.string.app_name))
-                        .bigText(app.getString(R.string.msg_background_active, String.valueOf(scheduled / 60_000L)))
+                        .bigText(app.getString(R.string.msg_background_active, String.valueOf(intervalMs / 60_000L)))
                         );
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

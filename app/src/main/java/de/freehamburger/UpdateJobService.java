@@ -13,6 +13,7 @@ import android.app.job.JobInfo;
 import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
 import android.app.job.JobService;
+import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -47,6 +48,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -141,6 +144,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private static final String PREF_STAT_ALL = "pref_stat_all";
     /** self-imposed minimum interval of 5 minutes regardless {@link JobInfo#getMinPeriodMillis() what Android says} */
     private static final int HARD_MINIMUM_INTERVAL_MINUTES = 5;
+    public static final int DEFAULT_INTERVAL_MINUTES = 15;
     private static final String TAG = "UpdateJobService";
     private static final BitmapFactory.Options BITMAPFACTORY_OPTIONS = new BitmapFactory.Options();
     /** to be added to values stored in {@link #PREF_STAT_ALL}<br><em>(DEBUG versions only!)</em> */
@@ -153,6 +157,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private static final String NOTIFIED_NEWS_FILE = "notified.txt";
     /** separates a News' external id from a timestamp in {@link #NOTIFIED_NEWS_FILE} */
     private static final char NOTIFIED_NEWS_FILE_SEP = '@';
+    private static final Set<String> EMPTY_STRING_SET = new HashSet<>(0);
     private static int nextid = 1;
 
     static {
@@ -174,6 +179,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     private volatile boolean stopJobReceived;
     private int nextNotificationId = NOTIFICATION_ID_OFFSET;
     private NotificationSummary summary = null;
+    private Waiter waiter = null;
 
     /**
      * Constructor.
@@ -283,7 +289,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     @FloatRange(from = 0f, to = 23.999722f)
     private static float getCurrentTimeInHours() {
         final Calendar now = new GregorianCalendar(App.TIMEZONE);
-        return now.get(Calendar.HOUR_OF_DAY) + now.get(Calendar.MINUTE) / 60f + now.get(Calendar.SECOND) / 3600f;
+        return now.get(Calendar.HOUR_OF_DAY) + now.get(Calendar.MINUTE) / 60f + now.get(Calendar.SECOND) / 3_600f;
     }
 
     /**
@@ -333,7 +339,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * Tells whether it is colder than outside.
      * @return {@code true} in the range of 23:00:00 to 05:59:59
      */
-    @VisibleForTesting
     public static boolean hasNightFallenOverBerlin() {
         float hour = getCurrentTimeInHours();
         return hour >= getNightStart() || hour < getNightEnd();
@@ -953,8 +958,10 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     @Override
     public void onDestroy() {
         if (BuildConfig.DEBUG) {
-            if (!previouslyShownNewsStored && id > 1) Log.w(TAG + id, "onDestroy(): previously shown news not stored!");
+            if (!this.previouslyShownNewsStored && id > 1) Log.w(TAG + id, "onDestroy(): previously shown news not stored!");
         }
+
+        if (this.waiter != null) this.waiter.destroyed = true;
 
         if (this.loaderExecutor != null) {
             this.loaderExecutor.shutdown();
@@ -989,23 +996,33 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     /** {@inheritDoc} */
     @Override
     public boolean onStartJob(JobParameters params) {
-        if (BuildConfig.DEBUG) Log.i(TAG + id, "onStartJob(…)");
         this.params = params;
         App app = (App) getApplicationContext();
         // determine whether this is the periodic job or a one-time job
         final boolean oneOff = params.getExtras().getInt(EXTRA_ONE_OFF, 0) != 0;
-        if (params.getJobId() == JOB_ID && app.hasCurrentActivity() && !oneOff) {
+        // check whether there are any widgets - if there are any, we must update even if there is a current activity
+        int[] appWidgetIds = AppWidgetManager.getInstance(app).getAppWidgetIds(new ComponentName(app, WidgetProvider.class));
+        boolean hasWidgets = appWidgetIds != null && appWidgetIds.length > 0;
+        //
+        if (BuildConfig.DEBUG) Log.i(TAG + id, "onStartJob(…): one-off: " + oneOff + ", has widgets: " + hasWidgets);
+        //
+        if (params.getJobId() == JOB_ID && app.hasCurrentActivity() && !hasWidgets && !oneOff) {
             // app is currently active; nothing to do here for now
-            if (BuildConfig.DEBUG) Log.i(TAG, "onStartJob(…) bailing out due to current activity");
+            if (BuildConfig.DEBUG) Log.i(TAG + id, "onStartJob(…): periodic job bailing out due to current activity and no widgets being present");
             done();
             return false;
         }
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
         boolean poll = prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT);
+        if (!poll) {
+            if (BuildConfig.DEBUG) Log.i(TAG + id, "onStartJob(…): bailing out due to polling being disabled");
+            done();
+            return false;
+        }
         boolean loadOverMobile = prefs.getBoolean(App.PREF_LOAD_OVER_MOBILE, App.DEFAULT_LOAD_OVER_MOBILE);
         boolean pollOverMobile = prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, App.PREF_POLL_OVER_MOBILE_DEFAULT);
-        if (!poll || (!loadOverMobile || !pollOverMobile) && Util.isNetworkMobile(app)) {
-            if (BuildConfig.DEBUG) Log.i(TAG, "onStartJob(…) bailing out due to mobile network");
+        if ((!loadOverMobile || !pollOverMobile) && Util.isNetworkMobile(app)) {
+            if (BuildConfig.DEBUG) Log.i(TAG + id, "onStartJob(…): bailing out due to mobile network");
             done();
             return false;
         }
@@ -1021,7 +1038,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 Log.i(TAG + id, "Hamburger update by one-time job");
             } else {
                 //noinspection ConstantConditions
-                Set<String> allRequests = new HashSet<>(prefs.getStringSet(PREF_STAT_ALL, new HashSet<>(0)));
+                Set<String> allRequests = new HashSet<>(prefs.getStringSet(PREF_STAT_ALL, EMPTY_STRING_SET));
                 allRequests.add(String.valueOf(System.currentTimeMillis() - ADD_TO_PREF_STAT_ALL_VALUE));
                 SharedPreferences.Editor ed = prefs.edit();
                 ed.putStringSet(PREF_STAT_ALL, allRequests);
@@ -1056,8 +1073,9 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             done();
             return false;
         }
-        Waiter waiter = new Waiter();
-        waiter.start();
+        this.waiter = new Waiter(this);
+        this.waiter.start();
+        // return true to indicate that this job should continue until jobFinished() is called
         return true;
     }
 
@@ -1263,42 +1281,55 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * Waits for {@link #loaderExecutor} to terminate.<br>
      * <em>Note: This might run after {@link #onDestroy()}.</em>
      */
-    private class Waiter extends Thread {
-        private final long wid = System.currentTimeMillis() - 1647000000000L;
+    private static class Waiter extends Thread {
+
+        private final long wid = System.currentTimeMillis() - 1_647_000_000_000L;
+        private final Reference<UpdateJobService> refService;
+        volatile boolean destroyed;
+
+        Waiter(@NonNull UpdateJobService service) {
+            super();
+            this.refService = new WeakReference<>(service);
+        }
 
         @Override
         public void run() {
-            if (UpdateJobService.this.loaderExecutor != null) {
+            final UpdateJobService service = this.refService.get();
+            if (service == null) {
+                if (BuildConfig.DEBUG) Log.w(TAG + "-W-" + wid, "Service is gone!");
+                return;
+            }
+            if (service.loaderExecutor != null) {
                 try {
-                    UpdateJobService.this.loaderExecutor.shutdown();
+                    service.loaderExecutor.shutdown();
                     //TODO the maximum wait time should be shorter if frequent updates are enabled
-                    if (!UpdateJobService.this.loaderExecutor.awaitTermination(10, TimeUnit.MINUTES)) {
-                        if (BuildConfig.DEBUG) Log.e(TAG + id + "-W-" + wid, "Not finished after 10 minutes!");
-                        UpdateJobService.this.loaderExecutor.shutdownNow();
+                    if (!service.loaderExecutor.awaitTermination(10, TimeUnit.MINUTES)) {
+                        if (BuildConfig.DEBUG) Log.e(TAG + service.id + "-W-" + wid, "Not finished after 10 minutes!");
+                        service.loaderExecutor.shutdownNow();
                     }
                     // All loaders have finished. Job will be stopped in DELAY_TO_DESTRUCTION ms
                     // wait DELAY_TO_DESTRUCTION/2 ms or embedded images to be loaded and notifications to be shown…
                     Thread.sleep(DELAY_TO_DESTRUCTION / 2L);
-                    if (BuildConfig.DEBUG) Log.i(TAG + id + "-W-" + wid, "Updating widgets");
-                    WidgetProvider.updateWidgets(UpdateJobService.this, WidgetProvider.loadWidgetSources(UpdateJobService.this));
+                    if (BuildConfig.DEBUG) Log.i(TAG + service.id + "-W-" + wid, "Updating widgets");
+                    WidgetProvider.updateWidgets(service, WidgetProvider.loadWidgetSources(service));
                     // Show a notification group summary if there is more than one notification
-                    if (UpdateJobService.this.summary != null && UpdateJobService.this.summary.getCount() >= 2) {
-                        ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID_SUMMARY, UpdateJobService.this.summary.build((App) getApplicationContext()));
-                        UpdateJobService.this.summary = null;
+                    if (service.summary != null && service.summary.getCount() >= 2) {
+                        ((NotificationManager)service.getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID_SUMMARY, service.summary.build((App) service.getApplicationContext()));
+                        service.summary = null;
                     }
                     // store list of previously displayed notifications
-                    if (!UpdateJobService.this.previouslyShownNewsStored) previouslyShownNewsUpdate();
-                    if (!UpdateJobService.this.stopJobReceived) {
+                    if (!service.previouslyShownNewsStored) service.previouslyShownNewsUpdate();
+                    if (!service.stopJobReceived) {
                         // job will be stopped in DELAY_TO_DESTRUCTION/2 ms
                         Thread.sleep(DELAY_TO_DESTRUCTION / 2L);
                     }
                 } catch (InterruptedException e) {
-                    if (BuildConfig.DEBUG) Log.e(TAG + id + "-W-" + wid, "While waiting: " + e, e);
+                    if (BuildConfig.DEBUG) Log.e(TAG + service.id + "-W-" + wid, "While waiting: " + e, e);
                 }
             } else {
-                if (BuildConfig.DEBUG) Log.e(TAG + id + "-W-" + wid, "No LoaderExecutor!");
+                if (BuildConfig.DEBUG) Log.e(TAG + service.id + "-W-" + wid, "No LoaderExecutor!");
             }
-            done();
+            if (!this.destroyed) service.done();
         }
     }
 }

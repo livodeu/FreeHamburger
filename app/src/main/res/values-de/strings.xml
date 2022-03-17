@@ -268,9 +268,6 @@
     <string name="pref_title_pip_enabled">Bild-in-Bild-Modus verwenden</string>
     <string name="pref_summary_pip_off">Der Bild-in-Bild-Modus wird nicht verwendet.</string>
     <string name="pref_summary_pip_on">Der Bild-in-Bild-Modus wird bei Vollbildvideos verwendet.</string>
-    <string name="pref_title_frequent_updates">Häufige Aktualisierungen</string>
-    <string name="pref_title_frequent_updates_interval">Aktualisierungsintervall in Min.</string>
-    <string name="pref_cat_pollinterval">Intervall</string>
     <string name="msg_widget_no_news">Zur Zeit keine Inhalte.</string>
     <string name="msg_frequent_updates_next">Nächste Aktualisierung: %1$s</string>
     <plurals name="msg_frequent_updates">

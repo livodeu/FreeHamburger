@@ -184,8 +184,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
             super.onResume();
             bindService(new Intent(this, HamburgerService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            if (prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT)
-                    && prefs.getInt(FrequentUpdatesService.PREF_FREQUENT_UPDATES, FrequentUpdatesService.PREF_FREQUENT_UPDATES_DEFAULT) > 0) {
+            if (FrequentUpdatesService.shouldBeEnabled(this, prefs)) {
                 bindService(new Intent(this, FrequentUpdatesService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
             }
         } catch (Throwable e) {

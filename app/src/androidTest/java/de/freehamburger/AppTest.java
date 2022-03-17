@@ -72,6 +72,7 @@ import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
+import de.freehamburger.prefs.PrefsHelper;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.MediaSourceHelper;
 import de.freehamburger.util.TtfInfo;
@@ -257,10 +258,10 @@ public class AppTest {
             ed.putBoolean(App.PREF_POLL, true);
             ed.apply();
         }
-        final boolean frequentUpdatesEnabled = prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT);
-        if (!frequentUpdatesEnabled) {
+        final int interval = PrefsHelper.getStringAsInt(prefs, App.PREF_POLL_INTERVAL, 15);
+        if (interval >= 15) {
             SharedPreferences.Editor ed = prefs.edit();
-            ed.putBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, true);
+            ed.putString(App.PREF_POLL_INTERVAL, "5");
             ed.apply();
         }
 
@@ -272,7 +273,7 @@ public class AppTest {
             } catch (Exception ignored) {
             }
             assertNotNull(activity.frequentUpdatesService);
-            assertTrue(activity.frequentUpdatesService.isEnabled(prefs));
+            assertTrue(FrequentUpdatesService.shouldBeEnabled(activity, prefs));
             assertTrue(activity.frequentUpdatesService.isForeground());
             assertNotNull(activity.frequentUpdatesService.ticker);
             NotificationManager nm = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -290,9 +291,9 @@ public class AppTest {
             assertTrue(notificationIdFound);
         });
 
-        if (!frequentUpdatesEnabled) {
+        if (interval >= 15) {
             SharedPreferences.Editor ed = prefs.edit();
-            ed.putBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, false);
+            ed.putString(App.PREF_POLL_INTERVAL, String.valueOf(interval));
             ed.putBoolean(App.PREF_POLL, pollingEnabled);
             ed.commit();
         }
@@ -438,6 +439,7 @@ public class AppTest {
         App app = (App)ctx.getApplicationContext();
         assertNotNull(app.getNotificationChannel());
         assertNotNull(app.getNotificationChannelHiPri());
+        assertNotNull(app.getNotificationChannelUpdates());
     }
 
     /**
@@ -564,6 +566,7 @@ public class AppTest {
         try {
             TtfInfo tti = TtfInfo.getTtfInfo(file);
             assertNotNull(tti);
+            android.util.Log.i(getClass().getSimpleName(), tti.toString());
             String fontName = tti.getFontFullName();
             assertNotNull(fontName);
             assertTrue(fontName.contains("Roboto"));

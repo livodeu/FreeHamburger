@@ -4,7 +4,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.job.JobInfo;
 import android.app.usage.UsageStatsManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -86,9 +85,9 @@ import de.freehamburger.util.Util;
  */
 public class SettingsActivity extends AppCompatActivity implements ServiceConnection, PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
 
+    static final String ACTION_CONFIGURE_BACKGROUND_UPDATES = "de.freehamburger.configure.backgroundupdates";
     private static final String TAG = "SettingsActivity";
     private static final String EXTRA_STORAGE_ACTIVITY = "de.freehamburger.extra.storage.activity";
-    static final String ACTION_CONFIGURE_BACKGROUND_UPDATES = "de.freehamburger.configure.backgroundupdates";
     @Nullable
     private HamburgerService service;
     /** {@code true} if the user has clicked "Manage Storage" in the system settings for this app - identified by:<ol><li>{@link Intent} action is {@link Intent#ACTION_VIEW ACTION_VIEW},</li><li>Intent data is {@code null}</li></ol> */
@@ -735,6 +734,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class PollingPreferenceFragment extends PreferenceFragmentCompat {
 
+        private final Handler handler = new Handler();
         private Preference prefPollStats;
         /** minimum polling interval in minutes */
         private int min;
@@ -794,7 +794,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
 
-            this.min = UpdateJobService.getMinimumIntervalInMinutes();
+            this.min = 1;//UpdateJobService.getMinimumIntervalInMinutes();
             this.maxNightInterval = Math.round(UpdateJobService.getNightDuration() * 60f);
 
             SwitchPreferenceCompat prefPoll = findPreference(App.PREF_POLL);
@@ -860,15 +860,12 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 }
             }
 
-            SwitchPreferenceCompat prefFrequentPoll = findPreference(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED);
             SummarizingEditTextPreference prefPollInterval = findPreference(App.PREF_POLL_INTERVAL);
             SummarizingEditTextPreference prefPollIntervalNight = findPreference(App.PREF_POLL_INTERVAL_NIGHT);
-            SeekBarPreference prefFrequentUpdates = findPreference(FrequentUpdatesService.PREF_FREQUENT_UPDATES);
-            boolean frequentPollingEnabled = prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT);
 
             if (prefPollInterval != null) {
-                prefPollInterval.setVisible(!frequentPollingEnabled);
                 prefPollInterval.setStringRes(R.string.label_every_minutes);
+                prefPollInterval.setDefaultValue(String.valueOf(App.PREF_POLL_INTERVAL_DEFAULT));
                 prefPollInterval.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
                 prefPollInterval.setOnPreferenceChangeListener((preference, o) -> {
                     int interval;
@@ -883,13 +880,16 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     if (interval < PollingPreferenceFragment.this.min) {
                         Toast.makeText(getActivity(), getResources().getString(R.string.error_poll_minimum_interval, min), Toast.LENGTH_LONG).show();
                     }
-                    return interval >= PollingPreferenceFragment.this.min;
+                    boolean valid = interval >= PollingPreferenceFragment.this.min;
+                    // if the interval is less than 15 mins, start the FrequentUpdatesService (the service will stop itself if the interval is >= 15 min)
+                    if (valid) FrequentUpdatesService.possiblyStart(activity, prefs, this.handler, 1_000L);
+                    return valid;
                 });
             }
 
             if (prefPollIntervalNight != null) {
-                prefPollIntervalNight.setVisible(!frequentPollingEnabled);
                 prefPollIntervalNight.setStringRes(R.string.label_every_minutes);
+                prefPollIntervalNight.setDefaultValue(String.valueOf(App.PREF_POLL_INTERVAL_DEFAULT));
                 prefPollIntervalNight.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
                 prefPollIntervalNight.setOnPreferenceChangeListener((preference, o) -> {
                     int interval;
@@ -907,41 +907,11 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                         Toast.makeText(getActivity(), getResources()
                                 .getString(R.string.error_poll_maximum_interval, PollingPreferenceFragment.this.maxNightInterval), Toast.LENGTH_LONG).show();
                     }
-                    return interval >= PollingPreferenceFragment.this.min && interval <= PollingPreferenceFragment.this.maxNightInterval;
+                    boolean valid = interval >= PollingPreferenceFragment.this.min && interval <= PollingPreferenceFragment.this.maxNightInterval;
+                    // if the interval is less than 15 mins, start the FrequentUpdatesService (the service will stop itself if the interval is >= 15 min)
+                    if (valid) FrequentUpdatesService.possiblyStart(activity, prefs, this.handler, 1_000L);
+                    return valid;
                 });
-            }
-
-            if (prefFrequentPoll != null) {
-                prefFrequentPoll.setOnPreferenceChangeListener((preference, newValue) -> {
-                    if (!(newValue instanceof Boolean)) return false;
-                    boolean frequentUpdatesEnabled = (boolean)newValue;
-                    if (prefPollInterval != null) prefPollInterval.setVisible(!frequentUpdatesEnabled);
-                    if (prefPollIntervalNight != null) prefPollIntervalNight.setVisible(!frequentUpdatesEnabled);
-                    if (prefFrequentUpdates != null) prefFrequentUpdates.setVisible(frequentUpdatesEnabled);
-                    if (frequentUpdatesEnabled) {
-                        try {
-                            activity.startService(new Intent(activity, FrequentUpdatesService.class));
-                        } catch (RuntimeException e) {
-                            if (BuildConfig.DEBUG) Log.e(TAG, "While launching FrequentUpdatesService: " + e);
-                        }
-                    }
-                    // no need to stop FrequentUpdatesService when frequentUpdatesEnabled is false because FrequentUpdatesService does that by itself
-                    return true;
-                });
-                // initialise the visibilities of the 3 interval prefs
-                //noinspection ConstantConditions
-                prefFrequentPoll.getOnPreferenceChangeListener().onPreferenceChange(prefFrequentPoll, prefs.getBoolean(FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED, FrequentUpdatesService.PREF_FREQUENT_UPDATES_ENABLED_DEFAULT));
-            }
-
-            // set min, max and default values for the frequent updates interval
-            if (prefFrequentUpdates != null) {
-                prefFrequentUpdates.setDefaultValue(FrequentUpdatesService.PREF_FREQUENT_UPDATES_DEFAULT);
-                prefFrequentUpdates.setMin(FrequentUpdatesService.PREF_FREQUENT_UPDATES_MIN);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    prefFrequentUpdates.setMax((int) (JobInfo.getMinPeriodMillis() / 60_000L) - 1);
-                } else {
-                    prefFrequentUpdates.setMax(14);
-                }
             }
 
             long statStart = prefs.getLong(UpdateJobService.PREF_STAT_START, 0L);
