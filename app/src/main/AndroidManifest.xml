@@ -240,6 +240,7 @@
 
         <service
             android:name=".BackgroundTile"
+            android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_launcher_qs"
             android:label="@string/pref_title_poll"

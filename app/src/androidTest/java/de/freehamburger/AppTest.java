@@ -27,6 +27,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.FeatureInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ServiceInfo;
 import android.content.pm.ShortcutManager;
 import android.content.res.XmlResourceParser;
 import android.graphics.Point;
@@ -542,9 +543,9 @@ public class AppTest {
     public void testTiles() {
         PackageManager pm = ctx.getPackageManager();
         try {
-            ServiceInfo serviceInfo = pm.getServiceInfo(new ComponentName(ctx, BackgroundTile.class), 0);
+            ServiceInfo serviceInfo = pm.getServiceInfo(new ComponentName(ctx, BackgroundTile.class), PackageManager.GET_DISABLED_COMPONENTS);
             assertNotNull(serviceInfo);
-            assertTrue(serviceInfo.enabled);
+            assertFalse(serviceInfo.enabled);
             assertTrue(serviceInfo.exported);
             assertEquals(Manifest.permission.BIND_QUICK_SETTINGS_TILE, serviceInfo.permission);
         } catch (PackageManager.NameNotFoundException e) {
