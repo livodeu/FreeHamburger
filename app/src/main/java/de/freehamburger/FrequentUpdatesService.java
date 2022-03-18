@@ -23,6 +23,7 @@ import android.os.IBinder;
 import android.widget.Toast;
 
 import androidx.annotation.IntRange;
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -33,7 +34,6 @@ import java.io.PrintWriter;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.text.DateFormat;
-import java.text.NumberFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -57,6 +57,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     private final FrequentUpdatesServiceBinder binder;
     @VisibleForTesting Ticker ticker;
     private Notification.Builder builder;
+    private DateFormat timeFormat;
     private boolean enabled;
     /** flag indicating whether the daytime or nighttime interval should be applied */
     private boolean night;
@@ -259,7 +260,6 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
                 .setContentTitle(getResources().getQuantityString(R.plurals.msg_frequent_updates, intervalInMinutes, intervalInMinutes))
                 .setLocalOnly(true)
                 .setOnlyAlertOnce(true)
-                .setShowWhen(BuildConfig.DEBUG)
                 .setSmallIcon(R.drawable.ic_updates)
                 .setSubText(this.night ? SYMBOL_NIGHT : SYMBOL_DAY)
         ;
@@ -280,20 +280,18 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     }
 
     /**
-     * Updates the notification message.
+     * Updates the notification message, showing the time of the next update.
      */
+    @MainThread
     private void updateNotification() {
         try {
-            NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-            String msg = getString(R.string.msg_frequent_updates_next, DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date(this.latestUpdate + this.requestedInterval)));
-            if (BuildConfig.DEBUG) Log.i(TAG, "updateNotification() - " + msg + " - latest: "
-                    + DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date(this.latestUpdate))
-                    + ", interval: " + NumberFormat.getIntegerInstance().format(this.requestedInterval) + " ms, night: " + this.night);
             // now, this should not happen, but better check instead of having a NPE…
             if (this.builder == null) setupNotification();
+            if (this.timeFormat == null) this.timeFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+            String msg = getString(R.string.msg_frequent_updates_next, this.timeFormat.format(new Date(this.latestUpdate + this.requestedInterval)));
             // 0x1f31b: 1st quarter half moon, 0x1f31e: sun with face
             this.builder.setContentTitle(msg).setSubText(this.night ? SYMBOL_NIGHT : SYMBOL_DAY);
-            nm.notify(NOTIFICATION_ID, this.builder.build());
+            ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID, this.builder.build());
         } catch (RuntimeException e) {
             if (BuildConfig.DEBUG) Log.e(TAG, "While updating notification: " + e);
         }
@@ -305,9 +303,15 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
      */
     private void updateState(@Nullable SharedPreferences prefs) {
         if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean wasNight = this.night;
+        boolean wasEnabled = this.enabled;
+        long wasInterval = this.requestedInterval;
         this.night = UpdateJobService.hasNightFallenOverBerlin();
         this.enabled = shouldBeEnabled(this, prefs);
         this.requestedInterval = PrefsHelper.getStringAsInt(prefs, this.night ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT) * 60_000L;
+        if (this.night != wasNight || this.enabled != wasEnabled || this.requestedInterval != wasInterval) {
+            updateNotification();
+        }
     }
 
     /**
