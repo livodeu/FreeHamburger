@@ -2,7 +2,10 @@ package de.freehamburger.util;
 
 import android.Manifest;
 import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.PendingIntent;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
@@ -24,6 +27,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
@@ -77,6 +81,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,6 +102,7 @@ import de.freehamburger.MainActivity;
 import de.freehamburger.R;
 import de.freehamburger.model.Content;
 import de.freehamburger.model.Source;
+import de.freehamburger.supp.ShareReceiver;
 
 /**
  *
@@ -108,6 +114,7 @@ public class Util {
     public static final boolean TEST;
     private static final String TAG = "Util";
     private static final Typeface NORMAL = Typeface.create("sans-serif", Typeface.NORMAL);
+    private static final String PROTOCOL_ANDROID_APP = "android-app://";
     /**
      * Selection of wrong quotation marks<br>
      * <pre>
@@ -341,7 +348,7 @@ public class Util {
                 .setIcon(Icon.createWithResource(ctx, source.getIcon()))
                 .setIntent(intent)
                 .build();
-         if (TEST) {
+        if (TEST) {
             return true;
         }
         return shortcutManager.requestPinShortcut(pinShortcutInfo, null);
@@ -696,23 +703,36 @@ public class Util {
     }
 
     /**
-     * Returns the Space occupied by a file or directory.<br>
-     * Will return 0 if the file does not exist or if it could not be accessed.
-     * @param file file <em>or</em> directory
-     * @return space used in bytes
+     * Attempts to determine the MIME type for the given resource.
+     * @param fileName resource
+     * @param defaultValue default MIME type value
+     * @return MIME type value
      */
-    @RequiresApi(21)
-    @VisibleForTesting
-    public static long getOccupiedSpace(@Nullable File file) {
-        if (file == null) return 0L;
-        long space;
-        try {
-            space = Os.stat(file.getAbsolutePath()).st_blocks << 9;
-        } catch (ErrnoException e) {
-            space = 0L;
-            if (BuildConfig.DEBUG) Log.e(TAG, "getOccupiedSpace(\"" + file + "\"): " + e);
+    @Nullable
+    public static String getMime(final String fileName, @Nullable final String defaultValue) {
+        if (fileName == null) return defaultValue;
+        String mime = null;
+        int posFiletag = fileName.lastIndexOf('.');
+        if (posFiletag > 0 && posFiletag < fileName.length() - 1) {
+            String filetag = fileName.substring(posFiletag + 1);
+            mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(filetag);
         }
-        return space;
+        if (mime == null) {
+            if (fileName.endsWith(".mp4")) {
+                mime = "video/mp4";
+            } else if (fileName.endsWith(".mp3")) {
+                mime = "audio/mpeg";
+            } else if (fileName.endsWith(".ogg")) {
+                mime = "application/ogg";
+            } else if (fileName.endsWith(".jpg")) {
+                mime = "image/jpeg";
+            } else if (fileName.endsWith(".m3u8")) {
+                mime = "application/vnd.apple.mpegurl";
+            } else {
+                mime = defaultValue;
+            }
+        }
+        return mime;
     }
 
     /**
@@ -734,6 +754,26 @@ public class Util {
         } catch (Exception ignored) {
         }
         return -1;
+    }
+
+    /**
+     * Returns the Space occupied by a file or directory.<br>
+     * Will return 0 if the file does not exist or if it could not be accessed.
+     * @param file file <em>or</em> directory
+     * @return space used in bytes
+     */
+    @RequiresApi(21)
+    @VisibleForTesting
+    public static long getOccupiedSpace(@Nullable File file) {
+        if (file == null) return 0L;
+        long space;
+        try {
+            space = Os.stat(file.getAbsolutePath()).st_blocks << 9;
+        } catch (ErrnoException e) {
+            space = 0L;
+            if (BuildConfig.DEBUG) Log.e(TAG, "getOccupiedSpace(\"" + file + "\"): " + e);
+        }
+        return space;
     }
 
     /**
@@ -943,6 +983,87 @@ public class Util {
     }
 
     /**
+     * Prepares the given Intent to be logged.<br>
+     * Just in case anyone asked: for debugging only.
+     * @param intent Intent to log
+     * @param indent number of spaces by which to indent the output
+     * @return CharSequence
+     */
+    @NonNull
+    private static CharSequence intentAsCharSequence(@NonNull final Intent intent, final int indent) {
+        final StringBuilder sb = new StringBuilder(128);
+        for (int i = 0; i < indent; i++) sb.append(' ');
+        sb.append(intent);
+        // MIME
+        String mime = intent.getType();
+        sb.append("\n");
+        for (int i = 0; i < indent; i++) sb.append(' ');
+        sb.append("Type: ").append(mime);
+        // Uri
+        Uri uri = intent.getData();
+        sb.append("\n");
+        for (int i = 0; i < indent; i++) sb.append(' ');
+        sb.append("Data: ").append(uri);
+        // Category
+        final Set<String> cats = intent.getCategories();
+        if (cats != null && !cats.isEmpty()) {
+            for (String cat : cats) {
+                sb.append("\n");
+                for (int i = 0; i < indent; i++) sb.append(' ');
+                sb.append("Category: \"").append(cat).append("\"");
+            }
+        }
+        // Flags
+        final int flax = intent.getFlags();
+        if (flax != 0) {
+            try {
+                final Field[] fields = Intent.class.getDeclaredFields();
+                for (Field field : fields) {
+                    if (field.getName().contains("FLAG")) {
+                        int val = field.getInt(Intent.class);
+                        if ((flax & val) > 0) {
+                            sb.append("\n");
+                            for (int i = 0; i < indent; i++) sb.append(' ');
+                            sb.append("⛳ ").append(field.getName()).append(" (0x").append(Integer.toHexString(val)).append(")");
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        final Bundle e = intent.getExtras();
+        if (e != null) {
+            sb.append('\n');
+            for (int i = 0; i < indent; i++) sb.append(' ');
+            final Set<String> keys = e.keySet();
+            for (String key : keys) {
+                sb.append(key).append("=");
+                Object value = e.get(key);
+                if (value == null) {
+                    sb.append("<null>\n");
+                    continue;
+                }
+                if (value instanceof Intent) {
+                    sb.append(intentAsCharSequence((Intent)value, indent + 4).toString().trim()).append("\n");
+                    continue;
+                }
+                if (value.getClass().isArray()) {
+                    try {
+                        sb.append(Arrays.toString((Object[]) value));
+                    } catch (Exception ignored) {
+                        sb.append(value);
+                    }
+                } else {
+                    sb.append(value);
+                }
+                sb.append('\n');
+                for (int i = 0; i < indent; i++) sb.append(' ');
+            }
+        }
+        return sb;
+    }
+
+    /**
      * Determines whether the given menu has at least one item that is visible and enabled.
      * @param menu Menu to inspect
      * @return true / false
@@ -1076,6 +1197,15 @@ public class Util {
             close(in);
         }
         return lines;
+    }
+
+    /**
+     * Logs the given Intent (in debug versions only).
+     * @param intent Intent to log
+     */
+    private static void logIntent(Intent intent) {
+        if (intent == null || !BuildConfig.DEBUG) return;
+        Log.i(TAG, intentAsCharSequence(intent, 0).toString());
     }
 
     /**
@@ -1268,7 +1398,7 @@ public class Util {
                 } else {
                     out.append('<');
                 }
-             } else if (!insideA) {
+            } else if (!insideA) {
                 out.append(c[pos]);
             }
         }
@@ -1329,52 +1459,46 @@ public class Util {
      */
     public static void sendBinaryData(@NonNull final Context ctx, @NonNull final String url, @Nullable CharSequence title) {
         final Intent intent = new Intent(Intent.ACTION_SEND);
-        String mime = null;
-        int posFiletag = url.lastIndexOf('.');
-        if (posFiletag > 0 && posFiletag < url.length() - 1) {
-            String filetag = url.substring(posFiletag + 1);
-            mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(filetag);
+        Uri uri = Uri.parse(url);
+        String mime = getMime(url, "video/*");
+        if ("content".equals(uri.getScheme())) {
+            intent.setDataAndType(uri, mime);
+            intent.setClipData(ClipData.newUri(ctx.getContentResolver(), title, uri));
+        } else {
+            intent.setType(mime);
         }
-        if (mime == null) {
-            if (url.endsWith(".mp4")) {
-                mime = "video/mp4";
-            } else if (url.endsWith(".mp3")) {
-                mime = "audio/mpeg";
-            } else if (url.endsWith(".ogg")) {
-                mime = "application/ogg";
-            } else if (url.endsWith(".jpg")) {
-                mime = "image/jpeg";
-            } else if (url.endsWith(".m3u8")) {
-                mime = "application/vnd.apple.mpegurl";
-            } else {
-                mime = "video/*";
-            }
-        }
-        intent.setType(mime);
         intent.putExtra(Intent.EXTRA_STREAM, Uri.parse(url));
         if (title != null) {
+            intent.putExtra(Intent.EXTRA_TITLE, title);
             intent.putExtra(Intent.EXTRA_SUBJECT, title);
         }
         if (!(ctx instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        if (ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-            ctx.startActivity(Intent.createChooser(intent, null));
+        intent.putExtra(Intent.EXTRA_REFERRER, Uri.parse(PROTOCOL_ANDROID_APP + ctx.getPackageName()));
+        final Intent chooserIntent;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            // 2022-03: FYG! Nowhere, repeat: NOWHERE, in the frigging Android docs any trace of the fact that the PendingIntent needs the FLAG_MUTABLE flag set!!!
+            @SuppressLint("InlinedApi")
+            PendingIntent pi = PendingIntent.getBroadcast(ctx, 0, new Intent(ctx, ShareReceiver.class), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            chooserIntent = Intent.createChooser(intent, null, pi.getIntentSender());
         } else {
-            if (ctx instanceof CoordinatorLayoutHolder) {
-                Snackbar.make(((CoordinatorLayoutHolder)ctx).getCoordinatorLayout(), R.string.error_no_app, Snackbar.LENGTH_LONG)
-                        .show();
-            } else {
-                Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_LONG)
-                        .show();
-            }
+            chooserIntent = Intent.createChooser(intent, null);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            chooserIntent.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, App.EXCLUDED_SEND_TARGETS);
+        }
+        logIntent(intent);
+        if (ctx.getPackageManager().resolveActivity(chooserIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+            ctx.startActivity(chooserIntent);
         }
     }
 
     /**
      * Shares the given Bitmap via {@link Intent#ACTION_SEND ACTION_SEND}.
-     * Does not always display an error message in case of failure.
+     * Does not always display an error message in case of failure.<br>
+     * Delegates to {@link #sendBinaryData(Context, String, CharSequence)}.
      * @param ctx Context
      * @param bm Bitmap
      * @param title title (optional)
@@ -1423,18 +1547,35 @@ public class Util {
         final Intent intent = new Intent(Intent.ACTION_SEND);
         intent.putExtra(Intent.EXTRA_TEXT, url);
         if (!TextUtils.isEmpty(title)) {
+            intent.putExtra(Intent.EXTRA_TITLE, title);
             intent.putExtra(Intent.EXTRA_SUBJECT, title);
         }
-        intent.setType("text/plain");
-        if (!(ctx instanceof Activity)) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        Uri uri = Uri.parse(url);
+        if ("content".equals(uri.getScheme())) {
+            intent.putExtra(Intent.EXTRA_STREAM, uri);
+            intent.setClipData(ClipData.newRawUri(title, uri));
         }
+        intent.setType(getMime(uri.getLastPathSegment(), "text/plain"));
+        //
+        if (!(ctx instanceof Activity)) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra(Intent.EXTRA_REFERRER, Uri.parse(PROTOCOL_ANDROID_APP + ctx.getPackageName()));
         if (ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-            ctx.startActivity(Intent.createChooser(intent, null));
+            Intent chooserIntent;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                @SuppressLint("InlinedApi")
+                PendingIntent pi = PendingIntent.getBroadcast(ctx, 0, new Intent(ctx, ShareReceiver.class), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+                chooserIntent = Intent.createChooser(intent, null, pi.getIntentSender());
+            } else {
+                chooserIntent = Intent.createChooser(intent, null);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                chooserIntent.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, App.EXCLUDED_SEND_TARGETS);
+            }
+            logIntent(chooserIntent);
+            ctx.startActivity(chooserIntent);
         } else {
             if (ctx instanceof CoordinatorLayoutHolder) {
-                Snackbar.make(((CoordinatorLayoutHolder)ctx).getCoordinatorLayout(), R.string.error_no_app, Snackbar.LENGTH_LONG)
-                        .show();
+                Snackbar.make(((CoordinatorLayoutHolder)ctx).getCoordinatorLayout(), R.string.error_no_app, Snackbar.LENGTH_LONG).show();
             } else {
                 Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_LONG).show();
             }

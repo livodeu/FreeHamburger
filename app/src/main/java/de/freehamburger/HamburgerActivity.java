@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -18,10 +19,11 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.view.Gravity;
+import android.view.View;
 import android.view.animation.AccelerateInterpolator;
+import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.LayoutRes;
@@ -33,6 +35,8 @@ import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
@@ -180,10 +184,11 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @CallSuper
     @Override
     protected void onResume() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
         try {
             super.onResume();
             bindService(new Intent(this, HamburgerService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
             if (FrequentUpdatesService.shouldBeEnabled(this, prefs)) {
                 bindService(new Intent(this, FrequentUpdatesService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
             }
@@ -191,6 +196,33 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
             if (BuildConfig.DEBUG) {
                 Log.e(TAG, e.toString(), e);
                 Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_LONG).show();
+            }
+        }
+
+        // display a Snackbar if something has been shared lately
+        if (prefs.getBoolean(App.PREF_SHOW_LATEST_SHARE_TARGET, App.PREF_SHOW_LATEST_SHARE_TARGET_DEFAULT)) {
+            App app = (App) getApplicationContext();
+            App.LatestShare ls = app.getLatestShare();
+            if (ls != null) {
+                if (ls.wasVeryRecent()) {
+                    try {
+                        PackageManager pm = getPackageManager();
+                        ApplicationInfo ai = pm.getApplicationInfo(ls.target.getPackageName(), Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ? PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS : 0);
+                        Snackbar sb = Snackbar.make(this.coordinatorLayout, getString(R.string.msg_shared_with, pm.getApplicationLabel(ai)), Snackbar.LENGTH_SHORT);
+                        View textView = sb.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+                        if (textView instanceof TextView) {
+                            ((TextView) textView).setGravity(Gravity.CENTER_VERTICAL);
+                            ((TextView) textView).setMaxLines(2);
+                            textView.setElevation(textView.getElevation() + 20f);
+                            ((TextView) textView).setCompoundDrawablesWithIntrinsicBounds(pm.getApplicationIcon(ai), null, null, null);
+                            ((TextView) textView).setCompoundDrawablePadding(16);
+                        }
+                        sb.show();
+                    } catch (Exception e) {
+                        if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
+                    }
+                }
+                app.setLatestShare(null);
             }
         }
     }
@@ -211,6 +243,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @CallSuper
     @Override
     public void onServiceDisconnected(ComponentName name) {
+        if (BuildConfig.DEBUG) Log.i(TAG, "onServiceDisconnected(" + name + ")");
         if (name == null) return;
         String clazz = name.getClassName();
         if (HamburgerService.class.getName().equals(clazz)) {

@@ -9,9 +9,11 @@
     <string name="action_filters_enabled">Aktiv</string>
     <string name="action_open_app">App öffnen</string>
     <string name="action_show_weberrors_no">Nicht wieder anzeigen</string>
+    <string name="action_view_in_browser">Im Browser ansehen</string>
     <string name="action_widget_configure">Bitte die Quelle auswählen</string>
     <string name="msg_widget_source_changed">Die Quelle wurde zu „%1$s” geändert.</string>
     <string name="msg_widget_source_notchanged">Die Quelle wurde nicht geändert.</string>
+    <string name="msg_shared_with">Weitergegeben an %1$s</string>
     <string name="label_widget_desc">Hamburger Nachrichten</string>
     <string name="hint_audio_content_play">Audioinhalte abspielen</string>
     <string name="label_cols_default">Standard</string>
@@ -26,6 +28,7 @@
     <string name="action_teletext_short">VT</string>
     <string name="action_shortcut_create">Verknüpfung erstellen</string>
     <string name="action_shortcut_create_condensed">Verknüpfung</string>
+    <string name="error_browser_failed">Es kann kein Browser geöffnet werden!</string>
     <string name="error_shortcut_fail">Die Verknüpfung konnte nicht erstellt werden!</string>
     <string name="msg_shortcut_exists">Die Verknüpfung existiert bereits.</string>
     <string name="app_build_date">Erstelldatum: %1$s</string>
@@ -44,9 +47,9 @@
     <string name="label_notification_channel">Meldungen</string>
     <string name="label_notification_channel_hipri">Eilmeldungen</string>
     <string name="label_notification_channel_updates">Häufige Aktualisierungen</string>
-    <string name="label_notification_channel_desc">Diese Kategorie betrifft Hamburger Nachrichten mit Standardpriorität</string>
-    <string name="label_notification_channel_desc_hipri">Diese Kategorie betrifft Hamburger Nachrichten hoher Priorität (Eilmeldungen)</string>
-    <string name="label_notification_channel_desc_updates">Diese Kategorie betrifft nur die Benachrichtigung, dass häufige Aktualisierungen erfolgen</string>
+    <string name="label_notification_channel_desc">Diese Kategorie betrifft Hamburger Nachrichten mit Standardpriorität.</string>
+    <string name="label_notification_channel_desc_hipri">Diese Kategorie betrifft Hamburger Nachrichten hoher Priorität (Eilmeldungen).</string>
+    <string name="label_notification_channel_desc_updates">Diese Kategorie betrifft nur die Benachrichtigung, dass häufige Aktualisierungen erfolgen.</string>
     <string name="error_news_not_found">Der Artikel wurde nicht gefunden.</string>
     <string name="error_no_network">Kein Datennetz.</string>
     <string name="error_no_network_ext">Für eine sinnvolle Verwendung sollten Sie das Gerät mit dem Internet verbinden.</string>

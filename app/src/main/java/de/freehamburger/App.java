@@ -1,6 +1,7 @@
 package de.freehamburger;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Notification;
@@ -8,6 +9,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -67,7 +69,10 @@ import okhttp3.TlsVersion;
  */
 public class App extends Application implements Application.ActivityLifecycleCallbacks, SharedPreferences.OnSharedPreferenceChangeListener {
 
-    public final static String URL_PREFIX = "https://www.tagesschau.de/api2/";
+    public static final String URL_PREFIX = "https://www.tagesschau.de/api2/";
+    /** components to be excluded when sharing content */
+    @TargetApi(Build.VERSION_CODES.N)
+    public static final ComponentName[] EXCLUDED_SEND_TARGETS = new ComponentName[] {new ComponentName("com.google.android.gms","com.google.android.gms.nearby.sharing.ShareSheetActivity")};
     /** the user agent to be used in the http requests */
     public static final String USER_AGENT;
     /** the directory that shared files are copied to (in the {@link #getCacheDir() cache dir}) */
@@ -222,6 +227,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     private final Handler handler = new Handler();
     private final ScheduleChecker scheduleChecker = new ScheduleChecker();
+    public long appStart = 0L;
     @Nullable
     private NotificationChannel notificationChannel;
     @Nullable
@@ -232,7 +238,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
     private Activity currentActivity;
     @Nullable
     private OkHttpClient client;
-    public long appStart = 0L;
+    @Nullable
+    private LatestShare latestShare;
 
     /**
      * Creates an OkHttpClient instance.
@@ -390,7 +397,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     }
 
     @Nullable
-    @VisibleForTesting
+    //@VisibleForTesting
     public Activity getCurrentActivity() {
         return this.currentActivity;
     }
@@ -401,6 +408,11 @@ public class App extends Application implements Application.ActivityLifecycleCal
      */
     long getCurrentCacheSize() {
         return Util.getOccupiedSpace(Util.listFiles(getCacheDir()));
+    }
+
+    @Nullable
+    public LatestShare getLatestShare() {
+        return this.latestShare;
     }
 
     /**
@@ -494,7 +506,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /**
      * @return {@code true} if there is currently an Activity in the resumed state
      */
-    boolean hasCurrentActivity() {
+    public boolean hasCurrentActivity() {
         return this.currentActivity != null;
     }
 
@@ -574,25 +586,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public void onActivityStopped(@NonNull Activity activity) {
         /* no-op */
     }
-
-    /*
-    Die Original-App löst auch folgende Anfrage aus:  https://www.tagesschau.de/app/config/app3-versions.json
-    Antwort z.B.:
-    {
-"android": {
-"minVersion": 2016112201,
-"minOSVersion": 19
-},
-"iOS": {
-"minVersion": 145,
-"minOSVersion": "10.0"
-},
-"appStartCount": 10,
-"gATrackingRate": 0.5,
-"firebaseTrackingRate": 1.0,
-"pushTestEnabled": true
-}
-     */
 
     /** {@inheritDoc} */
     @Override
@@ -803,6 +796,10 @@ public class App extends Application implements Application.ActivityLifecycleCal
         if (nm != null) nm.cancelAll();
     }
 
+    public void setLatestShare(@Nullable ComponentName componentName) {
+        this.latestShare = componentName != null ? new LatestShare(componentName) : null;
+    }
+
     /**
      * Sets the most recent <em>successful</em> update of the given Source.<br>
      * Set the timestamp to 0 to remove it.
@@ -890,6 +887,37 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({ORIENTATION_AUTO, ORIENTATION_LANDSCAPE, ORIENTATION_PORTRAIT})
     @interface Orientation {}
+
+    /**
+     * Represents an action during which the honorable user ventured to pass some data, possibly even information, to another app¹.<br>
+     * Colloquially, and to the peasants, known as "sharing".<br><br>
+     * ¹: An "app" is known as, in order not to mislead you, an electronic manifestation of machine instructions to be executed, limited to and bordered by the realms of a portable² electronic brain. 🆒<br>
+     * ²: "portable" is in the arms of the, Gee! , holder³<br>
+     * ³: literally<br>
+     * <br>
+     * Now, this is a piece of documentation up with which you will have to put!<br>
+     */
+    public static class LatestShare {
+        /** Apparently the user likes that app…<br>What does it have that <i>{@link BuildConfig#APPLICATION_ID this}</i> has not?!? */
+        @NonNull public final ComponentName target;
+        /** Heck, what could this mean? Something about postage? A stamped stamp? Stamps me. */
+        private final long timestamp;
+
+        /**
+         * This is the place to go if you want a new LatestShare!
+         * @param target ComponentName
+         */
+        LatestShare(@NonNull ComponentName target) {
+            super();
+            this.target = target;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        /** @return {@code true} if this happened only a blink of an I ago */
+        boolean wasVeryRecent() {
+            return System.currentTimeMillis() - this.timestamp < 60_000L;
+        }
+    }
 
     /**
      * Checks whether the {@link UpdateJobService background job} is scheduled.

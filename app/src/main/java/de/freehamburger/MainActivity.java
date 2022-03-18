@@ -847,37 +847,45 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      */
     @Override
     public boolean onContextItemSelected(MenuItem menuItem) {
-        int id = menuItem.getItemId();
+        final int id = menuItem.getItemId();
+        if (id == R.id.action_view_in_browser) {
+            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
+            if (news.getDetailsWeb() == null) return true;
+            // opens the news' detailsWeb URL
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(Uri.parse(news.getDetailsWeb()), "text/html");
+            try {
+                startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(this, android.R.anim.fade_in, android.R.anim.fade_out).toBundle());
+            } catch (Exception e) {
+                if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+                Snackbar.make(this.coordinatorLayout, R.string.error_browser_failed, Snackbar.LENGTH_LONG).show();
+            }
+            return true;
+        }
         if (id == R.id.action_share_news) {
             News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
+            if (news.getDetailsWeb() == null) return true;
             // prefer title over topline because it's usually more informative
             String title = news.getTitle();
             if (TextUtils.isEmpty(title)) title = news.getTopline();
-            Intent intent = new Intent(Intent.ACTION_SEND);
             // shares the news' detailsWeb URL
-            intent.putExtra(Intent.EXTRA_TEXT, news.getDetailsWeb());
-            if (!TextUtils.isEmpty(title)) {
-                intent.putExtra(Intent.EXTRA_SUBJECT, title);
-            }
-            intent.setType("text/plain");
-            if (getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-                startActivity(Intent.createChooser(intent, null));
-            } else {
-                Snackbar.make(this.coordinatorLayout, R.string.error_no_app, Snackbar.LENGTH_LONG).show();
-            }
+            Util.sendUrl(this, news.getDetailsWeb(), title);
             return true;
         }
         if (id == R.id.action_share_video) {
             News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
-            if (news.getContent() == null || !news.getContent().hasVideo()) return true;
-            List<Video> videoList = news.getContent().getVideoList();
-            Video video = videoList.get(0);
-            //TODO handle more than 1 video per Content
-            if (BuildConfig.DEBUG && videoList.size() > 1) {
-                Log.w(TAG, "Has more than one video: " + news);
+            if ((news.getContent() == null || !news.getContent().hasVideo()) && news.getStreams().isEmpty()) return true;
+            final Map<StreamQuality, String> streams;
+            if (!news.getStreams().isEmpty()) {
+                streams = news.getStreams();
+            } else {
+                List<Video> videoList = news.getContent().getVideoList();
+                Video video = videoList.get(0);
+                //TODO handle more than 1 video per Content
+                if (BuildConfig.DEBUG && videoList.size() > 1) Log.w(TAG, "Has more than one video: " + news);
+                //
+                streams = video.getStreams();
             }
-            //
-            final Map<StreamQuality, String> streams = video.getStreams();
             if (streams.size() > 1) {
                 CharSequence[] items = new CharSequence[streams.size()];
                 int i = 0;
@@ -909,7 +917,11 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     if (getPackageManager().resolveActivity(wotswotwot, PackageManager.MATCH_DEFAULT_ONLY) != null) {
                         builder.setNeutralButton(getString(R.string.label_streamquality_adaptive) + "? (Wikipedia)", (dialog, which) -> {
                             dialog.cancel();
-                            startActivity(wotswotwot);
+                            try {
+                                startActivity(wotswotwot);
+                            } catch (Exception ignored) {
+                                Snackbar.make(coordinatorLayout, R.string.error_browser_failed, Snackbar.LENGTH_LONG).show();
+                            }
                         });
                     }
                 }
@@ -930,17 +942,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             String url = image.getBestImage();
             if (url == null) return true;
             String title = news.getTitle();
-            Intent intent = new Intent(Intent.ACTION_SEND);
-            intent.putExtra(Intent.EXTRA_TEXT, url);
-            if (!TextUtils.isEmpty(title)) {
-                intent.putExtra(Intent.EXTRA_SUBJECT, title);
-            }
-            intent.setType("text/plain");
-            if (getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-                startActivity(Intent.createChooser(intent, null));
-            } else {
-                Snackbar.make(this.coordinatorLayout, R.string.error_no_app, Snackbar.LENGTH_LONG).show();
-            }
+            Util.sendUrl(this, url, title);
             return true;
         }
         if (id == R.id.action_view_picture) {

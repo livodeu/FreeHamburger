@@ -597,10 +597,14 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             adapter.contextMenuIndex = position;
             //
             News news = adapter.getItem(position);
+            MenuItem menuItemViewInBrowser = menu.findItem(R.id.action_view_in_browser);
+            menuItemViewInBrowser.setEnabled(news != null && !TextUtils.isEmpty(news.getDetailsWeb()));
             MenuItem menuItemShareNews = menu.findItem(R.id.action_share_news);
             menuItemShareNews.setEnabled(news != null && !TextUtils.isEmpty(news.getDetailsWeb()));
             MenuItem menuItemShareVideo = menu.findItem(R.id.action_share_video);
-            menuItemShareVideo.setEnabled(news != null && news.getContent() != null && news.getContent().hasVideo());
+            boolean hasVideo = news != null
+                    && ((news.getContent() != null && news.getContent().hasVideo()) || (!news.getStreams().isEmpty()));
+            menuItemShareVideo.setEnabled(hasVideo);
             boolean hasImage = news != null && news.getTeaserImage() != null && news.getTeaserImage().hasImage();
             MenuItem menuItemShareImage = menu.findItem(R.id.action_share_image);
             menuItemShareImage.setEnabled(hasImage);

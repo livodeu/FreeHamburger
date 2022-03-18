@@ -20,7 +20,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
-import android.webkit.MimeTypeMap;
 import android.webkit.RenderProcessGoneDetail;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
@@ -85,12 +84,8 @@ public class WebViewActivity extends AppCompatActivity {
         if (dm == null) return;
         final DownloadManager.Request r = new DownloadManager.Request(uri);
         String s = uri.toString();
-        int dot = s.lastIndexOf('.');
-        if (dot > 0 && dot < s.length() - 1) {
-            String extension = s.substring(dot + 1);
-            String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
-            if (mime != null) r.setMimeType(mime);
-        }
+        String mime = Util.getMime(s, null);
+        if (mime != null) r.setMimeType(mime);
         r.setTitle(uri.getLastPathSegment());
         r.setVisibleInDownloadsUi(true);
         r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);

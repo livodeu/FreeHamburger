@@ -52,6 +52,7 @@
     <string name="action_teletext_short">TT</string>
     <string name="action_quality_select">Select video quality</string>
     <string name="action_quit">Quit the app?</string>
+    <string name="action_view_in_browser">View in browser</string>
     <string name="action_view_picture">View picture</string>
     <string name="action_widget_configure">Select Widget Source</string>
 
@@ -78,6 +79,7 @@
     <string name="intro_5">Enjoy the app!</string>
 
     <string name="error_audio_focus_denied">This cannot be played right now!</string>
+    <string name="error_browser_failed">Cannot open a browser!</string>
     <string name="error_connection_failed">Failed to connect to %1$s!</string>
     <string name="error_connection_interrupted">The network connection has been interrupted!</string>
     <string name="error_download_failed">Download failed:\n%1$s</string>
@@ -211,6 +213,7 @@
         <item quantity="other">%1$d regions selected.</item>
     </plurals>
     <string name="msg_search_sugg_deleted_locale">Search suggestions have been cleared due to the recent change of locale!</string>
+    <string name="msg_shared_with">Passed to %1$s</string>
     <string name="msg_shortcut_exists">The shortcut already exists.</string>
     <string name="msg_standby_bucket_frequent">This app is not used often. Background activities may be delayed by up to 8 hrs!</string>
     <string name="msg_standby_bucket_rare">This app is used rarely. Background activities may be delayed by up to 24 hrs!</string>

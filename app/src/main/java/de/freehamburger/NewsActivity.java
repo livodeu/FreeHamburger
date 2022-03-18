@@ -46,7 +46,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.MimeTypeMap;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -259,7 +258,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         boolean validTopVideo = false;
         boolean validBottomVideo = false;
         // top video from news.streams
-        if (prefs.getBoolean(App.PREF_SHOW_TOP_VIDEO, getResources().getBoolean(R.bool.showTopVideoDefault))) {
+        if (prefs.getBoolean(App.PREF_SHOW_TOP_VIDEO, getResources().getBoolean(R.bool.pref_show_topvideo_default))) {
             String newsVideo = StreamQuality.getStreamsUrl(this, this.news.getStreams());
             if (newsVideo != null && this.exoPlayerTopVideo != null) {
                 Uri videoUri = Uri.parse(Util.makeHttps(newsVideo));
@@ -291,7 +290,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 this.buttonAudio.setTag(audio.getStream());
                 this.buttonAudio.setContentDescription(audio.getTitle());
                 this.textViewAudioTitle.setText(audio.getTitle());
-                this.textViewAudioTitle.setTypeface(Util.getTypefaceForTextView(this.textViewAudioTitle, audio.getTitle()));
                 this.textViewAudioTitle.setSelected(true);
                 this.audioBlock.setVisibility(View.VISIBLE);
                 // restore the layout params for the textViewContent
@@ -469,8 +467,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
             URLSpan[] urlSpans = spannable.getSpans(0, spannable.length(), URLSpan.class);
             if (urlSpans != null) {
-                @ColorInt final int colorInternal = Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M ? getResources().getColor(R.color.colorLinkInternal, getTheme()) : getResources().getColor(R.color.colorLinkInternal);
-                @ColorInt final int colorExternal = Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M ? getResources().getColor(R.color.colorLinkExternal, getTheme()) : getResources().getColor(R.color.colorLinkExternal);
+                @ColorInt final int colorInternal = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? getResources().getColor(R.color.colorLinkInternal, getTheme()) : getResources().getColor(R.color.colorLinkInternal);
+                @ColorInt final int colorExternal = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? getResources().getColor(R.color.colorLinkExternal, getTheme()) : getResources().getColor(R.color.colorLinkExternal);
                 for (URLSpan urlSpan : urlSpans) {
                     final String url = urlSpan.getURL();
                     int start = spannable.getSpanStart(urlSpan);
@@ -635,6 +633,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private void initTts() {
         this.ttsInitialised = false;
         this.tts = new TextToSpeech(getApplicationContext(), status -> {
+            if (isDestroyed()) return;
             if (status != TextToSpeech.SUCCESS) {
                 NewsActivity.this.tts = null;
             }
@@ -874,6 +873,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
         Typeface tf = Util.loadFont(this);
         if (tf != null) {
+            this.textViewTitle.setTypeface(tf);
+            this.textViewAudioTitle.setTypeface(tf);
             this.textViewContent.setTypeface(tf);
         }
 
@@ -972,20 +973,22 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
     /** {@inheritDoc} */
     @Override
+    protected void onDestroy() {
+        if (this.tts != null) {
+            this.tts.shutdown();
+            this.tts = null;
+        }
+        super.onDestroy();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_share) {
             String url = this.news.getDetailsWeb();
-            if (url == null) {
-                return true;
-            }
-            String title = this.news.getTitle() != null ? this.news.getTitle() : this.news.getTopline();
-            Intent sendIntent = new Intent();
-            sendIntent.setAction(Intent.ACTION_SEND);
-            sendIntent.putExtra(Intent.EXTRA_TEXT, url);
-            if (title != null) sendIntent.putExtra(Intent.EXTRA_SUBJECT, title);
-            sendIntent.setType("text/plain");
-            startActivity(Intent.createChooser(sendIntent, null));
+            if (url == null) return true;
+            Util.sendUrl(this, url, this.news.getTitle() != null ? this.news.getTitle() : this.news.getTopline());
             return true;
         }
         if (id == R.id.action_read) {
@@ -1503,23 +1506,21 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         @Override
         public void onClick(@NonNull View widget) {
             Uri uri = Uri.parse(getURL());
-            String lps = uri.getLastPathSegment();
-            String tag = lps != null ? lps.substring(lps.lastIndexOf('.') + 1) : null;
-            String mime = this.mime != null ? this.mime : (tag != null ? MimeTypeMap.getSingleton().getMimeTypeFromExtension(tag) : null);
-            Context context = widget.getContext();
-            Intent intent = new Intent(Intent.ACTION_VIEW);
+            String mime = this.mime != null ? this.mime : Util.getMime(uri.getLastPathSegment(), null);
+            Context ctx = widget.getContext();
+            final Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setDataAndType(uri, mime);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT);
             }
-            if (context.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) == null) {
-                Toast.makeText(context, R.string.error_no_app, Toast.LENGTH_SHORT).show();
+            if (ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) == null) {
+                Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_SHORT).show();
                 return;
             }
             Intent chooserIntent = Intent.createChooser(intent, null);
             try {
-                context.startActivity(chooserIntent);
+                ctx.startActivity(chooserIntent);
             } catch (ActivityNotFoundException e) {
                 if (BuildConfig.DEBUG) Log.w(getClass().getSimpleName(), "Actvity was not found for intent " + intent);
             }
