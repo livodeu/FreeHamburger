@@ -142,7 +142,7 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
         }
         if (id == R.id.action_enable_filters) {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            boolean wasEnabled = prefs.getBoolean(App.PREF_FILTERS_APPLY, true);
+            boolean wasEnabled = prefs.getBoolean(App.PREF_FILTERS_APPLY, App.PREF_FILTERS_APPLY_DEFAULT);
             boolean nowEnabled = !wasEnabled;
             SharedPreferences.Editor ed = prefs.edit();
             ed.putBoolean(App.PREF_FILTERS_APPLY, nowEnabled);
@@ -180,7 +180,7 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
                 }
             }
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            boolean enabled = prefs.getBoolean(App.PREF_FILTERS_APPLY, true);
+            boolean enabled = prefs.getBoolean(App.PREF_FILTERS_APPLY, App.PREF_FILTERS_APPLY_DEFAULT);
             SharedPreferences.Editor ed = prefs.edit();
             int n = preferredFilters.size();
             if (n == 0) {
@@ -210,7 +210,7 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
         MenuItem menuItemAdd = menu.findItem(R.id.action_add_filter);
         menuItemAdd.setVisible(adapter != null && !adapter.hasFilterWithNoText());
         MenuItem menuItemEnable = menu.findItem(R.id.action_enable_filters);
-        boolean filtersEnabled = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_FILTERS_APPLY, true);
+        boolean filtersEnabled = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_FILTERS_APPLY, App.PREF_FILTERS_APPLY_DEFAULT);
         menuItemEnable.setTitle(filtersEnabled ? R.string.action_filters_enabled : R.string.action_filters_disabled);
         if (this.filterChanging) {
             // set the icon for the start situation (yes, red if enabled and green if disabled)

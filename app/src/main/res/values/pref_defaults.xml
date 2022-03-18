@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="pref_ask_before_finish_default">true</bool>
+    <bool name="pref_correct_quotation_marks_default">false</bool>
+    <bool name="pref_load_over_mobile_default">true</bool>
+    <bool name="pref_load_videos_over_mobile_default">false</bool>
+    <bool name="pref_notification_extended_default">false</bool>
+    <bool name="pref_open_links_internally_default">true</bool>
+    <bool name="pref_pip_enabled_default">true</bool>
+    <bool name="pref_play_intro_default">true</bool>
+    <bool name="pref_poll_breaking_only_default">true</bool>
+    <bool name="pref_poll_default">false</bool>
+    <bool name="pref_poll_over_mobile_default">false</bool>
+    <bool name="pref_show_share_target_default">false</bool>
+    <bool name="pref_show_topvideo_default">true</bool>
+    <bool name="pref_topline_marquee_default">false</bool>
+    <bool name="pref_time_mode_default">true</bool>
+    <bool name="pref_warn_mute_default">true</bool>
+    <integer name="pref_cache_max_size_default">15</integer>
+    <integer name="pref_font_zoom_default">100</integer>
+    <integer name="pref_mem_cache_max_size_default">20</integer>
+    <integer name="pref_poll_interval_default">15</integer>
+</resources>

@@ -131,6 +131,7 @@
     <string name="label_streamquality_m">Medium (%1$d px wide)</string>
     <string name="label_streamquality_l">Large (%1$d px wide)</string>
     <string name="label_streamquality_xl">XLarge (%1$d px wide)</string>
+    <string name="label_no">No</string>
     <string name="label_notification_channel">News</string>
     <string name="label_notification_channel_hipri">Breaking news</string>
     <string name="label_notification_channel_updates">Frequent updates</string>
@@ -284,6 +285,7 @@
     <string name="pref_title_quotationmarks_fix">Wrong quotation marks</string>
     <string name="pref_title_quotationmarks_fix_on">will be fixed („”)</string>
     <string name="pref_title_quotationmarks_fix_off">will be left as they are (\" \")</string>
+    <string name="pref_title_show_share_target">Show share target</string>
     <string name="pref_title_time_mode">Time mode</string>
     <string name="pref_title_time_mode_on">Relative</string>
     <string name="pref_title_time_mode_off">Absolute</string>

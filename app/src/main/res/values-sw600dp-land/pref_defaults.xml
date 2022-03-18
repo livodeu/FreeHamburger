@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <bool name="showTopVideoDefault">true</bool>
+    <bool name="pref_show_topvideo_default">false</bool>
 </resources>

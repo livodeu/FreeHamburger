@@ -79,7 +79,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** String: maximum 'disk' cache size in MB */
     public static final String PREF_CACHE_MAX_SIZE = "pref_cache_max_size";
     /** String: default maximum 'disk' cache size in MB */
-    public static final String DEFAULT_CACHE_MAX_SIZE = "15";
+    public static final String DEFAULT_CACHE_MAX_SIZE = "20";
     /** default maximum 'disk' cache size in MB */
     public static final long DEFAULT_CACHE_MAX_SIZE_MB = Long.parseLong(DEFAULT_CACHE_MAX_SIZE);
     /** String: maximum memory cache size in MB */
@@ -103,6 +103,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** boolean: show a link for htmlEmbed content */
     public static final String PREF_SHOW_EMBEDDED_HTML_LINKS = "pref_show_enbedded_html_links";
     public static final boolean PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT = true;
+    /** boolean: show where the shared content went */
+    public static final String PREF_SHOW_LATEST_SHARE_TARGET = "pref_show_share_target";
+    public static final boolean PREF_SHOW_LATEST_SHARE_TARGET_DEFAULT = false;
     /** String: DIRECT, HTTP or SOCKS */
     public static final String PREF_PROXY_TYPE = "pref_proxy_type";
     public static final String PREF_REGIONS = "pref_regions";
@@ -114,7 +117,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** boolean: ask before leaving the app */
     public static final String PREF_ASK_BEFORE_FINISH = "pref_ask_before_finish";
     public static final boolean PREF_ASK_BEFORE_FINISH_DEFAULT = true;
-    /** boolean: show or hide top video in news */
+    /** boolean: show or hide top video in news - the default depends on the device size and is therefore defined in the resources as {@link R.bool#pref_show_topvideo_default pref_show_topvideo_default} */
     public static final String PREF_SHOW_TOP_VIDEO = "pref_show_top_video";
     /** int: 0 closes the app; 1 navigates to home category; 2 navigates to recent section; see {@link BackButtonBehaviour} */
     public static final String PREF_USE_BACK_IN_APP = "pref_use_back";
@@ -130,6 +133,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_FILTERS = "pref_filters";
     /** boolean */
     public static final String PREF_FILTERS_APPLY = "pref_filters_apply";
+    public static final boolean PREF_FILTERS_APPLY_DEFAULT = true;
     /** int: percentage value (range between @integer/min_magnification_text and @integer/max_magnification_text) */
     public static final String PREF_FONT_ZOOM = "pref_font_zoom";
     public static final int PREF_FONT_ZOOM_DEFAULT = 100;
@@ -137,6 +141,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_SWIPE_TO_DISMISS = "pref_swipe_to_dismiss";
     /** boolean */
     public static final String PREF_PLAY_INTRO = "pref_play_intro";
+    public static final boolean PREF_PLAY_INTRO_DEFAULT = true;
     /** boolean */
     public static final String PREF_POLL = "pref_poll";
     public static final boolean PREF_POLL_DEFAULT = false;

@@ -1,11 +1,18 @@
-<PreferenceScreen
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    >
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <SwitchPreferenceCompat
+        app:defaultValue="@bool/pref_play_intro_default"
         app:key="pref_play_intro"
-        app:title="@string/pref_title_play_intro"
+        app:summaryOff="@string/hint_intro_will_not_be_played"
         app:summaryOn="@string/hint_intro_will_be_played"
-        app:summaryOff="@string/hint_intro_will_not_be_played"/>
+        app:title="@string/pref_title_play_intro" />
+
+    <SwitchPreferenceCompat
+        app:defaultValue="@bool/pref_show_share_target_default"
+        app:key="pref_show_share_target"
+        app:singleLineTitle="false"
+        app:summaryOff="@string/label_no"
+        app:summaryOn="@string/label_yes"
+        app:title="@string/pref_title_show_share_target" />
 
 </PreferenceScreen>

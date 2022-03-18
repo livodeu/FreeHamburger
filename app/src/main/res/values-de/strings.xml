@@ -16,6 +16,7 @@
     <string name="hint_audio_content_play">Audioinhalte abspielen</string>
     <string name="label_cols_default">Standard</string>
     <string name="pref_title_orientation_main">Ausrichtung</string>
+    <string name="pref_title_show_share_target">Empfänger weitergegebener Inhalte anzeigen</string>
     <string name="msg_background_active">Hintergrundaktualisierungen sind aktiv und werden etwa alle %1$s Minuten ausgeführt.</string>
     <string name="msg_background_active_short">Hintergrundaktualisierungen aktiv (alle %1$s Min.)</string>
     <string name="msg_background_inactive">Hintergrundaktualisierungen sind deaktiviert.</string>
@@ -39,6 +40,7 @@
     <string name="label_license">Lizenz</string>
     <string name="label_link">(externes Ziel)</string>
     <string name="label_yes">Ja</string>
+    <string name="label_no">Nein</string>
     <string name="label_notification_channel">Meldungen</string>
     <string name="label_notification_channel_hipri">Eilmeldungen</string>
     <string name="label_notification_channel_updates">Häufige Aktualisierungen</string>

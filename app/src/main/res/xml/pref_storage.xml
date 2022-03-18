@@ -1,7 +1,7 @@
 <PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android">
     <EditTextPreference
-        android:defaultValue="15"
+        android:defaultValue="@integer/pref_cache_max_size_default"
         android:dialogIcon="@drawable/ic_storage_content_24dp"
         android:hint="@string/pref_hint_pref_cache_max_size"
         android:icon="@drawable/ic_storage_content_24dp"

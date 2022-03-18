@@ -3,7 +3,7 @@
     >
 
     <SwitchPreferenceCompat
-        android:defaultValue="true"
+        android:defaultValue="@bool/pref_load_over_mobile_default"
         android:key="pref_load_over_mobile"
         android:icon="@drawable/ic_network_cell_content_24dp"
         android:title="@string/pref_title_pref_load_over_mobile"
@@ -11,7 +11,7 @@
         android:summaryOff="@string/pref_title_pref_load_over_mobile_off"/>
 
     <SwitchPreferenceCompat
-        android:defaultValue="false"
+        android:defaultValue="@bool/pref_load_videos_over_mobile_default"
         android:key="pref_load_videos_over_mobile"
         android:dependency="pref_load_over_mobile"
         android:icon="@drawable/ic_network_cell_content_24dp"

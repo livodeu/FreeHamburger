@@ -4,7 +4,7 @@
     >
 
     <de.freehamburger.prefs.NiceSwitchPreference
-        android:defaultValue="false"
+        android:defaultValue="@bool/pref_poll_default"
         android:icon="@drawable/ic_notifications_content_24dp"
         android:key="pref_poll"
         android:summaryOff="@string/pref_title_poll_off"
@@ -21,21 +21,21 @@
         />
 
     <SwitchPreferenceCompat
-        android:defaultValue="true"
+        android:defaultValue="@bool/pref_poll_breaking_only_default"
         android:dependency="pref_poll"
         android:icon="@drawable/ic_whatshot_content_24dp"
         android:key="pref_poll_breaking_only"
         android:title="@string/pref_title_poll_breaking_only"/>
 
     <SwitchPreferenceCompat
-        android:defaultValue="false"
+        android:defaultValue="@bool/pref_poll_over_mobile_default"
         android:dependency="pref_poll"
         android:icon="@drawable/ic_network_cell_content_24dp"
         android:key="pref_poll_over_mobile"
         android:title="@string/pref_title_poll_over_mobile"/>
 
     <de.freehamburger.prefs.SummarizingEditTextPreference
-        android:defaultValue="15"
+        android:defaultValue="@integer/pref_poll_interval_default"
         android:dependency="pref_poll"
         android:dialogIcon="@drawable/ic_schedule_content_24dp"
         android:hint="@string/pref_hint_poll_interval"
@@ -46,7 +46,7 @@
         />
 
     <de.freehamburger.prefs.SummarizingEditTextPreference
-        android:defaultValue="15"
+        android:defaultValue="@integer/pref_poll_interval_default"
         android:dependency="pref_poll"
         android:dialogIcon="@drawable/ic_schedule_content_24dp"
         android:hint="@string/pref_hint_poll_interval_night"
@@ -57,7 +57,7 @@
         />
 
     <SwitchPreferenceCompat
-        android:defaultValue="false"
+        android:defaultValue="@bool/pref_notification_extended_default"
         android:dependency="pref_poll"
         android:icon="@drawable/ic_baseline_topic_content_24"
         android:key="pref_notification_extended"

@@ -150,7 +150,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         super();
         this.activity = activity;
         this.background = activity.getBackground();
-        this.filtersEnabled = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_FILTERS_APPLY, true);
+        this.filtersEnabled = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_FILTERS_APPLY, App.PREF_FILTERS_APPLY_DEFAULT);
         setHasStableIds(true);
         setTypeface(typeface);
     }
@@ -386,7 +386,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
         if (App.PREF_FILTERS_APPLY.equals(key)) {
-            this.filtersEnabled = prefs.getBoolean(key, true);
+            this.filtersEnabled = prefs.getBoolean(key, App.PREF_FILTERS_APPLY_DEFAULT);
         } else if (App.PREF_BACKGROUND.equals(key)) {
             // The activity receives the same info (HamburgerActivity.onSharedPreferenceChanged()) and sets its background accordingly; give it a moment to do so
             this.handler.postDelayed(() -> {

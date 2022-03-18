@@ -4,16 +4,16 @@
 
     <de.freehamburger.prefs.ButtonPreference
         android:icon="@drawable/ic_wb_sunny_content_24dp"
-        android:title="@string/pref_title_background"
         android:key="pref_background"
-        app:entries="@array/entries_list_background"
+        android:title="@string/pref_title_background"
         app:colors="@array/colors_list_background"
+        app:entries="@array/entries_list_background"
         />
 
     <de.freehamburger.prefs.NiceDropDownPreference
+        android:icon="@drawable/ic_screen_rotation_content_24dp"
         android:key="pref_orientation"
         android:title="@string/pref_title_orientation_main"
-        android:icon="@drawable/ic_screen_rotation_content_24dp"
         app:entries="@array/entries_list_orientation"
         app:entryValues="@array/entryvalues_list_orientation"
         app:useSimpleSummaryProvider="true"
@@ -53,67 +53,68 @@
         >
 
         <SeekBarPreference
+            android:icon="@drawable/ic_search_content_24dp"
             android:key="pref_font_zoom"
             android:max="@integer/max_magnification_text"
             android:title="@string/pref_title_font_zoom"
-            android:icon="@drawable/ic_search_content_24dp"
+            app:defaultValue="@integer/pref_font_zoom_default"
             app:min="@integer/min_magnification_text"
             app:showSeekBarValue="false" />
 
         <Preference
+            android:icon="@drawable/ic_text_format_content_24dp"
             android:key="pref_import_font"
-            android:title="@string/action_import_font"
-            android:icon="@drawable/ic_text_format_content_24dp">
+            android:title="@string/action_import_font">
             <intent android:action="@string/main_action_font_import" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
         </Preference>
 
         <Preference
-            android:key="pref_delete_font"
-            android:title="@string/action_font_delete"
+            android:enabled="false"
             android:icon="@drawable/ic_delete_forever_content_24dp"
-            android:enabled="false">
+            android:key="pref_delete_font"
+            android:title="@string/action_font_delete">
             <intent android:action="@string/main_action_font_delete" android:targetClass="de.freehamburger.MainActivity" android:targetPackage="de.freehamburger"/>
         </Preference>
     </PreferenceCategory>
 
     <PreferenceCategory
+        app:initialExpandedChildrenCount="0"
         app:key="pref_cat_opts"
         app:title="@string/pref_cat_opts"
-        app:initialExpandedChildrenCount="0"
         >
 
         <SwitchPreferenceCompat
-            android:defaultValue="false"
-            android:key="pref_time_mode"
-            android:title="@string/pref_title_time_mode"
+            android:defaultValue="@bool/pref_time_mode_default"
             android:icon="@drawable/ic_schedule_content_24dp"
-            android:summaryOn="@string/pref_title_time_mode_on"
+            android:key="pref_time_mode"
             android:summaryOff="@string/pref_title_time_mode_off"
+            android:summaryOn="@string/pref_title_time_mode_on"
+            android:title="@string/pref_title_time_mode"
             />
 
         <SwitchPreferenceCompat
-            android:defaultValue="@bool/showTopVideoDefault"
+            android:defaultValue="@bool/pref_show_topvideo_default"
             android:key="pref_show_top_video"
-            android:title="@string/pref_title_show_top_video"
-            android:summaryOn="@string/pref_title_show_top_video_on"
             android:summaryOff="@string/pref_title_show_top_video_off"
+            android:summaryOn="@string/pref_title_show_top_video_on"
+            android:title="@string/pref_title_show_top_video"
             />
 
         <SwitchPreferenceCompat
-            android:defaultValue="false"
-            android:key="pref_topline_marquee"
-            android:title="@string/pref_title_pref_topline_marquee"
+            android:defaultValue="@bool/pref_topline_marquee_default"
             android:icon="@drawable/ic_compare_arrows_content_24dp"
-            android:summaryOn="@string/pref_title_pref_topline_marquee_on"
+            android:key="pref_topline_marquee"
             android:summaryOff="@string/pref_title_pref_topline_marquee_off"
+            android:summaryOn="@string/pref_title_pref_topline_marquee_on"
+            android:title="@string/pref_title_pref_topline_marquee"
             />
 
         <SwitchPreferenceCompat
-            android:defaultValue="false"
+            android:defaultValue="@bool/pref_correct_quotation_marks_default"
             android:key="pref_correct_quotation_marks"
-            android:title="@string/pref_title_quotationmarks_fix"
-            android:summaryOn="@string/pref_title_quotationmarks_fix_on"
             android:summaryOff="@string/pref_title_quotationmarks_fix_off"
+            android:summaryOn="@string/pref_title_quotationmarks_fix_on"
+            android:title="@string/pref_title_quotationmarks_fix"
             />
     </PreferenceCategory>
 </PreferenceScreen>

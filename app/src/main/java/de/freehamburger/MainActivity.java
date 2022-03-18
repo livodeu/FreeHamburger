@@ -1620,7 +1620,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         boolean hasTemporaryFilter = this.newsAdapter.setFilters(TextFilter.createTextFiltersFromPreferences(this));
         this.clockView.setTint(hasTemporaryFilter ? Util.getColor(this, R.color.colorFilter) : Color.TRANSPARENT);
         // if the adapter is already filled, we are able to show the intro now (playIntro will return quickly if the adapter is empty)
-        if (prefs.getBoolean(App.PREF_PLAY_INTRO, true)) {
+        if (prefs.getBoolean(App.PREF_PLAY_INTRO, App.PREF_PLAY_INTRO_DEFAULT)) {
             if (playIntro()) {
                 SharedPreferences.Editor ed = prefs.edit();
                 ed.putBoolean(App.PREF_PLAY_INTRO, false);
@@ -1800,7 +1800,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 app.trimCacheIfNeeded();
 
                 // if we were not able to show the intro in onResume(), we should be now
-                if (prefs.getBoolean(App.PREF_PLAY_INTRO, true)) {
+                if (prefs.getBoolean(App.PREF_PLAY_INTRO, App.PREF_PLAY_INTRO_DEFAULT)) {
                     if (playIntro()) {
                         SharedPreferences.Editor ed = prefs.edit();
                         ed.putBoolean(App.PREF_PLAY_INTRO, false);

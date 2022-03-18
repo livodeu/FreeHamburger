@@ -29,6 +29,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.content.pm.ShortcutManager;
+import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
 import android.graphics.Point;
 import android.graphics.Typeface;
@@ -41,6 +42,8 @@ import android.text.TextUtils;
 import android.util.SparseArray;
 import android.widget.TextView;
 
+import androidx.annotation.CheckResult;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.StyleRes;
@@ -88,6 +91,56 @@ import okhttp3.OkHttpClient;
 public class AppTest {
 
     private static Context ctx;
+
+    /**
+     * Returns a resource's name.
+     * @param ctx Context
+     * @param id resource id
+     * @return resource name
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
+    @NonNull
+    @CheckResult
+    private static String getResourceName(@NonNull Context ctx, int id) {
+        if (id == 0xffffffff) return "";
+        Resources r = ctx.getResources();
+        if (r == null) return "<NOR>";
+        StringBuilder out = new StringBuilder();
+        try {
+            String pkgname;
+            switch (id & 0xff000000) {
+                case 0x7f000000:
+                    pkgname = "app";
+                    break;
+                case 0x01000000:
+                    pkgname = "android";
+                    break;
+                default:
+                    pkgname = r.getResourcePackageName(id);
+                    break;
+            }
+            String typename;
+            try {
+                typename = r.getResourceTypeName(id);
+            } catch (UnsupportedOperationException ee) {
+                typename = "<null>";
+            }
+            String entryname;
+            try {
+                entryname = r.getResourceEntryName(id);
+            } catch (UnsupportedOperationException ee) {
+                entryname = "<null>";
+            }
+            out.append(pkgname);
+            out.append(":");
+            out.append(typename);
+            out.append("/");
+            out.append(entryname);
+        } catch (Resources.NotFoundException e) {
+            out.append("0x").append(Integer.toHexString(id));
+        }
+        return out.toString();
+    }
 
     @BeforeClass
     public static void init() {
@@ -186,6 +239,66 @@ public class AppTest {
             assertNotNull(app.getCurrentActivity());
             activity.finish();
         });
+    }
+
+    /**
+     * Tests that preference default values defined in the resources match those defined in the code.
+     */
+    @Test
+    public void testDefaults() {
+        final int[] resBoolValues = new int[] {
+                R.bool.pref_ask_before_finish_default,
+                R.bool.pref_correct_quotation_marks_default,
+                R.bool.pref_load_over_mobile_default,
+                R.bool.pref_load_videos_over_mobile_default,
+                R.bool.pref_notification_extended_default,
+                R.bool.pref_open_links_internally_default,
+                R.bool.pref_pip_enabled_default,
+                R.bool.pref_play_intro_default,
+                R.bool.pref_poll_breaking_only_default,
+                R.bool.pref_poll_default,
+                R.bool.pref_poll_over_mobile_default,
+                R.bool.pref_show_share_target_default,
+                R.bool.pref_time_mode_default,
+                R.bool.pref_warn_mute_default
+        };
+        final boolean[] appBoolValues = new boolean[] {
+                App.PREF_ASK_BEFORE_FINISH_DEFAULT,
+                App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT,
+                App.DEFAULT_LOAD_OVER_MOBILE,
+                App.DEFAULT_LOAD_VIDEOS_OVER_MOBILE,
+                UpdateJobService.PREF_NOTIFICATION_EXTENDED_DEFAULT,
+                VideoActivity.PREF_PIP_ENABLED_DEFAULT,
+                App.PREF_PLAY_INTRO_DEFAULT,
+                App.PREF_OPEN_LINKS_INTERNALLY_DEFAULT,
+                App.PREF_POLL_BREAKING_ONLY_DEFAULT,
+                App.PREF_POLL_DEFAULT,
+                App.PREF_POLL_OVER_MOBILE_DEFAULT,
+                App.PREF_SHOW_LATEST_SHARE_TARGET_DEFAULT,
+                App.PREF_TIME_MODE_RELATIVE_DEFAULT,
+                App.PREF_WARN_MUTE_DEFAULT
+        };
+        final int[] resIntValues = new int[] {
+                R.integer.pref_font_zoom_default,
+                R.integer.pref_mem_cache_max_size_default,
+                R.integer.pref_poll_interval_default
+        };
+        final int[] appIntValues = new int[] {
+                App.PREF_FONT_ZOOM_DEFAULT,
+                (int)App.DEFAULT_CACHE_MAX_SIZE_MB,
+                App.PREF_POLL_INTERVAL_DEFAULT
+        };
+        final Resources res = ctx.getResources();
+        final int nBools = resBoolValues.length;
+        assertEquals(nBools, appBoolValues.length);
+        for (int i = 0; i < nBools; i++) {
+            assertEquals(getResourceName(ctx, resBoolValues[i]) + " is wrong; ", appBoolValues[i], res.getBoolean(resBoolValues[i]));
+        }
+        final int nInts = resIntValues.length;
+        assertEquals(nInts, appIntValues.length);
+        for (int i = 0; i < nInts; i++) {
+            assertEquals(getResourceName(ctx, resIntValues[i]) + " is wrong; ", appIntValues[i], res.getInteger(resIntValues[i]));
+        }
     }
 
     @Test
