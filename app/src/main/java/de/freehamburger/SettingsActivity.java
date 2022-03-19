@@ -24,6 +24,7 @@ import android.os.IBinder;
 import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -35,6 +36,7 @@ import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import androidx.annotation.Keep;
@@ -795,7 +797,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
 
             this.min = 1;//UpdateJobService.getMinimumIntervalInMinutes();
-            this.maxNightInterval = Math.round(UpdateJobService.getNightDuration() * 60f);
+            this.maxNightInterval = Math.round(UpdateJobService.getNightDuration(prefs) * 60f);
 
             SwitchPreferenceCompat prefPoll = findPreference(App.PREF_POLL);
             if (prefPoll != null) {
@@ -911,6 +913,50 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     // if the interval is less than 15 mins, start the FrequentUpdatesService (the service will stop itself if the interval is >= 15 min)
                     if (valid) FrequentUpdatesService.possiblyStart(activity, prefs, this.handler, 1_000L);
                     return valid;
+                });
+            }
+
+            Preference prefNightPeriod = findPreference("pref_night_period");
+            if (prefNightPeriod != null) {
+                prefNightPeriod.setSummary(getString(R.string.pref_summary_poll_nightis, Util.formatFloatTime(prefs.getFloat(App.PREF_POLL_NIGHT_START, App.PREF_POLL_NIGHT_START_DEFAULT)), Util.formatFloatTime(prefs.getFloat(App.PREF_POLL_NIGHT_END, App.PREF_POLL_NIGHT_END_DEFAULT))));
+                prefNightPeriod.setOnPreferenceClickListener(preference -> {
+                    Activity a = getActivity();
+                    if (a == null) return false;
+                    View v = LayoutInflater.from(a).inflate(R.layout.night, null);
+                    TimePicker timeFrom = v.findViewById(R.id.timeFrom);
+                    TimePicker timeTo = v.findViewById(R.id.timeTo);
+                    timeFrom.setIs24HourView(true);
+                    timeTo.setIs24HourView(true);
+                    float from = prefs.getFloat(App.PREF_POLL_NIGHT_START, App.PREF_POLL_NIGHT_START_DEFAULT);
+                    float to = prefs.getFloat(App.PREF_POLL_NIGHT_END, App.PREF_POLL_NIGHT_END_DEFAULT);
+                    int fromHour = (int)from;
+                    int fromMinute = (int)(60f * (from - fromHour));
+                    int toHour = (int)to;
+                    int toMinute = (int)(60f * (to - toHour));
+                    timeFrom.setCurrentHour(fromHour);
+                    timeFrom.setCurrentMinute(fromMinute);
+                    timeTo.setCurrentHour(toHour);
+                    timeTo.setCurrentMinute(toMinute);
+                    AlertDialog.Builder builder = new MaterialAlertDialogBuilder(a)
+                            .setIcon(R.drawable.ic_baseline_mode_night_content_24)
+                            .setTitle(R.string.pref_title_poll_nightis)
+                            .setView(v)
+                            .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel())
+                            .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                                float selectedFrom = timeFrom.getCurrentHour() + timeFrom.getCurrentMinute() / 60f;
+                                float selectedTo = timeTo.getCurrentHour() + timeTo.getCurrentMinute() / 60f;
+                                if (selectedFrom >= 0 && selectedFrom < 24f && selectedTo >= 0f && selectedTo < 24f && Math.abs(selectedTo - selectedFrom) > 0.1f) {
+                                    SharedPreferences.Editor ed = prefs.edit();
+                                    ed.putFloat(App.PREF_POLL_NIGHT_START, selectedFrom);
+                                    ed.putFloat(App.PREF_POLL_NIGHT_END, selectedTo);
+                                    ed.apply();
+                                    prefNightPeriod.setSummary(getString(R.string.pref_summary_poll_nightis, Util.formatFloatTime(prefs.getFloat(App.PREF_POLL_NIGHT_START, App.PREF_POLL_NIGHT_START_DEFAULT)), Util.formatFloatTime(prefs.getFloat(App.PREF_POLL_NIGHT_END, App.PREF_POLL_NIGHT_END_DEFAULT))));
+                                }
+                                dialog.dismiss();
+                            })
+                            ;
+                    builder.show();
+                    return true;
                 });
             }
 

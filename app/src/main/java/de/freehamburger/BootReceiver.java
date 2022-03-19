@@ -41,7 +41,7 @@ public class BootReceiver extends BroadcastReceiver {
         App app = (App)ctx.getApplicationContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
         if (!prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)) return;
-        int intervalMinutes = PrefsHelper.getStringAsInt(prefs, UpdateJobService.hasNightFallenOverBerlin() ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT);
+        int intervalMinutes = PrefsHelper.getStringAsInt(prefs, UpdateJobService.hasNightFallenOverBerlin(prefs) ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT);
         boolean frequentUpdates = FrequentUpdatesService.shouldBeEnabled(ctx, prefs);//intervalMinutes < UpdateJobService.getMinimumIntervalInMinutes();
 
         long intervalMs;

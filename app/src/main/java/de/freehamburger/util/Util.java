@@ -53,6 +53,7 @@ import android.widget.Toast;
 import androidx.annotation.AnyThread;
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
+import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -571,6 +572,13 @@ public class Util {
             pos = found + 1;
         }
         return out;
+    }
+
+    @NonNull
+    public static String formatFloatTime(@FloatRange(from = 0f, to = 24f) float t) {
+        int h = (int)t;
+        int m = (int)(60f * (t - h));
+        return String.format(Locale.getDefault(), "%02d:%02d", h, m);
     }
 
     /**

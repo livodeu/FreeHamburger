@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="16dp"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp">
+
+    <TextView
+        android:id="@+id/ltf"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:labelFor="@id/timeFrom"
+        android:text="von"
+        android:textAlignment="center"
+        android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+        app:layout_constraintEnd_toStartOf="@+id/ltt"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/ltt"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:labelFor="@id/timeTo"
+        android:text="bis"
+        android:textAlignment="center"
+        android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/ltf"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="HardcodedText" />
+
+    <TimePicker
+        android:id="@+id/timeFrom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:importantForAutofill="no"
+        android:scaleX="0.9"
+        android:scaleY="0.9"
+        android:timePickerMode="spinner"
+        app:layout_constraintEnd_toStartOf="@+id/timeTo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ltf" />
+
+    <TimePicker
+        android:id="@+id/timeTo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:importantForAutofill="no"
+        android:scaleX="0.9"
+        android:scaleY="0.9"
+        android:timePickerMode="spinner"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/timeFrom"
+        app:layout_constraintTop_toBottomOf="@+id/ltt" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

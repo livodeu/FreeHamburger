@@ -56,6 +56,14 @@
         android:title="@string/pref_hint_poll_interval_night"
         />
 
+    <Preference
+        android:dependency="pref_poll"
+        android:dialogLayout="@layout/night"
+        android:icon="@drawable/ic_baseline_mode_night_content_24"
+        android:key="pref_night_period"
+        android:title="@string/pref_title_poll_nightis"
+        />
+
     <SwitchPreferenceCompat
         android:defaultValue="@bool/pref_notification_extended_default"
         android:dependency="pref_poll"

@@ -163,8 +163,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_POLL_INTERVAL_NIGHT = "pref_poll_interval_night";
     /** long: set to the current timestamp if scheduling the background job had failed */
     public static final String PREF_POLL_FAILED = "pref_poll_failed";
+    /** float */
     public static final String PREF_POLL_NIGHT_START = "pref_poll_night_start";
+    public static final float PREF_POLL_NIGHT_START_DEFAULT = 23f;
+    /** float */
     public static final String PREF_POLL_NIGHT_END = "pref_poll_night_end";
+    public static final float PREF_POLL_NIGHT_END_DEFAULT = 6f;
     /** boolean -  See <a href="https://en.wikipedia.org/wiki/Quotation_mark#German">here</a> */
     public static final String PREF_CORRECT_WRONG_QUOTATION_MARKS = "pref_correct_quotation_marks";
     public static final boolean PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT = false;
@@ -174,7 +178,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final int BACKGROUND_AUTO = 0;
     public static final int BACKGROUND_NIGHT = 1;
     public static final int BACKGROUND_DAY = 2;
-    //public static final int BACKGROUND_VDARK = 3;
     static final String ORIENTATION_AUTO = "AUTO";
     static final String ORIENTATION_PORTRAIT = "PORTRAIT";
     static final String ORIENTATION_LANDSCAPE = "LANDSCAPE";
@@ -749,7 +752,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @AnyThread
     void scheduleStart() {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if (PrefsHelper.getStringAsInt(prefs, UpdateJobService.hasNightFallenOverBerlin() ? PREF_POLL_INTERVAL_NIGHT : PREF_POLL_INTERVAL, PREF_POLL_INTERVAL_DEFAULT) < UpdateJobService.getMinimumIntervalInMinutes()) {
+        if (PrefsHelper.getStringAsInt(prefs, UpdateJobService.hasNightFallenOverBerlin(prefs) ? PREF_POLL_INTERVAL_NIGHT : PREF_POLL_INTERVAL, PREF_POLL_INTERVAL_DEFAULT) < UpdateJobService.getMinimumIntervalInMinutes()) {
             if (BuildConfig.DEBUG) Log.i(TAG, "Skipping periodic background job because the interval is less than 15 minutes");
             return;
         }

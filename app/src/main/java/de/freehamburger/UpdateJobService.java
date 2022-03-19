@@ -208,7 +208,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
             // do not set to a longer interval than the rest of the night or day! (don't wait 7 hours at 5 o'clock!)
             float nowInHours = getCurrentTimeInHours();
             if (forNight) {
-                float nightEnd = getNightEnd();   // 6f
+                float nightEnd = getNightEnd(prefs);   // 6f
                 float minutesToNightEnd = (nightEnd - nowInHours) * 60f;   // at 4:30 this is 90
                 if (minutesToNightEnd < 0) minutesToNightEnd = 1440 + minutesToNightEnd;
                 if (intervalInMinutes > minutesToNightEnd) {
@@ -221,7 +221,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                     }
                 }
             } else {
-                float nightStart = getNightStart(); // 23f
+                float nightStart = getNightStart(prefs); // 23f
                 float minutesToNightStart = (nightStart - nowInHours) * 60f; // at 22:50 this is 10
                 if (minutesToNightStart < 0) minutesToNightStart = 1440 + minutesToNightStart;
                 if (intervalInMinutes > minutesToNightStart) {
@@ -313,8 +313,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * @return duration of nighttime in hours
      */
     @FloatRange(from = 0f, to = 24f)
-    static float getNightDuration() {
-        float delta = getNightEnd() - getNightStart();
+    static float getNightDuration(@NonNull SharedPreferences prefs) {
+        float delta = getNightEnd(prefs) - getNightStart(prefs);
         if (delta < 0f) delta = 24f + delta;
         return delta;
     }
@@ -323,25 +323,25 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * @return the point at which the night ends (in hours)
      */
     @FloatRange(from = 0f, to = 24f)
-    private static float getNightEnd() {
-        return 6f;
+    private static float getNightEnd(@NonNull SharedPreferences prefs) {
+        return prefs.getFloat(App.PREF_POLL_NIGHT_END, App.PREF_POLL_NIGHT_END_DEFAULT);
     }
 
     /**
      * @return the point at which the night starts (in hours)
      */
     @FloatRange(from = 0f, to = 24f)
-    private static float getNightStart() {
-        return 23f;
+    private static float getNightStart(@NonNull SharedPreferences prefs) {
+        return prefs.getFloat(App.PREF_POLL_NIGHT_START, App.PREF_POLL_NIGHT_START_DEFAULT);
     }
 
     /**
      * Tells whether it is colder than outside.
      * @return {@code true} in the range of 23:00:00 to 05:59:59
      */
-    public static boolean hasNightFallenOverBerlin() {
+    public static boolean hasNightFallenOverBerlin(@NonNull SharedPreferences prefs) {
         float hour = getCurrentTimeInHours();
-        return hour >= getNightStart() || hour < getNightEnd();
+        return hour >= getNightStart(prefs) || hour < getNightEnd(prefs);
     }
 
     /**
@@ -442,8 +442,9 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     @NonNull
     @RequiresPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED)
     static JobInfo makeJobInfo(@NonNull Context ctx) {
-        final boolean night = hasNightFallenOverBerlin();
-        final long intervalMs = calcInterval(PreferenceManager.getDefaultSharedPreferences(ctx), night);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        final boolean night = hasNightFallenOverBerlin(prefs);
+        final long intervalMs = calcInterval(prefs, night);
         final JobInfo.Builder jib = new JobInfo.Builder(JOB_ID, new ComponentName(ctx, UpdateJobService.class))
                 .setPeriodic(intervalMs)
                 // JobInfo.NETWORK_TYPE_UNMETERED is not a reliable equivalent for Wifi => decision whether to actually poll is deferred to onStartJob()
@@ -524,18 +525,19 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     @VisibleForTesting()
     public static boolean needsReScheduling(@NonNull Context ctx, @NonNull JobParameters params) {
         if (params.getExtras().getInt(EXTRA_ONE_OFF, 0) != 0) return false;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         final boolean jobWasScheduledForNight = params.getExtras().getInt(EXTRA_NIGHT, JOB_SCHEDULE_DAY) == JOB_SCHEDULE_NIGHT;
-        final boolean isNight = hasNightFallenOverBerlin();
+        final boolean isNight = hasNightFallenOverBerlin(prefs);
         boolean yes = (isNight != jobWasScheduledForNight);
         if (!yes) {
             // the simple comparison above does not consider the case that it's now just before the day-night or night-day switch
             // like, for example, at 5:54 => this is still night so we might apply a 420 minutes interval => next update near 13:00!
             final float nowInHours = getCurrentTimeInHours();
             //noinspection ConstantConditions
-            int intervalInMinutes = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(ctx).getString(jobWasScheduledForNight ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, String.valueOf(getMinimumIntervalInMinutes())));
+            int intervalInMinutes = Integer.parseInt(prefs.getString(jobWasScheduledForNight ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, String.valueOf(getMinimumIntervalInMinutes())));
             float intervalInHours = intervalInMinutes / 60f;
-            float nightStart = getNightStart();
-            float nightEnd = getNightEnd();
+            float nightStart = getNightStart(prefs);
+            float nightEnd = getNightEnd(prefs);
             if (nowInHours < nightStart && nowInHours + intervalInHours >= nightStart + 10) {
                 // 22:55 + 15 minutes = 23:10
                 yes = true;

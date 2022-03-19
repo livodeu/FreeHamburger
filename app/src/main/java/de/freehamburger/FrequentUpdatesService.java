@@ -20,6 +20,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.service.notification.StatusBarNotification;
 import android.widget.Toast;
 
 import androidx.annotation.IntRange;
@@ -102,7 +103,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     static boolean shouldBeEnabled(Context ctx, @NonNull final SharedPreferences prefs) {
         boolean should = prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)
                 && (!Util.isNetworkMobile(ctx) || prefs.getBoolean(App.PREF_POLL_OVER_MOBILE, App.PREF_POLL_OVER_MOBILE_DEFAULT))
-                && PrefsHelper.getStringAsInt(prefs, UpdateJobService.hasNightFallenOverBerlin() ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT) < UpdateJobService.getMinimumIntervalInMinutes();
+                && PrefsHelper.getStringAsInt(prefs, UpdateJobService.hasNightFallenOverBerlin(prefs) ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT) < UpdateJobService.getMinimumIntervalInMinutes();
         if (BuildConfig.DEBUG) Log.i(TAG, "shouldBeEnabled() returns " + should + " (from " + new Throwable().getStackTrace()[1] + ")");
         return should;
     }
@@ -182,12 +183,10 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
             if (runningServices != null) {
                 for (ActivityManager.RunningServiceInfo running : runningServices) {
                     if (getClass().getName().equals(running.service.getClassName())) {
-                        if (BuildConfig.DEBUG) Log.i(TAG, "Apparently" + (running.foreground ? "" : " NOT") + " running in the foreground.");
                         return running.foreground;
                     }
                 }
             }
-            if (BuildConfig.DEBUG) Log.i(TAG, "Apparently NOT running.");
             return false;
         } catch (Throwable t) {
             throw new RuntimeException(t);
@@ -306,7 +305,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         boolean wasNight = this.night;
         boolean wasEnabled = this.enabled;
         long wasInterval = this.requestedInterval;
-        this.night = UpdateJobService.hasNightFallenOverBerlin();
+        this.night = UpdateJobService.hasNightFallenOverBerlin(prefs);
         this.enabled = shouldBeEnabled(this, prefs);
         this.requestedInterval = PrefsHelper.getStringAsInt(prefs, this.night ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT) * 60_000L;
         if (this.night != wasNight || this.enabled != wasEnabled || this.requestedInterval != wasInterval) {
