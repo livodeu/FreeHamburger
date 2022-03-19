@@ -138,6 +138,20 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
             if (BuildConfig.DEBUG) Log.e(TAG, "While unregistering: " + e);
         }
         stopForeground(true);
+        // sometimes, it appears, removing the notification via stopForeground(true) does not work
+        NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            StatusBarNotification[] sbs = nm.getActiveNotifications();
+            for (StatusBarNotification sb : sbs) {
+                if (sb.getId() == NOTIFICATION_ID) {
+                    if (BuildConfig.DEBUG) Log.e(TAG, "Notification 10000 still present although not in foreground!");
+                    nm.cancel(NOTIFICATION_ID);
+                    break;
+                }
+            }
+        } else {
+            nm.cancel(NOTIFICATION_ID);
+        }
     }
 
     /**
@@ -157,6 +171,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
             if (BuildConfig.DEBUG) Log.e(TAG, "While checking foreground state: " + e);
         }
         try {
+            if (this.builder == null) setupNotification();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(NOTIFICATION_ID, this.builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
             } else {
@@ -234,9 +249,8 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     @Override
     public void onSharedPreferenceChanged(final SharedPreferences prefs, final String key) {
         if (App.PREF_POLL.equals(key) || App.PREF_POLL_INTERVAL.equals(key) || App.PREF_POLL_INTERVAL_NIGHT.equals(key) || App.PREF_POLL_OVER_MOBILE.equals(key)) {
-            updateState(prefs);
             if (BuildConfig.DEBUG) Log.i(TAG, "onSharedPreferenceChanged(…, " + key + ") - enabled: " + enabled + ", req. interval: " + requestedInterval);
-            if (this.enabled) foregroundStart(); else foregroundEnd();
+            updateState(prefs);
         }
     }
 
@@ -244,7 +258,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (BuildConfig.DEBUG) Log.i(TAG, "onStartCommand(" + intent + ", " + flags + ", " + startId + ")");
-        foregroundStart();
+        updateState(null);
         return START_STICKY;
     }
 
@@ -273,9 +287,6 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             this.builder.setAllowSystemGeneratedContextualActions(false);
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            this.builder.setFlag(Notification.FLAG_FOREGROUND_SERVICE, true);
-        }
     }
 
     /**
@@ -283,11 +294,13 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
      */
     @MainThread
     private void updateNotification() {
+        if (!this.enabled) return;
         try {
             // now, this should not happen, but better check instead of having a NPE…
             if (this.builder == null) setupNotification();
             if (this.timeFormat == null) this.timeFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
-            String msg = getString(R.string.msg_frequent_updates_next, this.timeFormat.format(new Date(this.latestUpdate + this.requestedInterval)));
+            long nextUpdate = this.latestUpdate > 0L ? this.latestUpdate + this.requestedInterval : System.currentTimeMillis() + this.requestedInterval;
+            String msg = getString(R.string.msg_frequent_updates_next, this.timeFormat.format(new Date(nextUpdate)));
             // 0x1f31b: 1st quarter half moon, 0x1f31e: sun with face
             this.builder.setContentTitle(msg).setSubText(this.night ? SYMBOL_NIGHT : SYMBOL_DAY);
             ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID, this.builder.build());
@@ -297,7 +310,9 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     }
 
     /**
-     * Updates the internal state of this service.
+     * Updates the internal state of this service<br>
+     * AND<br>
+     * starts or stops the foreground mode accordingly.
      * @param prefs SharedPreferences
      */
     private void updateState(@Nullable SharedPreferences prefs) {
@@ -308,8 +323,13 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         this.night = UpdateJobService.hasNightFallenOverBerlin(prefs);
         this.enabled = shouldBeEnabled(this, prefs);
         this.requestedInterval = PrefsHelper.getStringAsInt(prefs, this.night ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT) * 60_000L;
-        if (this.night != wasNight || this.enabled != wasEnabled || this.requestedInterval != wasInterval) {
-            updateNotification();
+        if (this.enabled) {
+            if (!isForeground()) foregroundStart();
+            if (this.night != wasNight || (!wasEnabled) || this.requestedInterval != wasInterval) {
+                updateNotification();
+            }
+        } else {
+            foregroundEnd();
         }
     }
 
