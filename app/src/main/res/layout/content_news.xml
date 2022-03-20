@@ -99,6 +99,7 @@
                 android:layout_gravity="center_vertical"
                 android:ellipsize="marquee"
                 android:singleLine="true"
+                android:textScaleX="0.9"
                 android:textSize="@dimen/text_size_news_audio_title"
                 tools:text="Audio element title" />
 
