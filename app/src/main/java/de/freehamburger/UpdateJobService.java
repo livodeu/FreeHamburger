@@ -507,7 +507,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         if (delayMin > delayMax) {long h = delayMin; delayMin = delayMax; delayMax = h;}
         jib.setMinimumLatency(delayMin).setOverrideDeadline(delayMax);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            jib.setImportantWhileForeground(true);
             jib.setEstimatedNetworkBytes(ESTIMATED_NETWORK_BYTES, 250L);
         }
         PersistableBundle extras = new PersistableBundle(1);
