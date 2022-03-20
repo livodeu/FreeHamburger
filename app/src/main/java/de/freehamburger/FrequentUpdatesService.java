@@ -43,18 +43,21 @@ import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
 
 /**
- * Provides updates more frequently than {@link UpdateJobService}.
+ * Provides updates more frequently than {@link UpdateJobService}.<br>
+ * Does not perform any requests itself but delegates to UpdateJobService.
  */
 public class FrequentUpdatesService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     @VisibleForTesting static final int NOTIFICATION_ID = 10_000;
+    static final String ACTION_UPDATE_ERROR = BuildConfig.APPLICATION_ID + ".action.update.error";
+    static final String EXTRA_ERROR_CODE = BuildConfig.APPLICATION_ID + ".extra.errorcode";
+    static final String EXTRA_ERROR_MESSAGE = BuildConfig.APPLICATION_ID + ".extra.errormsg";
     private static final long INTERVAL_MIN_MS = App.PREF_POLL_INTERVAL_DEFAULT * 60_000L;
     private static final String TAG = "FrequentUpdatesService";
     /** 0x1f31e: sun with face */
     private static final String SYMBOL_DAY = "\uD83C\uDF1E";
     /** 0x1f31b: 1st quarter half moon */
     private static final String SYMBOL_NIGHT = "\uD83C\uDF1B";
-
     private final FrequentUpdatesServiceBinder binder;
     @VisibleForTesting Ticker ticker;
     private Notification.Builder builder;
@@ -66,6 +69,9 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     /** requested interval in milliseconds */
     @IntRange(from = INTERVAL_MIN_MS)
     private long requestedInterval = Math.max(INTERVAL_MIN_MS, App.PREF_POLL_INTERVAL_DEFAULT * 60_000L);
+    private int errorCode;
+    /** An error message */
+    private String errorMsg;
 
     /**
      * Constructor.
@@ -73,6 +79,27 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
     public FrequentUpdatesService() {
         super();
         this.binder = new FrequentUpdatesServiceBinder(this);
+    }
+
+    /**
+     * Determines whether a service runs as a foreground service.
+     * @return true / false
+     * @throws RuntimeException if Doodle "thinks" it's appropriate to do so
+     */
+    static boolean isForeground(@NonNull Context ctx, @NonNull Class<? extends Service> clazz) {
+        try {
+            final List<ActivityManager.RunningServiceInfo> runningServices = ((ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE)).getRunningServices(Integer.MAX_VALUE);
+            if (runningServices != null) {
+                for (ActivityManager.RunningServiceInfo running : runningServices) {
+                    if (clazz.getName().equals(running.service.getClassName())) {
+                        return running.foreground;
+                    }
+                }
+            }
+            return false;
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
     }
 
     /**
@@ -139,19 +166,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         }
         stopForeground(true);
         // sometimes, it appears, removing the notification via stopForeground(true) does not work
-        NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            StatusBarNotification[] sbs = nm.getActiveNotifications();
-            for (StatusBarNotification sb : sbs) {
-                if (sb.getId() == NOTIFICATION_ID) {
-                    if (BuildConfig.DEBUG) Log.e(TAG, "Notification 10000 still present although not in foreground!");
-                    nm.cancel(NOTIFICATION_ID);
-                    break;
-                }
-            }
-        } else {
-            nm.cancel(NOTIFICATION_ID);
-        }
+        removeNotification();
     }
 
     /**
@@ -163,7 +178,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         registerReceiver(this.ticker, new IntentFilter(Intent.ACTION_TIME_TICK));
         // skipping the rest if getForegroundServiceType() returns something other than ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE does not work
         try {
-            if (isForeground()) {
+            if (isForeground(this, getClass())) {
                 if (BuildConfig.DEBUG) Log.i(TAG, "foregroundStart(): Already in foreground.");
                 return;
             }
@@ -183,28 +198,6 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
                 Log.e(TAG, "While starting foreground service: " + e);
                 Toast.makeText(this, "Foreground: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
-        }
-    }
-
-    /**
-     * Determines whether this service runs as a foreground service.
-     * @return true / false
-     * @throws RuntimeException if Doodle "thinks" it's appropriate to do so
-     */
-    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-    boolean isForeground() {
-        try {
-            final List<ActivityManager.RunningServiceInfo> runningServices = ((ActivityManager) getSystemService(Context.ACTIVITY_SERVICE)).getRunningServices(Integer.MAX_VALUE);
-            if (runningServices != null) {
-                for (ActivityManager.RunningServiceInfo running : runningServices) {
-                    if (getClass().getName().equals(running.service.getClassName())) {
-                        return running.foreground;
-                    }
-                }
-            }
-            return false;
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
         }
     }
 
@@ -241,6 +234,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         } catch (Exception e) {
             if (BuildConfig.DEBUG) Log.e(TAG, "While unregistering: " + e);
         }
+        removeNotification();
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
         super.onDestroy();
     }
@@ -254,12 +248,38 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         }
     }
 
-    /** {@inheritDoc} */
+    /** {@inheritDoc}
+     * <hr>
+     * <em>According to the docs, {@code intent} may be {@code null}!</em>
+     */
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
         if (BuildConfig.DEBUG) Log.i(TAG, "onStartCommand(" + intent + ", " + flags + ", " + startId + ")");
+        if (intent != null && ACTION_UPDATE_ERROR.equals(intent.getAction())) {
+            this.errorCode = intent.getIntExtra(EXTRA_ERROR_CODE, 0);
+            this.errorMsg = intent.getStringExtra(EXTRA_ERROR_MESSAGE);
+            // this.error being non-null indicates that we have an error condition - see updateNotification()
+            if (this.errorMsg == null) this.errorMsg = "";
+        }
         updateState(null);
         return START_STICKY;
+    }
+
+    private void removeNotification() {
+        NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        if (nm == null) return;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            StatusBarNotification[] sbs = nm.getActiveNotifications();
+            for (StatusBarNotification sb : sbs) {
+                if (sb.getId() == NOTIFICATION_ID) {
+                    if (BuildConfig.DEBUG) Log.e(TAG, "Notification 10000 still present although not in foreground!");
+                    nm.cancel(NOTIFICATION_ID);
+                    break;
+                }
+            }
+        } else {
+            nm.cancel(NOTIFICATION_ID);
+        }
     }
 
     /**
@@ -300,13 +320,29 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
             if (this.builder == null) setupNotification();
             if (this.timeFormat == null) this.timeFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
             long nextUpdate = this.latestUpdate > 0L ? this.latestUpdate + this.requestedInterval : System.currentTimeMillis() + this.requestedInterval;
-            String msg = getString(R.string.msg_frequent_updates_next, this.timeFormat.format(new Date(nextUpdate)));
+            String msg;
+            if (this.errorMsg != null && this.errorCode >= 400) {
+                // error state
+                msg = this.errorMsg.length() > 0 ? getString(R.string.error_download_failed, this.errorMsg) : getString(R.string.error_download_failed2);
+                this.builder.setColor(Util.getColor(this, R.color.color_error)).setShowWhen(true);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) this.builder.setColorized(true);
+            } else {
+                // normal state
+                msg = getString(R.string.msg_frequent_updates_next, this.timeFormat.format(new Date(nextUpdate)));
+                this.builder.setColor(Notification.COLOR_DEFAULT).setShowWhen(false);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    this.builder.setColorized(false).setTimeoutAfter(this.requestedInterval + 30_000L);
+                }
+            }
             // 0x1f31b: 1st quarter half moon, 0x1f31e: sun with face
             this.builder.setContentTitle(msg).setSubText(this.night ? SYMBOL_NIGHT : SYMBOL_DAY);
             ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID, this.builder.build());
         } catch (RuntimeException e) {
             if (BuildConfig.DEBUG) Log.e(TAG, "While updating notification: " + e);
         }
+        // remove error message
+        this.errorCode = 0;
+        this.errorMsg = null;
     }
 
     /**
@@ -324,8 +360,8 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         this.enabled = shouldBeEnabled(this, prefs);
         this.requestedInterval = PrefsHelper.getStringAsInt(prefs, this.night ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT) * 60_000L;
         if (this.enabled) {
-            if (!isForeground()) foregroundStart();
-            if (this.night != wasNight || (!wasEnabled) || this.requestedInterval != wasInterval) {
+            if (!isForeground(this, getClass())) foregroundStart();
+            if (this.night != wasNight || (!wasEnabled) || this.requestedInterval != wasInterval || this.errorMsg != null) {
                 updateNotification();
             }
         } else {
@@ -403,6 +439,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
                     updateNotification();
                 } else {
                     if (BuildConfig.DEBUG) Log.e(TAG, "Failed to schedule one-off job!");
+                    FrequentUpdatesService.this.errorMsg = getString(R.string.error_download_failed2);
                 }
             }
         }

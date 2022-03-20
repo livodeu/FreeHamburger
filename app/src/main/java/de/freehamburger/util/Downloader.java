@@ -122,7 +122,7 @@ public abstract class Downloader extends AsyncTask<Downloader.Order, Float, Down
          * @param msg HTTP status message
          * @param listener optional DownloaderListener
          */
-        Result(String sourceUri, int rc, @Nullable String msg, @Nullable DownloaderListener listener) {
+        public Result(String sourceUri, int rc, @Nullable String msg, @Nullable DownloaderListener listener) {
             super();
             this.sourceUri = sourceUri;
             this.rc = rc;

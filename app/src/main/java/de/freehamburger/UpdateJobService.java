@@ -198,7 +198,8 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * @throws NullPointerException if {@code prefs} is {@code null}
      */
     @IntRange(from = 300_000)
-    private static long calcInterval(@NonNull SharedPreferences prefs, boolean forNight) {
+    @VisibleForTesting
+    static long calcInterval(@NonNull SharedPreferences prefs, boolean forNight) {
         final int minimumIntervalInMinutes = getMinimumIntervalInMinutes();
         //
         int intervalInMinutes;
@@ -310,6 +311,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
+     * @param prefs SharedPreferences
      * @return duration of nighttime in hours
      */
     @FloatRange(from = 0f, to = 24f)
@@ -320,6 +322,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
+     * @param prefs SharedPreferences
      * @return the point at which the night ends (in hours)
      */
     @FloatRange(from = 0f, to = 24f)
@@ -328,6 +331,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
+     * @param prefs SharedPreferences
      * @return the point at which the night starts (in hours)
      */
     @FloatRange(from = 0f, to = 24f)
@@ -337,6 +341,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
 
     /**
      * Tells whether it is colder than outside.
+     * @param prefs SharedPreferences
      * @return {@code true} in the range of 23:00:00 to 05:59:59
      */
     public static boolean hasNightFallenOverBerlin(@NonNull SharedPreferences prefs) {
@@ -348,11 +353,12 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
      * Creates a PendingIntent designed to open the given News in MainActivity.
      * @param app App
      * @param news News
+     * @param source Source that may be set as the current one
      * @return PendingIntent
      * @throws NullPointerException if app is {@code null}
      */
     @NonNull
-    static PendingIntent makeIntentForMainActivity(@NonNull App app, @Nullable News news, Source source) {
+    static PendingIntent makeIntentForMainActivity(@NonNull App app, @Nullable News news, @Nullable Source source) {
         final Intent mainIntent = new Intent(app, MainActivity.class);
         mainIntent.setAction(ACTION_NOTIFICATION);
         if (news != null) mainIntent.putExtra(EXTRA_FROM_NOTIFICATION, news.getExternalId());
@@ -364,7 +370,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     /**
      * Creates a PendingIntent meant to be sent to the MainActivity.
      * Its Intent will carry the Action {@link MainActivity#ACTION_SHOW_NEWS}.
-     * @param app Ap
+     * @param app App
      * @param news News
      * @param notificationId notification id
      * @return PendingIntent
@@ -423,8 +429,10 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
 
     /**
      * Creates a PendingIntent to disable background updates.
+     * Invokes {@link UpdateJobService} with action {@link #ACTION_DISABLE_POLLING}.
      * @param app App
      * @return PendingIntent
+     * @throws NullPointerException if {@code app} is {@code null}
      */
     @NonNull
     static PendingIntent makeIntentToDisable(@NonNull App app) {
@@ -433,7 +441,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
     }
 
     /**
-     * Generates a JobInfo that can be used to schedule the periodic job.<br>
+     * Generates a JobInfo that can be used to schedule the <u>periodic</u> job.<br>
      * <em>The returned JobInfo should be used immediately as it contains a timestamp.</em>
      * @param ctx Context
      * @return JobInfo
@@ -445,10 +453,14 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         final boolean night = hasNightFallenOverBerlin(prefs);
         final long intervalMs = calcInterval(prefs, night);
-        final JobInfo.Builder jib = new JobInfo.Builder(JOB_ID, new ComponentName(ctx, UpdateJobService.class))
-                .setPeriodic(intervalMs)
-                // JobInfo.NETWORK_TYPE_UNMETERED is not a reliable equivalent for Wifi => decision whether to actually poll is deferred to onStartJob()
-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+        final JobInfo.Builder jib = new JobInfo.Builder(JOB_ID, new ComponentName(ctx, UpdateJobService.class));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            jib.setPeriodic(intervalMs, Math.max(JobInfo.getMinFlexMillis(), intervalMs / 10L));
+        } else {
+            jib.setPeriodic(intervalMs);
+        }
+        // JobInfo.NETWORK_TYPE_UNMETERED is not a reliable equivalent for Wifi => decision whether to actually poll is deferred to onStartJob()
+        jib.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                 .setBackoffCriteria(120_000L, JobInfo.BACKOFF_POLICY_LINEAR)
                 .setPersisted(true);    // <- this one needs RECEIVE_BOOT_COMPLETED permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -699,6 +711,23 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         this.params = null;
     }
 
+    /**
+     * Passes a download result on to the {@link FrequentUpdatesService}, provided it is running in the foreground.
+     * @param result Downloader.Result
+     */
+    private void notifyFrequentUpdatesService(@Nullable Downloader.Result result) {
+        if (!FrequentUpdatesService.isForeground(this, FrequentUpdatesService.class)) return;
+        // notify FrequentUpdatesService because its Notification still says "Next update: …"!
+        final String errMsg;
+        if (result != null) errMsg = TextUtils.isEmpty(result.msg) ? "HTTP " + result.rc : result.msg;
+        else errMsg = "";
+        Intent notifyFrequentUpdatesService = new Intent(this, FrequentUpdatesService.class);
+        notifyFrequentUpdatesService.setAction(FrequentUpdatesService.ACTION_UPDATE_ERROR);
+        notifyFrequentUpdatesService.putExtra(FrequentUpdatesService.EXTRA_ERROR_CODE, result != null ? result.rc : 0);
+        notifyFrequentUpdatesService.putExtra(FrequentUpdatesService.EXTRA_ERROR_MESSAGE, errMsg);
+        startService(notifyFrequentUpdatesService);
+    }
+
     /** {@inheritDoc} */
     @Override
     public void downloaded(boolean completed, @Nullable Downloader.Result result) {
@@ -707,11 +736,12 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 if (result != null) {
                     String errMsg = "Download of \"" + result.sourceUri + "\": HTTP " + result.rc + " " + result.msg;
                     if (result.rc < 400) Log.i(TAG + id, errMsg); else Log.w(TAG + id, errMsg);
-                    //TODO if (result.rc >= 500) retry soon (example: java.net.ConnectException: Failed to connect to www.tagesschau.de/104.111.238.138:443)
                 } else {
                     Log.w(TAG + id, "Download: No result");
                 }
             }
+
+            notifyFrequentUpdatesService(result);
             return;
         }
         // update statistics
@@ -732,11 +762,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         }
         editor.apply();
         Source source = Source.getSourceFromFile(result.file);
-        if (source != null) {
-            app.setMostRecentUpdate(source, now, false);
-        } else {
-            if (BuildConfig.DEBUG) Log.e(TAG + id, "Could not determine source from " + result.file);
-        }
+        if (source != null) app.setMostRecentUpdate(source, now, false);
         //
         if (this.stopJobReceived) {
             // Job stopped before parser could run
