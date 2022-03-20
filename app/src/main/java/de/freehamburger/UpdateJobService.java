@@ -668,7 +668,9 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
 
         TeaserImage teaserImage = newsToDisplay.getTeaserImage();
         if (teaserImage != null) {
-            TeaserImage.MeasuredImage mi = teaserImage.getBestImageForWidth(Util.getDisplaySize(this).x, News.NEWS_TYPE_VIDEO.equals(newsToDisplay.getType()));
+            @TeaserImage.Format int format = News.NEWS_TYPE_VIDEO.equals(newsToDisplay.getType()) ? TeaserImage.FORMAT_LANDSCAPE : TeaserImage.FORMAT_PORTRAIT;
+            TeaserImage.MeasuredImage mi = teaserImage.getBestImageForWidth(Util.getDisplaySize(this).x, format);
+            if (BuildConfig.DEBUG) Log.i(TAG, "Image for notification: " + mi);
             String imageUrl = mi != null && mi.url != null ? mi.url : null;
             if (imageUrl != null && Util.isNetworkAvailable(app)) {
                 try {

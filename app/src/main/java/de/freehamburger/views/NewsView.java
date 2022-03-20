@@ -336,7 +336,7 @@ public class NewsView extends RelativeLayout {
         // get the image url; if this NewsView was inflated from news_view_nocontent_notitle (no textViewTitle and no textViewFirstSentence), then preferrably in landscape orientation
         boolean landscapePreferred = this.textViewTitle == null && this.textViewFirstSentence == null;
         //
-        final TeaserImage.MeasuredImage measuredImage = image.getBestImageForWidth(imageViewMaxWidth, landscapePreferred);
+        final TeaserImage.MeasuredImage measuredImage = image.getBestImageForWidth(imageViewMaxWidth, landscapePreferred ? TeaserImage.FORMAT_LANDSCAPE : TeaserImage.FORMAT_PORTRAIT);
         this.imageView.setTag(measuredImage != null ? measuredImage.url : null);
         if (!TextUtils.isEmpty(image.getTitle())) {
             this.imageView.setContentDescription(image.getTitle());

@@ -5,10 +5,13 @@ import android.util.JsonToken;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.AbstractMap;
 import java.util.EnumMap;
 import java.util.Map;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -17,13 +20,22 @@ import androidx.annotation.Nullable;
  */
 public class TeaserImage implements Serializable {
 
+    public static final int FORMAT_PORTRAIT = 1;
+    public static final int FORMAT_LANDSCAPE = 2;
+    public static final int FORMAT_SQUARE = 3;
     /** the {@link Quality Qualities} ordered from best to worst */
     private static final Quality[] BEST_QUALITY = new Quality[] {Quality.L, Quality.P2, Quality.M, Quality.P1, Quality.S};
-
     final AbstractMap<Quality, String> images = new EnumMap<>(Quality.class);
     String title;
     String copyright;
     String alttext;
+
+    /**
+     * Constructor.
+     */
+    TeaserImage() {
+        super();
+    }
 
     /**
      * Parses the given JsonReader to retrieve a TeaserImage element.
@@ -78,19 +90,27 @@ public class TeaserImage implements Serializable {
                 reader.nextName();
                 teaserImage.addImage(Quality.P1, reader.nextString());
                 reader.endObject();
+            } else if ("videoweb1x1l".equals(name)) {           // 559 x 559
+                reader.beginObject();
+                reader.nextName();
+                teaserImage.addImage(Quality.LQ, reader.nextString());
+                reader.endObject();
+            } else if ("mittelgross1x1".equals(name)) {         // 420 x 420
+                reader.beginObject();
+                reader.nextName();
+                teaserImage.addImage(Quality.MQ, reader.nextString());
+                reader.endObject();
+            } else if ("klein1x1".equals(name)) {               // 140 x 140
+                reader.beginObject();
+                reader.nextName();
+                teaserImage.addImage(Quality.MQ, reader.nextString());
+                reader.endObject();
             } else {
                 reader.skipValue();
             }
         }
         reader.endObject();
         return teaserImage;
-    }
-
-    /**
-     * Constructor.
-     */
-    TeaserImage() {
-        super();
     }
 
     private void addImage(@NonNull Quality quality, String url) {
@@ -118,14 +138,26 @@ public class TeaserImage implements Serializable {
     /**
      * Returns the image variant whose width is greater than the given width.
      * @param width width in px
-     * @param landscapePreferred true to return preferredly landscape images (prefer {@link Quality#S S} over {@link Quality#P1 P1} and {@link Quality#M M} over {@link Quality#P2 P2})
+     * @param format requested format ({@link #FORMAT_PORTRAIT}, {@link #FORMAT_LANDSCAPE}, {@link #FORMAT_SQUARE})
      * @return MeasuredImage
      */
     @Nullable
-    public MeasuredImage getBestImageForWidth(final int width, final boolean landscapePreferred) {
+    public MeasuredImage getBestImageForWidth(final int width, @Format int preferredFormat) {
         if (this.images.isEmpty()) return null;
-        final Quality[] v = landscapePreferred ? Quality.valuesForLandscape() : Quality.values();
-        for (Quality q : v) {
+        final Quality[] available;
+        switch (preferredFormat) {
+            case FORMAT_LANDSCAPE:
+                available = Quality.valuesForLandscape();
+                break;
+            case FORMAT_PORTRAIT:
+                available = Quality.valuesForPortrait();
+                break;
+            case FORMAT_SQUARE:
+            default:
+                available = Quality.valuesForSquare();
+                break;
+        }
+        for (Quality q : available) {
             if (q.width < width) {
                 continue;
             }
@@ -188,23 +220,48 @@ public class TeaserImage implements Serializable {
      * They are be ordered from smallest width to biggest width, but, if same width, from biggest height to smallest height
      */
     public enum Quality {
-        /** 256x288 */ P1(256, 288), /** 256x144 */ S(256, 144), /** 512x576 */ P2(512, 576), /** 512x288 */ M(512, 288), /** 960x540 */ L(960, 540);
+        /** 140x140 */ SQ(140, 140),
+        /** 256x288 */ P1(256, 288),
+        /** 256x144 */ S(256, 144),
+        /** 420x420 */ MQ(420, 420),
+        /** 512x576 */ P2(512, 576),
+        /** 512x288 */ M(512, 288),
+        /** 559x559 */ LQ(559, 559),
+        /** 960x540 */ L(960, 540);
 
         private final int width;
         private final int height;
-
-        /**
-         * @return Quality array ordered to prefer landscape images over portrait images
-         */
-        private static Quality[] valuesForLandscape() {
-            return new Quality[] {S, P1, M, P2, L};
-        }
 
         Quality(int width, int height) {
             this.width = width;
             this.height = height;
         }
+
+        /**
+         * @return Quality array ordered to prefer landscape images over portrait images
+         */
+        private static Quality[] valuesForLandscape() {
+            return new Quality[] {S, M, L};
+        }
+
+        /**
+         * @return Quality array ordered to prefer portrait images over landscape images
+         */
+        private static Quality[] valuesForPortrait() {
+            return new Quality[] {P1, P2};
+        }
+
+        /**
+         * @return Quality array ordered to prefer square images
+         */
+        private static Quality[] valuesForSquare() {
+            return new Quality[] {SQ, MQ, LQ};
+        }
     }
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({FORMAT_PORTRAIT, FORMAT_LANDSCAPE, FORMAT_SQUARE})
+    public @interface Format {}
 
     /**
      * Wraps an image url and the image dimensions into one object.
