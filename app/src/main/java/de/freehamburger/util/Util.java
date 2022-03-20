@@ -352,7 +352,11 @@ public class Util {
         if (TEST) {
             return true;
         }
-        return shortcutManager.requestPinShortcut(pinShortcutInfo, null);
+        try {
+            return shortcutManager.requestPinShortcut(pinShortcutInfo, null);
+        } catch (IllegalStateException ignored) {
+        }
+        return false;
     }
 
     /**
