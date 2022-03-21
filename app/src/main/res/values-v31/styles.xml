@@ -4,6 +4,7 @@
     <style name="AppTheme" parent="AppTheme.21">
         <!-- contextPopupMenuStyle allows a colored context menu (it'd have a white background if this were not here) -->
         <item name="android:contextPopupMenuStyle">@style/ContextMenu</item>
+        <item name="android:buttonCornerRadius">4dp</item>
         <!-- new for Android 12 aka S -->
         <item name="android:windowSplashScreenBackground">@color/color_secondary</item>
 
