@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="@dimen/related_view_padding"
-    android:foreground="?android:attr/selectableItemBackground"
     android:focusable="true"
     android:focusableInTouchMode="false"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:padding="@dimen/related_view_padding"
     tools:context=".NewsActivity"
-    tools:ignore="UnusedAttribute"
-    >
+    tools:ignore="UnusedAttribute">
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/imageViewRelated"
         android:layout_width="@dimen/related_view_width"
         android:layout_height="wrap_content"
@@ -20,20 +20,21 @@
         android:elevation="4dp"
         android:outlineProvider="bounds"
         android:scaleType="fitStart"
-        tools:src="@tools:sample/backgrounds/scenic"
-        tools:ignore="ContentDescription"/>
+        app:shapeAppearance="?attr/shapeAppearanceSmallComponent"
+        tools:ignore="ContentDescription"
+        tools:src="@tools:sample/backgrounds/scenic"/>
 
     <ImageView
         android:id="@+id/imageViewType"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/imageViewRelated"
         android:layout_alignEnd="@+id/imageViewRelated"
+        android:layout_alignBottom="@+id/imageViewRelated"
         android:elevation="8dp"
         android:visibility="gone"
-        tools:visibility="visible"
-        tools:src="@drawable/ic_videocam_content_24dp"
         tools:ignore="ContentDescription"
+        tools:src="@drawable/ic_videocam_content_24dp"
+        tools:visibility="visible"
         />
 
     <TextView
@@ -41,8 +42,8 @@
         android:layout_width="@dimen/related_view_width"
         android:layout_height="wrap_content"
         android:layout_below="@id/imageViewRelated"
-        android:layout_marginTop="8dp"
         android:layout_alignParentStart="true"
+        android:layout_marginTop="8dp"
         android:textColor="@color/colorContent"
         tools:text="12.34.5678"/>
 
@@ -52,12 +53,12 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/textViewDate"
         android:layout_alignParentStart="true"
-        android:textColor="@color/colorContent"
+        android:breakStrategy="high_quality"
         android:ellipsize="end"
         android:fontFamily="sans-serif-condensed"
         android:hyphenationFrequency="full"
-        android:breakStrategy="high_quality"
         android:maxLines="3"
-        tools:text="@tools:sample/lorem/random"
-        tools:ignore="UnusedAttribute"/>
+        android:textColor="@color/colorContent"
+        tools:ignore="UnusedAttribute"
+        tools:text="@tools:sample/lorem/random"/>
 </RelativeLayout>

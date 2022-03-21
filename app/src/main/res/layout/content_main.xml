@@ -30,26 +30,26 @@
             android:layout_height="match_parent"
             android:background="@color/colorPrimarySemiTrans"
             android:elevation="30dp"
+            android:importantForAccessibility="no"
+            android:onClick="onPlaneClicked"
             android:visibility="gone"
             tools:visibility="gone"
-            android:onClick="onPlaneClicked"
-            android:importantForAccessibility="no"
             />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerView"
-            android:background="@color/colorRecyclerBg"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
+            android:background="@color/colorRecyclerBg"
             android:scrollbars="none"
             tools:listitem="@layout/news_view"
             >
             <requestFocus/>
         </androidx.recyclerview.widget.RecyclerView>
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/quickView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -62,6 +62,7 @@
             android:paddingEnd="4dp"
             android:scaleType="fitCenter"
             android:visibility="gone"
+            app:shapeAppearance="?attr/shapeAppearanceMediumComponent"
             tools:ignore="ContentDescription"
             tools:src="@tools:sample/backgrounds/scenic"
             />

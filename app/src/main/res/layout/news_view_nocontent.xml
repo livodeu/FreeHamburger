@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:foreground="?android:attr/selectableItemBackground"
     android:background="@drawable/bg_news"
-    android:elevation="@dimen/news_elevation"
-    android:padding="@dimen/news_padding"
-    android:clipToPadding="false"
     android:clipChildren="false"
+    android:clipToPadding="false"
+    android:elevation="@dimen/news_elevation"
     android:focusable="true"
     android:focusableInTouchMode="false"
-    tools:ignore="UnusedAttribute"
-    >
+    android:foreground="?android:attr/selectableItemBackground"
+    android:padding="@dimen/news_padding"
+    tools:ignore="UnusedAttribute">
 
     <TextView
         android:id="@+id/textViewTopline"
@@ -47,22 +46,22 @@
         tools:ignore="RtlSymmetry"
         tools:text="vor 1234 Stunden" />
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/imageView"
         android:layout_width="@dimen/image_width_normal"
         android:layout_height="wrap_content"
         android:layout_below="@+id/textViewDate"
         android:layout_alignParentStart="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="@dimen/space_between_image_and_text"
+        android:layout_marginBottom="8dp"
         android:adjustViewBounds="true"
-        android:layerType="hardware"
         android:contentDescription="@string/hint_pic"
         android:cropToPadding="true"
-        android:elevation="4dp"
+        android:layerType="hardware"
         android:maxWidth="@dimen/image_width_normal"
-        android:paddingTop="8dp"
-        android:paddingEnd="@dimen/space_between_image_and_text"
-        android:paddingBottom="8dp"
         android:scaleType="fitCenter"
+        app:shapeAppearance="?attr/shapeAppearanceMediumComponent"
         tools:ignore="RtlSymmetry"
         tools:srcCompat="@tools:sample/backgrounds/scenic"/>
 

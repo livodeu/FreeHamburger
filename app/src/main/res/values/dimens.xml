@@ -1,6 +1,7 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="image_width_normal">120dp</dimen>
+    <dimen name="image_width_wide">240dp</dimen>
     <dimen name="space_between_image_and_text">8dp</dimen>
     <dimen name="bottomsheet_height">200dp</dimen>
     <dimen name="space_between_menu_items">8dp</dimen>
@@ -32,6 +33,7 @@
     <dimen name="news_content_margin_topblock_end">32dp</dimen>
     <dimen name="news_padding">8dp</dimen>
     <dimen name="news_elevation">8dp</dimen>
+    <dimen name="news_image_elevation">4dp</dimen>
 
     <dimen name="related_view_padding">4dp</dimen>
     <dimen name="related_view_width">160dp</dimen>

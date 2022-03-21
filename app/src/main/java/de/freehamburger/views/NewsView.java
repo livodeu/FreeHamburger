@@ -169,7 +169,10 @@ public class NewsView extends RelativeLayout {
             if (this.textViewTitle != null) this.textViewTitle.setText(null);
             this.textViewDate.setText(null);
             if (this.textViewFirstSentence != null) this.textViewFirstSentence.setText(null);
-            if (this.imageView != null) this.imageView.setImageDrawable(null);
+            if (this.imageView != null) {
+                this.imageView.setImageDrawable(null);
+                this.imageView.setElevation(0f);
+            }
             return;
         }
         Context ctx = getContext();
@@ -283,6 +286,7 @@ public class NewsView extends RelativeLayout {
         if (image == null) {
             // it is perfectly normal to have no TeaserImage
             this.imageView.setImageDrawable(null);
+            this.imageView.setElevation(0f);
             this.imageView.setTag(null);
             this.imageView.setVisibility(View.GONE);
             // make sure the textViewDate is as wide as the imageView would be
@@ -345,21 +349,20 @@ public class NewsView extends RelativeLayout {
         } else {
             this.imageView.setContentDescription(null);
         }
-        if (measuredImage == null || measuredImage.url == null) {
+        if (measuredImage == null || measuredImage.url == null || bitmapGetter == null) {
             this.imageView.setImageBitmap(null);
-            return;
-        }
-        if (bitmapGetter == null) {
-            this.imageView.setImageBitmap(null);
+            this.imageView.setElevation(0f);
             return;
         }
         Bitmap bitmap = bitmapGetter.getCachedBitmap(measuredImage.url);
         if (bitmap != null) {
+            this.imageView.setElevation(getResources().getDimensionPixelSize(R.dimen.news_image_elevation));
             this.imageView.setImageBitmap(bitmap);
             return;
         }
         // clear the image before loading it
         this.imageView.setImageBitmap(null);
+        this.imageView.setElevation(0f);
         //
         bitmapGetter.loadImageIntoImageView(measuredImage.url, this.imageView, measuredImage.width, measuredImage.height);
     }

@@ -426,6 +426,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         private final float ratio;
         @Nullable
         private final Drawable placeholder;
+        private final float elevation;
         @Nullable
         private ImageView dest;
         /** initially false to indicate that loading from network has not been attempted yet */
@@ -461,6 +462,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
             this.refTarget = target != null ? new WeakReference<>(target) : null;
             this.placeholder = placeholder;
             this.ratio = ratio;
+            this.elevation = service.getResources().getDimensionPixelSize(R.dimen.news_image_elevation);
         }
 
         /** {@inheritDoc} */
@@ -484,14 +486,20 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
                         .into(this.dest, this);
             } else {
                 // picture failed to load from web
-                this.dest = null;
+                if (this.dest != null) {
+                    this.dest.setElevation(0f);
+                    this.dest = null;
+                }
             }
         }
 
         /** {@inheritDoc} */
         @Override
         public void onSuccess() {
-            this.dest = null;
+            if (this.dest != null) {
+                this.dest.setElevation(this.elevation);
+                this.dest = null;
+            }
         }
 
         /** {@inheritDoc} */
