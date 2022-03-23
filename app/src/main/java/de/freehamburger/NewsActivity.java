@@ -101,6 +101,7 @@ import de.freehamburger.util.Log;
 import de.freehamburger.util.MediaSourceHelper;
 import de.freehamburger.util.PlayerListener;
 import de.freehamburger.util.PositionedSpan;
+import de.freehamburger.util.PrintUtil;
 import de.freehamburger.util.TextViewImageSpanClickHandler;
 import de.freehamburger.util.Util;
 import okhttp3.Call;
@@ -984,7 +985,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     /** {@inheritDoc} */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
+        final int id = item.getItemId();
         if (id == R.id.action_share) {
             String url = this.news.getDetailsWeb();
             if (url == null) return true;
@@ -993,6 +994,18 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
         if (id == R.id.action_read) {
             startStopReading();
+            return true;
+        }
+        if (id == R.id.action_print) {
+            if (!PrintUtil.printNews(this, this.news, printJob -> {
+                if (printJob == null) {
+                    Snackbar.make(this.coordinatorLayout, R.string.msg_print_failed, Snackbar.LENGTH_SHORT).show();
+                    return;
+                }
+                new PrintUtil.PrintJobWaiter(this, printJob).start();
+            })) {
+                Snackbar.make(this.coordinatorLayout, R.string.msg_print_failed, Snackbar.LENGTH_SHORT).show();
+            }
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -1036,6 +1049,9 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         // sharing is possible if news has its detailsWeb attribute set
         MenuItem menuItemShare = menu.findItem(R.id.action_share);
         menuItemShare.setEnabled(this.news != null && this.news.getDetailsWeb() != null);
+        //
+        MenuItem menuItemPrint = menu.findItem(R.id.action_print);
+        menuItemPrint.setEnabled(PrintUtil.canPrint(this.news));
         // reading (aloud) is possible once tts has been initialised
         MenuItem menuItemRead = menu.findItem(R.id.action_read);
         if (this.tts != null && this.ttsInitialised) {

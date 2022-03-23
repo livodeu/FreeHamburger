@@ -118,6 +118,7 @@ import de.freehamburger.util.Downloader;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.Intro;
 import de.freehamburger.util.Log;
+import de.freehamburger.util.PrintUtil;
 import de.freehamburger.util.SpaceBetween;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
@@ -950,6 +951,26 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
             viewImage(news, true);
             return true;
+        }
+        if (id == R.id.action_print_picture) {
+            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
+            TeaserImage image = news.getTeaserImage();
+            if (image == null) return true;
+            String url = image.getBestImage();
+            if (url == null) return true;
+            try {
+                File temp = File.createTempFile("photo", null);
+                this.service.loadFile(url, temp, (completed, result) -> {
+                    if (!completed || result == null || result.rc >= 400 || result.file == null) {
+                        Util.deleteFile(temp);
+                        return;
+                    }
+                    Bitmap bmp = BitmapFactory.decodeFile(result.file.getAbsolutePath());
+                    PrintUtil.printImage(this, bmp, news.getTitle() != null ? news.getTitle() : news.getFirstSentence());
+                });
+            } catch (Exception e) {
+                if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+            }
         }
         return super.onContextItemSelected(menuItem);
     }

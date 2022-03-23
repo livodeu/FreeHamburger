@@ -11,6 +11,7 @@
     <permission android:name="${applicationId}.nix" android:protectionLevel="signature"/>
 
     <uses-feature android:name="android.software.app_widgets" android:required="false"/>
+    <uses-feature android:name="android.software.print" android:required="false"/>
 
     <queries>
         <intent>

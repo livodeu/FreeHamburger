@@ -8,6 +8,13 @@
     <string name="action_filters_disabled">Inaktiv</string>
     <string name="action_filters_enabled">Aktiv</string>
     <string name="action_open_app">App öffnen</string>
+    <string name="action_print">Drucken</string>
+    <string name="msg_print_cancelled">Druckvorgang abgebrochen.</string>
+    <string name="msg_print_failed">Druckvorgang fehlgeschlagen.</string>
+    <string name="msg_print_failed_wlabel">Druckvorgang „%1$s” fehlgeschlagen.</string>
+    <string name="msg_print_failed_wlabel_wstatus">Druckvorgang „%1$s” fehlgeschlagen: %2$s</string>
+    <string name="msg_print_finished">Druckvorgang beendet.</string>
+    <string name="action_print_pic">Bild drucken</string>
     <string name="action_show_weberrors_no">Nicht wieder anzeigen</string>
     <string name="action_view_in_browser">Im Browser ansehen</string>
     <string name="action_widget_configure">Bitte die Quelle auswählen</string>
@@ -276,6 +283,7 @@
     <string name="pref_summary_pip_off">Der Bild-in-Bild-Modus wird nicht verwendet.</string>
     <string name="pref_summary_pip_on">Der Bild-in-Bild-Modus wird bei Vollbildvideos verwendet.</string>
     <string name="msg_widget_no_news">Zur Zeit keine Inhalte.</string>
+    <string name="msg_frequent_updates_inactive">Inaktiv.</string>
     <string name="msg_frequent_updates_next">Nächste Aktualisierung: %1$s</string>
     <plurals name="msg_frequent_updates">
         <item quantity="one">Aktualisierung jede Minute.</item>

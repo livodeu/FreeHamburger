@@ -20,6 +20,8 @@
     <string name="action_import_font">Import font</string>
     <string name="action_info">Info</string>
     <string name="action_open_app">Open app</string>
+    <string name="action_print">Print</string>
+    <string name="action_print_pic">Print picture</string>
     <string name="action_read">Read</string>
     <string name="action_read_stop">Stop reading</string>
     <string name="action_scroll_to_top">Scroll to top</string>
@@ -200,6 +202,7 @@
     <string name="msg_font_import_failed">Font import failed!</string>
     <string name="msg_font_none">There is no imported font.</string>
     <string name="msg_found">\"%1$s\" has been found %2$d times.</string>
+    <string name="msg_frequent_updates_inactive">Inactive.</string>
     <string name="msg_frequent_updates_next">Next update: %1$s</string>
     <plurals name="msg_frequent_updates">
         <item quantity="one">Updates every minute.</item>
@@ -208,6 +211,11 @@
     <string name="msg_justamoment">Just a moment, please…</string>
     <string name="msg_not_found">Not found: \"%1$s\"</string>
     <string name="msg_not_modified">Not modified.</string>
+    <string name="msg_print_cancelled">Printing cancelled.</string>
+    <string name="msg_print_failed">Printing failed.</string>
+    <string name="msg_print_failed_wlabel">Printing of \"%1$s\" failed.</string>
+    <string name="msg_print_failed_wlabel_wstatus">Printing of \"%1$s\" failed: %2$s</string>
+    <string name="msg_print_finished">Printing finished.</string>
     <plurals name="msg_regions_selected">
         <item quantity="one">%1$d region selected.</item>
         <item quantity="other">%1$d regions selected.</item>

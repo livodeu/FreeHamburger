@@ -245,8 +245,7 @@ public class WebViewActivity extends AppCompatActivity {
     /**
      * A WebViewClient implementation.
      */
-    @VisibleForTesting
-    static class HamburgerWebViewClient extends WebViewClient {
+    public static class HamburgerWebViewClient extends WebViewClient {
 
         private static final String[] DOWNLOADABLE_RESOURCES = new String[] {
                 ".7z", ".apk", ".arw", ".bin", ".bz2", ".cr2", ".deb", ".dng", ".doc", ".docx", ".epub", ".exe",
@@ -280,8 +279,7 @@ public class WebViewActivity extends AppCompatActivity {
          * @return {@code true} if the given Uri should be blocked
          * @throws NullPointerException if {@code uri} is {@code null}
          */
-        @VisibleForTesting
-        static boolean shouldBlock(@NonNull Uri uri) {
+        public static boolean shouldBlock(@NonNull Uri uri) {
             @Nullable final String host = uri.getHost();    // is null when scheme is 'data'
             @Nullable final String path = uri.getPath();    // is null when scheme is 'data'
             if (host == null || path == null) return false;

@@ -119,6 +119,10 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         return this.background;
     }
 
+    public CoordinatorLayout getCoordinatorLayout() {
+        return coordinatorLayout;
+    }
+
     @Nullable
     public final HamburgerService getHamburgerService() {
         return this.service;

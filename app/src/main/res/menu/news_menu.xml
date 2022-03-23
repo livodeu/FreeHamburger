@@ -5,8 +5,8 @@
 
     <item
         android:id="@+id/action_share"
-        android:orderInCategory="10"
         android:icon="@drawable/ic_share_content_24dp"
+        android:orderInCategory="10"
         android:title="@string/action_share"
         app:showAsAction="never"
         />
@@ -18,5 +18,11 @@
         android:icon="@drawable/ic_hearing_content_24dp"
         android:orderInCategory="20"
         android:title="@string/action_read"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_print"
+        android:orderInCategory="30"
+        android:title="@string/action_print"
         app:showAsAction="never"/>
 </menu>
