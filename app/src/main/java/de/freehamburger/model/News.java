@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 import de.freehamburger.BuildConfig;
 import de.freehamburger.util.Log;
@@ -41,22 +42,18 @@ public final class News implements Comparable<News>, Serializable {
     public static final String NEWS_TYPE_STORY = "story";
     public static final String NEWS_TYPE_WEBVIEW = "webview";
     public static final String NEWS_TYPE_VIDEO = "video";
+    @Flag
+    public static final int FLAG_INCLUDE_HTMLEMBED = 1;
     private static final String TAG = "News";
     /** Example: 2017-11-16T11:54:03.882+01:00 */
     private static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
     private static long nextid = 1L;
-
-
-    @Flag
-    public static final int FLAG_INCLUDE_HTMLEMBED = 1;
-
-
-    private final Set<String> tags = new HashSet<>(8);
-    private final Set<String> geotags = new HashSet<>(4);
     /** the streams of differenty qualities (highest number found was all 7 StreamQualities) */
     final Map<StreamQuality, String> streams = new EnumMap<>(StreamQuality.class);
-    private final Set<Region> regions = new HashSet<>(2);
     final long id = nextid++;
+    private final Set<String> tags = new HashSet<>(8);
+    private final Set<String> geotags = new HashSet<>(4);
+    private final Set<Region> regions = new HashSet<>(2);
     private final boolean regional;
 
     boolean breakingNews;
@@ -89,6 +86,15 @@ public final class News implements Comparable<News>, Serializable {
     transient String titleL;
     /** the contents of {@link #firstSentence} in lower case */
     transient String firstSentenceL;
+
+    /**
+     * Constructor.
+     * @param regional {@code true} if the News originates in the "regional" part of the json data
+     */
+    private News(boolean regional) {
+        super();
+        this.regional = regional;
+    }
 
     /**
      * Fixes the given News objects.<br>
@@ -177,7 +183,18 @@ public final class News implements Comparable<News>, Serializable {
                 try {
                     news.date = parseDate(dateString);
                     if (news.date != null) news.ts = news.date.getTime();
-                } catch (Exception ignored) {
+                } catch (Exception e0) {
+                    try {
+                        long timestamp = Long.parseLong(dateString);
+                        if (timestamp >= 1_600_000_000L) {
+                            // now, it's just an assumption that those smartypants divided the value by 1000
+                            timestamp *= 1_000L;
+                            news.date = new Date(timestamp);
+                            news.ts = timestamp;
+                        }
+                    } catch (Exception e1) {
+                        if (BuildConfig.DEBUG) Log.e(News.class.getSimpleName(), "Failed to parse date \"" + dateString + "\"");
+                    }
                 }
             } else if ("details".equals(name)) {
                 news.details = reader.nextString();
@@ -277,6 +294,7 @@ public final class News implements Comparable<News>, Serializable {
     public static News parseNews(@NonNull final JsonReader reader, boolean regional, @Flag final int flags) throws IOException {
         final News news = new News(regional);
         loop(reader, news, flags);
+        if (news.externalId == null) news.externalId = UUID.randomUUID().toString();
         //noinspection ConstantConditions
         if ("demo".equals(BuildConfig.BUILD_TYPE)) {
             try {
@@ -290,30 +308,23 @@ public final class News implements Comparable<News>, Serializable {
         return news;
     }
 
-    /**
-     * Constructor.
-     * @param regional {@code true} if the News originates in the "regional" part of the json data
-     */
-    private News(boolean regional) {
-        super();
-        this.regional = regional;
-    }
-
     /** {@inheritDoc} */
     @Override
     public int compareTo(@NonNull News o) {
         if (type == null) {
-            return o.type == null ? 0 : 1;
+            if (o.type != null) return 1;
         }
         //
         if (o.date == null) {
             // live streams do not have a date; this way they appear at the top of lists
             return date == null ? 0 : 1;
         }
-        if (date == null) {
-            return -1;
+        int tsComparison = Long.compare(o.ts, ts);
+        if (tsComparison != 0) return tsComparison;
+        if (title == null) {
+            return o.title == null ? 0 : 1;
         }
-        return Long.compare(o.ts, ts);
+        return title.compareToIgnoreCase(o.title);
     }
 
     /** {@inheritDoc} */
