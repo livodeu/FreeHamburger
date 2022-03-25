@@ -596,20 +596,22 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             NewsRecyclerAdapter adapter = ma.getAdapter();
             adapter.contextMenuIndex = position;
             //
-            News news = adapter.getItem(position);
-            MenuItem menuItemViewInBrowser = menu.findItem(R.id.action_view_in_browser);
-            menuItemViewInBrowser.setEnabled(news != null && !TextUtils.isEmpty(news.getDetailsWeb()));
-            MenuItem menuItemShareNews = menu.findItem(R.id.action_share_news);
-            menuItemShareNews.setEnabled(news != null && !TextUtils.isEmpty(news.getDetailsWeb()));
-            MenuItem menuItemShareVideo = menu.findItem(R.id.action_share_video);
-            boolean hasVideo = news != null
-                    && ((news.getContent() != null && news.getContent().hasVideo()) || (!news.getStreams().isEmpty()));
-            menuItemShareVideo.setEnabled(hasVideo);
+            final News news = adapter.getItem(position);
+            boolean hasWebLink = news != null && !TextUtils.isEmpty(news.getDetailsWeb());
+            boolean hasVideo = news != null && ((news.getContent() != null && news.getContent().hasVideo()) || (!news.getStreams().isEmpty()));
             boolean hasImage = news != null && news.getTeaserImage() != null && news.getTeaserImage().hasImage();
+            MenuItem menuItemViewInBrowser = menu.findItem(R.id.action_view_in_browser);
+            menuItemViewInBrowser.setEnabled(hasWebLink);
+            MenuItem menuItemShareNews = menu.findItem(R.id.action_share_news);
+            menuItemShareNews.setEnabled(hasWebLink);
+            MenuItem menuItemShareVideo = menu.findItem(R.id.action_share_video);
+            menuItemShareVideo.setEnabled(hasVideo);
             MenuItem menuItemShareImage = menu.findItem(R.id.action_share_image);
             menuItemShareImage.setEnabled(hasImage);
             MenuItem menuItemViewImage = menu.findItem(R.id.action_view_picture);
             menuItemViewImage.setEnabled(hasImage);
+            MenuItem menuItemPrintImage = menu.findItem(R.id.action_print_picture);
+            menuItemPrintImage.setEnabled(hasImage);
         }
     }
 
