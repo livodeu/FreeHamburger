@@ -953,19 +953,25 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return true;
         }
         if (id == R.id.action_print_picture) {
-            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
+            // the menu item should have been disabled if there is no image (see NewsRecyclerAdapter.onCreateContextMenu())
+            final News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
             TeaserImage image = news.getTeaserImage();
             if (image == null) return true;
             String url = image.getBestImage();
             if (url == null) return true;
             try {
-                File temp = File.createTempFile("photo", null);
-                this.service.loadFile(url, temp, (completed, result) -> {
+                final File temp = File.createTempFile("photo", null);
+                this.service.loadFile(Util.makeHttps(url), temp, (completed, result) -> {
                     if (!completed || result == null || result.rc >= 400 || result.file == null) {
                         Util.deleteFile(temp);
+                        Snackbar.make(this.coordinatorLayout, R.string.msg_print_failed, Snackbar.LENGTH_SHORT).show();
                         return;
                     }
                     Bitmap bmp = BitmapFactory.decodeFile(result.file.getAbsolutePath());
+                    if (bmp == null) {
+                        Snackbar.make(this.coordinatorLayout, R.string.msg_print_failed, Snackbar.LENGTH_SHORT).show();
+                        return;
+                    }
                     PrintUtil.printImage(this, bmp, news.getTitle() != null ? news.getTitle() : news.getFirstSentence());
                 });
             } catch (Exception e) {
@@ -2109,6 +2115,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             // see above
             return;
         }
+        url = Util.makeHttps(url);
         this.newsForQuickView = news;
         if (this.service == null) {
             if (retryIfNoService) this.handler.postDelayed(() -> viewImage(news, false), 500L);
@@ -2143,7 +2150,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 this.quickView.setVisibility(View.VISIBLE);
                 this.quickView.setImageBitmap(bm);
             } else {
-                if (BuildConfig.DEBUG) Log.w(TAG, "Failed to decode bitmap from " + url);
+                if (BuildConfig.DEBUG) Log.w(TAG, "Failed to decode bitmap from " + result.sourceUri);
                 findViewById(R.id.plane).setVisibility(View.GONE);
                 this.newsForQuickView = null;
                 if (!TextUtils.isEmpty(result.msg)) {
