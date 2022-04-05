@@ -193,6 +193,12 @@
         <item name="android:lineSpacingMultiplier">0.75</item>
     </style>
 
+    <style name="TextAppearance.Tbl" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textSize">13sp</item>
+        <item name="android:fontFamily">sans-serif-condensed-medium</item>
+        <item name="android:lineSpacingMultiplier">0.5</item>
+    </style>
+
     <!-- dialogs start -->
 
     <style name="MaterialDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">

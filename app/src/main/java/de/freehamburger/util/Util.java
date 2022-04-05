@@ -1462,6 +1462,32 @@ public class Util {
     }
 
     /**
+     * Replaces a HTML table with simple &lt;br&gt;-separated lines where each table row is wrapped in &lt;tbl&gt;…&lt;/tbl&gt;.
+     * See {@link PositionedSpan#TAG_TABLE}.
+     * @param in CharSequence
+     * @return CharSequence
+     */
+    @NonNull
+    public static CharSequence replaceHtmlTable(@NonNull CharSequence in) {
+        final SpannableStringBuilder sb = replaceAll(in, new String[] {
+            "<table>", "<tbody>",
+                "<tr>", "<td>", "</td>", "</tr>",
+                "</tbody>", "</table>"
+        }, new CharSequence[] {
+            "", "",
+                "<br>" + PositionedSpan.TAG_TABLE_OPENING, "&nbsp;", "", PositionedSpan.TAG_TABLE_CLOSING,
+                "", ""
+        });
+        // if a <br> comes first, remove it
+        int firstBr = TextUtils.indexOf(sb, "<br>");
+        int firstTbl = TextUtils.indexOf(sb, PositionedSpan.TAG_TABLE_OPENING);
+        if (firstBr >= 0 && firstBr < firstTbl) {
+            sb.delete(firstBr, firstBr + 4);
+        }
+        return sb;
+    }
+
+    /**
      * Shares the given stream of data (represented by the url) via {@link Intent#ACTION_SEND ACTION_SEND}.
      * Displays an error message if there isn't any suitable app installed.
      * @param ctx Context

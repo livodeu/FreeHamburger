@@ -21,6 +21,9 @@ public class PositionedSpan {
     public static final String TAG_XSMALL = "xsm";
     public static final String TAG_XSMALL_OPENING = '<' + TAG_XSMALL + '>';
     public static final String TAG_XSMALL_CLOSING = "</" + TAG_XSMALL + '>';
+    public static final String TAG_TABLE = "tbl";
+    public static final String TAG_TABLE_OPENING = '<' + TAG_TABLE + '>';
+    public static final String TAG_TABLE_CLOSING = "</" + TAG_TABLE + '>';
 
     @NonNull
     public final CharacterStyle characterStyle;
@@ -31,6 +34,9 @@ public class PositionedSpan {
     public static PositionedSpan forTag(Context ctx, String tag, @IntRange(from = 0) int position) {
         if (TAG_XSMALL.equals(tag)) {
             return new PositionedSpan(new TextAppearanceSpan(ctx, R.style.TextAppearance_Xsm), position, 0);
+        }
+        if (TAG_TABLE.equals(tag)) {
+            return new PositionedSpan(new TextAppearanceSpan(ctx, R.style.TextAppearance_Tbl), position, 0);
         }
         return null;
     }

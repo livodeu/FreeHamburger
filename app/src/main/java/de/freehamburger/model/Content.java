@@ -133,6 +133,7 @@ public class Content implements Serializable {
                     || ContentElement.TYPE_IMAGE_GALLERY.equals(type)
                     || ContentElement.TYPE_BOX.equals(type)
                     || (ContentElement.TYPE_HTMLEMBED.equals(type) && (flags & News.FLAG_INCLUDE_HTMLEMBED) > 0)
+                    || ContentElement.TYPE_WEBVIEW.equals(type)
                     || ContentElement.TYPE_LIST.equals(type)
                     || ContentElement.TYPE_VIDEO.equals(type)
                     || ContentElement.TYPE_AUDIO.equals(type)
@@ -150,11 +151,29 @@ public class Content implements Serializable {
                 String value = ce.getValue();
                 if (value != null) {
                     // the value has to be pre-processed because Html.fromHtml() which is used in NewsActivity.applyNews() is not perfect…
-                    CharSequence cs = Util.replaceAll(value, new CharSequence [] {"<br />", "\t", "\r\n\r\n", "&nbsp;"}, new CharSequence[] {"\n", " ", "\n", " "});
+                    CharSequence cs = Util.replaceAll(value, new CharSequence[]{"<br />", "\t", "\r\n\r\n", "&nbsp;"}, new CharSequence[]{"\n", " ", "\n", " "});
                     StringBuilder sb = Util.removeHtmlLists(cs);
                     // create html text
                     htmlTextBuilder.append(sb).append("<br><br>");
                     // create plain text
+                    Spanned spannedPlainText = Util.fromHtml(null, Util.removeLinks(sb).toString(), null);
+                    plainTextBuilder.append(spannedPlainText).append('\n');
+                }
+            } else if (ContentElement.TYPE_WEBVIEW.equals(type)) {
+                String html = ce.getValue();
+                if (html != null) {
+                    // remove <style>…</style>
+                    int style0 = html.indexOf("<style");
+                    int style1 = html.indexOf("</style>", style0 + 7);
+                    if (style0 >= 0 && style1 > style0) {
+                        html = html.substring(0, style0) + html.substring(style1 + 8);
+                    }
+                    // replace <table>…</table> with <tbl></tbl>…
+                    html = Util.replaceHtmlTable(html).toString();
+                    // the rest has been copied from TYPE_TEXT handling above or below
+                    CharSequence cs = Util.replaceAll(html, new CharSequence[]{"<br />", "\t", "\r\n\r\n", "&nbsp;"}, new CharSequence[]{"\n", " ", "\n", " "});
+                    StringBuilder sb = Util.removeHtmlLists(cs);
+                    htmlTextBuilder.append(sb).append("<br><br>");
                     Spanned spannedPlainText = Util.fromHtml(null, Util.removeLinks(sb).toString(), null);
                     plainTextBuilder.append(spannedPlainText).append('\n');
                 }
@@ -478,16 +497,21 @@ public class Content implements Serializable {
                         ce.related = Related.parse(reader);
                     } else if ("title".equals(name)) {
                         ce.title = reader.nextString();
+                    } else if ("webview".equals(name)) {
+                        reader.beginObject();
+                        reader.nextName();
+                        ce.value = reader.nextString();
+                        reader.endObject();
                     } else {
                         // known elements that wil be ignored: "tracking", "social"
                         if (BuildConfig.DEBUG && !"tracking".equals(name) && !"social".equals(name))
-                            android.util.Log.w("Content.ContentElement", "Skipping content element '" + name + "'");
+                            de.freehamburger.util.Log.w(Content.class.getSimpleName(), "Skipping content element '" + name + "'");
                         reader.skipValue();
                     }
                 }
                 reader.endObject();
             } catch (MalformedJsonException mje) {
-                if (BuildConfig.DEBUG) android.util.Log.e(Content.class.getSimpleName(), mje.toString());
+                if (BuildConfig.DEBUG) de.freehamburger.util.Log.e(Content.class.getSimpleName(), mje.toString());
                 throw new InformativeJsonException(mje, reader);
             }
             return ce;
