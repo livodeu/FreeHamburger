@@ -144,6 +144,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /** file tag for TTF files */
     private static final String TTF_TAG = ".ttf";
 
+    private static final int UI_FLAGS_FOR_QUICKVIEW = View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+
     /** maximum number of recent sources/categories to keep */
     private static final int MAX_RECENT_SOURCES = 10;
     /** used to colorise the progress image in {@link #swipeRefreshLayout } - this designates the percentage completed when download is done and parsing starts  */
@@ -171,6 +173,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private RecyclerView recyclerView;
     private NewsRecyclerAdapter newsAdapter;
     private ClockView clockView;
+    private View plane;
     private Filter searchFilter = null;
     /** {@code true} when the message given in {@link R.string#msg_found msg_found} or {@link R.string#msg_not_found msg_not_found} has been shown */
     private boolean msgFoundShown = false;
@@ -805,7 +808,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
         // if the quickView is shown, accept the back button as command to hide it
         if (this.quickView.getVisibility() == View.VISIBLE) {
-            onQuickViewClicked(this.quickView);
+            hideQuickView(this.quickView);
             return;
         }
         @App.BackButtonBehaviour int useBack = PreferenceManager.getDefaultSharedPreferences(this).getInt(App.PREF_USE_BACK_IN_APP, App.USE_BACK_FINISH);
@@ -1057,8 +1060,10 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         //
         this.coordinatorLayout = findViewById(R.id.coordinator_layout);
         this.fab = findViewById(R.id.fab);
+        this.plane = findViewById(R.id.plane);
+        this.plane.setOnClickListener(this::hideQuickView);
         this.quickView = findViewById(R.id.quickView);
-        this.quickView.setOnClickListener(this::onQuickViewClicked);
+        this.quickView.setOnClickListener(this::hideQuickView);
         this.recyclerView = findViewById(R.id.recyclerView);
         //this.recyclerView.setHasFixedSize(true);
         selectLayoutManager(null);
@@ -1405,17 +1410,17 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         // next lifecycle method to be called will be onStop()
     }
 
-    /**
+    /*
      * The user has tapped the semi-transparent plane which, when visible, covers all other elements in the screen.
      * @param ignored ignored View
-     */
+     *
     public void onPlaneClicked(@Nullable View ignored) {
         if (this.quickView.getVisibility() == View.VISIBLE) {
-            onQuickViewClicked(this.quickView);
+            hideQuickView(this.quickView);
         } else {
             this.quickViewRequestCancelled = true;
         }
-    }
+    }*/
 
     /** {@inheritDoc} */
     @Override
@@ -1439,12 +1444,12 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
      * The user has tapped the 'quick view' which, when visible, displays the article's {@link News#getTeaserImage() teaser image}.
      * @param ignored ignored View
      */
-    public void onQuickViewClicked(@Nullable View ignored) {
-        this.quickView.setVisibility(View.GONE);
+    public void hideQuickView(@Nullable View ignored) {
+        if (this.quickView.getVisibility() != View.VISIBLE) this.quickViewRequestCancelled = true; else this.quickView.setVisibility(View.GONE);
         this.quickView.setImageBitmap(null);
         this.newsForQuickView = null;
-        View plane = findViewById(R.id.plane);
-        if (plane != null) plane.setVisibility(View.GONE);
+        this.plane.setVisibility(View.GONE);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
     }
 
     /** {@inheritDoc} */
@@ -2125,18 +2130,18 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         String newsid = news.getExternalId();
         if (newsid == null) newsid = "temp";
         final File temp = new File(getCacheDir(), "quik_" + newsid.replace('/', '_').replace('\0', '_') + ".jpg");
-        findViewById(R.id.plane).setVisibility(View.VISIBLE);
+        this.plane.setVisibility(View.VISIBLE);
         this.service.loadFile(url, temp, temp.lastModified(), (completed, result) -> {
             if (this.quickViewRequestCancelled) {
                 this.quickViewRequestCancelled = false;
                 FileDeleter.add(temp);
-                findViewById(R.id.plane).setVisibility(View.GONE);
+                this.plane.setVisibility(View.GONE);
                 this.newsForQuickView = null;
                 return;
             }
             if (!completed || result == null || result.rc >= 400 || temp.length() == 0L) {
                 FileDeleter.add(temp);
-                findViewById(R.id.plane).setVisibility(View.GONE);
+                this.plane.setVisibility(View.GONE);
                 this.newsForQuickView = null;
                 if (result != null && !TextUtils.isEmpty(result.msg)) {
                     Snackbar.make(this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
@@ -2147,11 +2152,12 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             }
             Bitmap bm = BitmapFactory.decodeFile(temp.getAbsolutePath(), OPTS_FOR_QUICKVIEW);
             if (bm != null) {
-                this.quickView.setVisibility(View.VISIBLE);
+                getWindow().getDecorView().setSystemUiVisibility(UI_FLAGS_FOR_QUICKVIEW);
                 this.quickView.setImageBitmap(bm);
+                this.quickView.setVisibility(View.VISIBLE);
             } else {
                 if (BuildConfig.DEBUG) Log.w(TAG, "Failed to decode bitmap from " + result.sourceUri);
-                findViewById(R.id.plane).setVisibility(View.GONE);
+                this.plane.setVisibility(View.GONE);
                 this.newsForQuickView = null;
                 if (!TextUtils.isEmpty(result.msg)) {
                     Snackbar.make(this.coordinatorLayout, getString(R.string.error_download_failed, result.msg), Snackbar.LENGTH_SHORT).show();
