@@ -1060,7 +1060,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         this.quickView = findViewById(R.id.quickView);
         this.quickView.setOnClickListener(this::onQuickViewClicked);
         this.recyclerView = findViewById(R.id.recyclerView);
-        this.recyclerView.setHasFixedSize(true);
+        //this.recyclerView.setHasFixedSize(true);
         selectLayoutManager(null);
         // enable context menus for news items
         this.recyclerView.setOnCreateContextMenuListener(this);

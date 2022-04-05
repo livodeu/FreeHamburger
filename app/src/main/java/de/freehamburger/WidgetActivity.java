@@ -73,7 +73,7 @@ public class WidgetActivity extends AppCompatActivity {
         this.recyclerView = getDelegate().findViewById(R.id.recyclerView);
         assert this.recyclerView != null;
         this.recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        this.recyclerView.setHasFixedSize(true);
+        //this.recyclerView.setHasFixedSize(true);
         this.recyclerView.setAdapter(new RecyclerView.Adapter<WidgetActivity.ViewHolder>() {
 
             @ColorInt final int colorAccent = getResources().getColor(R.color.colorAccent);
