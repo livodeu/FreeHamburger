@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.usage.UsageStatsManager;
+import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -71,6 +72,7 @@ import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Set;
 
 import de.freehamburger.model.Source;
@@ -81,6 +83,7 @@ import de.freehamburger.supp.PopupManager;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
+import de.freehamburger.widget.WidgetProvider;
 
 /**
  *
@@ -98,6 +101,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
     private Snackbar snackbar;
     private WebView webViewForHelp;
     private AlertDialog helpDialog;
+    private UpdatesController updatesController;
 
     /**
      * @param activity Activity
@@ -235,6 +239,8 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         this.webViewForHelp.setBackgroundColor(getResources().getColor(R.color.colorPrimarySemiTrans));
         this.webViewForHelp.setWebChromeClient(new NonLoggingWebChromeClient());
 
+        this.updatesController = new UpdatesController(this);
+
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.settings, this.fromBackgroundTile ? new PollingPreferenceFragment() : new RootPreferenceFragment())
@@ -332,7 +338,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
     /** {@inheritDoc} */
     @Override
     public void startActivity(Intent intent) {
-        if (BuildConfig.DEBUG) android.util.Log.i(getClass().getSimpleName(), "startActivity(" + intent + ")");
+        if (BuildConfig.DEBUG) Log.i(getClass().getSimpleName(), "startActivity(" + intent + ")");
 
         String bai = intent.getStringExtra("com.android.browser.application_id");
         if (BuildConfig.APPLICATION_ID.equals(bai)) {
@@ -796,7 +802,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
 
-            this.min = 1;//UpdateJobService.getMinimumIntervalInMinutes();
+            this.min = 1;
             this.maxNightInterval = Math.round(UpdateJobService.getNightDuration(prefs) * 60f);
 
             SwitchPreferenceCompat prefPoll = findPreference(App.PREF_POLL);
@@ -807,6 +813,28 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     prefPoll.setSummaryOn(getString(R.string.pref_title_poll_on) + '\n' + getString(R.string.error_poll_failed, date));
                     prefPoll.setSummaryOff(getString(R.string.pref_title_poll_off) + '\n' + getString(R.string.error_poll_failed, date));
                 }
+                prefPoll.setOnPreferenceChangeListener((preference, newValue) -> {
+                    if (BuildConfig.DEBUG) Log.i(TAG, App.PREF_POLL + ": " + newValue);
+                    this.handler.removeCallbacks(activity.updatesController);
+                    this.handler.postDelayed(activity.updatesController, 1_000L);
+                    if (Boolean.FALSE.equals(newValue)) {
+                        AppWidgetManager aw = AppWidgetManager.getInstance(activity);
+                        ComponentName provider = new ComponentName(activity, WidgetProvider.class);
+                        final int[] widgetIds = aw.getAppWidgetIds(provider);
+                        if (widgetIds != null && widgetIds.length > 0) {
+                            // ask user to enable updates because there is at least one widget
+                            View cl = activity.findViewById(R.id.coordinator_layout);
+                            Snackbar sb = Snackbar.make(cl, getResources().getQuantityString(R.plurals.msg_widget_dont_disable_updates, widgetIds.length, widgetIds.length), Snackbar.LENGTH_INDEFINITE);
+                            sb.setAction(android.R.string.ok, v -> {
+                                prefPoll.setChecked(true);
+                                Objects.requireNonNull(prefPoll.getOnPreferenceChangeListener()).onPreferenceChange(prefPoll, true);
+                            });
+                            Util.setSnackbarMaxLines(sb, 3);
+                            sb.show();
+                        }
+                    }
+                    return true;
+                });
             }
 
             SwitchPreferenceCompat prefPollBreakingOnly = findPreference(App.PREF_POLL_BREAKING_ONLY);
@@ -874,7 +902,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     try {
                         interval = Integer.parseInt(o.toString().trim());
                     } catch (NumberFormatException nfe) {
-                        Toast.makeText(getActivity(), R.string.error_invalid_not_a_number, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(activity, R.string.error_invalid_not_a_number, Toast.LENGTH_SHORT).show();
                         return false;
                     } catch (Exception ignored) {
                         return false;
@@ -883,8 +911,10 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                         Toast.makeText(getActivity(), getResources().getString(R.string.error_poll_minimum_interval, min), Toast.LENGTH_LONG).show();
                     }
                     boolean valid = interval >= PollingPreferenceFragment.this.min;
-                    // if the interval is less than 15 mins, start the FrequentUpdatesService (the service will stop itself if the interval is >= 15 min)
-                    if (valid) FrequentUpdatesService.possiblyStart(activity, prefs, this.handler, 1_000L);
+                    if (valid) {
+                        this.handler.removeCallbacks(activity.updatesController);
+                        this.handler.postDelayed(activity.updatesController, 1_000L);
+                    }
                     return valid;
                 });
             }
@@ -910,8 +940,10 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                                 .getString(R.string.error_poll_maximum_interval, PollingPreferenceFragment.this.maxNightInterval), Toast.LENGTH_LONG).show();
                     }
                     boolean valid = interval >= PollingPreferenceFragment.this.min && interval <= PollingPreferenceFragment.this.maxNightInterval;
-                    // if the interval is less than 15 mins, start the FrequentUpdatesService (the service will stop itself if the interval is >= 15 min)
-                    if (valid) FrequentUpdatesService.possiblyStart(activity, prefs, this.handler, 1_000L);
+                    if (valid) {
+                        this.handler.removeCallbacks(activity.updatesController);
+                        this.handler.postDelayed(activity.updatesController, 1_000L);
+                    }
                     return valid;
                 });
             }
@@ -951,6 +983,8 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                                     ed.putFloat(App.PREF_POLL_NIGHT_END, selectedTo);
                                     ed.apply();
                                     prefNightPeriod.setSummary(getString(R.string.pref_summary_poll_nightis, Util.formatFloatTime(prefs.getFloat(App.PREF_POLL_NIGHT_START, App.PREF_POLL_NIGHT_START_DEFAULT)), Util.formatFloatTime(prefs.getFloat(App.PREF_POLL_NIGHT_END, App.PREF_POLL_NIGHT_END_DEFAULT))));
+                                    this.handler.removeCallbacks(activity.updatesController);
+                                    this.handler.postDelayed(activity.updatesController, 1_000L);
                                 }
                                 dialog.dismiss();
                             })

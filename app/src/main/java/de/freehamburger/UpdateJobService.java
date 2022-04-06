@@ -637,8 +637,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         // let it all run even if the Blob's source is meant to be displayed in a widget instead of a notification - notify(News, Source, Bitmap) will take care of that
         News newsToDisplay = null;
         for (News n : jointList) {
-            // decision: skip weather (at the time of writing this, weather is the only news with no 'externalId' set)
-            // reason for that decision is that the weather news is updated much more frequently than others so it would be a bit like notification spam…
             if (n.getExternalId() == null) {
                 continue;
             }
@@ -1005,7 +1003,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         if (intent != null) {
             if (ACTION_CLEAR_NOTIFICATION.equals(intent.getAction())) {
                 removeNotification();
-                stopSelf(startId);
                 return START_REDELIVER_INTENT;
             }
             if (ACTION_DISABLE_POLLING.equals(intent.getAction())) {

@@ -617,21 +617,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     }
 
     /**
-     * Starts {@link FrequentUpdatesService} if the polling interval is less than 15 minutes.
-     * @param prefs SharedPreferences (optional)
-     */
-    private void launchFrequentUpdatesService(@Nullable SharedPreferences prefs) {
-        if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if (!FrequentUpdatesService.shouldBeEnabled(this, prefs)) return;
-        try {
-            startService(new Intent(this, FrequentUpdatesService.class));
-        } catch (RuntimeException e) {
-            if (BuildConfig.DEBUG) Log.w(TAG, "While launching FrequentUpdatesService: " + e);
-            this.handler.postDelayed(() -> launchFrequentUpdatesService(null), 5_000L);
-        }
-    }
-
-    /**
      * Displays the News' details in a {@link NewsActivity}.
      * @param news News
      */
@@ -1410,18 +1395,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         // next lifecycle method to be called will be onStop()
     }
 
-    /*
-     * The user has tapped the semi-transparent plane which, when visible, covers all other elements in the screen.
-     * @param ignored ignored View
-     *
-    public void onPlaneClicked(@Nullable View ignored) {
-        if (this.quickView.getVisibility() == View.VISIBLE) {
-            hideQuickView(this.quickView);
-        } else {
-            this.quickViewRequestCancelled = true;
-        }
-    }*/
-
     /** {@inheritDoc} */
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
@@ -1650,7 +1623,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     protected void onResume() {
         super.onResume();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        launchFrequentUpdatesService(prefs);
         boolean hasTemporaryFilter = this.newsAdapter.setFilters(TextFilter.createTextFiltersFromPreferences(this));
         this.clockView.setTint(hasTemporaryFilter ? Util.getColor(this, R.color.colorFilter) : Color.TRANSPARENT);
         // if the adapter is already filled, we are able to show the intro now (playIntro will return quickly if the adapter is empty)

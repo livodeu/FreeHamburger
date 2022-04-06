@@ -708,27 +708,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 Util.clearAppWebview(App.this);
             }
         }.start();
-
-        // scheduleStart() takes quite long (ca. 1/3 sec. on upper-lower-middle middle class SoC) -> run it in different thread
-       new Thread() {
-            @Override
-            public void run() {
-                scheduleStart();
-            }
-        }.start();
     }
 
     /** {@inheritDoc} */
     @Override
     public void onSharedPreferenceChanged(final SharedPreferences prefs, final String key) {
-        if (PREF_POLL.equals(key) || PREF_POLL_INTERVAL.equals(key) || PREF_POLL_INTERVAL_NIGHT.equals(key)) {
-            boolean on = prefs.getBoolean(PREF_POLL, PREF_POLL_DEFAULT);
-            if (on && !FrequentUpdatesService.shouldBeEnabled(this, prefs)) {
-                scheduleStart();
-            } else {
-                scheduleStop();
-            }
-        } else if (PREF_PROXY_SERVER.equals(key) || PREF_PROXY_TYPE.equals(key)) {
+        if (PREF_PROXY_SERVER.equals(key) || PREF_PROXY_TYPE.equals(key)) {
             // OkHttpClient needs to be rebuilt next time
             closeClient();
         } else if (PREF_BACKGROUND.equals(key)) {
@@ -753,7 +738,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     void scheduleStart() {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         if (PrefsHelper.getStringAsInt(prefs, UpdateJobService.hasNightFallenOverBerlin(prefs) ? PREF_POLL_INTERVAL_NIGHT : PREF_POLL_INTERVAL, PREF_POLL_INTERVAL_DEFAULT) < UpdateJobService.getMinimumIntervalInMinutes()) {
-            if (BuildConfig.DEBUG) Log.i(TAG, "Skipping periodic background job because the interval is less than 15 minutes");
+            // Skipping periodic background job because the interval is less than 15 minutes
             return;
         }
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
@@ -774,29 +759,31 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 ed.remove(PREF_POLL_FAILED);
                 ed.apply();
             }
-            if (BuildConfig.DEBUG) {
-                Log.i(TAG, "Periodic job scheduled at " + DateFormat.getDateTimeInstance().format(new java.util.Date(System.currentTimeMillis())) + " for every " + (jobInfo.getIntervalMillis() / 60000) + " minutes");
-            }
+            if (BuildConfig.DEBUG) Log.i(TAG, "Periodic job scheduled at " + DateFormat.getDateTimeInstance().format(new java.util.Date(System.currentTimeMillis())) + " for every " + (jobInfo.getIntervalMillis() / 60000) + " minutes");
         }
     }
 
     /**
      * Cancels the background update if it is currently scheduled. Also removes the notification.
+     * @return {@code true} if the job has been cancelled, {@code false} if it was not scheduled
      */
-    void scheduleStop() {
+    boolean scheduleStop() {
         JobScheduler js = (JobScheduler)getSystemService(JOB_SCHEDULER_SERVICE);
-        if (js == null) return;
+        if (js == null) return false;
+        boolean cancelled = false;
         final List<JobInfo> pending = js.getAllPendingJobs();
         for (JobInfo job : pending) {
             int id = job.getId();
             if (id == UpdateJobService.JOB_ID) {
                 js.cancel(id);
+                cancelled = true;
                 if (BuildConfig.DEBUG) Log.i(TAG, "Schedule for periodic job with interval of " + job.getIntervalMillis() + " ms cancelled.");
                 break;
             }
         }
         NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         if (nm != null) nm.cancelAll();
+        return cancelled;
     }
 
     public void setLatestShare(@Nullable ComponentName componentName) {

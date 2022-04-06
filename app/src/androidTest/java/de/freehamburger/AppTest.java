@@ -75,7 +75,6 @@ import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
-import de.freehamburger.prefs.PrefsHelper;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.MediaSourceHelper;
 import de.freehamburger.util.TtfInfo;
@@ -359,58 +358,24 @@ public class AppTest {
 
     @Test
     public void testFrequentUpdates() {
+        // test presence of FrequentUpdatesService in manifest
+        PackageManager pm = ctx.getPackageManager();
+        try {
+            ServiceInfo si = pm.getServiceInfo(new ComponentName(ctx, FrequentUpdatesService.class), 0);
+            assertNotNull(si);
+            assertTrue(si.enabled);
+            assertFalse(si.exported);
+        } catch (PackageManager.NameNotFoundException e) {
+            fail(e.toString());
+        }
+
         JobInfo jobInfo = UpdateJobService.makeOneOffJobInfo(ctx, false);
         assertNotNull(jobInfo);
         assertFalse(jobInfo.isPeriodic());
         if (Build.VERSION.SDK_INT >= 28) assertNotNull(jobInfo.getRequiredNetwork());
 
-        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        final boolean pollingEnabled = prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT);
-        if (!pollingEnabled) {
-            SharedPreferences.Editor ed = prefs.edit();
-            ed.putBoolean(App.PREF_POLL, true);
-            ed.apply();
-        }
-        final int interval = PrefsHelper.getStringAsInt(prefs, App.PREF_POLL_INTERVAL, 15);
-        if (interval >= 15) {
-            SharedPreferences.Editor ed = prefs.edit();
-            ed.putString(App.PREF_POLL_INTERVAL, "5");
-            ed.apply();
-        }
-
-        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            try {
-                Thread.sleep(3_000L);
-            } catch (Exception ignored) {
-            }
-            assertNotNull(activity.frequentUpdatesService);
-            assertTrue(FrequentUpdatesService.shouldBeEnabled(activity, prefs));
-            assertTrue(activity.frequentUpdatesService.isForeground());
-            assertNotNull(activity.frequentUpdatesService.ticker);
-            NotificationManager nm = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-            assertNotNull(nm);
-            StatusBarNotification[] sbs = nm.getActiveNotifications();
-            assertNotNull(sbs);
-            assertTrue(sbs.length > 0);
-            boolean notificationIdFound = false;
-            for (StatusBarNotification sb : sbs) {
-                if (FrequentUpdatesService.NOTIFICATION_ID == sb.getId()) {
-                    notificationIdFound = true;
-                    break;
-                }
-            }
-            assertTrue(notificationIdFound);
-        });
-
-        if (interval >= 15) {
-            SharedPreferences.Editor ed = prefs.edit();
-            ed.putString(App.PREF_POLL_INTERVAL, String.valueOf(interval));
-            ed.putBoolean(App.PREF_POLL, pollingEnabled);
-            ed.commit();
-        }
-        asn.moveToState(Lifecycle.State.DESTROYED);
+        int run = UpdatesController.whatShouldRun(ctx);
+        assertTrue(run == UpdatesController.RUN_JOB || run == UpdatesController.RUN_SERVICE || run == UpdatesController.RUN_NONE);
     }
 
     /**
@@ -454,7 +419,7 @@ public class AppTest {
             assertTrue(permInternet);
             assertTrue(permNetworkState);
 
-            ApplicationInfo ai = pm.getApplicationInfo(ctx.getPackageName(), PackageManager.GET_META_DATA);
+            final ApplicationInfo ai = pm.getApplicationInfo(ctx.getPackageName(), PackageManager.GET_META_DATA);
             assertNotNull(ai);
             ai.dump(new android.util.LogPrinter(android.util.Log.INFO, getClass().getSimpleName()), "");
             assertEquals("de.freehamburger.App", ai.name);
@@ -539,6 +504,13 @@ public class AppTest {
                 fail("Undefined background value of " + background);
         }
 
+        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
+        asn.moveToState(Lifecycle.State.RESUMED);
+        asn.onActivity(activity -> {
+            if (background == App.BACKGROUND_DAY) assertFalse(Util.isNightMode(activity));
+            else if (background == App.BACKGROUND_NIGHT) assertTrue(Util.isNightMode(activity));
+            activity.finish();
+        });
     }
 
     /**
@@ -679,7 +651,6 @@ public class AppTest {
         try {
             TtfInfo tti = TtfInfo.getTtfInfo(file);
             assertNotNull(tti);
-            android.util.Log.i(getClass().getSimpleName(), tti.toString());
             String fontName = tti.getFontFullName();
             assertNotNull(fontName);
             assertTrue(fontName.contains("Roboto"));
@@ -703,10 +674,26 @@ public class AppTest {
     @SmallTest
     @FlakyTest(detail = "The last part (App.hasCurrentActivity()) succeeds on some devices (APIs 23,31) and fails on others (API 28)")
     public void testUpdateService() {
+
+        // test presence of UpdateJobService in manifest
+        PackageManager pm = ctx.getPackageManager();
+        try {
+            ServiceInfo si = pm.getServiceInfo(new ComponentName(ctx, UpdateJobService.class), 0);
+            assertNotNull(si);
+            assertTrue(si.enabled);
+            assertTrue(si.exported);
+        } catch (PackageManager.NameNotFoundException e) {
+            fail(e.toString());
+        }
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         JobInfo jobInfo = UpdateJobService.makeJobInfo(ctx);
         assertNotNull(jobInfo);
         assertTrue(jobInfo.isPeriodic());
         if (Build.VERSION.SDK_INT >= 28) assertNotNull(jobInfo.getRequiredNetwork());
+        boolean night = UpdateJobService.hasNightFallenOverBerlin(prefs);
+        long intervalMs = UpdateJobService.calcInterval(prefs, night);
+        assertEquals(Math.max(JobInfo.getMinPeriodMillis(), intervalMs), jobInfo.getIntervalMillis());
         JobScheduler js = (JobScheduler)ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE);
         assertNotNull(js);
         int result = js.schedule(jobInfo);
@@ -822,7 +809,7 @@ public class AppTest {
             for (FeatureInfo fi : pi.reqFeatures) {
                 if (PackageManager.FEATURE_APP_WIDGETS.equals(fi.name)) {appWidgetsFeatureDeclared = true; break;}
             }
-            assertTrue(appWidgetsFeatureDeclared);
+            assertTrue("uses-feature android:name=\"android.software.app_widgets\" not found in manifest", appWidgetsFeatureDeclared);
         } catch (PackageManager.NameNotFoundException e) {
             fail(e.toString());
         }
@@ -884,6 +871,12 @@ public class AppTest {
         }
         boolean textViewSetGravityRemotable = WidgetProvider.isRemotable(TextView.class,"setGravity", int.class);
         if (Build.VERSION.SDK_INT >= 31) assertTrue(textViewSetGravityRemotable); else assertFalse(textViewSetGravityRemotable);
+
+        JobInfo ji = UpdateJobService.makeOneOffJobInfoWithDelay(ctx, 5_000L, 10_000L);
+        assertNotNull(ji);
+        assertFalse(ji.isPeriodic());
+        assertTrue(ji.getMinLatencyMillis() > 0L);
+        assertFalse(ji.isImportantWhileForeground());
     }
 
 }

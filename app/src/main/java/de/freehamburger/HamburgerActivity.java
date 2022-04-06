@@ -190,18 +190,19 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     protected void onResume() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
+        @UpdatesController.Run int r = UpdatesController.whatShouldRun(this);
+
         try {
             super.onResume();
             bindService(new Intent(this, HamburgerService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
-            if (FrequentUpdatesService.shouldBeEnabled(this, prefs)) {
-                bindService(new Intent(this, FrequentUpdatesService.class), this, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
-            }
         } catch (Throwable e) {
             if (BuildConfig.DEBUG) {
                 Log.e(TAG, e.toString(), e);
                 Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_LONG).show();
             }
         }
+
+        new UpdatesController(this).run();
 
         // display a Snackbar if something has been shared lately
         if (prefs.getBoolean(App.PREF_SHOW_LATEST_SHARE_TARGET, App.PREF_SHOW_LATEST_SHARE_TARGET_DEFAULT)) {
@@ -235,6 +236,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @CallSuper
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
+        if (BuildConfig.DEBUG) Log.i(TAG, "onServiceConnected(" + name + ", " + service + ")");
         if (service instanceof HamburgerService.HamburgerServiceBinder) {
             this.service = ((HamburgerService.HamburgerServiceBinder) service).getHamburgerService();
         } else if (service instanceof FrequentUpdatesService.FrequentUpdatesServiceBinder) {

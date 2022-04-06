@@ -202,7 +202,6 @@
     <string name="msg_font_import_failed">Font import failed!</string>
     <string name="msg_font_none">There is no imported font.</string>
     <string name="msg_found">\"%1$s\" has been found %2$d times.</string>
-    <string name="msg_frequent_updates_inactive">Inactive.</string>
     <string name="msg_frequent_updates_next">Next update: %1$s</string>
     <plurals name="msg_frequent_updates">
         <item quantity="one">Updates every minute.</item>
@@ -229,6 +228,10 @@
     <string name="msg_text_copied">The text has been copied to the clipboard.</string>
     <string name="msg_volume_mute">Audio is muted.</string>
     <string name="msg_website_errors">The website contains errors.</string>
+    <plurals name="msg_widget_dont_disable_updates">
+        <item quantity="one">There is %1$s widget. You should not disable updates!</item>
+        <item quantity="other">There are %1$d widgets. You should not disable updates!</item>
+    </plurals>
     <string name="msg_widget_source_changed">The source has been changed to \"%1$s\".</string>
     <string name="msg_widget_source_notchanged">The source has not been changed.</string>
 

@@ -39,22 +39,23 @@ public class BootReceiver extends BroadcastReceiver {
         }
         // btw: the intent has got the extra "android.intent.extra.user_handle" with a java.lang.Integer value of 0
         App app = (App)ctx.getApplicationContext();
+        @UpdatesController.Run final int r = UpdatesController.whatShouldRun(app);
+        if (r == UpdatesController.RUN_NONE) {
+            return;
+        }
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
-        if (!prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)) return;
         int intervalMinutes = PrefsHelper.getStringAsInt(prefs, UpdateJobService.hasNightFallenOverBerlin(prefs) ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT);
-        boolean frequentUpdates = FrequentUpdatesService.shouldBeEnabled(ctx, prefs);//intervalMinutes < UpdateJobService.getMinimumIntervalInMinutes();
 
-        long intervalMs;
-        if (frequentUpdates) {
+        long intervalMs = intervalMinutes * 60_000L;
+        if (r == UpdatesController.RUN_SERVICE)  {
             // According to https://developer.android.com/guide/components/foreground-services#background-start-restriction-exemptions, a foreground service may be started here
-            intervalMs = intervalMinutes * 60_000L;
             Intent intentFrequentUpdates = new Intent(ctx, FrequentUpdatesService.class);
             try {
                 ctx.startService(intentFrequentUpdates);
             } catch (Exception e) {
                 if (BuildConfig.DEBUG) Log.e(getClass().getSimpleName(), "While starting " + intentFrequentUpdates + ": " + e);
             }
-        } else {
+        } else if (r == UpdatesController.RUN_JOB)  {
             intervalMs = app.isBackgroundJobScheduled();
             if (intervalMs == 0L) {
                 app.scheduleStart();
@@ -87,7 +88,7 @@ public class BootReceiver extends BroadcastReceiver {
                         );
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!frequentUpdates) {
+            if (r == UpdatesController.RUN_JOB) {
                 builder.addAction(new Notification.Action.Builder(
                         Icon.createWithResource(app, R.drawable.ic_do_not_disturb_alt_ededed_24dp),
                         app.getString(R.string.action_background_disable),
@@ -100,7 +101,7 @@ public class BootReceiver extends BroadcastReceiver {
                     UpdateJobService.makeIntentForMainActivity(app, null, Source.HOME))
                     .build());
         } else {
-            if (!frequentUpdates) builder.addAction(new Notification.Action(R.drawable.ic_do_not_disturb_alt_ededed_24dp, app.getString(R.string.action_background_disable), UpdateJobService.makeIntentToDisable(app)));
+            if (r == UpdatesController.RUN_JOB) builder.addAction(new Notification.Action(R.drawable.ic_do_not_disturb_alt_ededed_24dp, app.getString(R.string.action_background_disable), UpdateJobService.makeIntentToDisable(app)));
             builder.addAction(new Notification.Action(R.drawable.ic_notification, app.getString(R.string.action_open_app), UpdateJobService.makeIntentForMainActivity(app, null, Source.HOME)));
         }
 

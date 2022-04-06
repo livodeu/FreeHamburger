@@ -282,8 +282,11 @@
     <string name="pref_title_pip_enabled">Bild-in-Bild-Modus verwenden</string>
     <string name="pref_summary_pip_off">Der Bild-in-Bild-Modus wird nicht verwendet.</string>
     <string name="pref_summary_pip_on">Der Bild-in-Bild-Modus wird bei Vollbildvideos verwendet.</string>
+    <plurals name="msg_widget_dont_disable_updates">
+        <item quantity="one">Auf dem Startbildschirm gibt es ein Widget. Sie sollten die Aktualisierungen nicht deaktivieren!</item>
+        <item quantity="other">Auf dem Startbildschirm gibt es %1$d Widgets. Sie sollten die Aktualisierungen nicht deaktivieren!</item>
+    </plurals>
     <string name="msg_widget_no_news">Zur Zeit keine Inhalte.</string>
-    <string name="msg_frequent_updates_inactive">Inaktiv.</string>
     <string name="msg_frequent_updates_next">Nächste Aktualisierung: %1$s</string>
     <plurals name="msg_frequent_updates">
         <item quantity="one">Aktualisierung jede Minute.</item>
