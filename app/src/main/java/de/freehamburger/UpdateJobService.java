@@ -867,18 +867,16 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         final PendingIntent contentIntent;
         final String type = news.getType() != null ? news.getType() : "";
         switch (type) {
-            case News.NEWS_TYPE_STORY:
-                contentIntent = makeIntentForStory(app, news, this.nextNotificationId);
-                break;
             case News.NEWS_TYPE_VIDEO:
                 contentIntent = makeIntentForVideoActivity(app, news);
                 break;
             case News.NEWS_TYPE_WEBVIEW:
                 contentIntent = makeIntentForWebViewActivity(app, news);
                 break;
+            case News.NEWS_TYPE_STORY:
             default:
-                contentIntent = makeIntentForMainActivity(app, news, source);
-                if (BuildConfig.DEBUG) Log.w(TAG + id, "Intent for " + news.getTitle() + " is for MainActivity - news type is \"" + type + "\"");
+                // "Und so wird das Wetter" has got no type
+                contentIntent = makeIntentForStory(app, news, this.nextNotificationId);
         }
         final Notification.Builder builder = new Notification.Builder(app)
                 .setDefaults(Notification.DEFAULT_SOUND)
