@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.http.SslError;
@@ -95,6 +96,12 @@ public class WebViewActivity extends AppCompatActivity {
 
     WebView webView;
     private News news;
+    /** vertical scroll position as a fraction of the page's height (can thus be larger than 1) */
+    private float currentScrollY = 0f;
+    /** {@code true} while the page is loading */
+    private boolean loading;
+    /** set to {@code true} when the device's configuration has changed*/
+    private boolean configurationJustChanged;
 
     /**
      * Returns a {@link PageFinishedListener PageFinishedListener} which gets notified when a page has been loaded. Defaults to null.
@@ -115,6 +122,13 @@ public class WebViewActivity extends AppCompatActivity {
         super.onBackPressed();
     }
 
+    /** {@inheritDoc} */
+    @Override public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        this.configurationJustChanged = true;
+        super.onConfigurationChanged(newConfig);
+    }
+
+    /** {@inheritDoc} */
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -164,6 +178,19 @@ public class WebViewActivity extends AppCompatActivity {
             String topline = this.news.getTopline();
             if (TextUtils.isEmpty(topline)) topline = this.news.getTitle();
             ab.setTitle(topline);
+        }
+
+        // remember the vertical scroll position to restore it after the device has been rotated
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            this.webView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                if (this.loading || this.configurationJustChanged) return;
+                this.currentScrollY = scrollY / (float)((WebView)v).getContentHeight();
+            });
+        } else {
+            this.webView.getViewTreeObserver().addOnScrollChangedListener(() -> {
+                if (this.loading || this.configurationJustChanged) return;
+                this.currentScrollY = this.webView.getScrollY() / (float)this.webView.getContentHeight();
+            });
         }
     }
 
@@ -314,9 +341,20 @@ public class WebViewActivity extends AppCompatActivity {
         }
 
         /** {@inheritDoc} */
+        @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+            this.activity.loading = true;
+            super.onPageStarted(view, url, favicon);
+        }
+
+        /** {@inheritDoc} */
         @Override
         public void onPageFinished(WebView view, String url) {
+            this.activity.loading = false;
+            this.activity.configurationJustChanged = false;
             if ("about:blank".equals(url)) return;
+            // scroll to the vertical scroll position that applied before the page was (re-)loaded - the delay was determined empirically and therefore adheres to the highest scientific standards…
+            this.handler.postDelayed(() -> view.scrollTo(0, Math.round(this.activity.currentScrollY * view.getContentHeight())), 404L);
+            //
             PageFinishedListener pageFinishedListener = this.activity.getPageFinishedListener();
             if (pageFinishedListener != null) pageFinishedListener.pageFinished(url);
             Uri uri = Uri.parse(url);
@@ -396,6 +434,9 @@ public class WebViewActivity extends AppCompatActivity {
         /** {@inheritDoc} */
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            // if the request was initiated by the user, reset the scroll position to apply after loading
+            if (request.hasGesture()) this.activity.currentScrollY = 0f;
+            //
             Uri uri = request.getUrl();
             if (SCHEME_HTTP.equalsIgnoreCase(uri.getScheme())) {
                 this.handler.postDelayed(() -> view.loadUrl(SCHEME_HTTPS + uri.toString().substring(SCHEME_HTTP.length())), 200L);
@@ -478,7 +519,7 @@ public class WebViewActivity extends AppCompatActivity {
                 if (!this.errors.contains(consoleMessage.message())) this.errors.add(consoleMessage.message());
                 AppCompatActivity activity = this.refactivity.get();
                 if (activity == null) return true;
-                boolean showErrors = BuildConfig.DEBUG || PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_SHOW_WEB_ERRORS, App.PREF_SHOW_WEB_ERRORS_DEFAULT);
+                boolean showErrors = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_SHOW_WEB_ERRORS, App.PREF_SHOW_WEB_ERRORS_DEFAULT);
                 if (showErrors && (this.sb == null || !this.sb.isShown())) {
                     Snackbar sb = Snackbar.make(activity.findViewById(R.id.coordinator_layout), R.string.msg_website_errors, Snackbar.LENGTH_INDEFINITE);
                     Util.setSnackbarFont(sb, Util.CONDENSED, (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? -1 : 12));
