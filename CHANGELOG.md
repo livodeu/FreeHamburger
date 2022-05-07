@@ -54,9 +54,11 @@ _2022-0x_
 
 * Changed: Theme based on Material3 flavour
 * Changed: Removed "Quick Settings" tile due to [memory leak in Android OS](https://tinyurl.com/2u9bhwn3)
+* Fixed: Issue #1
 * Fixed: Videos can now be shared from video-only categories, too
 * New: App widgets are now available
 * New: News can be updated more frequently than every 15 minutes
 * New: Definition of nighttime for background updates can be modified
-* Upgrade: A library has been updated:
+* Upgrade: Two libraries have been updated:
   * exoplayer 2.16.1 → 2.17.1 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)
+  * material 1.5.0 → 1.6.0 [release](https://github.com/material-components/material-components-android/releases/tag/1.6.0)
