@@ -966,12 +966,14 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         this.loaderExecutor = (ThreadPoolExecutor)Executors.newCachedThreadPool();
         this.loaderExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 
-        this.filters.addAll(TextFilter.createTextFiltersFromPreferences(this));
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean filtersEnabled = prefs.getBoolean(App.PREF_FILTERS_APPLY, App.PREF_FILTERS_APPLY_DEFAULT);
+        if (filtersEnabled) this.filters.addAll(TextFilter.createTextFiltersFromPreferences(this));
         //
         try {
             BITMAPFACTORY_OPTIONS.inPreferredConfig = Bitmap.Config.RGB_565;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                String cs = PreferenceManager.getDefaultSharedPreferences(this).getString(App.PREF_COLORSPACE, ColorSpace.Named.SRGB.name());
+                String cs = prefs.getString(App.PREF_COLORSPACE, ColorSpace.Named.SRGB.name());
                 BITMAPFACTORY_OPTIONS.inPreferredColorSpace = ColorSpace.get(ColorSpace.Named.valueOf(cs));
             }
         } catch (Throwable t) {

@@ -382,7 +382,8 @@ public class WidgetProvider extends AppWidgetProvider {
         final AppWidgetManager aw = AppWidgetManager.getInstance(app);
         final int[] widgetIds = aw.getAppWidgetIds(new ComponentName(app, WidgetProvider.class));
         if (widgetIds == null || widgetIds.length == 0) return;
-        final List<Filter> filters = TextFilter.createTextFiltersFromPreferences(ctx);
+        boolean filtersEnabled = PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_FILTERS_APPLY, App.PREF_FILTERS_APPLY_DEFAULT);
+        final List<Filter> filters = filtersEnabled ? TextFilter.createTextFiltersFromPreferences(ctx) : null;
         final Map<Source, Blob> blobsCache = new HashMap<>();
         final AtomicBoolean needsNetworkRefresh = new AtomicBoolean(false);
         final Handler handler = new Handler(Looper.getMainLooper());
