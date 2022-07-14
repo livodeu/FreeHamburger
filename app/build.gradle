@@ -82,6 +82,7 @@ android {
         // UseCompatLoadingForDrawables is misleading for minSdkVersion >= 21
         ignore 'UseCompatLoadingForDrawables'
     }
+    namespace 'de.freehamburger'
 
 }
 
