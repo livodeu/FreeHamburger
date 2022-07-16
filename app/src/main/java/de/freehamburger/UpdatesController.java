@@ -19,6 +19,12 @@ import java.lang.ref.WeakReference;
 import de.freehamburger.prefs.PrefsHelper;
 import de.freehamburger.util.Log;
 
+/**
+ * Controls how background updates are retrieved.<br>
+ * If updates are requested more frequently than every 15 minutes, the {@link FrequentUpdatesService} is used to retrieve them,
+ * otherwise the {@link UpdateJobService} is scheduled for periodic execution.<br>
+ * Note that the FrequentUpdatesService itself schedules a one-time UpdateJobService, too.
+ */
 public class UpdatesController implements Runnable {
 
     /** the user does not want any background updates */
@@ -28,7 +34,7 @@ public class UpdatesController implements Runnable {
     /** the user wants background updates more frequently than every 15 minutes */
     @Run public static final int RUN_SERVICE = 2;
     private final static String TAG = "UpdatesController";
-    private final Reference<Activity> refa;
+    @NonNull private final Reference<Activity> refa;
 
     /**
      * Constructor.
@@ -39,6 +45,12 @@ public class UpdatesController implements Runnable {
         this.refa = new WeakReference<>(a);
     }
 
+    /**
+     * Determines how to retrieve background updates.<br>
+     * If updates are requested more frequently than every 15 minutes, use the {@link FrequentUpdatesService} to retrieve them, otherwise use the {@link UpdateJobService}.
+     * @param ctx Context
+     * @return one of {@link #RUN_NONE}, {@link #RUN_JOB}, {@link #RUN_SERVICE}
+     */
     @Run
     public static int whatShouldRun(@NonNull Context ctx) {
         final int minimumIntervalForBackgroundJobs = UpdateJobService.getMinimumIntervalInMinutes();
@@ -47,6 +59,7 @@ public class UpdatesController implements Runnable {
         final boolean frequentUpdatesDay = PrefsHelper.getStringAsInt(prefs, App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT) < minimumIntervalForBackgroundJobs;
         final boolean frequentUpdatesNight = PrefsHelper.getStringAsInt(prefs, App.PREF_POLL_INTERVAL_NIGHT, App.PREF_POLL_INTERVAL_DEFAULT) < minimumIntervalForBackgroundJobs;
         if (poll) {
+            // if updates are requested more frequently than every 15 minutes, use the FrequentUpdatesService to retrieve them, otherwise use the UpdateJobService
             if ((frequentUpdatesDay || frequentUpdatesNight)) return RUN_SERVICE; else return RUN_JOB;
         }
         return RUN_NONE;
