@@ -202,7 +202,6 @@
     <string name="msg_font_import_failed">Font import failed!</string>
     <string name="msg_font_none">There is no imported font.</string>
     <string name="msg_found">\"%1$s\" has been found %2$d times.</string>
-    <string name="msg_frequent_updates_next">Next update: %1$s</string>
     <plurals name="msg_frequent_updates">
         <item quantity="one">Updates every minute.</item>
         <item quantity="other">Updates every %1$d minutes.</item>
