@@ -230,7 +230,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     private final Handler handler = new Handler();
     private final ScheduleChecker scheduleChecker = new ScheduleChecker();
-    public long appStart = 0L;
+    long appStart = 0L;
     @Nullable
     private NotificationChannel notificationChannel;
     @Nullable
