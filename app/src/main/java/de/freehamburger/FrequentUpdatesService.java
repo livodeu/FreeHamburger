@@ -32,7 +32,6 @@ import java.io.PrintWriter;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.text.DateFormat;
-import java.util.Date;
 import java.util.List;
 
 import de.freehamburger.prefs.PrefsHelper;
@@ -240,7 +239,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
         NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         if (nm == null) return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            StatusBarNotification[] sbs = nm.getActiveNotifications();
+            final StatusBarNotification[] sbs = nm.getActiveNotifications();
             for (StatusBarNotification sb : sbs) {
                 if (sb.getId() == NOTIFICATION_ID) {
                     nm.cancel(NOTIFICATION_ID);
@@ -284,13 +283,15 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
      */
     @MainThread
     private void updateNotification() {
-        if (!this.enabled) return;
+        if (!this.enabled) {
+            removeNotification();
+            return;
+        }
         try {
             // now, this should not happen, but better check instead of having a NPE…
             if (this.builder == null) setupNotification();
             if (this.timeFormat == null) this.timeFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
-            long nextUpdate = this.latestUpdate > 0L ? this.latestUpdate + this.requestedInterval : System.currentTimeMillis() + this.requestedInterval;
-            String msg;
+            final String msg;
             if (this.errorMsg != null && this.errorCode >= 400) {
                 // error state
                 msg = this.errorMsg.length() > 0 ? getString(R.string.error_download_failed, this.errorMsg) : getString(R.string.error_download_failed2);
@@ -298,11 +299,10 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) this.builder.setColorized(true);
             } else {
                 // normal state
-                msg = getString(R.string.msg_frequent_updates_next, this.timeFormat.format(new Date(nextUpdate)));
+                int every = (int)(this.requestedInterval / 60_000L);
+                msg = getResources().getQuantityString(R.plurals.msg_frequent_updates, every, every);
                 this.builder.setColor(Notification.COLOR_DEFAULT).setShowWhen(false);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    this.builder.setColorized(false).setTimeoutAfter(this.requestedInterval + 30_000L);
-                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) this.builder.setColorized(false).setTimeoutAfter(this.requestedInterval + 30_000L);
             }
             // 0x1f31b: 1st quarter half moon, 0x1f31e: sun with face
             this.builder.setContentTitle(msg).setSubText(this.night ? SYMBOL_NIGHT : SYMBOL_DAY);
@@ -321,18 +321,18 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
      * starts or stops the foreground mode accordingly.
      * @param prefs SharedPreferences
      */
+    @MainThread
     private void updateState(@Nullable SharedPreferences prefs) {
         if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean wasNight = this.night;
         boolean wasEnabled = this.enabled;
         long wasInterval = this.requestedInterval;
-        @UpdatesController.Run int r = UpdatesController.whatShouldRun(this);
         this.night = UpdateJobService.hasNightFallenOverBerlin(prefs);
-        this.enabled = (r == UpdatesController.RUN_SERVICE);
+        this.enabled = (UpdatesController.whatShouldRun(this) == UpdatesController.RUN_SERVICE);
         this.requestedInterval = PrefsHelper.getStringAsInt(prefs, this.night ? App.PREF_POLL_INTERVAL_NIGHT : App.PREF_POLL_INTERVAL, App.PREF_POLL_INTERVAL_DEFAULT) * 60_000L;
         if (this.enabled) {
             if (!isForeground(this, getClass())) foregroundStart();
-            if (this.night != wasNight || (!wasEnabled) || this.requestedInterval != wasInterval || this.errorMsg != null) {
+            if (this.night != wasNight || !wasEnabled || this.requestedInterval != wasInterval || this.errorMsg != null) {
                 updateNotification();
             }
         } else {
