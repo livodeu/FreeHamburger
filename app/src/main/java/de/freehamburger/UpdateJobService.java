@@ -1060,16 +1060,13 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         }
         //
         if (BuildConfig.DEBUG) {
-            if (oneOff) {
-                Log.i(TAG + id, "Hamburger update by one-time job");
-            } else {
-                //noinspection ConstantConditions
-                Set<String> allRequests = new HashSet<>(prefs.getStringSet(PREF_STAT_ALL, EMPTY_STRING_SET));
-                allRequests.add(String.valueOf(System.currentTimeMillis() - ADD_TO_PREF_STAT_ALL_VALUE));
-                SharedPreferences.Editor ed = prefs.edit();
-                ed.putStringSet(PREF_STAT_ALL, allRequests);
-                ed.apply();
-            }
+            if (oneOff) Log.i(TAG + id, "Hamburger update by one-time job"); else Log.i(TAG + id, "Hamburger update by periodic job");
+            //noinspection ConstantConditions
+            Set<String> allRequests = new HashSet<>(prefs.getStringSet(PREF_STAT_ALL, EMPTY_STRING_SET));
+            allRequests.add(String.valueOf(System.currentTimeMillis() - ADD_TO_PREF_STAT_ALL_VALUE));
+            SharedPreferences.Editor ed = prefs.edit();
+            ed.putStringSet(PREF_STAT_ALL, allRequests);
+            ed.apply();
         }
         if (needsReScheduling(this, params)) {
             reschedule();
