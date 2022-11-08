@@ -6,6 +6,7 @@ import android.os.Build;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -20,7 +21,6 @@ import java.net.UnknownHostException;
 import java.security.cert.CertPathValidatorException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
 import java.util.zip.GZIPInputStream;
 
@@ -51,7 +51,8 @@ public class OkHttpDownloader extends Downloader {
      * See <a href="https://tools.ietf.org/html/rfc2616#section-14.25">here</a>
      */
     @SuppressLint("SimpleDateFormat")
-    private static final DateFormat DF = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
+    @VisibleForTesting
+    public static final DateFormat DF = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
     static {
         DF.setTimeZone(java.util.TimeZone.getTimeZone("GMT"));
     }
@@ -93,13 +94,13 @@ public class OkHttpDownloader extends Downloader {
 
         if (f.length() > 0L) {
             // don't use lastModified() for .source files which indicates the newest article in that file; instead use App.getMostRecentUpdate(Source)
-            String ifModifiedSince;
+            final String ifModifiedSince;
             if (order.mostRecentUpdate > 0L) {
-                ifModifiedSince = DF.format(new Date(order.mostRecentUpdate));
+                ifModifiedSince = Util.formatTs(DF, order.mostRecentUpdate, null);
             } else {
-                ifModifiedSince = DF.format(new Date(f.lastModified()));
+                ifModifiedSince = Util.formatTs(DF, f.lastModified(), null);
             }
-            requestBuilder.addHeader("If-Modified-Since", ifModifiedSince);
+            if (ifModifiedSince != null) requestBuilder.addHeader("If-Modified-Since", ifModifiedSince);
         }
         //
         Request request = requestBuilder.build();

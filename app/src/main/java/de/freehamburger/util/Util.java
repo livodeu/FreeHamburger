@@ -85,10 +85,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -624,6 +627,29 @@ public class Util {
         int h = (int)t;
         int m = (int)(60f * (t - h));
         return String.format(Locale.getDefault(), "%02d:%02d", h, m);
+    }
+
+    /**
+     * Formats a timestamp using the given format.
+     * @param dateFormat format to use
+     * @param ts timestamp to format
+     * @param defaultValue default value to return in case of parsing/formatting failure
+     * @return formatted value or null
+     */
+    @Nullable
+    public static String formatTs(@Nullable DateFormat dateFormat, long ts, @Nullable String defaultValue) {
+        if (dateFormat == null) {
+            return defaultValue;
+        }
+        try {
+            return dateFormat.format(new Date(ts));
+        } catch (Exception re) {
+            if (BuildConfig.DEBUG) {
+                if (dateFormat instanceof SimpleDateFormat) Log.e(TAG, "Cannot parse/format " + ts + " with " + ((SimpleDateFormat)dateFormat).toPattern() +  ": " + re, re);
+                else Log.e(TAG, "Cannot parse/format " + ts + ": " + re, re);
+            }
+        }
+        return defaultValue;
     }
 
     /**

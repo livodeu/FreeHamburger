@@ -46,7 +46,8 @@ public final class News implements Comparable<News>, Serializable {
     public static final int FLAG_INCLUDE_HTMLEMBED = 1;
     private static final String TAG = "News";
     /** Example: 2017-11-16T11:54:03.882+01:00 */
-    private static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
+    @VisibleForTesting
+    public static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
     private static long nextid = 1L;
     /** the streams of differenty qualities (highest number found was all 7 StreamQualities) */
     final Map<StreamQuality, String> streams = new EnumMap<>(StreamQuality.class);

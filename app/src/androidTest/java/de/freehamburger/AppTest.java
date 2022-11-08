@@ -68,6 +68,7 @@ import org.xmlpull.v1.XmlPullParser;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.text.DateFormat;
 import java.util.List;
 import java.util.Set;
 
@@ -77,6 +78,7 @@ import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.MediaSourceHelper;
+import de.freehamburger.util.OkHttpDownloader;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
 import de.freehamburger.widget.WidgetProvider;
@@ -794,6 +796,27 @@ public class AppTest {
         assertNotNull(split);
         assertEquals(2, split.size());
         assertEquals("01234", split.get(0));
+    }
+
+    /**
+     * Tests DateFormats used in the app.
+     */
+    @Test
+    @SmallTest
+    public void testDateFormats() {
+        final long now = System.currentTimeMillis();
+        String result;
+        //
+        result = Util.formatTs(DateFormat.getDateTimeInstance(), now, null);
+        assertNotNull(result);
+        //
+        assertNotNull(OkHttpDownloader.DF);
+        result = Util.formatTs(OkHttpDownloader.DF, now, null);
+        assertNotNull(result);
+        //
+        assertNotNull(News.DF);
+        result = Util.formatTs(News.DF, now, null);
+        assertNotNull(result);
     }
 
     @Test
