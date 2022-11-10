@@ -72,6 +72,7 @@
         android:summaryOff="@string/pref_summary_poll_customnotification_off"
         android:summaryOn="@string/pref_summary_poll_customnotification_on"
         android:title="@string/pref_title_poll_customnotification"
+        app:isPreferenceVisible="false"
         app:allowDividerAbove="true"
         app:singleLineTitle="false"
         />

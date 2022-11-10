@@ -842,7 +842,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         // prepare notification summary
         if (this.summary == null) this.summary = new NotificationSummary(); else this.summary.increase();
         // show extended notification?
-        boolean applyExtendedStyle = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && prefs.getBoolean(PREF_NOTIFICATION_EXTENDED, PREF_NOTIFICATION_EXTENDED_DEFAULT);
+        boolean applyExtendedStyle = false; // = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && prefs.getBoolean(PREF_NOTIFICATION_EXTENDED, PREF_NOTIFICATION_EXTENDED_DEFAULT);
         //
         long when = news.getDate() != null ? news.getDate().getTime() : 0L;
         String title, content, bigtext;
