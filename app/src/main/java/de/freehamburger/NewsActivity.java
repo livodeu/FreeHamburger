@@ -644,7 +644,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             AudioAttributes.Builder aab = new AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
-                    .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
                     ;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // https://android-developers.googleblog.com/2019/07/capturing-audio-in-android-q.html
