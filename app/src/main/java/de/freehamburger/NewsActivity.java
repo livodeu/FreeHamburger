@@ -59,6 +59,7 @@ import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.ActionBar;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -171,10 +172,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
     private StyledPlayerView bottomVideoView;
     private TextView textViewBottomVideoViewOverlay;
-    private BottomSheetBehavior<? extends LinearLayout> bottomSheetBehavior;
-    private boolean loadVideo;
-    @Nullable private ExoPlayer exoPlayerTopVideo;
-    @Nullable private ExoPlayer exoPlayerBottomVideo;
+    @VisibleForTesting BottomSheetBehavior<? extends LinearLayout> bottomSheetBehavior;
+    @VisibleForTesting boolean loadVideo;
+    @Nullable @VisibleForTesting ExoPlayer exoPlayerTopVideo;
+    @Nullable @VisibleForTesting ExoPlayer exoPlayerBottomVideo;
     private ImageView bottomVideoPauseIndicator;
     /** Listener for the bottom video */
     private final PlayerListener listenerBottom = new PlayerListener(this,true) {
