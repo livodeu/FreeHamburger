@@ -3,16 +3,19 @@ package de.freehamburger.views;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
-import androidx.annotation.ColorInt;
-import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import org.jetbrains.annotations.TestOnly;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -65,6 +68,11 @@ public class ClockView extends RelativeLayout {
             return this.clock.getTooltipText();
         }
         return "";
+    }
+
+    @TestOnly
+    public boolean hasOnTextClickListener() {
+        return this.textView.hasOnClickListeners();
     }
 
     /**
@@ -122,6 +130,14 @@ public class ClockView extends RelativeLayout {
     @Override
     public void setOnClickListener(@Nullable View.OnClickListener l) {
         this.clock.setOnClickListener(l);
+    }
+
+    /**
+     * Adds a {@link View.OnClickListener} to the text area.
+     * @param l OnClickListener
+     */
+    public void setOnTextClickListener(@Nullable View.OnClickListener l) {
+        this.textView.setOnClickListener(l);
     }
 
     public void setText(CharSequence text) {

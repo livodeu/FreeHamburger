@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <bool name="pref_ask_before_finish_default">true</bool>
+    <bool name="pref_click_for_cats_default">true</bool>
     <bool name="pref_correct_quotation_marks_default">false</bool>
     <bool name="pref_load_over_mobile_default">true</bool>
     <bool name="pref_load_videos_over_mobile_default">false</bool>

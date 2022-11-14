@@ -183,6 +183,14 @@ public class DataAndGuiTest {
             KeyEvent keRight = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
             activity.dispatchKeyEvent(keRight);
             assertFalse("Drawer is not closed", activity.drawerLayout.isDrawerOpen(GravityCompat.END));
+            //
+            boolean tapToOpen = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_CLICK_FOR_CATS, App.PREF_CLICK_FOR_CATS_DEFAULT);
+            if (tapToOpen) {
+                assertTrue("ClockView text does not have a listener", activity.clockView.hasOnTextClickListener());
+            } else {
+                assertFalse("ClockView text has a listener", activity.clockView.hasOnTextClickListener());
+            }
+            //
             activity.finish();
         });
     }

@@ -55,6 +55,7 @@ _2022-0x_
 * Changed: Theme based on Material3 flavour
 * Changed: Removed "Quick Settings" tile due to [memory leak in Android OS](https://tinyurl.com/2u9bhwn3)
 * Fixed: Issue #1
+* Fixed: Issue #4 - Categories may be selected via tapping the current category name
 * Fixed: Videos can now be shared from video-only categories, too
 * New: App widgets are now available
 * New: News can be updated more frequently than every 15 minutes

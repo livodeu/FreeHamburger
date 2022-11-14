@@ -144,6 +144,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final int PREF_FONT_ZOOM_DEFAULT = 100;
     /** boolean: allow to close dialogs by swiping (see {@link android.view.Window#FEATURE_SWIPE_TO_DISMISS}; seems not to work on tablets! */
     public static final String PREF_SWIPE_TO_DISMISS = "pref_swipe_to_dismiss";
+    public static final String PREF_CLICK_FOR_CATS = "pref_click_for_cats";
+    public static final boolean PREF_CLICK_FOR_CATS_DEFAULT = true;
     /** boolean */
     public static final String PREF_PLAY_INTRO = "pref_play_intro";
     public static final boolean PREF_PLAY_INTRO_DEFAULT = true;

@@ -146,6 +146,9 @@
         <item quantity="one">vor %1$d Tag</item>
         <item quantity="other">vor %1$d Tagen</item>
     </plurals>
+    <string name="pref_title_click_for_cats">Kategorien öffnen</string>
+    <string name="pref_title_click_for_cats_off">nur durch Wischgeste</string>
+    <string name="pref_title_click_for_cats_on">durch Wischgeste oder durch Antippen der derzeitigen Kategorie</string>
     <string name="pref_title_use_back">„Zurück”-Schaltfläche</string>
     <string name="pref_header_data">Daten</string>
     <string name="pref_header_other">Anderes</string>

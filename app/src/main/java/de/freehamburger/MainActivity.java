@@ -172,7 +172,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private FloatingActionButton fab;
     private RecyclerView recyclerView;
     private NewsRecyclerAdapter newsAdapter;
-    private ClockView clockView;
+    @VisibleForTesting ClockView clockView;
     private View plane;
     private Filter searchFilter = null;
     /** {@code true} when the message given in {@link R.string#msg_found msg_found} or {@link R.string#msg_not_found msg_not_found} has been shown */
@@ -1625,6 +1625,14 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean hasTemporaryFilter = this.newsAdapter.setFilters(TextFilter.createTextFiltersFromPreferences(this));
         this.clockView.setTint(hasTemporaryFilter ? Util.getColor(this, R.color.colorFilter) : Color.TRANSPARENT);
+
+        // let the user open the categories drawer via clicking the title (useful if the phone uses nav. gestures)
+        if (prefs.getBoolean(App.PREF_CLICK_FOR_CATS, App.PREF_CLICK_FOR_CATS_DEFAULT)) {
+            this.clockView.setOnTextClickListener(v -> this.drawerLayout.openDrawer(GravityCompat.END, true));
+        } else {
+            this.clockView.setOnTextClickListener(null);
+        }
+
         // if the adapter is already filled, we are able to show the intro now (playIntro will return quickly if the adapter is empty)
         if (prefs.getBoolean(App.PREF_PLAY_INTRO, App.PREF_PLAY_INTRO_DEFAULT)) {
             if (playIntro()) {

@@ -11,6 +11,15 @@
         />
 
     <SwitchPreferenceCompat
+        android:defaultValue="@bool/pref_click_for_cats_default"
+        android:icon="@drawable/ic_menu_open_24"
+        android:key="pref_click_for_cats"
+        android:summaryOff="@string/pref_title_click_for_cats_off"
+        android:summaryOn="@string/pref_title_click_for_cats_on"
+        android:title="@string/pref_title_click_for_cats"
+        />
+
+    <SwitchPreferenceCompat
         android:defaultValue="@bool/pref_ask_before_finish_default"
         android:key="pref_ask_before_finish"
         android:title="@string/pref_title_ask_before_finish"
