@@ -64,3 +64,4 @@ _2022-0x_
   * constraintlayout 2.1.3 → 2.1.4 [change log](https://github.com/androidx/constraintlayout/wiki/What's-New-in-2.1#new-in-214)
   * exoplayer 2.16.1 → 2.17.1 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)
   * material 1.5.0 → 1.6.1 [comparison](https://github.com/material-components/material-components-android/compare/1.5.0...1.6.1)
+  * okhttp 4.9.3 → 4.10.0 [change log](https://square.github.io/okhttp/changelogs/changelog_4x/)

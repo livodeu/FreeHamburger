@@ -96,7 +96,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.6.1'
     // https://github.com/square/okhttp
     //noinspection GradleDependency
-    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
     // https://github.com/google/conscrypt - integrates with okhttp (see https://github.com/square/okhttp) - this is optional; the app runs without it
     implementation 'org.conscrypt:conscrypt-android:2.5.2'
     //noinspection GradleDependency
