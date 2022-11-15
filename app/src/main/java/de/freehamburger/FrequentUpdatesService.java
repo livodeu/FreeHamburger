@@ -302,8 +302,9 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
                 int every = (int)(this.requestedInterval / 60_000L);
                 msg = getResources().getQuantityString(R.plurals.msg_frequent_updates, every, every);
                 this.builder.setColor(Notification.COLOR_DEFAULT).setShowWhen(false);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) this.builder.setColorized(false).setTimeoutAfter(this.requestedInterval + 30_000L);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) this.builder.setColorized(false);
             }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) this.builder.setTimeoutAfter(this.requestedInterval + 30_000L);
             // 0x1f31b: 1st quarter half moon, 0x1f31e: sun with face
             this.builder.setContentTitle(msg).setSubText(this.night ? SYMBOL_NIGHT : SYMBOL_DAY);
             ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).notify(NOTIFICATION_ID, this.builder.build());
