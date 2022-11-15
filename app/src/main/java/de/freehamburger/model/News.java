@@ -39,15 +39,15 @@ import de.freehamburger.util.Util;
  */
 public final class News implements Comparable<News>, Serializable {
 
-    public static final String NEWS_TYPE_STORY = "story";
-    public static final String NEWS_TYPE_WEBVIEW = "webview";
-    public static final String NEWS_TYPE_VIDEO = "video";
-    @Flag
-    public static final int FLAG_INCLUDE_HTMLEMBED = 1;
-    private static final String TAG = "News";
     /** Example: 2017-11-16T11:54:03.882+01:00 */
     @VisibleForTesting
     public static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
+    @Flag
+    public static final int FLAG_INCLUDE_HTMLEMBED = 1;
+    public static final String NEWS_TYPE_STORY = "story";
+    public static final String NEWS_TYPE_VIDEO = "video";
+    public static final String NEWS_TYPE_WEBVIEW = "webview";
+    private static final String TAG = "News";
     private static long nextid = 1L;
     /** the streams of differenty qualities (highest number found was all 7 StreamQualities) */
     final Map<StreamQuality, String> streams = new EnumMap<>(StreamQuality.class);
@@ -501,6 +501,15 @@ public final class News implements Comparable<News>, Serializable {
     }
 
     /**
+     * Determines whether there is a video in the {@link #content}.<br>
+     * This would be displayed in the bottom sheet area and may contain some valuable information.
+     * @return true / false
+     */
+    public boolean hasBottomVideo() {
+        return this.content != null && this.content.hasVideo();
+    }
+
+    /**
      * Determines whether this News provides a text that goes into the 3rd level text view next to the image.
      * @return {@code true} if this News has got text to fill the {@link de.freehamburger.views.NewsView#textViewFirstSentence large TextView} within a {@link de.freehamburger.views.NewsView NewsView}
      */
@@ -523,6 +532,15 @@ public final class News implements Comparable<News>, Serializable {
      */
     public boolean hasTitle() {
         return !TextUtils.isEmpty(this.title);
+    }
+
+    /**
+     * Determines whether there is a video in the {@link #streams}.<br>
+     * This would be displayed in the top area and generally does not contain valuable information.
+     * @return true / false
+     */
+    public boolean hasTopVideo() {
+        return !this.streams.isEmpty();
     }
 
     /** {@inheritDoc} */

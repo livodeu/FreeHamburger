@@ -862,19 +862,14 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return true;
         }
         if (id == R.id.action_share_video) {
+            // share bottom video if present (the top video (from News.streams) is generally not interesting and thus ignored here)
             News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
-            if ((news.getContent() == null || !news.getContent().hasVideo()) && news.getStreams().isEmpty()) return true;
-            final Map<StreamQuality, String> streams;
-            if (!news.getStreams().isEmpty()) {
-                streams = news.getStreams();
-            } else {
-                List<Video> videoList = news.getContent().getVideoList();
-                Video video = videoList.get(0);
-                //TODO handle more than 1 video per Content
-                if (BuildConfig.DEBUG && videoList.size() > 1) Log.w(TAG, "Has more than one video: " + news);
-                //
-                streams = video.getStreams();
-            }
+            if (!news.hasBottomVideo()) return true;
+            @SuppressWarnings("ConstantConditions")
+            List<Video> videoList = news.getContent().getVideoList();
+            if (BuildConfig.DEBUG && videoList.size() > 1) Log.w(TAG, "Has more than one video: " + news);
+            //
+            final Map<StreamQuality, String> streams = videoList.get(0).getStreams();
             if (streams.size() > 1) {
                 CharSequence[] items = new CharSequence[streams.size()];
                 int i = 0;
