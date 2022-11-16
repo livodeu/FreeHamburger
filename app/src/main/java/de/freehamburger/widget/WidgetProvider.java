@@ -63,21 +63,23 @@ import de.freehamburger.util.Util;
 
 public class WidgetProvider extends AppWidgetProvider {
 
-    @WidgetLayout public static final int WIDGET_LAYOUT_REGULAR = 0;
-    @WidgetLayout public static final int WIDGET_LAYOUT_SMALL = 1;
-    @WidgetLayout public static final int WIDGET_LAYOUT_WIDE = 2;
-    /** int: one of the @WidgetLayout values */
-    public static final String PREF_WIDGETS_LAYOUT_PRE_S = "pref_widgets_layout_pre_s";
-    @WidgetLayout public static final int PREF_WIDGETS_LAYOUT_PRE_S_DEFAULT = WIDGET_LAYOUT_REGULAR;
     public static final String ACTION_WIDGET_TAPPED = BuildConfig.APPLICATION_ID + ".action.widgettapped";
     public static final String EXTRA_FROM_WIDGET = BuildConfig.APPLICATION_ID + ".extra.fromwidget";
+    /** int: one of the @WidgetLayout values */
+    public static final String PREF_WIDGETS_LAYOUT_PRE_S = "pref_widgets_layout_pre_s";
+    @WidgetLayout public static final int WIDGET_LAYOUT_REGULAR = 0;
+    @WidgetLayout public static final int PREF_WIDGETS_LAYOUT_PRE_S_DEFAULT = WIDGET_LAYOUT_REGULAR;
+    @WidgetLayout public static final int WIDGET_LAYOUT_SMALL = 1;
+    @WidgetLayout public static final int WIDGET_LAYOUT_WIDE = 2;
+    /** if widget data is older than this [ms], it should be refreshed over the network */
+    private static final long ACCEPTABLE_AGE = 120_000L;
+    /** the default Source for each widget as long as the user has not selected something else */
+    private static final Source DEFAULT_SOURCE = Source.HOME;
+    /** the separator char for {@link #WIDGET_SOURCES} */
+    private static final char SEP = '=';
     private static final String TAG = "WidgetProvider";
     /** the file where mappings like &lt;widgetId&gt;=&lt;SOURCE&gt; are stored */
     private static final String WIDGET_SOURCES = "widgets.txt";
-    /** the separator char for {@link #WIDGET_SOURCES} */
-    private static final char SEP = '=';
-    /** the default Source for each widget as long as the user has not selected something else */
-    private static final Source DEFAULT_SOURCE = Source.HOME;
     /** TextView.setGravity() has been made "remotable" apparently for Android 12 */
     private static Boolean setGravityMayBeUsed = null;
 
@@ -387,6 +389,7 @@ public class WidgetProvider extends AppWidgetProvider {
         final Map<Source, Blob> blobsCache = new HashMap<>();
         final AtomicBoolean needsNetworkRefresh = new AtomicBoolean(false);
         final Handler handler = new Handler(Looper.getMainLooper());
+        final long now = System.currentTimeMillis();
         for (int widgetId : widgetIds) {
             Source source = widgetSources.indexOfKey(widgetId) >= 0 ? widgetSources.get(widgetId) : DEFAULT_SOURCE;
             Blob blob = blobsCache.get(source);
@@ -417,6 +420,13 @@ public class WidgetProvider extends AppWidgetProvider {
                     fillWidget(app, aw, widgetId, null, null);
                     continue;
                 }
+                // we have a file, but we initiate a network refresh if the data is a bit old
+                long age = now - app.getMostRecentUpdate(source);
+                if (age > ACCEPTABLE_AGE) {
+                    if (BuildConfig.DEBUG) Log.i(TAG, "Local data for " + source + " for widget " + widgetId + " is " + (age/60000L) + " minutes old - will be refreshed shortly");
+                    needsNetworkRefresh.set(true);
+                }
+                //
                 BlobParser blobParser = new BlobParser(ctx, (parsedBlob, ok, oops) -> {
                     if (parsedBlob == null || !ok || oops != null) {
                         if (BuildConfig.DEBUG && oops != null) Log.e(TAG, "While updating widget " + widgetId + ": " + oops);
@@ -447,7 +457,7 @@ public class WidgetProvider extends AppWidgetProvider {
             }
         }
         if (needsNetworkRefresh.get()) {
-            if (BuildConfig.DEBUG) Log.i(TAG, "Initiating one-off job because we're lacking data…");
+            if (BuildConfig.DEBUG) Log.i(TAG, "Initiating one-off job because we're lacking current data…");
             JobScheduler js = (JobScheduler)ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE);
             // once there was some kind of endless loop when there wasn't a delay, so…
             if (js != null) js.schedule(UpdateJobService.makeOneOffJobInfoWithDelay(ctx, 2_000L, 10_000L));
