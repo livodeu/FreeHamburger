@@ -29,13 +29,11 @@ import android.preference.PreferenceManager;
 import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
 import android.util.SparseArray;
-import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
-import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -66,7 +64,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import de.freehamburger.adapters.NewsRecyclerAdapter;
 import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
 import de.freehamburger.model.Filter;
@@ -78,7 +75,6 @@ import de.freehamburger.util.Downloader;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.OkHttpDownloader;
 import de.freehamburger.util.Util;
-import de.freehamburger.views.NewsView;
 import de.freehamburger.widget.WidgetProvider;
 
 /**
@@ -577,40 +573,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 .apply();
     }
 
-    /**
-     * Attempts to apply a {@link Notification.Builder#setCustomBigContentView(RemoteViews) "custom big content view"}
-     * and a {@link Notification.DecoratedCustomViewStyle} to the given Notification.Builder.<br>
-     * Catches all Exceptions and just returns {@code false} in case of an error.
-     * @param builder Notification.Builder
-     * @param news News
-     * @param largeIcon Bitmap (optional)
-     * @return {@code true} / {@code false} to indicate success or failure
-     */
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    private boolean applyCustomView(@NonNull final Notification.Builder builder, @NonNull final News news, @Nullable final Bitmap largeIcon) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false;
-        try {
-            @LayoutRes int layout = NewsRecyclerAdapter.getViewType(news);
-            final RemoteViews notificationLayout = new RemoteViews(getPackageName(), layout);
-            final String ntopline = news.getTopline();
-            final String ntitle = news.getTitle();
-            final String nfirstSentence = news.getFirstSentence();
-            notificationLayout.setTextViewText(R.id.textViewTopline, !TextUtils.isEmpty(ntopline) ? ntopline : ntitle);
-            notificationLayout.setTextViewText(R.id.textViewTitle, !TextUtils.isEmpty(ntopline) ? ntitle : "");
-            notificationLayout.setTextViewText(R.id.textViewFirstSentence, !TextUtils.isEmpty(nfirstSentence) ? nfirstSentence : news.getShorttext());
-            notificationLayout.setTextViewText(R.id.textViewDate, NewsView.getRelativeTime(this, news.getDate(), null));
-            if (largeIcon != null) notificationLayout.setImageViewBitmap(R.id.imageView, largeIcon);
-            else notificationLayout.setViewVisibility(R.id.imageView, android.view.View.GONE);
-            builder.setCustomBigContentView(notificationLayout);
-            builder.setLargeIcon((Bitmap)null);
-            builder.setStyle(new Notification.DecoratedCustomViewStyle());
-            return true;
-        } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG + id, e.toString(), e);
-        }
-        return false;
-    }
-
     /** {@inheritDoc} */
     @Override
     public void blobParsed(@Nullable final Blob blob, boolean ok, @Nullable Throwable oops) {
@@ -841,8 +803,6 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         }
         // prepare notification summary
         if (this.summary == null) this.summary = new NotificationSummary(); else this.summary.increase();
-        // show extended notification?
-        boolean applyExtendedStyle = false; // = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && prefs.getBoolean(PREF_NOTIFICATION_EXTENDED, PREF_NOTIFICATION_EXTENDED_DEFAULT);
         //
         long when = news.getDate() != null ? news.getDate().getTime() : 0L;
         String title, content, bigtext;
@@ -895,22 +855,19 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
                 .setOnlyAlertOnce(true)
                 .setOngoing(false);
 
-        boolean extendedStyleApplied = applyExtendedStyle && applyCustomView(builder, news, largeIcon);
-        if (!extendedStyleApplied) {
-            if (largeIcon != null) builder.setLargeIcon(largeIcon);
-            if (!TextUtils.isEmpty(bigtext)) {
-                builder.setStyle(new Notification.BigTextStyle()
-                                .bigText(bigtext)
-                                .setBigContentTitle(title)
-                                // .setSummaryText() here affects the same area as setSubText() in the std. notification
-                                );
-            } else if (largeIcon != null) {
-                builder.setStyle(new Notification.BigPictureStyle()
-                        .bigLargeIcon((Bitmap) null)
-                        .bigPicture(largeIcon)
-                        .setBigContentTitle(title)
-                        .setSummaryText(content));
-            }
+        if (largeIcon != null) builder.setLargeIcon(largeIcon);
+        if (!TextUtils.isEmpty(bigtext)) {
+            builder.setStyle(new Notification.BigTextStyle()
+                            .bigText(bigtext)
+                            .setBigContentTitle(title)
+                    // .setSummaryText() here affects the same area as setSubText() in the std. notification
+            );
+        } else if (largeIcon != null) {
+            builder.setStyle(new Notification.BigPictureStyle()
+                    .bigLargeIcon((Bitmap) null)
+                    .bigPicture(largeIcon)
+                    .setBigContentTitle(title)
+                    .setSummaryText(content));
         }
 
         if (when > 0L) {

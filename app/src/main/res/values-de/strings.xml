@@ -232,9 +232,6 @@
     <string name="pref_hint_poll_interval">Abfrageintervall</string>
     <string name="pref_hint_poll_interval_night">Abfrageintervall nachts</string>
     <string name="pref_hint_poll_quicksettings">Hintergrundaktualisierungen ein-/ausschalten.</string>
-    <string name="pref_title_poll_customnotification">Benachrichtigungen im App-Stil</string>
-    <string name="pref_summary_poll_customnotification_off">Standarddarstellung</string>
-    <string name="pref_summary_poll_customnotification_on">Ja, bitte</string>
     <string name="pref_title_poll_on">Aktiv.</string>
     <string name="pref_title_poll_off">Inaktiv.</string>
     <string name="error_poll_maximum_interval">Das Intervall darf höchstens %1$d Minuten betragen.</string>

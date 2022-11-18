@@ -64,19 +64,6 @@
         android:title="@string/pref_title_poll_nightis"
         />
 
-    <SwitchPreferenceCompat
-        android:defaultValue="@bool/pref_notification_extended_default"
-        android:dependency="pref_poll"
-        android:icon="@drawable/ic_baseline_topic_content_24"
-        android:key="pref_notification_extended"
-        android:summaryOff="@string/pref_summary_poll_customnotification_off"
-        android:summaryOn="@string/pref_summary_poll_customnotification_on"
-        android:title="@string/pref_title_poll_customnotification"
-        app:isPreferenceVisible="false"
-        app:allowDividerAbove="true"
-        app:singleLineTitle="false"
-        />
-
     <Preference
         android:key="pref_poll_stats"
         android:title="@string/pref_title_poll_stats"
