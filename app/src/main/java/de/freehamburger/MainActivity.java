@@ -40,7 +40,6 @@ import android.util.JsonReader;
 import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.ContextMenu;
-import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -129,29 +128,28 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
     public static final String ACTION_SHOW_NEWS = BuildConfig.APPLICATION_ID + ".action.show_news";
     public static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
-    private static final String TAG = "MainActivity";
-    private static final String STATE_SOURCE = BuildConfig.APPLICATION_ID + ".state.source";
-    private static final String STATE_RECENT_SOURCES = BuildConfig.APPLICATION_ID + ".state.recentsources";
+    /** ConnectException andSocketTimeoutException messages.toLowerCase() usually start with this (the first one with "Failed", the latter one with "failed") */
+    private static final String ERROR_CONNECTION_FAILED_MSG_PREFIX = "failed to connect to ";
+    @VisibleForTesting static final long[] INTRO_DELAYS = new long[] {500L, 1000L, 1000L, 2500L, 1000L, 4500L, 1000L, 1000L, 1000L, 1000L, 2000L, 1000L};
+    /** maximum number of recent sources/categories to keep */
+    private static final int MAX_RECENT_SOURCES = 10;
+    private static final BitmapFactory.Options OPTS_FOR_QUICKVIEW = new BitmapFactory.Options();
+    /** used to colorise the progress image in {@link #swipeRefreshLayout } - this designates the percentage completed when download is done and parsing starts  */
+    @FloatRange(from = 0f, to = 255f) private static final float PROGRESS_DOWNLOAD_PARSE = 128f;
+    /** used when the user has picked a font file to import */
+    private static final int REQUEST_CODE_FONT_IMPORT = 815;
     private static final String STATE_LIST_POS = BuildConfig.APPLICATION_ID + ".state.list.pos";
     /** stores {@link #msgFoundShown} */
     private static final String STATE_MSG_FOUND_SHOWN = BuildConfig.APPLICATION_ID + ".state.msgfoundshown";
     /** contains a News object if the {@link #quickView} should be restored */
     private static final String STATE_QUIKVIEW = BuildConfig.APPLICATION_ID + ".state.quikview";
-    /** used when the user has picked a font file to import */
-    private static final int REQUEST_CODE_FONT_IMPORT = 815;
-    /** ConnectException andSocketTimeoutException messages.toLowerCase() usually start with this (the first one with "Failed", the latter one with "failed") */
-    private static final String ERROR_CONNECTION_FAILED_MSG_PREFIX = "failed to connect to ";
+    private static final String STATE_RECENT_SOURCES = BuildConfig.APPLICATION_ID + ".state.recentsources";
+    private static final String STATE_SOURCE = BuildConfig.APPLICATION_ID + ".state.source";
+    private static final String TAG = "MainActivity";
     /** file tag for TTF files */
     private static final String TTF_TAG = ".ttf";
-
     private static final int UI_FLAGS_FOR_QUICKVIEW = View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
-    /** maximum number of recent sources/categories to keep */
-    private static final int MAX_RECENT_SOURCES = 10;
-    /** used to colorise the progress image in {@link #swipeRefreshLayout } - this designates the percentage completed when download is done and parsing starts  */
-    @FloatRange(from = 0f, to = 255f) private static final float PROGRESS_DOWNLOAD_PARSE = 128f;
-
-    private static final BitmapFactory.Options OPTS_FOR_QUICKVIEW = new BitmapFactory.Options();
     static {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             OPTS_FOR_QUICKVIEW.inPreferredConfig = Bitmap.Config.HARDWARE;
@@ -167,12 +165,12 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private final SparseArray<Source> sourceForMenuItem = new SparseArray<>();
     private final ConnectivityReceiver connectivityReceiver = new ConnectivityReceiver();
     @VisibleForTesting public DrawerLayout drawerLayout;
+    @VisibleForTesting ClockView clockView;
     private CoordinatorLayout coordinatorLayout;
     private SwipeRefreshLayout swipeRefreshLayout;
     private FloatingActionButton fab;
     private RecyclerView recyclerView;
     private NewsRecyclerAdapter newsAdapter;
-    @VisibleForTesting ClockView clockView;
     private View plane;
     private Filter searchFilter = null;
     /** {@code true} when the message given in {@link R.string#msg_found msg_found} or {@link R.string#msg_not_found msg_not_found} has been shown */
@@ -192,6 +190,70 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /** timestamp indicating when a refresh failed because there was no network available */
     private long lastTimeRefreshFailedDueToNoNetwork = 0L;
     private PopupManager popupManager;
+    /** Runnables to perform to display an introduction to the app - played sequentially with delays given in {@link #INTRO_DELAYS}. */
+    @VisibleForTesting final Runnable[] introSteps = new Runnable[] {
+            // show plane and open drawer, then display "Select a category in the right-hand drawer."
+            () -> {
+                if (this.isFinishing()) return;
+                this.recyclerView.scrollToPosition(0);
+                findViewById(R.id.plane).setVisibility(View.VISIBLE);
+                this.drawerLayout.openDrawer(GravityCompat.END);
+                this.popupManager.showPopup(this.drawerLayout, getString(R.string.intro_1), 4_500L, false);
+            },
+            // apply a reddish hue to the drawer
+            () -> findViewById(R.id.navigationView).setBackgroundTintList(ColorStateList.valueOf(Util.getColor(this, R.color.colorIntro))),
+            // reset drawer color
+            () -> findViewById(R.id.navigationView).setBackgroundTintList(null),
+            // close drawer
+            () -> this.drawerLayout.closeDrawer(GravityCompat.END),
+            // colorize clock and click it => the menu will be shown, then display "Search, apply filters and change other settings here."
+            () -> {
+                this.clockView.setTint(Util.getColor(this, R.color.colorIntro));
+                this.clockView.performClick();
+                this.popupManager.showPopup(this.coordinatorLayout, getString(R.string.intro_2), 4_500L, false);
+            },
+            // reset clock color and close the menu
+            () -> {
+                this.clockView.setTint(Color.TRANSPARENT);
+                closeOptionsMenu();
+            },
+            // scroll downwards and display "Scroll through the list to see the articles."
+            () -> {
+                Point ds = Util.getDisplaySize(this);
+                this.recyclerView.smoothScrollBy(0, ds.y >> 1);
+                this.popupManager.showPopup(this.recyclerView, getString(R.string.intro_3), 3_000L, false);
+                this.recyclerView.smoothScrollBy(0, ds.y >> 1);
+            },
+            // scroll to top
+            () -> this.recyclerView.smoothScrollToPosition(0),
+            // display "tap an article to see details"
+            () -> this.popupManager.showPopup(this.recyclerView, getString(R.string.intro_4), 3_000L, false),
+            // tap the first list entry
+            () -> {
+                RecyclerView.ViewHolder vh = this.recyclerView.findViewHolderForAdapterPosition(0);
+                if (vh == null) return;
+                findViewById(R.id.plane).setTranslationY(vh.itemView.getHeight());
+                ColorStateList originalTint = vh.itemView.getBackgroundTintList();
+                vh.itemView.setTag(originalTint);
+                vh.itemView.setBackgroundTintList(ColorStateList.valueOf(Util.getColor(this, R.color.colorIntro)));
+                vh.itemView.setPressed(true);
+            },
+            // reset the first entry's appearance
+            () -> {
+                RecyclerView.ViewHolder vh = this.recyclerView.findViewHolderForAdapterPosition(0);
+                if (vh == null) return;
+                ColorStateList originalTint = (ColorStateList)vh.itemView.getTag();
+                vh.itemView.setPressed(false);
+                vh.itemView.setBackgroundTintList(originalTint);
+                vh.itemView.setTag(null);
+                findViewById(R.id.plane).setTranslationY(0);
+            },
+            // hide blocking plane and display last message ("Enjoy the app!" or similar)
+            () -> {
+                findViewById(R.id.plane).setVisibility(View.GONE);
+                this.popupManager.showPopup(this.coordinatorLayout, getString(R.string.intro_5), 3_000L, true);
+            }
+    };
     /** used to remember the preferences before SettingsActivity is invoked, should be set in {@link #onMenuItemSelected(MenuItem)} */
     private Map<String, ?> recentPreferences = null;
     /** used to remember the font before SettingsActivity is invoked (separate from recentPreferences because, {@link SharedPreferences#getAll() according to docs}, they must not be modified) */
@@ -534,6 +596,18 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     @Override
     boolean hasMenuOverflowButton() {
         return false;
+    }
+
+    /**
+     * The user has tapped the 'quick view' which, when visible, displays the article's {@link News#getTeaserImage() teaser image}.
+     * @param ignored ignored View
+     */
+    public void hideQuickView(@Nullable View ignored) {
+        if (this.quickView.getVisibility() != View.VISIBLE) this.quickViewRequestCancelled = true; else this.quickView.setVisibility(View.GONE);
+        this.quickView.setImageBitmap(null);
+        this.newsForQuickView = null;
+        this.plane.setVisibility(View.GONE);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
     }
 
     /**
@@ -1408,18 +1482,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         return super.onPrepareOptionsMenu(menu);
     }
 
-    /**
-     * The user has tapped the 'quick view' which, when visible, displays the article's {@link News#getTeaserImage() teaser image}.
-     * @param ignored ignored View
-     */
-    public void hideQuickView(@Nullable View ignored) {
-        if (this.quickView.getVisibility() != View.VISIBLE) this.quickViewRequestCancelled = true; else this.quickView.setVisibility(View.GONE);
-        this.quickView.setImageBitmap(null);
-        this.newsForQuickView = null;
-        this.plane.setVisibility(View.GONE);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
-    }
-
     /** {@inheritDoc} */
     @Override
     public void onRefresh() {
@@ -1859,140 +1921,11 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         // do not play Intro if adapter is empty because there isn't anything to show
         if (this.newsAdapter.getItemCount() == 0) return false;
         //
-        final int tint = Util.getColor(this, R.color.colorIntro);
         this.intro = new Intro(this);
-        // show plane and open drawer
-        Intro.Step step1 = new Intro.Step(500L) {
-            @Override
-            public void run() {
-                if (MainActivity.this.isFinishing()) return;
-                MainActivity.this.recyclerView.scrollToPosition(0);
-                View plane = findViewById(R.id.plane);
-                plane.setVisibility(View.VISIBLE);
-                MainActivity.this.drawerLayout.openDrawer(GravityCompat.END);
-                // the popup delay should be as long as the duration from step1b to step2
-                MainActivity.this.popupManager.showPopup(MainActivity.this.drawerLayout, getString(R.string.intro_1), 4_500L, false);
-            }
-        };
-        this.intro.addStep(step1);
-        // colorise drawer reddish
-        Intro.Step step1b = new Intro.Step(1_000L) {
-            @Override
-            public void run() {
-                NavigationView navigationView = findViewById(R.id.navigationView);
-                navigationView.setBackgroundTintList(ColorStateList.valueOf(tint));
-            }
-        };
-        this.intro.addStep(step1b);
-        // reset drawer color
-        Intro.Step step1c = new Intro.Step(1_000L) {
-            @Override
-            public void run() {
-                NavigationView navigationView = findViewById(R.id.navigationView);
-                navigationView.setBackgroundTintList(null);
-            }
-        };
-        this.intro.addStep(step1c);
-        // close drawer
-        Intro.Step step2 = new Intro.Step(2_500L) {
-            @Override
-            public void run() {
-                findViewById(R.id.navigationView).setBackgroundTintList(null);
-                MainActivity.this.drawerLayout.closeDrawer(GravityCompat.END);
-            }
-        };
-        this.intro.addStep(step2);
-        // colorise clock and tap it / open its menu
-        Intro.Step step3 = new Intro.Step(1_000L) {
-            @Override
-            public void run() {
-                MainActivity.this.clockView.setTint(tint);
-                MainActivity.this.clockView.performClick();
-                // the popup delay should be as long as the duration of step3
-                MainActivity.this.popupManager.showPopup(MainActivity.this.coordinatorLayout, getString(R.string.intro_2), 4_500L, false);
-            }
-        };
-        this.intro.addStep(step3);
-        // reset clock color and close options menu
-        Intro.Step step4 = new Intro.Step(4_500L) {
-            @Override
-            public void run() {
-                MainActivity.this.clockView.setTint(Color.TRANSPARENT);
-                closeOptionsMenu();
-            }
-        };
-        this.intro.addStep(step4);
-        final Point ds = Util.getDisplaySize(this);
-        // scroll down
-        Intro.Step step5 = new Intro.Step(1_000L) {
-            @Override
-            public void run() {
-                MainActivity.this.recyclerView.smoothScrollBy(0, ds.y >> 1);
-                // the popup delay should be as long as the duration of step6 to step7
-                MainActivity.this.popupManager.showPopup(MainActivity.this.recyclerView, getString(R.string.intro_3), 3_000L, false);
-                MainActivity.this.recyclerView.smoothScrollBy(0, ds.y >> 1);
-            }
-        };
-        this.intro.addStep(step5);
-        // scroll up
-        Intro.Step step6 = new Intro.Step(1_000L) {
-            @Override
-            public void run() {
-                MainActivity.this.recyclerView.smoothScrollToPosition(0);
-            }
-        };
-        this.intro.addStep(step6);
-        //
-        Intro.Step step7 = new Intro.Step(1_800L) {
-            @Override
-            public void run() {
-                // the popup delay should be as long as the duration of step7b to step7c
-                MainActivity.this.popupManager.showPopup(MainActivity.this.recyclerView, getString(R.string.intro_4), 3_000L, false);
-            }
-        };
-        this.intro.addStep(step7);
-        //
-        Intro.Step step7b = new Intro.Step(1_000L) {
-            @Override
-            public void run() {
-                RecyclerView.ViewHolder vh = MainActivity.this.recyclerView.findViewHolderForAdapterPosition(0);
-                if (vh == null) return;
-                View plane = findViewById(R.id.plane);
-                plane.setTranslationY(vh.itemView.getHeight());
-                ColorStateList originalTint = vh.itemView.getBackgroundTintList();
-                vh.itemView.setTag(originalTint);
-                vh.itemView.setBackgroundTintList(ColorStateList.valueOf(tint));
-                vh.itemView.setPressed(true);
-                vh.itemView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS | HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING | HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
-            }
-        };
-        this.intro.addStep(step7b);
-        //
-        Intro.Step step7c = new Intro.Step(2_000L) {
-            @Override
-            public void run() {
-                RecyclerView.ViewHolder vh = MainActivity.this.recyclerView.findViewHolderForAdapterPosition(0);
-                if (vh == null) return;
-                ColorStateList originalTint = (ColorStateList)vh.itemView.getTag();
-                vh.itemView.setPressed(false);
-                vh.itemView.setBackgroundTintList(originalTint);
-                vh.itemView.setTag(null);
-                View plane = findViewById(R.id.plane);
-                plane.setTranslationY(0);
-            }
-        };
-        this.intro.addStep(step7c);
-        //  hide plane
-        Intro.Step lastStep = new Intro.Step(1_000L) {
-            @Override
-            public void run() {
-                View plane = findViewById(R.id.plane);
-                plane.setVisibility(View.GONE);
-                MainActivity.this.popupManager.showPopup(MainActivity.this.coordinatorLayout, getString(R.string.intro_5), 3_000L, true);
-            }
-        };
-        this.intro.addStep(lastStep);
-        //
+        final int n = this.introSteps.length;
+        for (int i = 0; i < n; i++) {
+            this.intro.addStep(this.introSteps[i], INTRO_DELAYS[i]);
+        }
         this.handler.post(this.intro);
         //
         return true;
