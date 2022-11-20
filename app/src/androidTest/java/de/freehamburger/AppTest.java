@@ -452,7 +452,10 @@ public class AppTest {
             assertTrue(ai.minSdkVersion >= 21);
             assertTrue("No app label", ai.labelRes != 0);
             assertTrue("No app icon", ai.icon != 0);
-            assertEquals(ApplicationInfo.CATEGORY_NEWS, ai.category);
+            if (Build.VERSION.SDK_INT >= 26) {
+                // the categories were added in API 26
+                assertEquals(ApplicationInfo.CATEGORY_NEWS, ai.category);
+            }
             assertEquals(SettingsActivity.class.getName(), ai.manageSpaceActivityName);
             try {
                 @SuppressWarnings("JavaReflectionMemberAccess")
