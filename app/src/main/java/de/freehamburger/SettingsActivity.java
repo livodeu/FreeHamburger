@@ -23,16 +23,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.text.InputType;
-import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewParent;
-import android.view.Window;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -43,7 +39,6 @@ import android.widget.Toast;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RawRes;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBar;
@@ -68,7 +63,6 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.Date;
@@ -102,65 +96,6 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
     private WebView webViewForHelp;
     private AlertDialog helpDialog;
     private UpdatesController updatesController;
-
-    /**
-     * @param activity Activity
-     * @param rawRes raw res
-     * @param webView WebView to (re-)use
-     * @return AlertDialog
-     */
-    @NonNull
-    private static AlertDialog showHelp(@NonNull Activity activity, @RawRes int rawRes, @NonNull final WebView webView) {
-        byte[] b = new byte[2048];
-        final SpannableStringBuilder sb = new SpannableStringBuilder();
-        InputStream in = null;
-        try {
-            in = activity.getResources().openRawResource(rawRes);
-            for (;;) {
-                int read = in.read(b);
-                if (read < 0) break;
-                //noinspection ObjectAllocationInLoop
-                sb.append(new String(b, 0, read));
-            }
-        } catch (Exception ignored) {
-        } finally {
-            Util.close(in);
-        }
-        String textColorForCss = Util.makeCssColor(activity, R.color.color_onPrimaryContainer);
-        String bgColorForCss = Util.makeCssColor(activity, R.color.color_primaryContainer);
-        CharSequence cs = TextUtils.replace(sb,
-                new String[] {"<style></style>"},
-                new CharSequence[] {"<style>body{color:#" + textColorForCss + ";background:#" + bgColorForCss + "}</style>"}
-                );
-        webView.loadDataWithBaseURL("about:blank", cs.toString(), "text/html", "UTF-8", null);
-        AlertDialog.Builder builder = new MaterialAlertDialogBuilder(activity)
-                .setTitle(R.string.action_help)
-                .setView(webView)
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
-                ;
-        final AlertDialog ad = builder.create();
-        Window w = ad.getWindow();
-
-        ad.setCanceledOnTouchOutside(true);
-        ad.setOnCancelListener(dialog -> {
-            ViewParent p = webView.getParent();
-            if (p instanceof ViewGroup) {
-                ((ViewGroup)p).removeView(webView);
-            }
-        });
-        ad.setOnDismissListener(dialog -> {
-            ViewParent p = webView.getParent();
-            if (p instanceof ViewGroup) {
-                ((ViewGroup)p).removeView(webView);
-            }
-        });
-        try {
-            ad.show();
-        } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
-        }
-        return ad;
-    }
 
     /** {@inheritDoc} */
     @Override
@@ -564,7 +499,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_appearance_de, sa.webViewForHelp);
+                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_appearance_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -638,7 +573,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_storage_de, sa.webViewForHelp);
+                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_storage_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -714,7 +649,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_general_de, sa.webViewForHelp);
+                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_general_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -1039,7 +974,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_polling_de, sa.webViewForHelp);
+                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_polling_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -1091,7 +1026,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_video_de, sa.webViewForHelp);
+                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_video_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -1192,7 +1127,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = showHelp(sa, R.raw.help_settings_data_de, sa.webViewForHelp);
+                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_data_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);

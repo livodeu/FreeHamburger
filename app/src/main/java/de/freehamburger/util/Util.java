@@ -45,9 +45,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.webkit.MimeTypeMap;
+import android.webkit.WebView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -63,12 +66,14 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.xml.sax.XMLReader;
@@ -1735,6 +1740,67 @@ public class Util {
         TextView textView = snackLayout.findViewById(com.google.android.material.R.id.snackbar_text);
         if (textView == null) return;
         textView.setMaxLines(maxLines);
+    }
+
+    /**
+     * @param activity Activity
+     * @param rawRes raw res
+     * @param webView WebView to (re-)use
+     * @return AlertDialog
+     */
+    @NonNull
+    public static AlertDialog showHelp(@NonNull Activity activity, @RawRes int rawRes, @NonNull final WebView webView) {
+        byte[] b = new byte[2048];
+        final SpannableStringBuilder sb = new SpannableStringBuilder();
+        InputStream in = null;
+        try {
+            in = activity.getResources().openRawResource(rawRes);
+            for (;;) {
+                int read = in.read(b);
+                if (read < 0) break;
+                //noinspection ObjectAllocationInLoop
+                sb.append(new String(b, 0, read));
+            }
+        } catch (Exception ignored) {
+        } finally {
+            close(in);
+        }
+        String textColorForCss = makeCssColor(activity, R.color.color_onPrimaryContainer);
+        String bgColorForCss = makeCssColor(activity, R.color.color_primaryContainer);
+        CharSequence cs = TextUtils.replace(sb,
+                new String[] {"<style></style>"},
+                new CharSequence[] {"<style>body{color:#" + textColorForCss + ";background:#" + bgColorForCss + ";margin:10px 20px 0px 20px" + "}</style>"}
+                );
+        webView.loadDataWithBaseURL("about:blank", cs.toString(), "text/html", "UTF-8", null);
+        AlertDialog.Builder builder = new MaterialAlertDialogBuilder(activity)
+                .setTitle(R.string.action_help)
+                .setView(webView)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
+                ;
+        final AlertDialog ad = builder.create();
+        Window w = ad.getWindow();
+        ad.setCanceledOnTouchOutside(true);
+        ad.setOnCancelListener(dialog -> {
+            ViewParent p = webView.getParent();
+            if (p instanceof ViewGroup) {
+                ((ViewGroup)p).removeView(webView);
+            }
+        });
+        ad.setOnDismissListener(dialog -> {
+            ViewParent p = webView.getParent();
+            if (p instanceof ViewGroup) {
+                ((ViewGroup)p).removeView(webView);
+            }
+        });
+        try {
+            ad.show();
+            // add some space below the dialog title
+            ViewGroup topPanel = ad.findViewById(R.id.topPanel);
+            if (topPanel != null) topPanel.setPadding(0, 0, 0, 28);
+        } catch (Exception e) {
+            if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+        }
+        return ad;
     }
 
     /**

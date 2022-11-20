@@ -13,6 +13,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewParent;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -162,6 +164,17 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
             ed.putBoolean(App.PREF_APPLY_FILTERS_TO_CATEGORIES, filtersAreAppliedToCats);
             ed.apply();
             invalidateOptionsMenu();
+            return true;
+        }
+        if (id == R.id.action_help_filters) {
+            WebView webViewForHelp = new WebView(this);
+            WebSettings ws = webViewForHelp.getSettings();
+            ws.setBlockNetworkLoads(true);
+            ws.setAllowContentAccess(false);
+            ws.setGeolocationEnabled(false);
+            webViewForHelp.setNetworkAvailable(false);
+            webViewForHelp.setBackgroundColor(getResources().getColor(R.color.colorPrimarySemiTrans));
+            Util.showHelp(this, R.raw.help_filters_de, webViewForHelp);
             return true;
         }
         return super.onOptionsItemSelected(item);

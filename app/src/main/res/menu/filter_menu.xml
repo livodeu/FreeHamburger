@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
         android:id="@+id/action_add_filter"
@@ -15,9 +15,14 @@
         android:title="@string/action_filters_enabled"
         app:showAsAction="ifRoom" />
     <item
-        android:checkable="true"
         android:id="@+id/action_cats_filters"
+        android:checkable="true"
         android:icon="@null"
         android:title="@string/pref_title_filters_apply_cats"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_help_filters"
+        android:icon="@null"
+        android:title="@string/action_help"
         app:showAsAction="never" />
 </menu>
