@@ -40,8 +40,6 @@ import android.service.notification.StatusBarNotification;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.util.SparseArray;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.CheckResult;
@@ -61,7 +59,6 @@ import androidx.test.filters.SmallTest;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
-import com.google.android.exoplayer2.ui.StyledPlayerView;
 
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -511,80 +508,6 @@ public class AppTest {
         ms = msh.buildMediaSource((Call.Factory) okHttpClient, uri);
         assertNotNull(ms);
         assertTrue("Not a ProgressiveMediaSource: " + ms, ms instanceof ProgressiveMediaSource);
-    }
-
-    /**
-     * Tests the {@link NewsActivity}.
-     */
-    @Test
-    public void testNewsActivity() {
-        ActivityScenario<NewsActivity> asn = ActivityScenario.launch(NewsActivity.class);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            // ensure that required Views are present
-            View fab = activity.findViewById(R.id.fab);
-            assertNotNull(fab);
-            StyledPlayerView topVideoView = activity.findViewById(R.id.topVideoView);
-            assertNotNull(topVideoView);
-            View textViewTitle = activity.findViewById(R.id.textViewTitle);
-            assertNotNull(textViewTitle);
-            View audioBlock = activity.findViewById(R.id.audioBlock);
-            assertNotNull(audioBlock);
-            View buttonAudio = activity.findViewById(R.id.buttonAudio);
-            assertNotNull(buttonAudio);
-            View textViewAudioTitle = activity.findViewById(R.id.textViewAudioTitle);
-            assertNotNull(textViewAudioTitle);
-            View recyclerViewRelated = activity.findViewById(R.id.recyclerViewRelated);
-            assertNotNull(recyclerViewRelated);
-            View dividerRelated = activity.findViewById(R.id.dividerRelated);
-            assertNotNull(dividerRelated);
-            TextView textViewRelated = activity.findViewById(R.id.textViewRelated);
-            assertNotNull(textViewRelated);
-            ViewGroup bottomVideoBlock = activity.findViewById(R.id.bottomVideoBlock);
-            assertNotNull(bottomVideoBlock);
-            View textViewBottomVideoPeek = activity.findViewById(R.id.textViewBottomVideoPeek);
-            assertNotNull(textViewBottomVideoPeek);
-            StyledPlayerView bottomVideoView = activity.findViewById(R.id.bottomVideoView);
-            assertNotNull(bottomVideoView);
-            View textViewBottomVideoViewOverlay = activity.findViewById(R.id.textViewBottomVideoViewOverlay);
-            assertNotNull(textViewBottomVideoViewOverlay);
-            View bottomVideoPauseIndicator = activity.findViewById(R.id.bottomVideoPauseIndicator);
-            assertNotNull(bottomVideoPauseIndicator);
-            View bottomVideoViewWrapper = activity.findViewById(R.id.bottomVideoViewWrapper);
-            assertNotNull(bottomVideoViewWrapper);
-            // make sure that the ExoPlayer instances exist
-            if (activity.loadVideo) {
-                assertNotNull(activity.exoPlayerTopVideo);
-                assertNotNull(activity.exoPlayerBottomVideo);
-                assertNotNull(topVideoView.getPlayer());
-                assertNotNull(bottomVideoView.getPlayer());
-            }
-            // make sure that some Views react to clicks
-            assertTrue(buttonAudio.hasOnClickListeners());
-            // hasOnLongClickListeners() is available only from Android 11 (R) on
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) assertTrue(buttonAudio.hasOnLongClickListeners());
-            assertTrue(textViewBottomVideoPeek.hasOnClickListeners());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) assertTrue(textViewBottomVideoPeek.hasOnLongClickListeners());
-            assertTrue(bottomVideoViewWrapper.hasOnClickListeners());
-            if (activity.loadVideo) {
-                assertNotNull(topVideoView.getVideoSurfaceView());
-                assertTrue(topVideoView.getVideoSurfaceView().hasOnClickListeners());
-            }
-            // make sure the top video View is not visible if videos must not be shown
-            if (!activity.loadVideo) {
-                assertFalse(topVideoView.getVisibility() == View.VISIBLE);
-            }
-            //
-            assertNotNull(activity.bottomSheetBehavior);
-            //
-            Intent intent = activity.getIntent();
-            assertNotNull(intent);
-            News news = (News) intent.getSerializableExtra(NewsActivity.EXTRA_NEWS);
-            assertNull(news);
-            //
-            activity.finish();
-        });
-
     }
 
     @Test

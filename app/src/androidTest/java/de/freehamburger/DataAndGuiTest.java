@@ -7,24 +7,38 @@ import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 import android.app.DownloadManager;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.text.TextUtils;
 import android.util.JsonReader;
 import android.view.KeyEvent;
+import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.GravityCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.MediumTest;
+
+import com.google.android.exoplayer2.ui.StyledPlayerView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.junit.AfterClass;
 import org.junit.Assume;
@@ -164,7 +178,7 @@ public class DataAndGuiTest {
             assertTrue("News has invalid date (b): " + date + " not before now (" + now + ")", date.before(now));
             assertNotNull("News has null regions", news.getRegions());
             if (PREFERRED_REGION.toString().equals(news.getTopline())) {
-                assertTrue("News with top line '" + PREFERRED_REGION.toString() + "' is not regional", news.isRegional());
+                assertTrue("News with top line '" + PREFERRED_REGION + "' is not regional", news.isRegional());
             }
         }
     }
@@ -191,6 +205,41 @@ public class DataAndGuiTest {
                 assertFalse("ClockView text has a listener", activity.clockView.hasOnTextClickListener());
             }
             //
+            activity.finish();
+        });
+    }
+
+    /** tests the correct application of filters to the categories menu */
+    @Test
+    public void testMenuFilter() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        assumeTrue("filters are not applied to categories", prefs.getBoolean(App.PREF_APPLY_FILTERS_TO_CATEGORIES, App.PREF_APPLY_FILTERS_TO_CATEGORIES_DEFAULT));
+        final String hideMe = new TextFilter(ctx.getString(Source.WIRTSCHAFT.getLabel()).toLowerCase(Locale.GERMAN)).getText().toString();
+        final Set<String> preferredFilters = prefs.getStringSet(App.PREF_FILTERS, new HashSet<>(0));
+        assert preferredFilters != null;
+        assumeFalse("user-defined filters already contain " + hideMe, preferredFilters.contains(hideMe));
+        final Set<String> testFilters = new HashSet<>(preferredFilters.size() + 1);
+        testFilters.addAll(preferredFilters);
+        testFilters.add(hideMe);
+        SharedPreferences.Editor ed = prefs.edit();
+        ed.putStringSet(App.PREF_FILTERS, testFilters);
+        ed.apply();
+        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
+        asn.moveToState(Lifecycle.State.RESUMED);
+        asn.onActivity(activity -> {
+            com.google.android.material.navigation.NavigationView nv = activity.findViewById(R.id.navigationView);
+            assertNotNull(nv);
+            Menu menu = nv.getMenu();
+            assertNotNull(menu);
+            final int n = menu.size();
+            for (int i = 0; i < n; i++) {
+                if (!menu.getItem(i).isVisible()) continue;
+                String menuTitle = menu.getItem(i).getTitle().toString().toLowerCase(Locale.GERMAN);
+                assertNotEquals("Found category \"" + hideMe + "\"!", hideMe, menuTitle);
+            }
+            SharedPreferences.Editor ed2 = prefs.edit();
+            ed2.putStringSet(App.PREF_FILTERS, preferredFilters);
+            assertTrue(ed2.commit());
             activity.finish();
         });
     }
@@ -244,6 +293,116 @@ public class DataAndGuiTest {
         assertTrue(tf4 + " does not accept " + news0, tf4.accept(news0));
         TextFilter tf5 = new TextFilter("<br>", false, false, false, false);
         assertTrue(tf5 + " does not accept " + news0, tf5.accept(news0));
+    }
+
+    @Test
+    public void testMainActivity() {
+        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
+        asn.moveToState(Lifecycle.State.RESUMED);
+        asn.onActivity(activity -> {
+            // drawer
+            assertNotNull(activity.drawerLayout);
+            com.google.android.material.navigation.NavigationView navigationView = activity.findViewById(R.id.navigationView);
+            assertNotNull(navigationView);
+            View kid0 = navigationView.getChildAt(0);
+            assertNotNull(kid0);
+            assertTrue(kid0 instanceof RecyclerView);
+            // swipe refresh
+            assertTrue(activity.findViewById(R.id.swiperefresh) instanceof SwipeRefreshLayout);
+            // CoordinatorLayout
+            assertTrue(activity.findViewById(R.id.coordinator_layout) instanceof CoordinatorLayout);
+            // fab
+            assertTrue(activity.findViewById(R.id.fab) instanceof FloatingActionButton);
+            // quick view
+            assertTrue(activity.findViewById(R.id.quickView) instanceof ImageView);
+            // Recycler
+            RecyclerView recyclerView = activity.findViewById(R.id.recyclerView);
+            assertNotNull(recyclerView);
+            assertNotNull(recyclerView.getLayoutManager());
+            NewsRecyclerAdapter adapter = activity.getAdapter();
+            assertNotNull(adapter);
+            // clock
+            assertNotNull(activity.clockView);
+            // blocking plane
+            assertNotNull(activity.findViewById(R.id.plane));
+            // intro steps
+            assertEquals(MainActivity.INTRO_DELAYS.length, activity.introSteps.length);
+            //
+            activity.finish();
+        });
+    }
+
+    /**
+     * Tests the {@link NewsActivity}.
+     */
+    @Test
+    public void testNewsActivity() {
+        ActivityScenario<NewsActivity> asn = ActivityScenario.launch(NewsActivity.class);
+        asn.moveToState(Lifecycle.State.RESUMED);
+        asn.onActivity(activity -> {
+            // ensure that required Views are present
+            View fab = activity.findViewById(R.id.fab);
+            assertNotNull(fab);
+            StyledPlayerView topVideoView = activity.findViewById(R.id.topVideoView);
+            assertNotNull(topVideoView);
+            View textViewTitle = activity.findViewById(R.id.textViewTitle);
+            assertNotNull(textViewTitle);
+            View audioBlock = activity.findViewById(R.id.audioBlock);
+            assertNotNull(audioBlock);
+            View buttonAudio = activity.findViewById(R.id.buttonAudio);
+            assertNotNull(buttonAudio);
+            View textViewAudioTitle = activity.findViewById(R.id.textViewAudioTitle);
+            assertNotNull(textViewAudioTitle);
+            View recyclerViewRelated = activity.findViewById(R.id.recyclerViewRelated);
+            assertNotNull(recyclerViewRelated);
+            View dividerRelated = activity.findViewById(R.id.dividerRelated);
+            assertNotNull(dividerRelated);
+            TextView textViewRelated = activity.findViewById(R.id.textViewRelated);
+            assertNotNull(textViewRelated);
+            ViewGroup bottomVideoBlock = activity.findViewById(R.id.bottomVideoBlock);
+            assertNotNull(bottomVideoBlock);
+            View textViewBottomVideoPeek = activity.findViewById(R.id.textViewBottomVideoPeek);
+            assertNotNull(textViewBottomVideoPeek);
+            StyledPlayerView bottomVideoView = activity.findViewById(R.id.bottomVideoView);
+            assertNotNull(bottomVideoView);
+            View textViewBottomVideoViewOverlay = activity.findViewById(R.id.textViewBottomVideoViewOverlay);
+            assertNotNull(textViewBottomVideoViewOverlay);
+            View bottomVideoPauseIndicator = activity.findViewById(R.id.bottomVideoPauseIndicator);
+            assertNotNull(bottomVideoPauseIndicator);
+            View bottomVideoViewWrapper = activity.findViewById(R.id.bottomVideoViewWrapper);
+            assertNotNull(bottomVideoViewWrapper);
+            // make sure that the ExoPlayer instances exist
+            if (activity.loadVideo) {
+                assertNotNull(activity.exoPlayerTopVideo);
+                assertNotNull(activity.exoPlayerBottomVideo);
+                assertNotNull(topVideoView.getPlayer());
+                assertNotNull(bottomVideoView.getPlayer());
+            }
+            // make sure that some Views react to clicks
+            assertTrue(buttonAudio.hasOnClickListeners());
+            // hasOnLongClickListeners() is available only from Android 11 (R) on
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) assertTrue(buttonAudio.hasOnLongClickListeners());
+            assertTrue(textViewBottomVideoPeek.hasOnClickListeners());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) assertTrue(textViewBottomVideoPeek.hasOnLongClickListeners());
+            assertTrue(bottomVideoViewWrapper.hasOnClickListeners());
+            if (activity.loadVideo) {
+                assertNotNull(topVideoView.getVideoSurfaceView());
+                assertTrue(topVideoView.getVideoSurfaceView().hasOnClickListeners());
+            }
+            // make sure the top video View is not visible if videos must not be shown
+            if (!activity.loadVideo) {
+                assertFalse(topVideoView.getVisibility() == View.VISIBLE);
+            }
+            //
+            assertNotNull(activity.bottomSheetBehavior);
+            //
+            Intent intent = activity.getIntent();
+            assertNotNull(intent);
+            News news = (News) intent.getSerializableExtra(NewsActivity.EXTRA_NEWS);
+            assertNull(news);
+            //
+            activity.finish();
+        });
     }
 
     /**
