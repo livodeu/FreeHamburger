@@ -37,6 +37,42 @@ public class TextFilter implements Filter {
     private boolean atEnd;
 
     /**
+     * Constructor.
+     * @param phrase filter phrase
+     */
+    public TextFilter(@NonNull String phrase) {
+        this(phrase, false, false, false, false);
+    }
+
+    /**
+     * Constructor.
+     * @param phrase filter phrase
+     * @param temporary true / false
+     * @param inverse true if the logic should be inverted
+     */
+    public TextFilter(@NonNull String phrase, boolean temporary, boolean inverse) {
+        this(phrase, false, false, temporary, inverse);
+    }
+
+    /**
+     * Constructor.
+     * @param phrase filter phrase
+     * @param atStart true / false
+     * @param atEnd true / false
+     * @param temporary true / false
+     * @param inverse true if the logic should be inverted
+     */
+    @VisibleForTesting
+    public TextFilter(@NonNull CharSequence phrase, boolean atStart, boolean atEnd, boolean temporary, boolean inverse) {
+        super();
+        this.phrase = phrase;
+        this.atStart = atStart;
+        this.atEnd = atEnd;
+        this.inverse = inverse;
+        this.temporary = temporary;
+    }
+
+    /**
      * Loads the preferred filters from the preferences.
      * @param ctx Context
      * @return List of Filters
@@ -162,40 +198,10 @@ public class TextFilter implements Filter {
         return false;
     }
 
-    /**
-     * Constructor.
-     * @param phrase filter phrase
-     */
-    public TextFilter(@NonNull String phrase) {
-        this(phrase, false, false, false, false);
-    }
-
-    /**
-     * Constructor.
-     * @param phrase filter phrase
-     * @param temporary true / false
-     * @param inverse true if the logic should be inverted
-     */
-    public TextFilter(@NonNull String phrase, boolean temporary, boolean inverse) {
-        this(phrase, false, false, temporary, inverse);
-    }
-
-    /**
-     * Constructor.
-     * @param phrase filter phrase
-     * @param atStart true / false
-     * @param atEnd true / false
-     * @param temporary true / false
-     * @param inverse true if the logic should be inverted
-     */
-    @VisibleForTesting
-    public TextFilter(@NonNull CharSequence phrase, boolean atStart, boolean atEnd, boolean temporary, boolean inverse) {
-        super();
-        this.phrase = phrase;
-        this.atStart = atStart;
-        this.atEnd = atEnd;
-        this.inverse = inverse;
-        this.temporary = temporary;
+    public final boolean accept(@NonNull String txt) {
+        if (this.atStart) return !txt.startsWith(this.phrase.toString());
+        else if (this.atEnd) return !txt.endsWith(this.phrase.toString());
+        else return !txt.contains(this.phrase);
     }
 
     /** {@inheritDoc} */

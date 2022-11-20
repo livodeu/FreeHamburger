@@ -154,6 +154,16 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
                 this.sb.show();
             }, TOGGLE_ANIMATION_OFFSET + getResources().getInteger(R.integer.toggle_animation_step) * 10L);
         }
+        if (id == R.id.action_cats_filters) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            boolean filtersWereAppliedToCats = prefs.getBoolean(App.PREF_APPLY_FILTERS_TO_CATEGORIES, App.PREF_APPLY_FILTERS_TO_CATEGORIES_DEFAULT);
+            boolean filtersAreAppliedToCats = !filtersWereAppliedToCats;
+            SharedPreferences.Editor ed = prefs.edit();
+            ed.putBoolean(App.PREF_APPLY_FILTERS_TO_CATEGORIES, filtersAreAppliedToCats);
+            ed.apply();
+            invalidateOptionsMenu();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -206,11 +216,14 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
     @SuppressLint("RestrictedApi")
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        //
         FilterAdapter adapter = (FilterAdapter)this.recyclerView.getAdapter();
         MenuItem menuItemAdd = menu.findItem(R.id.action_add_filter);
         menuItemAdd.setVisible(adapter != null && !adapter.hasFilterWithNoText());
+        //
         MenuItem menuItemEnable = menu.findItem(R.id.action_enable_filters);
-        boolean filtersEnabled = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_FILTERS_APPLY, App.PREF_FILTERS_APPLY_DEFAULT);
+        boolean filtersEnabled = prefs.getBoolean(App.PREF_FILTERS_APPLY, App.PREF_FILTERS_APPLY_DEFAULT);
         menuItemEnable.setTitle(filtersEnabled ? R.string.action_filters_enabled : R.string.action_filters_disabled);
         if (this.filterChanging) {
             // set the icon for the start situation (yes, red if enabled and green if disabled)
@@ -227,6 +240,10 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
         } else {
             menuItemEnable.setIcon(filtersEnabled ? R.drawable.ic_toggle_9: R.drawable.ic_toggle_0);
         }
+        //
+        MenuItem menuItemApplyFiltersToCats = menu.findItem(R.id.action_cats_filters);
+        menuItemApplyFiltersToCats.setChecked(prefs.getBoolean(App.PREF_APPLY_FILTERS_TO_CATEGORIES, App.PREF_APPLY_FILTERS_TO_CATEGORIES_DEFAULT));
+        //
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -241,14 +258,12 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
         } else {
             this.filterCountOnResume = 0;
         }
-        if (BuildConfig.DEBUG || this.filterCountOnResume == 0) {
+        if (this.filterCountOnResume == 0) {
             this.sb = Snackbar.make(this.coordinatorLayout, R.string.hint_filter_add, Snackbar.LENGTH_INDEFINITE);
             this.sb.setActionTextColor(getResources().getColor(R.color.colorToolbarText));
             // the "+" action text corresponds to the + icon ic_add_toolbartext_24dp in the menu - they should look the same so that the snackbar text refers to both
             this.sb.setAction("+", v -> {
-                if (!addFilter()) {
-                    Snackbar.make(this.coordinatorLayout, R.string.error_filter_not_added, Snackbar.LENGTH_SHORT).show();
-                }
+                if (!addFilter()) Snackbar.make(this.coordinatorLayout, R.string.error_filter_not_added, Snackbar.LENGTH_SHORT).show();
             });
             Util.setSnackbarActionFont(this.sb, Typeface.MONOSPACE, getResources().getInteger(R.integer.snackbar_action_font_size));
             this.sb.show();

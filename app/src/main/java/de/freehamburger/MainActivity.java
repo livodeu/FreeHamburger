@@ -1762,6 +1762,14 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
     }
 
+    /** {@inheritDoc} */
+    @Override public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+        super.onSharedPreferenceChanged(prefs, key);
+        if (App.PREF_FILTERS.equals(key) || App.PREF_APPLY_FILTERS_TO_CATEGORIES.equals(key)) {
+            updateMenu();
+        }
+    }
+
     /**
      * Parses the given json file and updates the {@link #newsAdapter adapter} afterwards.<br>
      * Does not do anything if the file does not exist.
@@ -1991,9 +1999,29 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         final int menuid = index >= 0 ? this.sourceForMenuItem.keyAt(index): Integer.MIN_VALUE;
         final Menu menu = ((NavigationView)findViewById(R.id.navigationView)).getMenu();
         final int n = menu.size();
+        // possibly apply filters to the menu
+        final List<Filter> filters = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_APPLY_FILTERS_TO_CATEGORIES, App.PREF_APPLY_FILTERS_TO_CATEGORIES_DEFAULT) ? TextFilter.createTextFiltersFromPreferences(this) : null;
+        //
         for (int i = 0; i < n; i++) {
             MenuItem item = menu.getItem(i);
             item.setChecked(menuid == item.getItemId());
+            if (filters == null) {
+                item.setVisible(true);
+                continue;
+            }
+            // don't hide active category!
+            if (item.isChecked()) continue;
+            // hide category if its displayed name matches one of the filters
+            String titleLower = item.getTitle().toString().toLowerCase(Locale.GERMAN);
+            boolean visible = true;
+            for (Filter filter : filters) {
+                if (!(filter instanceof TextFilter)) continue;
+                if (!((TextFilter)filter).accept(titleLower)) {
+                    visible = false;
+                    break;
+                }
+            }
+            item.setVisible(visible);
         }
     }
 

@@ -261,6 +261,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
 
     /** {@inheritDoc} */
     @Override
+    @CallSuper
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
         if (App.PREF_BACKGROUND.equals(key)) {
             this.background = applyTheme(this, prefs, true);

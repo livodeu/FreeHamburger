@@ -98,6 +98,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_COLS_LANDSCAPE = "pref_cols_landscape";
     /** int: number of columns in portrait orientation - set to 0 to apply defaults */
     public static final String PREF_COLS_PORTRAIT = "pref_cols_portrait";
+    /** if this is true, filters will be applied to the categories being displayed - the user can hide categories this way */
+    public static final String PREF_APPLY_FILTERS_TO_CATEGORIES = "pref_apply_filters_to_cats";
+    public static final boolean PREF_APPLY_FILTERS_TO_CATEGORIES_DEFAULT = false;
     public static final String PREF_LOAD_OVER_MOBILE = "pref_load_over_mobile";
     public static final boolean DEFAULT_LOAD_OVER_MOBILE = true;
     public static final String PREF_LOAD_VIDEOS_OVER_MOBILE = "pref_load_videos_over_mobile";

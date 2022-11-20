@@ -227,6 +227,7 @@
     <string name="action_section_sport">Sport</string>
     <string name="action_section_video">Video</string>
     <string name="pref_header_polling">Hintergrundaktualisierungen</string>
+    <string name="pref_title_filters_apply_cats">auf Kategorien anwenden</string>
     <string name="pref_title_poll">Hintergrund&#173;aktualisierungen</string>
     <string name="pref_title_poll_breaking_only">Nur Eilmeldungen</string>
     <string name="pref_hint_poll_interval">Abfrageintervall</string>
