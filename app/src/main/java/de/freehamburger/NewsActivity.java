@@ -806,8 +806,11 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         if (this.listenerBottom.getExoPlayerState() != Player.STATE_READY) return;
         if (this.listenerBottom.isExoPlayerPlayWhenReady()) {
             stopBottomVideo();
+            // show navigation bar to allow user to press the back button
+            Util.goFullScreen(this);
         } else {
             playBottomVideo();
+            Util.hideActionNavigationStatusBar(this, true);
         }
     }
 

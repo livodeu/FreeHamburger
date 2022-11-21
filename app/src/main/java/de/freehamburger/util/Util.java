@@ -1028,6 +1028,16 @@ public class Util {
     }
 
     /**
+     * Goes into fullscreen mode; the navigation and action bars will be visible, the status bar will be hidden.
+     * @param a AppCompatActivity
+     */
+    public static void goFullScreen(@NonNull AppCompatActivity a) {
+        ActionBar actionBar = a.getSupportActionBar();
+        if (actionBar != null) actionBar.show();
+        a.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
+    }
+
+    /**
      * Determines whether a pinned shortcut to the given Source exists.
      * @param ctx Context
      * @param source Source
