@@ -1,11 +1,22 @@
-# Free Hamburgers ![Logo](app/src/main/res/mipmap-mdpi/ic_launcher.png)
-<p>Hamburger is a news app for Android phones - it displays the news issued by the primary German public television and radio broadcaster.</p>
-<p>In contrast to the app provided by the broadcaster itself, Hamburger does not track the user in any way.</p>
+# ![Logo](app/src/main/res/mipmap-mdpi/ic_launcher.png) Free Hamburgers
+Hamburger is a news app for Android phones - it displays the news issued by the primary German public television and radio broadcaster.
+
+In contrast to the app provided by the broadcaster itself, Hamburger does **not** track the user in any way.
+
+## Get it
+
+Either 
+
+download the APK package that is available under ["Releases"](https://github.com/livodeu/FreeHamburger/releases/latest)
+
+or 
+
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.svg" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/de.freehamburger/)
 
 ## Build
 
-<p>To build the release variant, you must add a file named "keystore.properties" in the root directory of the project.
-It must contain the following entries:</p>
+To build the release variant, you must add a file named "keystore.properties" in the root directory of the project.
+It must contain the following entries:
 
     storeFile <file://absolute.path.to.keystore>
     storePassword <store_password>

@@ -50,11 +50,11 @@ _2022-02_
 
 ## 1.3
 
-_2022-0x_
+_2022-11_
 
 * Changed: Theme based on Material3 flavour
 * Changed: Removed "Quick Settings" tile due to [memory leak in Android OS](https://tinyurl.com/2u9bhwn3)
-* Fixed: Issue #1
+* Fixed: Issue #1 - Remember the vertical scroll position in teletext when rotating the device
 * Fixed: Issue #4 - Categories may be selected via tapping the current category name
 * Fixed: Videos can now be shared from video-only categories, too
 * New: App widgets are now available
