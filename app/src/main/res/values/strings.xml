@@ -54,6 +54,7 @@
     <string name="action_teletext_short">TT</string>
     <string name="action_quality_select">Select video quality</string>
     <string name="action_quit">Quit the app?</string>
+    <string name="action_view">View</string>
     <string name="action_view_in_browser">View in browser</string>
     <string name="action_view_picture">View picture</string>
     <string name="action_widget_configure">Select Widget Source</string>

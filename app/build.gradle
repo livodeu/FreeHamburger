@@ -107,6 +107,8 @@ dependencies {
     implementation 'com.google.android.exoplayer:exoplayer-hls:2.17.1'
     implementation 'com.google.android.exoplayer:extension-okhttp:2.17.1'
 
+    implementation 'com.github.chrisbanes:PhotoView:2.3.0'
+
     // https://developer.android.com/jetpack/androidx/releases/test
     androidTestImplementation 'androidx.test:core:1.5.0'
     androidTestImplementation 'androidx.test:runner:1.5.1'

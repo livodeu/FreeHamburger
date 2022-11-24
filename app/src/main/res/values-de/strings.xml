@@ -16,6 +16,7 @@
     <string name="msg_print_finished">Druckvorgang beendet.</string>
     <string name="action_print_pic">Bild drucken</string>
     <string name="action_show_weberrors_no">Nicht wieder anzeigen</string>
+    <string name="action_view">Ansehen</string>
     <string name="action_view_in_browser">Im Browser ansehen</string>
     <string name="action_widget_configure">Bitte die Quelle auswählen</string>
     <string name="msg_widget_source_changed">Die Quelle wurde zu „%1$s” geändert.</string>

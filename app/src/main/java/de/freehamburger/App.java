@@ -72,7 +72,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String URL_PREFIX = "https://www.tagesschau.de/api2/";
     /** components to be excluded when sharing content */
     @TargetApi(Build.VERSION_CODES.N)
-    public static final ComponentName[] EXCLUDED_SEND_TARGETS = new ComponentName[] {new ComponentName("com.google.android.gms","com.google.android.gms.nearby.sharing.ShareSheetActivity")};
+    public static final ComponentName[] EXCLUDED_SEND_TARGETS = new ComponentName[] {
+            new ComponentName("com.google.android.gms","com.google.android.gms.nearby.sharing.ShareSheetActivity"),
+            new ComponentName("com.google.android.gms",".nearby.sharing.ShareSheetActivity"),
+            new ComponentName("com.google.android.apps.maps", "com.google.android.maps.MapsActivity"),
+            // setting images from this app as profile photos would be weird
+            new ComponentName("com.samsung.android.app.contacts","com.samsung.android.contacts.editor.SetProfilePhotoActivity")
+    };
     /** the user agent to be used in the http requests */
     public static final String USER_AGENT;
     /** the directory that shared files are copied to (in the {@link #getCacheDir() cache dir}) */

@@ -83,7 +83,7 @@ public class TextViewImageSpanClickHandler implements View.OnTouchListener {
         Context ctx = textView.getContext();
         String source = imageSpan.getSource();
         if (source != null) {
-            Util.sendUrl(ctx, source, title);
+            Util.sendUrl(ctx, source, title, imageSpan.getDrawable() instanceof BitmapDrawable ? ((BitmapDrawable)imageSpan.getDrawable()).getBitmap() : null);
             return;
         }
         // if there is no source url, try to send the image as Bitmap

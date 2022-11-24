@@ -6,9 +6,11 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.ClipData;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
+import android.content.pm.LabeledIntent;
 import android.content.pm.PackageManager;
 import android.content.pm.ShortcutInfo;
 import android.content.pm.ShortcutManager;
@@ -29,6 +31,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.system.ErrnoException;
@@ -109,6 +112,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.MainActivity;
+import de.freehamburger.PictureActivity;
 import de.freehamburger.R;
 import de.freehamburger.model.Content;
 import de.freehamburger.model.Source;
@@ -1661,10 +1665,13 @@ public class Util {
      * @param ctx Context
      * @param url URL
      * @param title title (optional)
+     * @param preview (optional)
      * @throws NullPointerException if {@code ctx} is {@code null}
      */
-    public static void sendUrl(@NonNull Context ctx, @NonNull String url, @Nullable CharSequence title) {
+    public static void sendUrl(@NonNull Context ctx, @NonNull String url, @Nullable CharSequence title, @Nullable Bitmap preview) {
+        url = makeHttps(url);
         final Intent intent = new Intent(Intent.ACTION_SEND);
+        if (BuildConfig.DEBUG) intent.addFlags(Intent.FLAG_DEBUG_LOG_RESOLUTION);
         intent.putExtra(Intent.EXTRA_TEXT, url);
         if (!TextUtils.isEmpty(title)) {
             intent.putExtra(Intent.EXTRA_TITLE, title);
@@ -1677,10 +1684,32 @@ public class Util {
         }
         intent.setType(getMime(uri.getLastPathSegment(), "text/plain"));
         //
+        if (preview != null) {
+            OutputStream out = null;
+            try {
+                File exportsDir = new File(ctx.getCacheDir(), App.EXPORTS_DIR);
+                if (exportsDir.isDirectory() || exportsDir.mkdirs()) {
+                    File tmp = File.createTempFile("tmp", ".jpg", exportsDir);
+                    out = new FileOutputStream(tmp);
+                    preview = Bitmap.createScaledBitmap(preview, preview.getWidth() >> 2, preview.getHeight() >> 2, true);
+                    preview.compress(Bitmap.CompressFormat.JPEG, 50, out);
+                    close(out);
+                    out = null;
+                    Uri thumbnail = FileProvider.getUriForFile(ctx, App.getFileProvider(), tmp);
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    intent.setClipData(new ClipData("thumbnail", new String[]{"image/jpeg"}, new ClipData.Item(thumbnail)));
+                }
+            } catch (IOException e) {
+                if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+            } finally {
+                close(out);
+            }
+        }
+        //
         if (!(ctx instanceof Activity)) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.putExtra(Intent.EXTRA_REFERRER, Uri.parse(PROTOCOL_ANDROID_APP + ctx.getPackageName()));
         if (ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-            Intent chooserIntent;
+            final Intent chooserIntent;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
                 @SuppressLint("InlinedApi")
                 PendingIntent pi = PendingIntent.getBroadcast(ctx, 0, new Intent(ctx, ShareReceiver.class), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
@@ -1688,9 +1717,16 @@ public class Util {
             } else {
                 chooserIntent = Intent.createChooser(intent, null);
             }
+            if (BuildConfig.DEBUG) chooserIntent.addFlags(Intent.FLAG_DEBUG_LOG_RESOLUTION);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 chooserIntent.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, App.EXCLUDED_SEND_TARGETS);
             }
+            Intent view = new Intent(Intent.ACTION_VIEW);
+            view.setData(uri);
+            view.setComponent(new ComponentName(ctx.getPackageName(), PictureActivity.class.getName()));
+            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Parcelable[] {
+                    new LabeledIntent(view, ctx.getPackageName(), ctx.getString(R.string.action_view), 0)
+            });
             logIntent(chooserIntent);
             ctx.startActivity(chooserIntent);
         } else {
@@ -1700,6 +1736,17 @@ public class Util {
                 Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    /**
+     * Shares the given url via {@link Intent#ACTION_SEND ACTION_SEND}. Displays an error message if there isn't any suitable app installed.
+     * @param ctx Context
+     * @param url URL
+     * @param title title (optional)
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
+    public static void sendUrl(@NonNull Context ctx, @NonNull String url, @Nullable CharSequence title) {
+        sendUrl(ctx, url, title, null);
     }
 
     /**

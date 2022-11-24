@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -812,6 +813,13 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             playBottomVideo();
             Util.hideActionNavigationStatusBar(this, true);
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // to have images occupy all the available space we apply the News again
+        applyNews();
     }
 
     /** {@inheritDoc} */
