@@ -51,12 +51,14 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -87,9 +89,11 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import de.freehamburger.adapters.RelatedAdapter;
@@ -122,9 +126,9 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
     /** boolean; if true, the ActionBar will not show the home arrow which would lead the user to the MainActivity */
     private static final String EXTRA_NO_HOME_AS_UP = "extra_no_home_as_up";
-    private static final String TAG = "NewsActivity";
     /** pictures are scaled to this percentage of the available width */
     private static final int SCALE_PICTURES_TO_PERCENT = 90;
+    private static final String TAG = "NewsActivity";
     @NonNull
     private final AudioAttributes aa = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setLegacyStreamType(App.STREAM_TYPE).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();
     private final MediaSourceHelper mediaSourceHelper = new MediaSourceHelper();
@@ -133,14 +137,14 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private final Set<SpannableImageTarget> spannableImageTargets = new HashSet<>();
     /** Listener for the top video */
     private final PlayerListener listenerTop = new PlayerListener(this,false);
+    @VisibleForTesting BottomSheetBehavior<? extends LinearLayout> bottomSheetBehavior;
+    @VisibleForTesting boolean loadVideo;
+    @Nullable @VisibleForTesting ExoPlayer exoPlayerTopVideo;
+    @Nullable @VisibleForTesting ExoPlayer exoPlayerBottomVideo;
     /** passed with the Intent as extra {@link #EXTRA_NEWS} */
     private News news;
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
-    private StyledPlayerView topVideoView;
-    private TextView textViewTitle;
-    private ViewGroup /*RelativeLayout*/ audioBlock;
-    private ImageButton buttonAudio;
-    /** Listener for the audio */
+    private StyledPlayerView topVideoView;    /** Listener for the audio */
     private final PlayerListener listenerAudio = new PlayerListener(this,true) {
 
         @Override
@@ -154,6 +158,9 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             NewsActivity.this.buttonAudio.setImageResource(isAudioPlaying() ? R.drawable.ic_pause_black_24dp : R.drawable.ic_play_arrow_black_24dp);
         }
     };
+    private TextView textViewTitle;
+    private ViewGroup /*RelativeLayout*/ audioBlock;
+    private ImageButton buttonAudio;
     private TextView textViewAudioTitle;
     private TextView textViewContent;
     private RecyclerView recyclerViewRelated;
@@ -173,10 +180,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
     private StyledPlayerView bottomVideoView;
     private TextView textViewBottomVideoViewOverlay;
-    @VisibleForTesting BottomSheetBehavior<? extends LinearLayout> bottomSheetBehavior;
-    @VisibleForTesting boolean loadVideo;
-    @Nullable @VisibleForTesting ExoPlayer exoPlayerTopVideo;
-    @Nullable @VisibleForTesting ExoPlayer exoPlayerBottomVideo;
     private ImageView bottomVideoPauseIndicator;
     /** Listener for the bottom video */
     private final PlayerListener listenerBottom = new PlayerListener(this,true) {
@@ -254,6 +257,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         if (this.news == null) {
             this.textViewTitle.setText(null);
             this.textViewContent.setText(null);
+            this.textViewContent.setTextIsSelectable(false);
             return;
         }
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -426,6 +430,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 pos = end + xsmallEnd.length();
             }
 
+            //final boolean textSelectable = this.textViewContent.isTextSelectable();
+            this.textViewContent.setTextIsSelectable(false);
             this.textViewContent.setText(spanned, TextView.BufferType.SPANNABLE);
             this.textViewContent.setVisibility(View.VISIBLE);
 
@@ -438,18 +444,30 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             }
 
             // load images
-            ImageSpan[] imageSpans = spannable.getSpans(0, spannable.length(), ImageSpan.class);
-            if (imageSpans != null) {
+            final ImageSpan[] imageSpans = spannable.getSpans(0, spannable.length(), ImageSpan.class);
+            if (imageSpans != null && imageSpans.length > 0) {
+                // Collect Targets and sources and actually start loading only after all targets have been put into this.spannableImageTargets.
+                // This is to make sure that loading of all images has finished once this.spannableImageTargets is empty.
+                // See SpannableImageTarget: it calls enableTextSelection() when this.spannableImageTargets is empty.
+                final Map<SpannableImageTarget, String> targetsAndUris = new HashMap<>(imageSpans.length);
+                //
                 for (ImageSpan imageSpan : imageSpans) {
                     String src = imageSpan.getSource();
                     if (src == null || src.startsWith(ContentResolver.SCHEME_ANDROID_RESOURCE)) continue;
                     src = Util.makeHttps(src);
                     SpannableImageTarget target = new SpannableImageTarget(this, spannable, imageSpan, SCALE_PICTURES_TO_PERCENT);
+                    targetsAndUris.put(target, src);
                     // store target in an (otherwise unused) instance variable to avoid garbage collection, because the service holds only a WeakReference on the target
                     this.spannableImageTargets.add(target);
-                    //
-                    this.service.loadImage(src, target);
                 }
+                // now start loading
+                Set<Map.Entry<SpannableImageTarget, String>> entries = targetsAndUris.entrySet();
+                for (Map.Entry<SpannableImageTarget, String> entry : entries) {
+                    this.service.loadImage(entry.getValue(), entry.getKey());
+                }
+            } else {
+                // it seems now to be safe to enable text selection as we don't have pictures to load
+                enableTextSelection(prefs);
             }
 
             // convert BackgroundColorSpans to BackgroundSpans
@@ -550,6 +568,39 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             }
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    /**
+     * Enables or disables text selection according to the preferences.
+     * @param prefs SharedPreferences
+     */
+    @MainThread
+    private void enableTextSelection(@Nullable SharedPreferences prefs) {
+        if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean enableTextSelection = prefs.getBoolean(App.PREF_TEXT_SELECTION, App.PREF_TEXT_SELECTION_DEFAULT);
+        this.textViewContent.setTextIsSelectable(enableTextSelection);
+        if (enableTextSelection) {
+            Util.enableDwds(this.textViewContent);
+            // workaround for weird behaviour: scrollViewNews scrolls downwards by about 300-400 px on first text selection
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                ScrollView sv = findViewById(R.id.scrollViewNews);
+                sv.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+                    boolean firstScroll = true;
+                    @Override
+                    public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+                        if (this.firstScroll) {
+                            v.scrollTo(0,0);
+                            this.firstScroll = false;
+                        }
+                    }
+                });
+            }
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                ScrollView sv = findViewById(R.id.scrollViewNews);
+                sv.setOnScrollChangeListener(null);
+            }
+        }
     }
 
     /**
@@ -832,7 +883,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         setVolumeControlStream(App.STREAM_TYPE);
 
         boolean mobile = Util.isNetworkMobile(this);
-        this.loadVideo = !mobile || PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_LOAD_VIDEOS_OVER_MOBILE, App.DEFAULT_LOAD_VIDEOS_OVER_MOBILE);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        this.loadVideo = !mobile || prefs.getBoolean(App.PREF_LOAD_VIDEOS_OVER_MOBILE, App.DEFAULT_LOAD_VIDEOS_OVER_MOBILE);
 
         this.fab = findViewById(R.id.fab);
         this.topVideoView = findViewById(R.id.topVideoView);
@@ -1462,7 +1514,12 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         public void onBitmapFailed(Exception e, Drawable errorDrawable) {
             this.spannable.removeSpan(this.toReplace);
             NewsActivity activity = this.refActivity.get();
-            if (activity != null) activity.spannableImageTargets.remove(this);
+            if (activity != null) {
+                activity.spannableImageTargets.remove(this);
+                if (activity.spannableImageTargets.isEmpty()) {
+                    activity.enableTextSelection(null);
+                }
+            }
             this.spannable = null;
             this.toReplace = null;
         }
@@ -1490,6 +1547,9 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             activity.spannableImageTargets.remove(this);
             this.spannable = null;
             this.toReplace = null;
+            if (activity.spannableImageTargets.isEmpty()) {
+                activity.enableTextSelection(null);
+            }
         }
 
         /** {@inheritDoc} */

@@ -15,4 +15,12 @@
         app:summaryOn="@string/label_yes"
         app:title="@string/pref_title_show_share_target" />
 
+    <SwitchPreferenceCompat
+        app:defaultValue="@bool/pref_text_selection_default"
+        app:key="pref_text_selection"
+        app:singleLineTitle="false"
+        app:summaryOff="@string/label_no"
+        app:summaryOn="@string/label_yes"
+        app:title="@string/pref_title_text_selection" />
+
 </PreferenceScreen>
