@@ -99,6 +99,7 @@ import java.util.Set;
 import de.freehamburger.adapters.RelatedAdapter;
 import de.freehamburger.model.Audio;
 import de.freehamburger.model.Content;
+import de.freehamburger.model.Dictionary;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Related;
 import de.freehamburger.model.StreamQuality;
@@ -580,7 +581,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         boolean enableTextSelection = prefs.getBoolean(App.PREF_TEXT_SELECTION, App.PREF_TEXT_SELECTION_DEFAULT);
         this.textViewContent.setTextIsSelectable(enableTextSelection);
         if (enableTextSelection) {
-            Util.enableDwds(this.textViewContent);
+            Dictionary.enable(this.textViewContent);
             // workaround for weird behaviour: scrollViewNews scrolls downwards by about 300-400 px on first text selection
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 ScrollView sv = findViewById(R.id.scrollViewNews);

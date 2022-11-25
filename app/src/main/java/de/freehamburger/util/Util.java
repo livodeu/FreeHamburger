@@ -43,7 +43,6 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
-import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -468,47 +467,6 @@ public class Util {
             if (s.indexOf(wrong) >= 0) return false;
         }
         return true;
-    }
-
-    /**
-     * Allows to look up a single word selection in DWDS.
-     * @param textView TextView.
-     */
-    public static void enableDwds(@NonNull final TextView textView) {
-        textView.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
-            private MenuItem itemDwds;
-
-            @Override public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-                if ("DWDS".equals(item.getTitle().toString())) {
-                    String selection = textView.getText().subSequence(textView.getSelectionStart(), textView.getSelectionEnd()).toString().trim();
-                    if (selection.length() > 0 && TextUtils.indexOf(selection, ' ') < 0) {
-                        Intent lookup = new Intent(Intent.ACTION_VIEW);
-                        lookup.setData(Uri.parse("https://www.dwds.de/?q=" + selection));
-                        lookup.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-                        try {
-                            textView.getContext().startActivity(lookup);
-                        } catch (Exception ignored) {
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            }
-
-            @Override public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                this.itemDwds = menu.add(0, 0, 100, "DWDS");
-                return true;
-            }
-
-            @Override public void onDestroyActionMode(ActionMode mode) {
-            }
-
-            @Override public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-                String selection = textView.getText().subSequence(textView.getSelectionStart(), textView.getSelectionEnd()).toString().trim();
-                this.itemDwds.setVisible(selection.length() > 0 && TextUtils.indexOf(selection, ' ') < 0);
-                return true;
-            }
-        });
     }
 
     /**
