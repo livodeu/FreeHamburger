@@ -1679,12 +1679,14 @@ public class Util {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 chooserIntent.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, App.EXCLUDED_SEND_TARGETS);
             }
-            Intent view = new Intent(Intent.ACTION_VIEW);
-            view.setData(uri);
-            view.setComponent(new ComponentName(ctx.getPackageName(), PictureActivity.class.getName()));
-            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Parcelable[] {
-                    new LabeledIntent(view, ctx.getPackageName(), ctx.getString(R.string.action_view), 0)
-            });
+            if (intent.getType() != null && intent.getType().startsWith("image/")) {
+                Intent view = new Intent(Intent.ACTION_VIEW);
+                view.setData(uri);
+                view.setComponent(new ComponentName(ctx.getPackageName(), PictureActivity.class.getName()));
+                chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Parcelable[]{
+                        new LabeledIntent(view, ctx.getPackageName(), ctx.getString(R.string.action_view), 0)
+                });
+            }
             logIntent(chooserIntent);
             ctx.startActivity(chooserIntent);
         } else {
