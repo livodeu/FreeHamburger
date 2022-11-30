@@ -48,51 +48,6 @@ public class NewsView extends RelativeLayout {
     public TextView textViewFirstSentence;
 
     /**
-     * Returns a textual representation of a time difference, e.g. "2¼ hours ago".
-     * @param ctx Context
-     * @param time Date
-     * @param basedOn Date (set to {@code null} to compare time to current time)
-     * @return relative time
-     * @throws NullPointerException if {@code ctx} is {@code null} and {@code time} is not {@code null}
-     */
-    @NonNull
-    public static String getRelativeTime(@NonNull Context ctx, @Nullable Date time, @Nullable Date basedOn) {
-        if (time == null) return "";
-        final long delta;
-        if (basedOn == null) {
-            delta = Math.abs(time.getTime() - System.currentTimeMillis());
-        } else {
-            delta = Math.abs(time.getTime() - basedOn.getTime());
-        }
-        if (delta < 60_000L) {
-            int seconds = (int)(delta / 1_000L);
-            return ctx.getResources().getQuantityString(R.plurals.label_time_rel_seconds, seconds, seconds);
-        }
-        if (delta < 60 * 60_000L) {
-            int minutes = (int)(delta / 60_000L);
-            return ctx.getResources().getQuantityString(R.plurals.label_time_rel_minutes, minutes, minutes);
-        }
-        if (delta < 24 * 60 * 60_000L) {
-            double dhours = delta / 3_600_000.;
-            int hours = (int)dhours;
-            final double frac = dhours - (double)hours;
-            if (frac >= 0.125 && frac < 0.375) {
-                return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours1, hours, hours);
-            }
-            if (frac >= 0.375 && frac < 0.625) {
-                return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours2, hours, hours);
-            }
-            if (frac >= 0.625 && frac < 0.875) {
-                return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours3, hours, hours);
-            }
-            if (frac >= 0.875) hours++;
-            return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours, hours, hours);
-        }
-        int days = (int)(delta / 86_400_000L);
-        return ctx.getResources().getQuantityString(R.plurals.label_time_rel_days, days, days);
-    }
-
-    /**
      * Constructor.
      * @param ctx Context
      * @throws NullPointerException if {@code ctx} is {@code null}
@@ -261,7 +216,7 @@ public class NewsView extends RelativeLayout {
         Date date = news.getDate();
         if (date != null) {
             boolean timeMode = prefs.getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
-            this.textViewDate.setText(timeMode ? getRelativeTime(ctx, date, null) : DF.format(date));
+            this.textViewDate.setText(timeMode ? Util.getRelativeTime(ctx, date.getTime(), null) : DF.format(date));
         } else {
             this.textViewDate.setText(null);
         }

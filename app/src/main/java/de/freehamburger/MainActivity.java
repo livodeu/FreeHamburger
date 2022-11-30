@@ -702,7 +702,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return;
         }
         try {
-            File tempFile = File.createTempFile("details", ".json");
+            File tempFile = File.createTempFile("details", news.isRegional() ? News.FILE_TAG_REGIONAL : News.FILE_TAG);
             this.service.loadFile(url, tempFile, (completed, result) -> {
                 if (!completed || result == null) {
                     Snackbar.make(this.coordinatorLayout, R.string.error_download_failed2, Snackbar.LENGTH_LONG).show();
@@ -729,13 +729,12 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     }
                     Intent intent = new Intent(this, NewsActivity.class);
                     intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
+                    intent.putExtra(NewsActivity.EXTRA_JSON, tempFile.getAbsolutePath());
                     startActivity(intent, ActivityOptionsCompat.makeCustomAnimation(this, R.anim.fadein, R.anim.fadeout).toBundle());
                 } catch (Exception e) {
                     Util.close(reader);
                     if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
                     Snackbar.make(this.coordinatorLayout, R.string.error_parsing, Snackbar.LENGTH_LONG).show();
-                } finally {
-                    Util.deleteFile(tempFile);
                 }
             });
         } catch (Exception e) {
@@ -901,8 +900,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     }
 
     @Override
-    void onColumnCountChanged(SharedPreferences prefs) {
-        selectLayoutManager(prefs);
+    void onColumnCountChanged(@NonNull SharedPreferences prefs) {
+        selectLayoutManager(prefs, this.recyclerView);
     }
 
     /** {@inheritDoc} <br><br>
@@ -1120,7 +1119,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         this.quickView.setOnClickListener(this::hideQuickView);
         this.recyclerView = findViewById(R.id.recyclerView);
         //this.recyclerView.setHasFixedSize(true);
-        selectLayoutManager(null);
+        selectLayoutManager(null, this.recyclerView);
         // enable context menus for news items
         this.recyclerView.setOnCreateContextMenuListener(this);
         //
@@ -1233,6 +1232,10 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
         if (id == R.id.action_teletext) {
             startTeletext(false, 100);
+            return true;
+        }
+        if (id == R.id.action_archive) {
+            startActivity(new Intent(this, Archive.class));
             return true;
         }
         if (id == R.id.action_shortcut_create) {
@@ -1479,6 +1482,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         } else {
             itemShortcutCreate.setVisible(false);
         }
+        MenuItem menuItemArchive = menu.findItem(R.id.action_archive);
+        menuItemArchive.setVisible(Archive.hasItems(this));
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -1805,8 +1810,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                         ((GridLayoutManager)layoutManager).setSpanCount(nItems);
                     } else {
                         // reset span count
-                        selectLayoutManager(prefs);
-                        //((GridLayoutManager)layoutManager).setSpanCount(getResources().getInteger(R.integer.num_columns));
+                        selectLayoutManager(prefs, MainActivity.this.recyclerView);
                     }
                 }
                 //
@@ -1939,38 +1943,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         return true;
     }
 
-    /**
-     * Selects the LayoutManager for the RecyclerView, based on the screen size.<br>
-     * With horizontal separator values of 7.5 and 6,
-     * a 10-inch tablet in landscape mode should show 3 columns,
-     * a 7-inch tablet in landscape mode should show 2 columns,
-     * all other devices/orientations should have 1 column.<br>
-     * Note: the number of columns might be reduced after loading the data if the number of News items is less than the normal number of columns (see {@link #parseLocalFileAsync(File)})<br>
-     * Screen sizes in dp:
-     * <ul>
-     * <li>10"-tablet avd is 1280 dp x 648 dp in landscape mode and 720 dp x 1208 dp in portrait mode</li>
-     * <li>7"-tablet avd is 1024 dp x 528 dp in landscape mode and 600 dp x 952 dp in portrait mode</li>
-     * <li>6.5" phone with 2400 px x 1080 px is 774 dp x 359 dp in landscape mode and 384 dp x 774 dp in portrait mode</li>
-     * <li>5.2" phone with 1920 px x 1080 px is 592 dp x 336 dp in landscape mode and 360 dp x 568 dp in portrait mode</li>
-     * </ul>
-     * The aforementioned values are reduced by ca. 50% in one dimension if the app runs in multi-window mode!
-     */
-    private void selectLayoutManager(@Nullable SharedPreferences prefs) {
-        Configuration c = getResources().getConfiguration();
-        RecyclerView.LayoutManager old = this.recyclerView.getLayoutManager();
-        if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        int preferredCols = c.orientation == Configuration.ORIENTATION_PORTRAIT ? prefs.getInt(App.PREF_COLS_PORTRAIT, 0) : prefs.getInt(App.PREF_COLS_LANDSCAPE, 0);
-        final int numColumns = preferredCols > 0 ? preferredCols : getResources().getInteger(R.integer.num_columns);
-        if (numColumns == 1) {
-            if (old instanceof LinearLayoutManager && !(old instanceof GridLayoutManager)) return;
-            LinearLayoutManager llm = new LinearLayoutManager(this);
-            this.recyclerView.setLayoutManager(llm);
-            return;
-        }
-        if (old instanceof GridLayoutManager && ((GridLayoutManager)old).getSpanCount() == numColumns) return;
-        GridLayoutManager glm = new GridLayoutManager(this, numColumns);
-        this.recyclerView.setLayoutManager(glm);
-    }
 
     /**
      * Starts the {@link TeletextActivity}.

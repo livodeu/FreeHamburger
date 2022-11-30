@@ -25,4 +25,11 @@
         android:orderInCategory="30"
         android:title="@string/action_print"
         app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_archive"
+        android:orderInCategory="40"
+        android:title="@string/action_archive_put"
+        app:showAsAction="never"
+        />
 </menu>

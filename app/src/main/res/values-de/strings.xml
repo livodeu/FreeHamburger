@@ -2,6 +2,11 @@
 <resources>
     <string name="action_quit">App beenden?</string>
     <string name="action_add_filter">Neu</string>
+    <string name="action_archive">Archiv</string>
+    <string name="action_archive_clear">Alle löschen</string>
+    <string name="action_archive_export">Exportieren</string>
+    <string name="action_archive_import">Importieren</string>
+    <string name="action_archive_put">Archivieren</string>
     <string name="action_background_disable">Deaktivieren</string>
     <string name="action_info">Info</string>
     <string name="action_teletext">Videotext</string>
@@ -9,6 +14,27 @@
     <string name="action_filters_enabled">Aktiv</string>
     <string name="action_open_app">App öffnen</string>
     <string name="action_print">Drucken</string>
+    <string name="label_archive">Archiv</string>
+    <string name="label_confirmation">Bestätigung</string>
+    <string name="msg_archive_delete_all">Alle archivierten Artikel löschen?\nEs werden %1$s kB Speicherplatz freigegeben.</string>
+    <string name="msg_archive_importing">Importiere „%1$s”…</string>
+    <plurals name="msg_archive_import_result1">
+        <item quantity="one">%1$d Datei wiederhergestellt</item>
+        <item quantity="other">%1$d Dateien wiederhergestellt</item>
+    </plurals>
+    <plurals name="msg_archive_import_result2">
+        <item quantity="one">%1$d Datei übersprungen</item>
+        <item quantity="other">%1$d Dateien übersprungen</item>
+    </plurals>
+    <string name="error_archived_parse_failed">Bei „%1$s” scheint es sich nicht um eine gültige Datei zu handeln! Löschen?</string>
+    <string name="error_archived_already">Der Artikel wurde bereits archiviert.</string>
+    <string name="error_archived_failure">Der Artikel wurde nicht archiviert!</string>
+    <string name="error_archived_retrieval">Der Artikel konnte nicht geladen werden!</string>
+    <string name="error_archive_export_failed">Export fehlgeschlagen!</string>
+    <string name="error_archive_import_failed">Der Import von „%1$s” ist fehlgeschlagen!</string>
+    <string name="msg_archived_success">Erfolgreich archiviert.</string>
+    <string name="action_archive_import_ext">Archiv importieren</string>
+    <string name="msg_delete_confirm">„%1$s” wirklich löschen?</string>
     <string name="msg_print_cancelled">Druckvorgang abgebrochen.</string>
     <string name="msg_print_failed">Druckvorgang fehlgeschlagen.</string>
     <string name="msg_print_failed_wlabel">Druckvorgang „%1$s” fehlgeschlagen.</string>
@@ -168,6 +194,7 @@
     <string name="hint_filter_add">Mit + fügen Sie einen neuen Filter hinzu</string>
     <string name="hint_filter_button_clear">Antippen um den Text zu löschen</string>    <!-- https://de.wikipedia.org/wiki/Infinitivgruppe -->
     <string name="hint_filter_button_delete">Antippen um den Filter zu entfernen</string>    <!-- https://de.wikipedia.org/wiki/Infinitivgruppe -->
+    <string name="hint_archive_button_delete">Antippen um den Artikel zu löschen</string>
     <string name="msg_filters_removed">Alle Filter wurden gelöscht.</string>
     <plurals name="msg_filters_stored">
         <item quantity="one">%1$d Filter gespeichert.</item>

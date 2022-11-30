@@ -14,6 +14,10 @@
         android:numericShortcut="1"
         android:title="@string/action_teletext"/>
     <item
+        android:id="@+id/action_archive"
+        android:title="@string/action_archive"
+        />
+    <item
         android:id="@+id/action_shortcut_create"
         android:alphabeticShortcut="l"
         android:numericShortcut="2"

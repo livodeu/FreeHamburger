@@ -47,6 +47,10 @@ public final class News implements Comparable<News>, Serializable {
     public static final String NEWS_TYPE_STORY = "story";
     public static final String NEWS_TYPE_VIDEO = "video";
     public static final String NEWS_TYPE_WEBVIEW = "webview";
+    /** a file that contains json data of a non-regional news item */
+    public static final String FILE_TAG = ".news";
+    /** a file that contains json data of a regional news item */
+    public static final String FILE_TAG_REGIONAL = ".rnews";
     private static final String TAG = "News";
     private static long nextid = 1L;
     /** the streams of differenty qualities (highest number found was all 7 StreamQualities) */
@@ -496,7 +500,7 @@ public final class News implements Comparable<News>, Serializable {
 
     @Nullable
     @NewsType
-    public final String getType() {
+    public String getType() {
         return this.type;
     }
 
@@ -586,7 +590,7 @@ public final class News implements Comparable<News>, Serializable {
 
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({FLAG_INCLUDE_HTMLEMBED})
+    @IntDef({0, FLAG_INCLUDE_HTMLEMBED})
     public @interface Flag {}
 
 }

@@ -13,6 +13,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -35,8 +36,13 @@ import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.snackbar.Snackbar;
+
+import java.io.File;
 
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
@@ -79,7 +85,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
 
     @VisibleForTesting
     @SuppressLint("SwitchIntDef")
-    public static int applyTheme(@NonNull final AppCompatActivity activity, @App.ResolvedBackgroundSelection final int bg, final boolean again) {
+    public static int applyTheme(@NonNull final AppCompatActivity activity, final boolean again) {
         // determine whether the Activity should display a ⁝ menu item
         boolean overflowButton = (!(activity instanceof HamburgerActivity) || ((HamburgerActivity) activity).hasMenuOverflowButton());
         @StyleRes final int resid = overflowButton ? R.style.AppTheme : R.style.AppTheme_NoOverflowButton;
@@ -110,7 +116,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         @App.BackgroundSelection int background = prefs.getInt(App.PREF_BACKGROUND, App.BACKGROUND_AUTO);
         // select theme based on the background
         if (background == App.BACKGROUND_AUTO) background = Util.isNightMode(activity) ? App.BACKGROUND_NIGHT : App.BACKGROUND_DAY;
-        applyTheme(activity, background, again);
+        applyTheme(activity, again);
         return background;
     }
 
@@ -142,7 +148,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
      * The preferred number of columns for either portrait or landscape orientation has changed.
      * @param prefs SharedPreferences
      */
-    void onColumnCountChanged(SharedPreferences prefs)  {
+    void onColumnCountChanged(@NonNull SharedPreferences prefs)  {
         //NOP
     }
 
@@ -153,7 +159,6 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         super.onCreate(savedInstanceState);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.registerOnSharedPreferenceChangeListener(this);
-        //App.setNightMode(prefs);
         this.background = applyTheme(this, prefs, false);
         setContentView(getMainLayout());
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -236,7 +241,6 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     @CallSuper
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "onServiceConnected(" + name + ", " + service + ")");
         if (service instanceof HamburgerService.HamburgerServiceBinder) {
             this.service = ((HamburgerService.HamburgerServiceBinder) service).getHamburgerService();
         } else if (service instanceof FrequentUpdatesService.FrequentUpdatesServiceBinder) {
@@ -262,7 +266,8 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
     /** {@inheritDoc} */
     @Override
     @CallSuper
-    public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+    public void onSharedPreferenceChanged(SharedPreferences prefs, @Nullable String key) {
+        if (prefs == null) return;
         if (App.PREF_BACKGROUND.equals(key)) {
             this.background = applyTheme(this, prefs, true);
         } else if (App.PREF_ORIENTATION.equals(key)) {
@@ -270,6 +275,40 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         } else if (App.PREF_COLS_PORTRAIT.equals(key) || App.PREF_COLS_LANDSCAPE.equals(key)) {
             onColumnCountChanged(prefs);
         }
+    }
+
+    /**
+     * Selects the LayoutManager for the RecyclerView, based on the screen size.<br>
+     * With horizontal separator values of 7.5 and 6,
+     * a 10-inch tablet in landscape mode should show 3 columns,
+     * a 7-inch tablet in landscape mode should show 2 columns,
+     * all other devices/orientations should have 1 column.<br>
+     * Note: the number of columns might be reduced after loading the data if the number of News items is less than the normal number of columns (see {@link #parseLocalFileAsync(File)})<br>
+     * Screen sizes in dp:
+     * <ul>
+     * <li>10"-tablet avd is 1280 dp x 648 dp in landscape mode and 720 dp x 1208 dp in portrait mode</li>
+     * <li>7"-tablet avd is 1024 dp x 528 dp in landscape mode and 600 dp x 952 dp in portrait mode</li>
+     * <li>6.5" phone with 2400 px x 1080 px is 774 dp x 359 dp in landscape mode and 384 dp x 774 dp in portrait mode</li>
+     * <li>5.2" phone with 1920 px x 1080 px is 592 dp x 336 dp in landscape mode and 360 dp x 568 dp in portrait mode</li>
+     * </ul>
+     * The aforementioned values are reduced by ca. 50% in one dimension if the app runs in multi-window mode!
+     */
+    protected void selectLayoutManager(@Nullable SharedPreferences prefs, RecyclerView recyclerView) {
+        if (recyclerView == null) return;
+        Configuration c = getResources().getConfiguration();
+        RecyclerView.LayoutManager old = recyclerView.getLayoutManager();
+        if (prefs == null) prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        int preferredCols = c.orientation == Configuration.ORIENTATION_PORTRAIT ? prefs.getInt(App.PREF_COLS_PORTRAIT, 0) : prefs.getInt(App.PREF_COLS_LANDSCAPE, 0);
+        final int numColumns = preferredCols > 0 ? preferredCols : getResources().getInteger(R.integer.num_columns);
+        if (numColumns == 1) {
+            if (old instanceof LinearLayoutManager && !(old instanceof GridLayoutManager)) return;
+            LinearLayoutManager llm = new LinearLayoutManager(this);
+            recyclerView.setLayoutManager(llm);
+            return;
+        }
+        if (old instanceof GridLayoutManager && ((GridLayoutManager)old).getSpanCount() == numColumns) return;
+        GridLayoutManager glm = new GridLayoutManager(this, numColumns);
+        recyclerView.setLayoutManager(glm);
     }
 
     /**

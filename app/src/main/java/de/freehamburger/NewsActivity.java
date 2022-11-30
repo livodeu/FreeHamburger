@@ -35,7 +35,6 @@ import android.text.Spannable;
 import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
-import android.text.method.LinkMovementMethod;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ImageSpan;
 import android.text.style.LineBackgroundSpan;
@@ -84,6 +83,7 @@ import com.squareup.picasso.Target;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -125,8 +125,9 @@ import okhttp3.Call;
 public class NewsActivity extends HamburgerActivity implements AudioManager.OnAudioFocusChangeListener, RelatedAdapter.OnRelatedClickListener, ServiceConnection {
 
     static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
+    static final String EXTRA_JSON = BuildConfig.APPLICATION_ID + ".extra.json";
     /** boolean; if true, the ActionBar will not show the home arrow which would lead the user to the MainActivity */
-    private static final String EXTRA_NO_HOME_AS_UP = "extra_no_home_as_up";
+    static final String EXTRA_NO_HOME_AS_UP = "extra_no_home_as_up";
     /** pictures are scaled to this percentage of the available width */
     private static final int SCALE_PICTURES_TO_PERCENT = 90;
     private static final String TAG = "NewsActivity";
@@ -144,6 +145,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     @Nullable @VisibleForTesting ExoPlayer exoPlayerBottomVideo;
     /** passed with the Intent as extra {@link #EXTRA_NEWS} */
     private News news;
+    private String json;
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
     private StyledPlayerView topVideoView;    /** Listener for the audio */
     private final PlayerListener listenerAudio = new PlayerListener(this,true) {
@@ -818,6 +820,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     }
                     Intent intent = new Intent(this, NewsActivity.class);
                     intent.putExtra(NewsActivity.EXTRA_NEWS, news);
+                    intent.putExtra(NewsActivity.EXTRA_JSON, result.file.getAbsolutePath());
                     // prevent going "back" to MainActivity because the preceding activity is <this>, not a MainActivity
                     intent.putExtra(NewsActivity.EXTRA_NO_HOME_AS_UP, true);
                     startActivity(intent);
@@ -1012,6 +1015,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
 
         this.news = (News) intent.getSerializableExtra(EXTRA_NEWS);
+        this.json = intent.getStringExtra(EXTRA_JSON);
         if (ab != null && this.news != null) {
             String topline = this.news.getTopline();
             if (TextUtils.isEmpty(topline)) topline = this.news.getTitle();
@@ -1072,6 +1076,35 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             }
             return true;
         }
+        if (id == R.id.action_archive) {
+            if (Archive.isArchived(this, this.news)) {
+                Snackbar.make(this.coordinatorLayout, R.string.error_archived_already, Snackbar.LENGTH_SHORT).show();
+                return true;
+            }
+            if (this.json == null) {
+                if (this.news.getDetails() == null) return true;
+                File tmp;
+                try {
+                    tmp = File.createTempFile("json", this.news.isRegional() ? News.FILE_TAG_REGIONAL : News.FILE_TAG);
+                    this.service.loadFile(this.news.getDetails(), tmp, (completed, result) -> {
+                        if (!completed || result == null || result.file == null || result.rc > 299) {
+                            Snackbar.make(this.coordinatorLayout, R.string.error_archived_failure, Snackbar.LENGTH_SHORT).show();
+                            return;
+                        }
+                        boolean success = Archive.saveNews(this, this.news, result.file);
+                        Snackbar.make(this.coordinatorLayout, success ? R.string.msg_archived_success : R.string.error_archived_failure, Snackbar.LENGTH_SHORT).show();
+                    });
+                } catch (IOException e) {
+                    if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+                }
+            } else {
+                File jsonFile = new File(this.json);
+                if (!jsonFile.isFile()) return true;
+                boolean success = Archive.saveNews(this, this.news, jsonFile);
+                Snackbar.make(this.coordinatorLayout, success ? R.string.msg_archived_success : R.string.error_archived_failure, Snackbar.LENGTH_SHORT).show();
+                return true;
+            }
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -1116,6 +1149,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         //
         MenuItem menuItemPrint = menu.findItem(R.id.action_print);
         menuItemPrint.setEnabled(PrintUtil.canPrint(this.news));
+        MenuItem menuItemArchive = menu.findItem(R.id.action_archive);
+        menuItemArchive.setVisible((this.json != null && new File(this.json).isFile()) || (this.news != null && this.news.getDetails() != null));
         // reading (aloud) is possible once tts has been initialised
         MenuItem menuItemRead = menu.findItem(R.id.action_read);
         if (this.tts != null && this.ttsInitialised) {

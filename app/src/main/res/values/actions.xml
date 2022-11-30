@@ -1,0 +1,3 @@
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="PluralsCandidate">
+	<string name="appaction_archive_import" translatable="false">de.freehamburger.action.import_archive</string>
+</resources> 

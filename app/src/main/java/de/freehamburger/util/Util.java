@@ -128,7 +128,7 @@ public class Util {
     private static final Typeface NORMAL = Typeface.create("sans-serif", Typeface.NORMAL);
     /** Throwables that might carry important information about a playback failure */
     private static final Collection<Class<? extends Throwable>> POSSIBLE_PLAYBACK_ERROR_CAUSES = Arrays.asList(UnknownHostException.class, SSLPeerUnverifiedException.class, HttpDataSource.InvalidResponseCodeException.class);
-    private static final String PROTOCOL_ANDROID_APP = "android-app://";
+    public static final String PROTOCOL_ANDROID_APP = "android-app://";
     private static final String TAG = "Util";
     /**
      * Selection of wrong quotation marks<br>
@@ -809,7 +809,6 @@ public class Util {
      * @return space used in bytes
      */
     @RequiresApi(21)
-    @VisibleForTesting
     public static long getOccupiedSpace(@Nullable File file) {
         if (file == null) return 0L;
         long space;
@@ -841,51 +840,48 @@ public class Util {
     }
 
     /**
-     * Returns a resource's name.
+     * Returns a textual representation of a time difference, e.g. "2¼ hours ago".
      * @param ctx Context
-     * @param id resource id
-     * @return resource name
+     * @param timestamp timestamp
+     * @param basedOn Date (set to {@code null} to compare time to current time)
+     * @return relative time
+     * @throws NullPointerException if {@code ctx} is {@code null} and {@code time} is not {@code null}
      */
     @NonNull
-    public static String getResourceName(Context ctx, int id) {
-        if (id == 0xffffffff) return "";
-        Resources r = ctx.getResources();
-        if (r == null) return "<NOR>";
-        StringBuilder out = new StringBuilder();
-        try {
-            String pkgname;
-            switch (id & 0xff000000) {
-                case 0x7f000000:
-                    pkgname = "app";
-                    break;
-                case 0x01000000:
-                    pkgname = "android";
-                    break;
-                default:
-                    pkgname = r.getResourcePackageName(id);
-                    break;
-            }
-            String typename;
-            try {
-                typename = r.getResourceTypeName(id);
-            } catch (UnsupportedOperationException ee) {
-                typename = "<null>";
-            }
-            String entryname;
-            try {
-                entryname = r.getResourceEntryName(id);
-            } catch (UnsupportedOperationException ee) {
-                entryname = "<null>";
-            }
-            out.append(pkgname);
-            out.append(":");
-            out.append(typename);
-            out.append("/");
-            out.append(entryname);
-        } catch (Resources.NotFoundException e) {
-            out.append("0x").append(Integer.toHexString(id));
+    public static String getRelativeTime(@NonNull Context ctx, long timestamp, @Nullable Date basedOn) {
+        if (timestamp == 0L) return "";
+        final long delta;
+        if (basedOn == null) {
+            delta = Math.abs(timestamp - System.currentTimeMillis());
+        } else {
+            delta = Math.abs(timestamp - basedOn.getTime());
         }
-        return out.toString();
+        if (delta < 60_000L) {
+            int seconds = (int)(delta / 1_000L);
+            return ctx.getResources().getQuantityString(R.plurals.label_time_rel_seconds, seconds, seconds);
+        }
+        if (delta < 60 * 60_000L) {
+            int minutes = (int)(delta / 60_000L);
+            return ctx.getResources().getQuantityString(R.plurals.label_time_rel_minutes, minutes, minutes);
+        }
+        if (delta < 24 * 60 * 60_000L) {
+            double dhours = delta / 3_600_000.;
+            int hours = (int)dhours;
+            final double frac = dhours - (double)hours;
+            if (frac >= 0.125 && frac < 0.375) {
+                return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours1, hours, hours);
+            }
+            if (frac >= 0.375 && frac < 0.625) {
+                return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours2, hours, hours);
+            }
+            if (frac >= 0.625 && frac < 0.875) {
+                return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours3, hours, hours);
+            }
+            if (frac >= 0.875) hours++;
+            return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours, hours, hours);
+        }
+        int days = (int)(delta / 86_400_000L);
+        return ctx.getResources().getQuantityString(R.plurals.label_time_rel_days, days, days);
     }
 
     /**
@@ -902,30 +898,6 @@ public class Util {
             e = e.getCause();
         } while (e != null);
         return null;
-    }
-
-    /**
-     * @param crash Throwable
-     * @return stack trace
-     */
-    @NonNull
-    public static String getStackTrace(@NonNull Throwable crash) {
-        final StringBuilder sb = new StringBuilder(2048);
-        final StackTraceElement[] ste = crash.getStackTrace();
-        for (StackTraceElement st : ste) {
-            sb.append(st.getClassName()).append('.').append(st.getMethodName());
-            if (st.isNativeMethod()) sb.append("(native)");
-            String file = st.getFileName();
-            if (file != null) {
-                int ln = st.getLineNumber();
-                if (ln >= 0) sb.append('(').append(file).append(':').append(ln).append(')');
-                else sb.append('(').append(file).append(')');
-            } else {
-                sb.append("(unknown src)");
-            }
-            sb.append('\n');
-        }
-        return sb.toString().trim();
     }
 
     /**

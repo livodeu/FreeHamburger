@@ -203,6 +203,14 @@
         </activity>
 
         <activity
+            android:name=".Archive"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+            android:exported="false"
+            android:label="@string/action_archive"
+            android:windowSoftInputMode="stateHidden">
+        </activity>
+
+        <activity
             android:name=".PictureActivity"
             android:exported="false"
             android:label="@string/action_view_picture"

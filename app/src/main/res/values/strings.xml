@@ -6,6 +6,12 @@
     <string name="app_task_description" translatable="false">Hamburger - %1$s</string>
 
     <string name="action_add_filter">Add</string>
+    <string name="action_archive">Archive</string>
+    <string name="action_archive_put">Archive</string>
+    <string name="action_archive_clear">Delete all</string>
+    <string name="action_archive_export">Export</string>
+    <string name="action_archive_import">Import</string>
+    <string name="action_archive_import_ext">Import archive</string>
     <string name="action_background_disable">Disable</string>
     <string name="action_clear_cache">Clear cache</string>
     <string name="action_delete_log" translatable="false">Delete log</string>
@@ -59,6 +65,7 @@
     <string name="action_view_picture">View picture</string>
     <string name="action_widget_configure">Select Widget Source</string>
 
+    <string name="hint_archive_button_delete">Click to delete the archived news</string>
     <string name="hint_audio_content_play">Play audio content</string>
     <string name="hint_filter">The phrase to filter</string>
     <string name="hint_filter_add">Use the + button to add a new filter</string>
@@ -81,6 +88,12 @@
     <string name="intro_4">Tap an article to see details.</string>
     <string name="intro_5">Enjoy the app!</string>
 
+    <string name="error_archived_already">Article has been archived already.</string>
+    <string name="error_archived_failure">Failed to archive this article!</string>
+    <string name="error_archived_retrieval">Could not load archived article!</string>
+    <string name="error_archive_export_failed">Export failed!</string>
+    <string name="error_archive_import_failed">Import of \"%1$s\" failed!</string>
+    <string name="error_archived_parse_failed">\"%1$s\" does not seem to be a valid file! Delete?</string>
     <string name="error_audio_focus_denied">This cannot be played right now!</string>
     <string name="error_browser_failed">Cannot open a browser!</string>
     <string name="error_connection_failed">Failed to connect to %1$s!</string>
@@ -116,9 +129,11 @@
     <string name="error_unknown_host">has not been found</string>
     <string name="msg_widget_no_news">No contents at the moment.</string>
 
+    <string name="label_archive">Archive</string>
     <string name="label_ca">ca.</string>
     <string name="label_char_invalid">Invalid</string>
     <string name="label_cols_default">Default</string>
+    <string name="label_confirmation">Confirmation</string>
     <string name="label_current_cache_size">currently %1$d MB out of %2$d MB</string>
     <string name="label_current_cache_size_kb">currently %1$d kB out of %2$d MB</string>
     <string name="label_every_minutes">every %1$s minutes</string>
@@ -186,10 +201,22 @@
     <string name="label_widget_desc">Hamburger News</string>
     <string name="label_yes">Yes</string>
 
+    <string name="msg_archive_delete_all">Delete all archived articles? This releases %1$s kB.</string>
+    <string name="msg_archived_success">Archived successfullly.</string>
+    <string name="msg_archive_importing">Importing \"%1$s\"…</string>
+    <plurals name="msg_archive_import_result1">
+        <item quantity="one">Restored %1$d file</item>
+        <item quantity="other">Restored %1$d files</item>
+    </plurals>
+    <plurals name="msg_archive_import_result2">
+        <item quantity="one">skipped %1$d file</item>
+        <item quantity="other">skipped %1$d files</item>
+    </plurals>
     <string name="msg_background_active">Background queries are scheduled to occur every %1$s minutes.</string>
     <string name="msg_background_active_short">Background queries occur every %1$s min.</string>
     <string name="msg_background_inactive">Background queries are disabled.</string>
     <string name="msg_breaking_only_disabled">\"Breaking\" news are delivered only via the \"Home\" category</string>
+    <string name="msg_delete_confirm">Really delete \"%1$s\"?</string>
     <string name="msg_filters_disabled">Filters are now disabled.</string>
     <string name="msg_filters_enabled">Filters are now enabled.</string>
     <string name="msg_filters_removed">All filters have been removed.</string>
