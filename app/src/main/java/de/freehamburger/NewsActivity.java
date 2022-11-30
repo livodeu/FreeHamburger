@@ -35,6 +35,7 @@ import android.text.Spannable;
 import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ImageSpan;
 import android.text.style.LineBackgroundSpan;
@@ -584,6 +585,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         this.textViewContent.setTextIsSelectable(enableTextSelection);
         if (enableTextSelection) {
             Dictionary.enable(this.textViewContent);
+            // setting the MovementMethod here allows BOTH selection and clickable links
+            this.textViewContent.setMovementMethod(LinkMovementMethod.getInstance());
             // workaround for weird behaviour: scrollViewNews scrolls downwards by about 300-400 px on first text selection
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 ScrollView sv = findViewById(R.id.scrollViewNews);
