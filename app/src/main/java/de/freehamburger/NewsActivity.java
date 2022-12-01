@@ -663,8 +663,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         DefaultTrackSelector dts = new DefaultTrackSelector(this);
         // create ExoPlayer instances
         if (this.loadVideo) {
-            this.exoPlayerTopVideo = new ExoPlayer.Builder(this).setTrackSelector(dts).build();
-            this.exoPlayerBottomVideo = new ExoPlayer.Builder(this).setTrackSelector(dts).build();
+            this.exoPlayerTopVideo = new ExoPlayer.Builder(this).setTrackSelector(dts).setUsePlatformDiagnostics(false).build();
+            this.exoPlayerBottomVideo = new ExoPlayer.Builder(this).setTrackSelector(dts).setUsePlatformDiagnostics(false).build();
             // assign the ExoPlayer instances to their video views
             this.topVideoView.setPlayer(this.exoPlayerTopVideo);
             this.bottomVideoView.setPlayer(this.exoPlayerBottomVideo);
@@ -680,7 +680,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         } else {
             this.topVideoView.setVisibility(View.GONE);
         }
-        this.exoPlayerAudio =  new ExoPlayer.Builder(this).setTrackSelector(dts).build();
+        this.exoPlayerAudio =  new ExoPlayer.Builder(this).setTrackSelector(dts).setUsePlatformDiagnostics(false).build();
         // listen to state changes
         if (this.exoPlayerTopVideo != null) this.exoPlayerTopVideo.addListener(this.listenerTop);
         if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.addListener(this.listenerBottom);

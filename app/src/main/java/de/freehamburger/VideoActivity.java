@@ -142,7 +142,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
      */
     private void initPlayer() {
         // create ExoPlayer instance
-        this.exoPlayerVideo = new ExoPlayer.Builder(this).setTrackSelector(new DefaultTrackSelector(this)).build();
+        this.exoPlayerVideo = new ExoPlayer.Builder(this).setTrackSelector(new DefaultTrackSelector(this)).setUsePlatformDiagnostics(false).build();
         // assign the ExoPlayer instance to the video view
         this.playerView.setPlayer(this.exoPlayerVideo);
         View st = findViewById(R.id.exo_subtitles);
