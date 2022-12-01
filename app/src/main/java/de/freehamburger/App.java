@@ -20,7 +20,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
+import android.os.Looper;
 import android.text.TextUtils;
 
 import androidx.annotation.AnyThread;
@@ -31,9 +31,12 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.StringDef;
 import androidx.annotation.VisibleForTesting;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.material.color.DynamicColors;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.squareup.picasso.Request;
 
 import java.io.File;
@@ -183,6 +186,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** float */
     public static final String PREF_POLL_NIGHT_END = "pref_poll_night_end";
     public static final float PREF_POLL_NIGHT_END_DEFAULT = 6f;
+    /** boolean */
+    public static final String PREF_POLL_ASK_SWITCHOFF = "pref_poll_ask_switchoff";
+    public static final boolean PREF_POLL_ASK_SWITCHOFF_DEFAULT = true;
     /** boolean -  See <a href="https://en.wikipedia.org/wiki/Quotation_mark#German">here</a> */
     public static final String PREF_CORRECT_WRONG_QUOTATION_MARKS = "pref_correct_quotation_marks";
     public static final boolean PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT = false;
@@ -715,6 +721,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
         FileDeleter.run();
 
+        // Android 13 - if the user stopped the app from the notification area, ask user whether to stop background updates
+        askWhetherToStopPolling(prefs);
+
         new Thread() {
             @Override
             public void run() {
@@ -722,6 +731,41 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 Util.clearAppWebview(App.this);
             }
         }.start();
+    }
+
+    /**
+     * For new behaviour in Android 13 / API 33:<br>
+     * If the user stopped the app from the notification area, ask user whether to stop background updates.
+     * @param prefs SharedPreferences
+     */
+    @TargetApi(Build.VERSION_CODES.R)
+    private void askWhetherToStopPolling(@NonNull final SharedPreferences prefs) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return;
+        // if the latest process exit was user-initiated AND if background updates are active AND if the user wishes to be asked…
+        if (prefs.getBoolean(PREF_POLL_ASK_SWITCHOFF, PREF_POLL_ASK_SWITCHOFF_DEFAULT)
+                && prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)
+                && Util.isRecentExitStopApp(this)) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (this.currentActivity == null || this.currentActivity.isFinishing()) return;
+                AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this.currentActivity)
+                        .setTitle(R.string.pref_header_polling)
+                        .setMessage(R.string.msg_background_switchoff)
+                        .setNeutralButton(R.string.label_dont_ask_again, (dialog, which) -> {
+                            dialog.cancel();
+                            SharedPreferences.Editor ed = prefs.edit();
+                            ed.putBoolean(PREF_POLL_ASK_SWITCHOFF, false);
+                            ed.apply();
+                        })
+                        .setNegativeButton(R.string.label_no, (dialog, which) -> dialog.cancel())
+                        .setPositiveButton(R.string.label_yes, (dialog, which) -> {
+                            dialog.dismiss();
+                            SharedPreferences.Editor ed = prefs.edit();
+                            ed.putBoolean(PREF_POLL, false);
+                            ed.apply();
+                        });
+                builder.show();
+            }, 5_000L);
+        }
     }
 
     /** {@inheritDoc} */

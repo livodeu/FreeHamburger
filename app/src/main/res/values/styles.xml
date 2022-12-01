@@ -105,9 +105,6 @@
     </style>
 
     <style name="AppTheme.Launcher">
-        <item name="colorPrimary">@android:color/transparent</item>
-        <item name="colorPrimaryDark">@android:color/transparent</item>
-        <item name="colorAccent">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowBackground">@drawable/color_primary_to_grey_gradient</item>
     </style>

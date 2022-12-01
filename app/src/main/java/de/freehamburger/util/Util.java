@@ -3,7 +3,10 @@ package de.freehamburger.util;
 import android.Manifest;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.ApplicationExitInfo;
 import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ComponentName;
@@ -1158,6 +1161,39 @@ public class Util {
      */
     public static boolean isNightMode(@NonNull Context ctx) {
         return (ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    /**
+     * Determines whether the most recent process exit was caused by the user stopping the app.<br>
+     * Can be caused via <pre>adb shell cmd activity stop-app &lt;package&gt;</pre>
+     * @param ctx Context
+     * @return true / false
+     */
+    @TargetApi(Build.VERSION_CODES.R)
+    public static boolean isRecentExitStopApp(@NonNull Context ctx) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false;
+        ActivityManager am = (ActivityManager)ctx.getSystemService(Context.ACTIVITY_SERVICE);
+        if (am == null) return false;
+        List<ApplicationExitInfo> exits = am.getHistoricalProcessExitReasons(ctx.getPackageName(), 0, 0);
+        if (exits.isEmpty()) return false;
+        ApplicationExitInfo latest = exits.get(0);
+        int subReason = 0;
+        try {
+            String s = latest.toString();
+            int sr0 = s.indexOf("subreason=");
+            int sr1 = s.indexOf(' ', sr0 + 10);
+            if (sr0 >= 0 && sr1 > sr0) subReason = Integer.parseInt(s.substring(sr0 + 10, sr1));
+        } catch (Exception ignored) {
+        }
+        if (BuildConfig.DEBUG) Log.i(TAG, "Latest process exit at "
+                + DateFormat.getDateTimeInstance().format(new java.util.Date(latest.getTimestamp()))
+                + " (Reason "
+                + latest.getReason()
+                + ", sub-reason "
+                + subReason
+                + "): "
+                + latest.getDescription());
+        return latest.getReason() == ApplicationExitInfo.REASON_USER_REQUESTED && subReason == 23;
     }
 
     /**

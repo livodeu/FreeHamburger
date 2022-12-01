@@ -67,6 +67,8 @@
     <string name="msg_shortcut_exists">Die Verknüpfung existiert bereits.</string>
     <string name="app_build_date">Erstelldatum: %1$s</string>
     <string name="app_license">Diese App wird lizenziert unter der „GNU Affero General Public License v3.0”</string>
+    <string name="label_dont_ask_again">Nicht wieder fragen</string>
+    <string name="msg_background_switchoff">Sie haben diese App kürzlich gestoppt. Sollen die Hintergrundaktualisierungen unterbunden werden?</string>
     <string name="pref_title_ask_before_finish">Vor dem Beenden</string>
     <string name="pref_title_ask_before_finish_off">nichts tun.</string>
     <string name="pref_title_ask_before_finish_on">nach Bestätigung fragen.</string>
