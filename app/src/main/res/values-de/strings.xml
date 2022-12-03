@@ -151,29 +151,57 @@
         <item quantity="one">vor %1$d Sekunde</item>
         <item quantity="other">vor %1$d Sekunden</item>
     </plurals>
+    <plurals name="label_time_rel_seconds_short">
+        <item quantity="one">vor %1$d s</item>
+        <item quantity="other">vor %1$d s</item>
+    </plurals>
     <plurals name="label_time_rel_minutes">
         <item quantity="one">vor %1$d Minute</item>
         <item quantity="other">vor %1$d Minuten</item>
+    </plurals>
+    <plurals name="label_time_rel_minutes_short">
+        <item quantity="one">vor %1$d min</item>
+        <item quantity="other">vor %1$d min</item>
     </plurals>
     <plurals name="label_time_rel_hours">
         <item quantity="one">vor %1$d Stunde</item>
         <item quantity="other">vor %1$d Stunden</item>
     </plurals>
+    <plurals name="label_time_rel_hours_short">
+        <item quantity="one">vor %1$d h</item>
+        <item quantity="other">vor %1$d h</item>
+    </plurals>
     <plurals name="label_time_rel_hours1">
         <item quantity="one">vor %1$d¼ Stunden</item>
         <item quantity="other">vor %1$d¼ Stunden</item>
+    </plurals>
+    <plurals name="label_time_rel_hours1_short">
+        <item quantity="one">vor %1$d¼ h</item>
+        <item quantity="other">vor %1$d¼ h</item>
     </plurals>
     <plurals name="label_time_rel_hours2">
         <item quantity="one">vor %1$d½ Stunden</item>
         <item quantity="other">vor %1$d½ Stunden</item>
     </plurals>
+    <plurals name="label_time_rel_hours2_short">
+        <item quantity="one">vor %1$d½ h</item>
+        <item quantity="other">vor %1$d½ h</item>
+    </plurals>
     <plurals name="label_time_rel_hours3">
         <item quantity="one">vor %1$d¾ Stunden</item>
         <item quantity="other">vor %1$d¾ Stunden</item>
     </plurals>
+    <plurals name="label_time_rel_hours3_short">
+        <item quantity="one">vor %1$d¾ h</item>
+        <item quantity="other">vor %1$d¾ h</item>
+    </plurals>
     <plurals name="label_time_rel_days">
         <item quantity="one">vor %1$d Tag</item>
         <item quantity="other">vor %1$d Tagen</item>
+    </plurals>
+    <plurals name="label_time_rel_days_short">
+        <item quantity="one">vor %1$d T.</item>
+        <item quantity="other">vor %1$d T.</item>
     </plurals>
     <string name="pref_title_click_for_cats">Kategorien öffnen</string>
     <string name="pref_title_click_for_cats_off">nur durch Wischgeste</string>

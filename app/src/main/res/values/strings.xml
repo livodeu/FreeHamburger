@@ -174,29 +174,57 @@
         <item quantity="one">%1$d second ago</item>
         <item quantity="other">%1$d seconds ago</item>
     </plurals>
+    <plurals name="label_time_rel_seconds_short">
+        <item quantity="one">%1$d sec ago</item>
+        <item quantity="other">%1$d sec ago</item>
+    </plurals>
     <plurals name="label_time_rel_minutes">
         <item quantity="one">%1$d minute ago</item>
         <item quantity="other">%1$d minutes ago</item>
+    </plurals>
+    <plurals name="label_time_rel_minutes_short">
+        <item quantity="one">%1$d min ago</item>
+        <item quantity="other">%1$d min ago</item>
     </plurals>
     <plurals name="label_time_rel_hours">
         <item quantity="one">%1$d hour ago</item>
         <item quantity="other">%1$d hours ago</item>
     </plurals>
+    <plurals name="label_time_rel_hours_short">
+        <item quantity="one">%1$d h ago</item>
+        <item quantity="other">%1$d h ago</item>
+    </plurals>
     <plurals name="label_time_rel_hours1">
         <item quantity="one">%1$d¼ hours ago</item>
         <item quantity="other">%1$d¼ hours ago</item>
+    </plurals>
+    <plurals name="label_time_rel_hours1_short">
+        <item quantity="one">%1$d¼ h ago</item>
+        <item quantity="other">%1$d¼ h ago</item>
     </plurals>
     <plurals name="label_time_rel_hours2">
         <item quantity="one">%1$d½ hours ago</item>
         <item quantity="other">%1$d½ hours ago</item>
     </plurals>
+    <plurals name="label_time_rel_hours2_short">
+        <item quantity="one">%1$d½ h ago</item>
+        <item quantity="other">%1$d½ h ago</item>
+    </plurals>
     <plurals name="label_time_rel_hours3">
         <item quantity="one">%1$d¾ hours ago</item>
         <item quantity="other">%1$d¾ hours ago</item>
     </plurals>
+    <plurals name="label_time_rel_hours3_short">
+        <item quantity="one">%1$d¾ h ago</item>
+        <item quantity="other">%1$d¾ h ago</item>
+    </plurals>
     <plurals name="label_time_rel_days">
         <item quantity="one">%1$d day ago</item>
         <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <plurals name="label_time_rel_days_short">
+        <item quantity="one">%1$d d. ago</item>
+        <item quantity="other">%1$d d. ago</item>
     </plurals>
     <string name="label_website_errors">Web site errors</string>
     <string name="label_widget_desc">Hamburger News</string>

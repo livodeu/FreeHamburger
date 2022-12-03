@@ -216,7 +216,13 @@ public class NewsView extends RelativeLayout {
         Date date = news.getDate();
         if (date != null) {
             boolean timeMode = prefs.getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
-            this.textViewDate.setText(timeMode ? Util.getRelativeTime(ctx, date.getTime(), null) : DF.format(date));
+            if (timeMode) {
+                String longDate = Util.getRelativeTime(ctx, date.getTime(), null, false);
+                String shortDate = Util.getRelativeTime(ctx, date.getTime(), null, true);
+                Util.fitText(this.textViewDate, longDate, shortDate);
+            } else {
+                this.textViewDate.setText(DF.format(date));
+            }
         } else {
             this.textViewDate.setText(null);
         }

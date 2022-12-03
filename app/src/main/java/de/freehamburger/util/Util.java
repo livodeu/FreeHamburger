@@ -44,6 +44,7 @@ import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.Menu;
@@ -69,6 +70,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RawRes;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
+import androidx.annotation.Size;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
@@ -527,6 +529,38 @@ public class Util {
     }
 
     /**
+     * Puts the longest out of a selection of texts that fits into a TextView.
+     * @param tv TextView
+     * @param txts alternative texts, <em>ordered from longest to shortest</em>
+     */
+    public static void fitText(@NonNull final TextView tv, @NonNull @Size(min = 1) final String... txts) {
+        int w = tv.getWidth() - tv.getPaddingStart() - tv.getPaddingEnd() - 8;
+        if (w <= 0) {
+            tv.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+                @Override
+                public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                    if (right - left <= 0) return;
+                    tv.removeOnLayoutChangeListener(this);
+                    fitText(tv, txts);
+                }
+            });
+            return;
+        }
+        final TextPaint tp = tv.getPaint();
+        final Rect r = new Rect();
+        for (String txt : txts) {
+            tp.getTextBounds(txt, 0, txt.length(), r);
+            if (r.width() <= w) {
+                tv.setEllipsize(null);
+                tv.setText(txt);
+                return;
+            }
+        }
+        if (txts.length == 0) return;
+        tv.setText(txts[txts.length - 1]);
+    }
+
+    /**
      * Replaces "Text." with „Text.“<br>
      * Lower/first is „ (0x201e), upper/last is “ (0x201c).<br>
      * See <a href="https://en.wikipedia.org/wiki/Quotation_mark#German">here</a> &amp; <a href="https://de.wikipedia.org/wiki/Anf%C3%BChrungszeichen#Anf%C3%BChrungszeichen_im_Deutschen">hier</a>.<br>
@@ -842,16 +876,21 @@ public class Util {
         return space;
     }
 
+    public static String getRelativeTime(@NonNull Context ctx, long timestamp, @Nullable Date basedOn) {
+        return getRelativeTime(ctx, timestamp, basedOn, false);
+    }
+
     /**
      * Returns a textual representation of a time difference, e.g. "2¼ hours ago".
      * @param ctx Context
      * @param timestamp timestamp
      * @param basedOn Date (set to {@code null} to compare time to current time)
+     * @param s true to return a short variant
      * @return relative time
      * @throws NullPointerException if {@code ctx} is {@code null} and {@code time} is not {@code null}
      */
     @NonNull
-    public static String getRelativeTime(@NonNull Context ctx, long timestamp, @Nullable Date basedOn) {
+    public static String getRelativeTime(@NonNull Context ctx, long timestamp, @Nullable Date basedOn, final boolean s) {
         if (timestamp == 0L) return "";
         final long delta;
         if (basedOn == null) {
@@ -861,30 +900,30 @@ public class Util {
         }
         if (delta < 60_000L) {
             int seconds = (int)(delta / 1_000L);
-            return ctx.getResources().getQuantityString(R.plurals.label_time_rel_seconds, seconds, seconds);
+            return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_seconds_short : R.plurals.label_time_rel_seconds, seconds, seconds);
         }
         if (delta < 60 * 60_000L) {
             int minutes = (int)(delta / 60_000L);
-            return ctx.getResources().getQuantityString(R.plurals.label_time_rel_minutes, minutes, minutes);
+            return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_minutes_short : R.plurals.label_time_rel_minutes, minutes, minutes);
         }
         if (delta < 24 * 60 * 60_000L) {
             double dhours = delta / 3_600_000.;
             int hours = (int)dhours;
             final double frac = dhours - (double)hours;
             if (frac >= 0.125 && frac < 0.375) {
-                return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours1, hours, hours);
+                return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_hours1_short : R.plurals.label_time_rel_hours1, hours, hours);
             }
             if (frac >= 0.375 && frac < 0.625) {
-                return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours2, hours, hours);
+                return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_hours2_short : R.plurals.label_time_rel_hours2, hours, hours);
             }
             if (frac >= 0.625 && frac < 0.875) {
-                return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours3, hours, hours);
+                return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_hours3_short : R.plurals.label_time_rel_hours3, hours, hours);
             }
             if (frac >= 0.875) hours++;
-            return ctx.getResources().getQuantityString(R.plurals.label_time_rel_hours, hours, hours);
+            return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_hours_short : R.plurals.label_time_rel_hours, hours, hours);
         }
         int days = (int)(delta / 86_400_000L);
-        return ctx.getResources().getQuantityString(R.plurals.label_time_rel_days, days, days);
+        return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_days_short : R.plurals.label_time_rel_days, days, days);
     }
 
     /**
