@@ -16,7 +16,7 @@
     <string name="action_print">Drucken</string>
     <string name="label_archive">Archiv</string>
     <string name="label_confirmation">Bestätigung</string>
-    <string name="msg_archive_delete_all">Alle archivierten Artikel löschen?\nEs werden %1$s kB Speicherplatz freigegeben.</string>
+    <string name="msg_archive_delete_all">Alle archivierten Artikel löschen?\nDies kann nicht rückgängig gemacht werden!\nEs werden %1$s kB Speicherplatz freigegeben.</string>
     <string name="msg_archive_importing">Importiere „%1$s”…</string>
     <plurals name="msg_archive_import_result1">
         <item quantity="one">%1$d Datei wiederhergestellt</item>

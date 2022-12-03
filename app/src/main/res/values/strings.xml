@@ -229,7 +229,7 @@
     <string name="label_widget_desc">Hamburger News</string>
     <string name="label_yes">Yes</string>
 
-    <string name="msg_archive_delete_all">Delete all archived articles? This releases %1$s kB.</string>
+    <string name="msg_archive_delete_all">Delete all archived articles?\nThis cannot be undone!\nThis releases %1$s kB.</string>
     <string name="msg_archived_success">Archived successfullly.</string>
     <string name="msg_archive_importing">Importing \"%1$s\"…</string>
     <plurals name="msg_archive_import_result1">
