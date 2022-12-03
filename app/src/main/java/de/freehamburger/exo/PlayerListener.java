@@ -1,7 +1,6 @@
-package de.freehamburger.util;
+package de.freehamburger.exo;
 
 import android.app.Activity;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.CallSuper;
@@ -15,7 +14,9 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
 import de.freehamburger.BuildConfig;
-import de.freehamburger.R;
+import de.freehamburger.util.CoordinatorLayoutHolder;
+import de.freehamburger.util.Log;
+import de.freehamburger.util.Util;
 
 /**
  * Implementation of ExoPlayer's Player.Listener that wraps the player state and the play-when-ready flag.
@@ -97,7 +98,6 @@ public class PlayerListener implements Player.Listener {
      */
     @Override
     public final void onPlayWhenReadyChanged(boolean playWhenReady, @Player.PlayWhenReadyChangeReason int reason) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "onPlayWhenReadyChanged(" + playWhenReady + ", " + playWhenReadyReason(reason) + ")");
         this.exoPlayerPlayWhenReady = playWhenReady;
         onPlayerStateOrOnPlayWhenReadyChanged();
     }
@@ -107,7 +107,6 @@ public class PlayerListener implements Player.Listener {
      */
     @Override
     public final void onPlaybackStateChanged(@Player.State int playbackState) {
-        if (BuildConfig.DEBUG) Log.i(TAG, "onPlaybackStateChanged(" + playbackState(playbackState) + ")");
         this.exoPlayerState = playbackState;
         onPlayerStateOrOnPlayWhenReadyChanged();
     }
@@ -118,14 +117,13 @@ public class PlayerListener implements Player.Listener {
     @Override
     @CallSuper
     public void onPlayerError(@NonNull PlaybackException error) {
-        if (BuildConfig.DEBUG) Log.e(TAG, "onPlayerError(" + error + ")");
+        if (BuildConfig.DEBUG) Log.w(TAG, "onPlayerError(" + error + ")");
         if (!this.showErrors) return;
         Activity activity = this.refActivity.get();
         if (activity == null) return;
         String msg = Util.playbackExceptionMsg(activity, error);
-        View coordinatorLayout = activity.findViewById(R.id.coordinator_layout);
-        if (coordinatorLayout != null) {
-            Snackbar sb = Snackbar.make(coordinatorLayout, msg, Snackbar.LENGTH_LONG);
+        if (activity instanceof CoordinatorLayoutHolder) {
+            Snackbar sb = Snackbar.make(((CoordinatorLayoutHolder)activity).getCoordinatorLayout(), msg, Snackbar.LENGTH_LONG);
             Util.setSnackbarFont(sb, Util.CONDENSED, 14f);
             sb.show();
         } else {

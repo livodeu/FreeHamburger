@@ -47,9 +47,13 @@
             android:focusableInTouchMode="false"
             android:minHeight="@dimen/bottomsheet_height"
             android:layerType="hardware"
+            app:scrubber_color="@color/colorExoScrubber"
+            app:show_timeout="@integer/exo_controller_timeout"
             app:surface_type="texture_view"
             app:resize_mode="fit"
-            app:use_controller="false"
+            app:use_controller="true"
+            app:show_next_button="false"
+            app:show_previous_button="false"
             />
 
         <TextView
@@ -68,20 +72,6 @@
             android:textColor="@color/colorDirtyWhite"
             tools:text="Video title again"/>
 
-        <ImageView
-            android:id="@+id/bottomVideoPauseIndicator"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:elevation="50dp"
-            android:src="@drawable/ic_pause_black_24dp"
-            android:scaleX="3"
-            android:scaleY="3"
-            android:contentDescription="@string/hint_paused"
-            android:visibility="gone"
-            tools:visibility="visible"
-            app:tint="@color/colorAccent" />
     </RelativeLayout>
 
 

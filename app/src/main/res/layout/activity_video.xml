@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/fullscreen_content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".VideoActivity"
-    >
+    tools:context=".VideoActivity">
 
     <com.google.android.exoplayer2.ui.StyledPlayerView
         android:id="@+id/playerView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_centerInParent="true"
         android:focusable="false"
         android:focusableInTouchMode="false"
         android:keepScreenOn="true"
         android:minHeight="200dp"
         app:resize_mode="fit"
-        app:use_controller="true"
+        app:scrubber_color="@color/colorExoScrubber"
+        app:show_timeout="@integer/exo_controller_timeout"
+        app:show_next_button="false"
         app:use_artwork="false"
-        />
+        app:use_controller="true" />
 
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
+        android:layout_gravity="center"
         android:elevation="10dp"
         android:indeterminate="true"
         android:visibility="gone"
-        tools:visibility="visible"/>
-</RelativeLayout>
+        tools:visibility="visible" />
+</FrameLayout>
 

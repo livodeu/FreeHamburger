@@ -1,4 +1,4 @@
-package de.freehamburger.util;
+package de.freehamburger.exo;
 
 import android.net.Uri;
 
@@ -60,7 +60,7 @@ public class MediaSourceHelper {
     @NonNull
     public MediaSource buildMediaSource(@NonNull Call.Factory cf, @NonNull Uri uri) {
         int contentType = com.google.android.exoplayer2.util.Util.inferContentType(uri);
-        if (contentType == C.TYPE_HLS) return buildHlsMediaSource(cf, uri);
+        if (contentType == C.CONTENT_TYPE_HLS) return buildHlsMediaSource(cf, uri);
         if (this.pms == null) {
             // call of OkHttpDataSourceFactory constructor could be replaced by "new DefaultHttpDataSourceFactory(USER_AGENT);" if extension-okhttp were not used
             DataSource.Factory dsf = new OkHttpDataSource.Factory(cf).setUserAgent(USER_AGENT);

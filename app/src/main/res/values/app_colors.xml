@@ -40,4 +40,7 @@
 
     <color name="colorContent">#ff000000</color>
 
+    <!-- the color of the 'scrubber' in StyledPlayerViews -->
+    <color name="colorExoScrubber">@color/color_secondary</color>
+
 </resources>

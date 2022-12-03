@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <integer name="exo_controller_timeout">2000</integer>
     <integer name="max_columns">4</integer>
     <integer name="max_lines_textview_firstsentence">10</integer>
     <integer name="max_lines_textview_title">3</integer>

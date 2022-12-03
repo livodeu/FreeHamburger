@@ -1,4 +1,4 @@
-package de.freehamburger.util;
+package de.freehamburger.exo;
 
 import androidx.annotation.NonNull;
 

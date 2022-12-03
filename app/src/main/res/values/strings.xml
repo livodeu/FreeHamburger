@@ -74,7 +74,6 @@
     <string name="hint_intro_will_be_played">The introduction will be shown during the next start.</string>
     <string name="hint_intro_will_not_be_played">The introduction will not be shown during the next start.</string>
     <string name="hint_menu_search">This menu item invokes the search function</string>
-    <string name="hint_paused">The video is paused.</string>
     <string name="hint_permission_location">Permit access to device location.</string>
     <string name="hint_pic">The illustration for this story</string>
     <string name="hint_search">Search</string>

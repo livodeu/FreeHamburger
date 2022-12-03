@@ -32,16 +32,16 @@ import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
 
 import java.lang.ref.WeakReference;
 
+import de.freehamburger.exo.ExoFactory;
+import de.freehamburger.exo.MediaSourceHelper;
+import de.freehamburger.exo.PlayerListener;
 import de.freehamburger.model.News;
 import de.freehamburger.model.StreamQuality;
 import de.freehamburger.util.Log;
-import de.freehamburger.util.MediaSourceHelper;
-import de.freehamburger.util.PlayerListener;
 import de.freehamburger.util.Util;
 import okhttp3.Call;
 
@@ -142,9 +142,13 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
      */
     private void initPlayer() {
         // create ExoPlayer instance
-        this.exoPlayerVideo = new ExoPlayer.Builder(this).setTrackSelector(new DefaultTrackSelector(this)).setUsePlatformDiagnostics(false).build();
+        this.exoPlayerVideo = ExoFactory.makeExoPlayer(this, null);
         // assign the ExoPlayer instance to the video view
         this.playerView.setPlayer(this.exoPlayerVideo);
+        View backSeconds = playerView.findViewById(R.id.exo_rew_with_amount);
+        if (backSeconds != null) backSeconds.setVisibility(View.GONE);
+        View fwdSeconds = playerView.findViewById(R.id.exo_ffwd_with_amount);
+        if (fwdSeconds != null) fwdSeconds.setVisibility(View.GONE);
         View st = findViewById(R.id.exo_subtitles);
         if (st != null) st.setVisibility(View.GONE);
         // listen to state changes
@@ -237,6 +241,9 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
         this.news = (News) getIntent().getSerializableExtra(EXTRA_NEWS);
 
         this.playerView = findViewById(R.id.playerView);
+        // show the |< button only if it's not live video
+        this.playerView.setShowPreviousButton(this.news != null && !this.news.isLiveStream());
+        //
         this.progressBar = findViewById(R.id.progressBar);
         getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(visibility -> {
             if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
@@ -330,7 +337,6 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
         } else {
             this.playerView.setVisibility(View.GONE);
         }
-
 
     }
 
@@ -446,7 +452,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
      * If the target value is {@code 0}, {@link #stop(boolean)} is called.
      */
     static class FlexiFader extends Thread {
-        @Nullable
+        @NonNull
         private final WeakReference<VideoActivity> refActivity;
         @FloatRange(from = 0, to = 1) private final float from, to;
         private final long period;
@@ -479,9 +485,8 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
         /** {@inheritDoc} */
         @Override
         public void run() {
-            if (this.refActivity == null) return;
             VideoActivity videoActivity = this.refActivity.get();
-            if (videoActivity.exoPlayerVideo == null) return;
+            if (videoActivity == null || videoActivity.exoPlayerVideo == null) return;
             final long interval = this.period >= 250L ? this.period / 10 : 25L;
             final float step = this.from < this.to ? 0.1f : -0.1f;
             float vol = this.from;

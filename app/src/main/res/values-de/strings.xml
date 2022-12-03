@@ -230,7 +230,6 @@
         <item quantity="one">%1$d Filter gespeichert.</item>
         <item quantity="other">%1$d Filter gespeichert.</item>
     </plurals>
-    <string name="hint_paused">Das Video ist pausiert.</string>
     <string name="hint_permission_location">Zugriff auf den Standort erlauben?</string>
     <string name="pref_title_play_intro">Einführung zeigen</string>
     <string name="pref_title_open_links_internally">Interne Verknüpfungen</string>

@@ -42,15 +42,15 @@ public final class News implements Comparable<News>, Serializable {
     /** Example: 2017-11-16T11:54:03.882+01:00 */
     @VisibleForTesting
     public static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
+    /** a file that contains json data of a non-regional news item */
+    public static final String FILE_TAG = ".news";
+    /** a file that contains json data of a regional news item */
+    public static final String FILE_TAG_REGIONAL = ".rnews";
     @Flag
     public static final int FLAG_INCLUDE_HTMLEMBED = 1;
     public static final String NEWS_TYPE_STORY = "story";
     public static final String NEWS_TYPE_VIDEO = "video";
     public static final String NEWS_TYPE_WEBVIEW = "webview";
-    /** a file that contains json data of a non-regional news item */
-    public static final String FILE_TAG = ".news";
-    /** a file that contains json data of a regional news item */
-    public static final String FILE_TAG_REGIONAL = ".rnews";
     private static final String TAG = "News";
     private static long nextid = 1L;
     /** the streams of differenty qualities (highest number found was all 7 StreamQualities) */
@@ -558,6 +558,13 @@ public final class News implements Comparable<News>, Serializable {
      */
     public boolean isBreakingNews() {
         return this.breakingNews;
+    }
+
+    /**
+     * @return {@code true} if this News is represents a live video stream.
+     */
+    public boolean isLiveStream() {
+        return NEWS_TYPE_VIDEO.equals(this.type) && this.date == null;
     }
 
     /**

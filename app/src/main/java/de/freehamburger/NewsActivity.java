@@ -105,9 +105,10 @@ import de.freehamburger.model.News;
 import de.freehamburger.model.Related;
 import de.freehamburger.model.StreamQuality;
 import de.freehamburger.model.Video;
+import de.freehamburger.exo.ExoFactory;
 import de.freehamburger.util.Log;
-import de.freehamburger.util.MediaSourceHelper;
-import de.freehamburger.util.PlayerListener;
+import de.freehamburger.exo.MediaSourceHelper;
+import de.freehamburger.exo.PlayerListener;
 import de.freehamburger.util.PositionedSpan;
 import de.freehamburger.util.PrintUtil;
 import de.freehamburger.util.TextViewImageSpanClickHandler;
@@ -184,7 +185,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
     private StyledPlayerView bottomVideoView;
     private TextView textViewBottomVideoViewOverlay;
-    private ImageView bottomVideoPauseIndicator;
     /** Listener for the bottom video */
     private final PlayerListener listenerBottom = new PlayerListener(this,true) {
 
@@ -211,7 +211,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 this.bottomVideoHiddenAfterPlayback = false;
                 float sx = bottomVideoView.getScaleX();
                 if (sx < 1f) ObjectAnimator.ofFloat(NewsActivity.this.bottomVideoView, "scaleX", sx, 1f).setDuration(300L).start();
-                if (exoPlayerState == Player.STATE_READY) NewsActivity.this.bottomVideoPauseIndicator.setVisibility(View.GONE);
             }
             // wind the tape back when finished
             if (!exoPlayerPlayWhenReady && exoPlayerState == Player.STATE_ENDED) NewsActivity.this.exoPlayerBottomVideo.seekTo(0);
@@ -224,14 +223,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     NewsActivity.this.bottomVideoView.setScaleX(1f);
                 }, 500L);
             }
-            // show or hide the pause indicator (only if the bottom sheet is visible)
-            if (exoPlayerState == Player.STATE_READY && !isBottomSheetCollapsedOrHidden()) {
-                NewsActivity.this.bottomVideoPauseIndicator.setVisibility(exoPlayerPlayWhenReady ? View.GONE : View.VISIBLE);
-            }
         }
     };
-    @Nullable
-    private ExoPlayer exoPlayerAudio;
+    @VisibleForTesting @Nullable
+    ExoPlayer exoPlayerAudio;
     @Nullable
     private TextToSpeech tts;
     private boolean ttsInitialised = false;
@@ -663,8 +658,15 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         DefaultTrackSelector dts = new DefaultTrackSelector(this);
         // create ExoPlayer instances
         if (this.loadVideo) {
-            this.exoPlayerTopVideo = new ExoPlayer.Builder(this).setTrackSelector(dts).setUsePlatformDiagnostics(false).build();
-            this.exoPlayerBottomVideo = new ExoPlayer.Builder(this).setTrackSelector(dts).setUsePlatformDiagnostics(false).build();
+            this.exoPlayerTopVideo = ExoFactory.makeExoPlayer(this, dts);
+            this.exoPlayerBottomVideo = ExoFactory.makeExoPlayer(this, dts);
+            //
+            View backSeconds = this.bottomVideoView.findViewById(R.id.exo_rew_with_amount);
+            if (backSeconds != null) backSeconds.setVisibility(View.GONE);
+            View fwdSeconds = this.bottomVideoView.findViewById(R.id.exo_ffwd_with_amount);
+            if (fwdSeconds != null) fwdSeconds.setVisibility(View.GONE);
+            View st = findViewById(R.id.exo_subtitles);
+            if (st != null) st.setVisibility(View.GONE);
             // assign the ExoPlayer instances to their video views
             this.topVideoView.setPlayer(this.exoPlayerTopVideo);
             this.bottomVideoView.setPlayer(this.exoPlayerBottomVideo);
@@ -680,7 +682,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         } else {
             this.topVideoView.setVisibility(View.GONE);
         }
-        this.exoPlayerAudio =  new ExoPlayer.Builder(this).setTrackSelector(dts).setUsePlatformDiagnostics(false).build();
+        this.exoPlayerAudio = ExoFactory.makeExoPlayer(this, dts);
         // listen to state changes
         if (this.exoPlayerTopVideo != null) this.exoPlayerTopVideo.addListener(this.listenerTop);
         if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.addListener(this.listenerBottom);
@@ -920,7 +922,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         this.textViewBottomVideoPeek = findViewById(R.id.textViewBottomVideoPeek);
         this.bottomVideoView = findViewById(R.id.bottomVideoView);
         this.textViewBottomVideoViewOverlay = findViewById(R.id.textViewBottomVideoViewOverlay);
-        this.bottomVideoPauseIndicator = findViewById(R.id.bottomVideoPauseIndicator);
         this.buttonAudio.setOnClickListener(this::playAudio);
         this.buttonAudio.setOnLongClickListener(v -> {
             Object tag = v.getTag();
