@@ -64,10 +64,10 @@
             app:srcCompat="@drawable/ic_arrow_upward_black_24dp"
             tools:visibility="visible" />
 
-        <com.google.android.material.imageview.ShapeableImageView
+        <com.github.chrisbanes.photoview.PhotoView
             android:id="@+id/quickView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_alignParentStart="true"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
@@ -78,7 +78,6 @@
             android:paddingEnd="4dp"
             android:scaleType="fitCenter"
             android:visibility="gone"
-            app:shapeAppearance="?attr/shapeAppearanceMediumComponent"
             tools:ignore="ContentDescription"
             tools:src="@tools:sample/backgrounds/scenic"
             />
