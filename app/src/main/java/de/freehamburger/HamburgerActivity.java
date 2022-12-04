@@ -218,7 +218,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
                     try {
                         PackageManager pm = getPackageManager();
                         ApplicationInfo ai = pm.getApplicationInfo(ls.target.getPackageName(), Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ? PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS : 0);
-                        Snackbar sb = Snackbar.make(this.coordinatorLayout, getString(R.string.msg_shared_with, pm.getApplicationLabel(ai)), Snackbar.LENGTH_SHORT);
+                        Snackbar sb = Snackbar.make(this.coordinatorLayout != null ? this.coordinatorLayout : getWindow().getDecorView(), getString(R.string.msg_shared_with, pm.getApplicationLabel(ai)), Snackbar.LENGTH_SHORT);
                         View textView = sb.getView().findViewById(com.google.android.material.R.id.snackbar_text);
                         if (textView instanceof TextView) {
                             ((TextView) textView).setGravity(Gravity.CENTER_VERTICAL);
