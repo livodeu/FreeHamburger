@@ -65,3 +65,14 @@ _2022-11_
   * exoplayer 2.16.1 → 2.17.1 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)
   * material 1.5.0 → 1.6.1 [comparison](https://github.com/material-components/material-components-android/compare/1.5.0...1.6.1)
   * okhttp 4.9.3 → 4.10.0 [change log](https://square.github.io/okhttp/changelogs/changelog_4x/)
+
+## 1.4
+
+_202x-xx_
+
+* Changed: The app targets API level 33 now.
+* Fixed: Pictures would be scaled down when rotating the device from portrait to landscape
+* New: Articles (excluding media contents) may be archived
+* New: Text selection is now possible within articles, selected words may be passed to dictionaries
+* Upgrade: A library has been updated:
+  * exoplayer 2.17.1 → 2.18.2 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)

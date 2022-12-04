@@ -219,7 +219,7 @@ public class NewsView extends RelativeLayout {
             if (timeMode) {
                 String longDate = Util.getRelativeTime(ctx, date.getTime(), null, false);
                 String shortDate = Util.getRelativeTime(ctx, date.getTime(), null, true);
-                Util.fitText(this.textViewDate, longDate, shortDate);
+                Util.fitText(this.textViewDate, "…", longDate, shortDate);
             } else {
                 this.textViewDate.setText(DF.format(date));
             }

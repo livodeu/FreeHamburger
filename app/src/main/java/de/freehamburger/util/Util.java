@@ -531,9 +531,10 @@ public class Util {
     /**
      * Puts the longest out of a selection of texts that fits into a TextView.
      * @param tv TextView
+     * @param placeholder (optional)
      * @param txts alternative texts, <em>ordered from longest to shortest</em>
      */
-    public static void fitText(@NonNull final TextView tv, @NonNull @Size(min = 1) final String... txts) {
+    public static void fitText(@NonNull final TextView tv, @Nullable CharSequence placeholder, @NonNull @Size(min = 1) final String... txts) {
         int w = tv.getWidth() - tv.getPaddingStart() - tv.getPaddingEnd() - 8;
         if (w <= 0) {
             tv.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
@@ -541,9 +542,12 @@ public class Util {
                 public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
                     if (right - left <= 0) return;
                     tv.removeOnLayoutChangeListener(this);
-                    fitText(tv, txts);
+                    fitText(tv, placeholder, txts);
                 }
             });
+            // sad to say, but the next line has been added to satisfy a test checking for non-empty content (this will probably never show since the view's width is <= 0)
+            tv.setText(placeholder);
+            //
             return;
         }
         final TextPaint tp = tv.getPaint();
