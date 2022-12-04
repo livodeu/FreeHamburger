@@ -214,7 +214,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
             App app = (App) getApplicationContext();
             App.LatestShare ls = app.getLatestShare();
             if (ls != null) {
-                if (ls.wasVeryRecent()) {
+                if (ls.wasVeryRecent() && !getPackageName().equals(ls.target.getPackageName())) {
                     try {
                         PackageManager pm = getPackageManager();
                         ApplicationInfo ai = pm.getApplicationInfo(ls.target.getPackageName(), Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ? PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS : 0);
