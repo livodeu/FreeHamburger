@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<!-- https://android-developers.googleblog.com/2009/03/android-layout-tricks-3-optimize-by.html -->
+<merge
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/fullscreen_content"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
     tools:context=".VideoActivity">
 
     <com.google.android.exoplayer2.ui.StyledPlayerView
@@ -34,5 +32,5 @@
         android:indeterminate="true"
         android:visibility="gone"
         tools:visibility="visible" />
-</FrameLayout>
+</merge>
 

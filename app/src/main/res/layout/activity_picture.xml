@@ -1,18 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<merge
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/black"
-    >
+    tools:context=".PictureActivity">
 
     <com.github.chrisbanes.photoview.PhotoView
         android:id="@+id/pictureView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
+        android:background="@android:color/black"
         android:adjustViewBounds="true"
         android:scaleType="fitCenter"
+        tools:src="@tools:sample/backgrounds/scenic"
         tools:ignore="ContentDescription" />
-</FrameLayout>
+</merge>
