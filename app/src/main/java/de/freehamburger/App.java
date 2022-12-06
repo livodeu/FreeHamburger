@@ -92,10 +92,16 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final long LOCAL_FILE_MAXAGE = 15 * 60_000L;
     /** String: maximum 'disk' cache size in MB */
     public static final String PREF_CACHE_MAX_SIZE = "pref_cache_max_size";
+    /** the minimum valid value for the 'disk' max cache size in bytes */
+    public static final long PREF_CACHE_MAX_SIZE_MIN = 4_194_304L;
     /** String: default maximum 'disk' cache size in MB */
     public static final String DEFAULT_CACHE_MAX_SIZE = "20";
     /** default maximum 'disk' cache size in MB */
     public static final long DEFAULT_CACHE_MAX_SIZE_MB = Long.parseLong(DEFAULT_CACHE_MAX_SIZE);
+    /** the minimum valid value for the memory max cache size in bytes */
+    public static final long PREF_MEM_CACHE_MAX_SIZE_MIN = 1_048_576L;
+    /** the maximum valid value for the memory max cache size in bytes */
+    public static final long PREF_MEM_CACHE_MAX_SIZE_MAX = 100L << 20;
     /** String: maximum memory cache size in MB */
     public static final String PREF_MEM_CACHE_MAX_SIZE = "pref_mem_cache_max_size";
     /** String: default maximum memory cache size in MB (must be &gt; 0) */

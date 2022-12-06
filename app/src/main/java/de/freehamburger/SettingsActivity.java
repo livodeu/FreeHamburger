@@ -74,6 +74,7 @@ import de.freehamburger.prefs.ButtonPreference;
 import de.freehamburger.prefs.DisablingValueListPreference;
 import de.freehamburger.prefs.SummarizingEditTextPreference;
 import de.freehamburger.supp.PopupManager;
+import de.freehamburger.util.EditTextIntegerLimiter;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
@@ -535,7 +536,11 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             Preference prefClearCache = findPreference("pref_clear_cache");
 
             this.prefMaxCacheSize.setDefaultValue(App.DEFAULT_CACHE_MAX_SIZE);
-            this.prefMaxCacheSize.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+            this.prefMaxCacheSize.setOnBindEditTextListener(editText -> {
+                editText.setInputType(InputType.TYPE_CLASS_NUMBER);
+                editText.setHint(getString(R.string.pref_hint_pref_cache_max_size));
+                editText.addTextChangedListener(new EditTextIntegerLimiter(editText, App.PREF_CACHE_MAX_SIZE_MIN >> 20, Long.MAX_VALUE));
+            });
             this.prefMaxCacheSize.setOnPreferenceChangeListener((preference, o) -> {
                 App app = (App)getActivity().getApplicationContext();
                 long maxCacheSize;
@@ -544,16 +549,13 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 } catch (Exception ignored) {
                     maxCacheSize = App.DEFAULT_CACHE_MAX_SIZE_MB << 20;
                 }
-                if (maxCacheSize < 1_048_576L) {
-                    return false;
-                }
                 long current = app.getCurrentCacheSize();
                 if (current < 1_048_576L) {
                     preference.setSummary(getString(R.string.label_current_cache_size_kb, current >> 10, maxCacheSize >> 20));
                 } else {
                     preference.setSummary(getString(R.string.label_current_cache_size, current >> 20, maxCacheSize >> 20));
                 }
-                return true;
+                return (maxCacheSize >= App.PREF_CACHE_MAX_SIZE_MIN);
             });
             //noinspection ConstantConditions
             this.prefMaxCacheSize.getOnPreferenceChangeListener().onPreferenceChange(this.prefMaxCacheSize, this.prefs.getString(App.PREF_CACHE_MAX_SIZE, App.DEFAULT_CACHE_MAX_SIZE));
@@ -610,18 +612,21 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
             if (prefMaxMemCacheSize != null) {
                 prefMaxMemCacheSize.setDefaultValue(App.DEFAULT_MEM_CACHE_MAX_SIZE);
-                prefMaxMemCacheSize.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+                prefMaxMemCacheSize.setOnBindEditTextListener(editText -> {
+                    editText.setInputType(InputType.TYPE_CLASS_NUMBER);
+                    editText.setHint(R.string.pref_hint_pref_cache_max_size);
+                    editText.addTextChangedListener(new EditTextIntegerLimiter(editText, App.PREF_MEM_CACHE_MAX_SIZE_MIN >> 20, App.PREF_MEM_CACHE_MAX_SIZE_MAX >> 20));
+                });
                 prefMaxMemCacheSize.setOnPreferenceChangeListener((preference, o) -> {
                     int maxCacheSize;
                     try {
                         maxCacheSize = Integer.parseInt(o.toString().trim()) << 20;
                     } catch (NumberFormatException nfe) {
-                        Toast.makeText(getActivity(), R.string.error_invalid_not_a_number, Toast.LENGTH_SHORT).show();
                         return false;
                     } catch (Exception ignored) {
                         maxCacheSize = App.DEFAULT_MEM_CACHE_MAX_SIZE_MB << 20;
                     }
-                    if (maxCacheSize < 1_048_576 || maxCacheSize > (100 << 20)) {
+                    if (maxCacheSize < App.PREF_MEM_CACHE_MAX_SIZE_MIN || maxCacheSize > App.PREF_MEM_CACHE_MAX_SIZE_MAX) {
                         return false;
                     }
 
