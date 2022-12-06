@@ -92,7 +92,6 @@
     <string name="error_archived_retrieval">Could not load archived article!</string>
     <string name="error_archive_export_failed">Export failed!</string>
     <string name="error_archive_import_failed">Import of \"%1$s\" failed!</string>
-    <string name="error_archived_parse_failed">\"%1$s\" does not seem to be a valid file! Delete?</string>
     <string name="error_audio_focus_denied">This cannot be played right now!</string>
     <string name="error_browser_failed">Cannot open a browser!</string>
     <string name="error_connection_failed">Failed to connect to %1$s!</string>

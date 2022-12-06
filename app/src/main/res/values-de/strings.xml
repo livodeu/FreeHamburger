@@ -26,7 +26,6 @@
         <item quantity="one">%1$d Datei übersprungen</item>
         <item quantity="other">%1$d Dateien übersprungen</item>
     </plurals>
-    <string name="error_archived_parse_failed">Bei „%1$s” scheint es sich nicht um eine gültige Datei zu handeln! Löschen?</string>
     <string name="error_archived_already">Der Artikel wurde bereits archiviert.</string>
     <string name="error_archived_failure">Der Artikel wurde nicht archiviert!</string>
     <string name="error_archived_retrieval">Der Artikel konnte nicht geladen werden!</string>
