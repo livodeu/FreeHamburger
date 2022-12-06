@@ -54,6 +54,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import de.freehamburger.adapters.NewsRecyclerAdapter;
+import de.freehamburger.exo.ExoFactory;
 import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
 import de.freehamburger.model.News;
@@ -70,20 +71,35 @@ import de.freehamburger.views.NewsView;
 @LargeTest
 public class DataAndGuiTest {
 
-    private static final Source SOURCE = Source.HOME;
-    private static final String FILENAME = SOURCE.name() + Source.FILE_SUFFIX;
-    /** the preferred region to assume for the test */
-    private static final Region PREFERRED_REGION = Region.BW;
     /** assuming the download does not take more than 3 seconds */
     private static final long DOWNLOAD_TIMEOUT = 6_000L;
     /** max age of the downloaded json data before we download again */
     private static final long FILE_MAX_AGE = 3_600_000L;
+    /** the preferred region to assume for the test */
+    private static final Region PREFERRED_REGION = Region.BW;
+    private static final Source SOURCE = Source.HOME;
+    private static final String FILENAME = SOURCE.name() + Source.FILE_SUFFIX;
     private static Context ctx;
     private static File file;
     private static DownloadManager dm;
     private static long downloadId;
     @Nullable
     private static Set<String> regions;
+
+    @AfterClass
+    public static void cleanup() {
+        // delete temporary file
+        if (file != null && file.isFile() && file.lastModified() - System.currentTimeMillis() >= FILE_MAX_AGE) {
+            if (!file.delete()) file.deleteOnExit();
+            dm.remove(downloadId);
+        }
+        // restore preferred regions
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        SharedPreferences.Editor ed = prefs.edit();
+        if (regions != null) ed.putStringSet(App.PREF_REGIONS, regions);
+        else ed.remove(App.PREF_REGIONS);
+        ed.commit();
+    }
 
     /**
      * If {@link #file} does not exist yet,
@@ -121,21 +137,6 @@ public class DataAndGuiTest {
         dm = (DownloadManager)ctx.getSystemService(Context.DOWNLOAD_SERVICE);
         assertNotNull(dm);
         downloadHomepage();
-    }
-
-    @AfterClass
-    public static void cleanup() {
-        // delete temporary file
-        if (file != null && file.isFile() && file.lastModified() - System.currentTimeMillis() >= FILE_MAX_AGE) {
-            if (!file.delete()) file.deleteOnExit();
-            dm.remove(downloadId);
-        }
-        // restore preferred regions
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        SharedPreferences.Editor ed = prefs.edit();
-        if (regions != null) ed.putStringSet(App.PREF_REGIONS, regions);
-        else ed.remove(App.PREF_REGIONS);
-        ed.commit();
     }
 
     /**
@@ -205,41 +206,6 @@ public class DataAndGuiTest {
                 assertFalse("ClockView text has a listener", activity.clockView.hasOnTextClickListener());
             }
             //
-            activity.finish();
-        });
-    }
-
-    /** tests the correct application of filters to the categories menu */
-    @Test
-    public void testMenuFilter() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-        assumeTrue("filters are not applied to categories", prefs.getBoolean(App.PREF_APPLY_FILTERS_TO_CATEGORIES, App.PREF_APPLY_FILTERS_TO_CATEGORIES_DEFAULT));
-        final String hideMe = new TextFilter(ctx.getString(Source.WIRTSCHAFT.getLabel()).toLowerCase(Locale.GERMAN)).getText().toString();
-        final Set<String> preferredFilters = prefs.getStringSet(App.PREF_FILTERS, new HashSet<>(0));
-        assert preferredFilters != null;
-        assumeFalse("user-defined filters already contain " + hideMe, preferredFilters.contains(hideMe));
-        final Set<String> testFilters = new HashSet<>(preferredFilters.size() + 1);
-        testFilters.addAll(preferredFilters);
-        testFilters.add(hideMe);
-        SharedPreferences.Editor ed = prefs.edit();
-        ed.putStringSet(App.PREF_FILTERS, testFilters);
-        ed.apply();
-        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            com.google.android.material.navigation.NavigationView nv = activity.findViewById(R.id.navigationView);
-            assertNotNull(nv);
-            Menu menu = nv.getMenu();
-            assertNotNull(menu);
-            final int n = menu.size();
-            for (int i = 0; i < n; i++) {
-                if (!menu.getItem(i).isVisible()) continue;
-                String menuTitle = menu.getItem(i).getTitle().toString().toLowerCase(Locale.GERMAN);
-                assertNotEquals("Found category \"" + hideMe + "\"!", hideMe, menuTitle);
-            }
-            SharedPreferences.Editor ed2 = prefs.edit();
-            ed2.putStringSet(App.PREF_FILTERS, preferredFilters);
-            assertTrue(ed2.commit());
             activity.finish();
         });
     }
@@ -332,6 +298,40 @@ public class DataAndGuiTest {
         });
     }
 
+    /** tests the correct application of filters to the categories menu */
+    @Test
+    public void testMenuFilter() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        assumeTrue("filters are not applied to categories", prefs.getBoolean(App.PREF_APPLY_FILTERS_TO_CATEGORIES, App.PREF_APPLY_FILTERS_TO_CATEGORIES_DEFAULT));
+        final String hideMe = new TextFilter(ctx.getString(Source.WIRTSCHAFT.getLabel()).toLowerCase(Locale.GERMAN)).getText().toString();
+        final Set<String> preferredFilters = prefs.getStringSet(App.PREF_FILTERS, new HashSet<>(0));
+        assumeFalse("user-defined filters already contain " + hideMe, preferredFilters.contains(hideMe));
+        final Set<String> testFilters = new HashSet<>(preferredFilters.size() + 1);
+        testFilters.addAll(preferredFilters);
+        testFilters.add(hideMe);
+        SharedPreferences.Editor ed = prefs.edit();
+        ed.putStringSet(App.PREF_FILTERS, testFilters);
+        ed.apply();
+        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
+        asn.moveToState(Lifecycle.State.RESUMED);
+        asn.onActivity(activity -> {
+            com.google.android.material.navigation.NavigationView nv = activity.findViewById(R.id.navigationView);
+            assertNotNull(nv);
+            Menu menu = nv.getMenu();
+            assertNotNull(menu);
+            final int n = menu.size();
+            for (int i = 0; i < n; i++) {
+                if (!menu.getItem(i).isVisible()) continue;
+                String menuTitle = menu.getItem(i).getTitle().toString().toLowerCase(Locale.GERMAN);
+                assertNotEquals("Found category \"" + hideMe + "\"!", hideMe, menuTitle);
+            }
+            SharedPreferences.Editor ed2 = prefs.edit();
+            ed2.putStringSet(App.PREF_FILTERS, preferredFilters);
+            assertTrue(ed2.commit());
+            activity.finish();
+        });
+    }
+
     /**
      * Tests the {@link NewsActivity}.
      */
@@ -367,8 +367,6 @@ public class DataAndGuiTest {
             assertNotNull(bottomVideoView);
             View textViewBottomVideoViewOverlay = activity.findViewById(R.id.textViewBottomVideoViewOverlay);
             assertNotNull(textViewBottomVideoViewOverlay);
-            View bottomVideoPauseIndicator = activity.findViewById(R.id.bottomVideoPauseIndicator);
-            assertNotNull(bottomVideoPauseIndicator);
             View bottomVideoViewWrapper = activity.findViewById(R.id.bottomVideoViewWrapper);
             assertNotNull(bottomVideoViewWrapper);
             // make sure that the ExoPlayer instances exist
@@ -377,6 +375,13 @@ public class DataAndGuiTest {
                 assertNotNull(activity.exoPlayerBottomVideo);
                 assertNotNull(topVideoView.getPlayer());
                 assertNotNull(bottomVideoView.getPlayer());
+                // this makes sure that the ExoPlayers were built in the ExoFactory
+                assertTrue(activity.exoPlayerTopVideo.getAnalyticsCollector() instanceof ExoFactory.NirvanaAnalyticsCollector);
+                assertTrue(activity.exoPlayerBottomVideo.getAnalyticsCollector() instanceof ExoFactory.NirvanaAnalyticsCollector);
+            }
+            if (activity.exoPlayerAudio != null) {
+                // this makes sure that the ExoPlayer was built in the ExoFactory
+                assertTrue(activity.exoPlayerAudio.getAnalyticsCollector() instanceof ExoFactory.NirvanaAnalyticsCollector);
             }
             // make sure that some Views react to clicks
             assertTrue(buttonAudio.hasOnClickListeners());
@@ -479,6 +484,22 @@ public class DataAndGuiTest {
             }
 
         }
+    }
+
+    @Test
+    public void testPictureActivity() {
+        Intent intent = new Intent(ctx, PictureActivity.class);
+        intent.setData(Uri.parse("https://www.tagesschau.de/res/assets/image/favicon/apple-touch-icon-144x144.png"));
+        ActivityScenario<PictureActivity> asn = ActivityScenario.launch(intent);
+        asn.moveToState(Lifecycle.State.RESUMED);
+        asn.onActivity(activity -> {
+            View pv = activity.findViewById(R.id.pictureView);
+            assertTrue(pv instanceof com.github.chrisbanes.photoview.PhotoView);
+            com.github.chrisbanes.photoview.PhotoView phv = (com.github.chrisbanes.photoview.PhotoView)pv;
+            try {Thread.sleep(2_000L);} catch (Exception ignored) {}
+            assertNotNull("No service!", activity.service);
+            try {Thread.sleep(2_000L);} catch (Exception ignored) {}
+        });
     }
 
     /**

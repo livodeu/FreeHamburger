@@ -72,12 +72,12 @@ import java.text.DateFormat;
 import java.util.List;
 import java.util.Set;
 
+import de.freehamburger.exo.MediaSourceHelper;
 import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
 import de.freehamburger.util.FileDeleter;
-import de.freehamburger.util.MediaSourceHelper;
 import de.freehamburger.util.OkHttpDownloader;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
@@ -453,7 +453,7 @@ public class AppTest {
             assertTrue("No app label", ai.labelRes != 0);
             assertTrue("No app icon", ai.icon != 0);
             if (Build.VERSION.SDK_INT >= 26) {
-                // the categories were added in API 26
+                //TODO since Util.fitText() has been added, the next line fails…
                 assertEquals(ApplicationInfo.CATEGORY_NEWS, ai.category);
             }
             assertEquals(SettingsActivity.class.getName(), ai.manageSpaceActivityName);
@@ -644,7 +644,7 @@ public class AppTest {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
             @App.BackgroundSelection int backgroundSelection = HamburgerActivity.applyTheme(activity, prefs,false);
             assertTrue(backgroundSelection == App.BACKGROUND_AUTO || backgroundSelection == App.BACKGROUND_DAY || backgroundSelection == App.BACKGROUND_NIGHT);
-            int resid = HamburgerActivity.applyTheme(activity, backgroundSelection, true);
+            int resid = HamburgerActivity.applyTheme(activity,true);
             assertTrue(resid != 0);
             activity.finish();
         });
@@ -655,7 +655,9 @@ public class AppTest {
      */
     @Test
     @SmallTest
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public void testTiles() {
+        assumeTrue("This test needs API 24 (N)", Build.VERSION.SDK_INT >= Build.VERSION_CODES.N);
         PackageManager pm = ctx.getPackageManager();
         try {
             ServiceInfo serviceInfo = pm.getServiceInfo(new ComponentName(ctx, BackgroundTile.class), PackageManager.GET_DISABLED_COMPONENTS);
@@ -720,8 +722,11 @@ public class AppTest {
         assertTrue(jobInfo.isPeriodic());
         if (Build.VERSION.SDK_INT >= 28) assertNotNull(jobInfo.getRequiredNetwork());
         boolean night = UpdateJobService.hasNightFallenOverBerlin(prefs);
-        long intervalMs = UpdateJobService.calcInterval(prefs, night);
-        assertEquals(Math.max(JobInfo.getMinPeriodMillis(), intervalMs), jobInfo.getIntervalMillis());
+        if (Build.VERSION.SDK_INT >= 24) {
+            // getMinPeriodMillis() requires API 24
+            long intervalMs = UpdateJobService.calcInterval(prefs, night);
+            assertEquals(Math.max(JobInfo.getMinPeriodMillis(), intervalMs), jobInfo.getIntervalMillis());
+        }
         JobScheduler js = (JobScheduler)ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE);
         assertNotNull(js);
         int result = js.schedule(jobInfo);
@@ -765,7 +770,7 @@ public class AppTest {
         KeyguardManager km = (KeyguardManager) app.getSystemService(Context.KEYGUARD_SERVICE);
         Assume.assumeFalse("Device is locked.", km.isDeviceLocked());
         try {Thread.sleep(2_000L);} catch (Exception ignored) {}
-        assertTrue(app.hasCurrentActivity());
+        assertTrue("No current activity!", app.hasCurrentActivity());
         try {Thread.sleep(2_000L);} catch (Exception ignored) {}
     }
 

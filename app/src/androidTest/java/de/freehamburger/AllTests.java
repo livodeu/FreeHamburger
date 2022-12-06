@@ -4,6 +4,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({AppTest.class, InstalledAppsTest.class, DataAndGuiTest.class, WebViewTest.class})
+@Suite.SuiteClasses({AppTest.class, InstalledAppsTest.class, DataAndGuiTest.class, WebViewTest.class, ArchiveTest.class})
 public class AllTests {
 }
