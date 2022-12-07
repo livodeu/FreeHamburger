@@ -392,18 +392,26 @@ public class WebViewActivity extends AppCompatActivity {
                 String offending = !allowedScheme ? scheme : uri.getHost();
                 //
                 Snackbar sb = Snackbar.make(view, view.getContext().getString(R.string.error_link_not_supported, offending), Snackbar.LENGTH_INDEFINITE);
-                sb.setAction("↗", v -> {
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setDataAndType(uri, "text/plain");
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    boolean canDo = v.getContext().getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null;
-                    if (canDo) {
-                        v.getContext().startActivity(intent);
-                    } else {
-                        Toast.makeText(v.getContext(), R.string.error_no_app, Toast.LENGTH_SHORT).show();
-                    }
-                    sb.dismiss();
-                });
+                // "file:" uris as data would cause an android.os.FileUriExposedException: "<uri> exposed beyond app through Intent.getData()"
+                if (!"file".equals(uri.getScheme())) {
+                    sb.setAction("↗", v -> {
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setDataAndType(uri, "text/plain");
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        boolean canDo = v.getContext().getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null;
+                        if (canDo) {
+                            try {
+                                v.getContext().startActivity(intent);
+                            } catch (Exception e) {
+                                if (BuildConfig.DEBUG) Log.e(TAG, "While starting " + intent + ": " + e);
+                            }
+                        } else {
+                            if (v.getContext() instanceof Activity) Util.makeSnackbar((Activity) v.getContext(), R.string.error_no_app, Snackbar.LENGTH_SHORT).show();
+                            else Toast.makeText(v.getContext(), R.string.error_no_app, Toast.LENGTH_SHORT).show();
+                        }
+                        sb.dismiss();
+                    });
+                }
                 sb.show();
                 view.goBack();
             }

@@ -71,6 +71,7 @@ import androidx.annotation.RawRes;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.Size;
+import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
@@ -128,12 +129,12 @@ import de.freehamburger.supp.ShareReceiver;
 public class Util {
 
     public static final Typeface CONDENSED = Typeface.create("sans-serif-condensed", Typeface.NORMAL);
+    public static final String PROTOCOL_ANDROID_APP = "android-app://";
     /** Determines whether this is a test build. */
     public static final boolean TEST;
     private static final Typeface NORMAL = Typeface.create("sans-serif", Typeface.NORMAL);
     /** Throwables that might carry important information about a playback failure */
     private static final Collection<Class<? extends Throwable>> POSSIBLE_PLAYBACK_ERROR_CAUSES = Arrays.asList(UnknownHostException.class, SSLPeerUnverifiedException.class, HttpDataSource.InvalidResponseCodeException.class);
-    public static final String PROTOCOL_ANDROID_APP = "android-app://";
     private static final String TAG = "Util";
     /**
      * Selection of wrong quotation marks<br>
@@ -1384,6 +1385,19 @@ public class Util {
         return url.toLowerCase(Locale.US).startsWith("http:") ? "https:" + url.substring(5) : url;
     }
 
+    @NonNull
+    public static Snackbar makeSnackbar(@NonNull Activity a, @StringRes int resid, @IntRange(from = -2) int duration) {
+        return makeSnackbar(a, a.getString(resid), duration);
+    }
+
+    @NonNull
+    public static Snackbar makeSnackbar(@NonNull Activity a, @NonNull CharSequence text, @IntRange(from = -2) int duration) {
+        View anchor = null;
+        if (a instanceof CoordinatorLayoutHolder) anchor = ((CoordinatorLayoutHolder)a).getCoordinatorLayout();
+        if (anchor == null) anchor = a.getWindow().getDecorView();
+        return Snackbar.make(anchor, text, duration);
+    }
+
     /**
      * Returns an error message for the given PlaybackException.
      * @param ctx Context
@@ -1741,8 +1755,8 @@ public class Util {
             logIntent(chooserIntent);
             ctx.startActivity(chooserIntent);
         } else {
-            if (ctx instanceof CoordinatorLayoutHolder) {
-                Snackbar.make(((CoordinatorLayoutHolder)ctx).getCoordinatorLayout(), R.string.error_no_app, Snackbar.LENGTH_LONG).show();
+            if (ctx instanceof Activity) {
+                makeSnackbar((Activity)ctx, R.string.error_no_app, Snackbar.LENGTH_LONG).show();
             } else {
                 Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_LONG).show();
             }

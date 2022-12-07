@@ -236,7 +236,7 @@ public class Archive extends HamburgerActivity {
         try {
             File exportsDir = new File(getCacheDir(), App.EXPORTS_DIR);
             if (!exportsDir.isDirectory() && !exportsDir.mkdirs()) {
-                Snackbar.make(getCoordinatorLayout(), R.string.error_archive_export_failed, Snackbar.LENGTH_SHORT).show();
+                Util.makeSnackbar(this, R.string.error_archive_export_failed, Snackbar.LENGTH_SHORT).show();
                 return;
             }
             final String label = getString(R.string.label_archive);
@@ -266,7 +266,7 @@ public class Archive extends HamburgerActivity {
             Util.sendBinaryData(this, FileProvider.getUriForFile(this, App.getFileProvider(), zip).toString(), label);
         } catch (IOException e) {
             if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
-            Snackbar.make(getCoordinatorLayout(), R.string.error_archive_export_failed, Snackbar.LENGTH_SHORT).show();
+            Util.makeSnackbar(this, R.string.error_archive_export_failed, Snackbar.LENGTH_SHORT).show();
         } finally {
             Util.close(in, out);
         }

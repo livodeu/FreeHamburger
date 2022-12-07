@@ -44,13 +44,14 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
 
+import de.freehamburger.util.CoordinatorLayoutHolder;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
 
 /**
  * Base for {@link MainActivity} and {@link NewsActivity}.
  */
-public abstract class HamburgerActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener, ServiceConnection {
+public abstract class HamburgerActivity extends AppCompatActivity implements CoordinatorLayoutHolder, SharedPreferences.OnSharedPreferenceChangeListener, ServiceConnection {
 
     static final long HIDE_FAB_AFTER = 2_000L;
     private static final String TAG = "HamburgerActivity";
@@ -125,8 +126,9 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         return this.background;
     }
 
-    public CoordinatorLayout getCoordinatorLayout() {
-        return coordinatorLayout;
+    @Override
+    @Nullable public CoordinatorLayout getCoordinatorLayout() {
+        return this.coordinatorLayout;
     }
 
     @Nullable
@@ -218,7 +220,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
                     try {
                         PackageManager pm = getPackageManager();
                         ApplicationInfo ai = pm.getApplicationInfo(ls.target.getPackageName(), Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ? PackageManager.MATCH_DISABLED_UNTIL_USED_COMPONENTS : 0);
-                        Snackbar sb = Snackbar.make(this.coordinatorLayout != null ? this.coordinatorLayout : getWindow().getDecorView(), getString(R.string.msg_shared_with, pm.getApplicationLabel(ai)), Snackbar.LENGTH_SHORT);
+                        Snackbar sb = Util.makeSnackbar(this, getString(R.string.msg_shared_with, pm.getApplicationLabel(ai)), Snackbar.LENGTH_SHORT);
                         View textView = sb.getView().findViewById(com.google.android.material.R.id.snackbar_text);
                         if (textView instanceof TextView) {
                             ((TextView) textView).setGravity(Gravity.CENTER_VERTICAL);
@@ -318,14 +320,14 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Sha
         Snackbar sb;
         Intent settingsIntent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
         if (getPackageManager().resolveActivity(settingsIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
-            sb = Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_LONG);
+            sb = Util.makeSnackbar(this, R.string.error_no_network, Snackbar.LENGTH_LONG);
             // the unicode wrench symbol (0x1f527)
             sb.setAction("\uD83D\uDD27", v -> {
                 sb.dismiss();
                 startActivity(settingsIntent);
             });
         } else {
-            sb = Snackbar.make(coordinatorLayout, R.string.error_no_network, Snackbar.LENGTH_SHORT);
+            sb = Util.makeSnackbar(this, R.string.error_no_network, Snackbar.LENGTH_SHORT);
         }
         sb.show();
     }

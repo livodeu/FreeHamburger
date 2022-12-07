@@ -14,6 +14,7 @@
     <string name="action_filters_enabled">Aktiv</string>
     <string name="action_open_app">App öffnen</string>
     <string name="action_print">Drucken</string>
+    <string name="error_video_unavailable">Das Video ist nicht verfügbar.</string>
     <string name="label_archive">Archiv</string>
     <string name="label_confirmation">Bestätigung</string>
     <string name="msg_archive_delete_all">Alle archivierten Artikel löschen?\nDies kann nicht rückgängig gemacht werden!\nEs werden %1$s kB Speicherplatz freigegeben.</string>

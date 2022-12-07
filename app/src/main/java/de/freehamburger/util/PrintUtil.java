@@ -15,7 +15,6 @@ import android.print.PrintJobInfo;
 import android.print.PrintManager;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.view.View;
 import android.webkit.RenderProcessGoneDetail;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebResourceError;
@@ -28,7 +27,6 @@ import android.webkit.WebViewClient;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-import androidx.annotation.StringRes;
 import androidx.print.PrintHelper;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -178,21 +176,21 @@ public final class PrintUtil {
 
     /**
      * Prints the given picture.
-     * @param ctx Context
+     * @param activity Context
      * @param bmp Bitmap
      * @param title title to be used as job name (optional
      */
     @RequiresApi(19)
-    public static void printImage(@NonNull Context ctx, @NonNull Bitmap bmp, @Nullable String title) {
-        if (title == null) title = ctx.getString(R.string.app_name);
-        PrintHelper photoPrinter = new PrintHelper(ctx);
+    public static void printImage(@NonNull Activity activity, @NonNull Bitmap bmp, @Nullable String title) {
+        if (title == null) title = activity.getString(R.string.app_name);
+        PrintHelper photoPrinter = new PrintHelper(activity);
         photoPrinter.setScaleMode(PrintHelper.SCALE_MODE_FIT);
         PrintHelper.OnPrintFinishCallback callback;
-        if (ctx instanceof HamburgerActivity) {
+        if (activity instanceof HamburgerActivity) {
             callback = () -> {
-                HamburgerActivity a = (HamburgerActivity)ctx;
+                HamburgerActivity a = (HamburgerActivity)activity;
                 if (a.isFinishing() || a.isDestroyed()) return;
-                safeSnackbar(a.getCoordinatorLayout(), R.string.msg_print_finished, Snackbar.LENGTH_SHORT);
+                Util.makeSnackbar(activity, R.string.msg_print_finished, Snackbar.LENGTH_SHORT).show();
             };
         } else {
             callback = null;
@@ -217,28 +215,6 @@ public final class PrintUtil {
         //noinspection ConstantConditions
         printHtml(activity, unwrapLinks(makeHttps(news.getContent().getHtmlText()).toString()).toString(), title, pr);
         return true;
-    }
-
-    /**
-     * Displays a Snackbar. Exceptions are caught here.
-     */
-    private static void safeSnackbar(@NonNull View view, @StringRes int msg, int duration) {
-        try {
-            Snackbar.make(view, msg, duration).show();
-        } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
-        }
-    }
-
-    /**
-     * Displays a Snackbar. Exceptions are caught here.
-     */
-    private static void safeSnackbar(@NonNull View view, @NonNull CharSequence msg, int duration) {
-        try {
-            Snackbar.make(view, msg, duration).show();
-        } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
-        }
     }
 
     /**
@@ -293,16 +269,16 @@ public final class PrintUtil {
                 HamburgerActivity a = this.refa.get();
                 if (a == null || a.isFinishing() || a.isDestroyed()) break;
                 if (this.printJob.isCancelled()) {
-                    safeSnackbar(a.getCoordinatorLayout(), R.string.msg_print_cancelled, 1_000);
+                    Util.makeSnackbar(a, R.string.msg_print_cancelled, 1_000).show();
                     break;
                 } else if (this.printJob.isCompleted()) {
-                    safeSnackbar(a.getCoordinatorLayout(), R.string.msg_print_finished, Snackbar.LENGTH_SHORT);
+                    Util.makeSnackbar(a, R.string.msg_print_finished, Snackbar.LENGTH_SHORT).show();
                     break;
                 } else if (this.printJob.isFailed() || this.printJob.isBlocked()) {
                     PrintJobInfo pi =  this.printJob.getInfo();
                     String label = pi.getLabel();
                     if (TextUtils.isEmpty(label)) {
-                        safeSnackbar(a.getCoordinatorLayout(), R.string.msg_print_failed, Snackbar.LENGTH_LONG);
+                        Util.makeSnackbar(a , R.string.msg_print_failed, Snackbar.LENGTH_LONG).show();
                     } else {
                         // attempt to determine the status text
                         String pis = pi.toString();
@@ -313,7 +289,7 @@ public final class PrintUtil {
                             if (status1 - status0 > 8) status = pis.substring(status0 + 8, status1).trim();
                         }
                         try {
-                            Snackbar sb = Snackbar.make(a.getCoordinatorLayout(), !TextUtils.isEmpty(status) ? a.getString(R.string.msg_print_failed_wlabel_wstatus, label, status) : a.getString(R.string.msg_print_failed_wlabel, label), Snackbar.LENGTH_INDEFINITE);
+                            Snackbar sb = Util.makeSnackbar(a, !TextUtils.isEmpty(status) ? a.getString(R.string.msg_print_failed_wlabel_wstatus, label, status) : a.getString(R.string.msg_print_failed_wlabel, label), Snackbar.LENGTH_INDEFINITE);
                             Util.setSnackbarMaxLines(sb, 5);
                             sb.setAction(android.R.string.ok, v -> sb.dismiss());
                             sb.show();

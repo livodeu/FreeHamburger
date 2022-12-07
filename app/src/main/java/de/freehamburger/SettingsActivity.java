@@ -763,8 +763,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                         final int[] widgetIds = aw.getAppWidgetIds(provider);
                         if (widgetIds != null && widgetIds.length > 0) {
                             // ask user to enable updates because there is at least one widget
-                            View cl = activity.findViewById(R.id.coordinator_layout);
-                            Snackbar sb = Snackbar.make(cl, getResources().getQuantityString(R.plurals.msg_widget_dont_disable_updates, widgetIds.length, widgetIds.length), Snackbar.LENGTH_INDEFINITE);
+                            Snackbar sb = Util.makeSnackbar(activity, getResources().getQuantityString(R.plurals.msg_widget_dont_disable_updates, widgetIds.length, widgetIds.length), Snackbar.LENGTH_INDEFINITE);
                             sb.setAction(android.R.string.ok, v -> {
                                 prefPoll.setChecked(true);
                                 Objects.requireNonNull(prefPoll.getOnPreferenceChangeListener()).onPreferenceChange(prefPoll, true);

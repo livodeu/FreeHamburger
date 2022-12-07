@@ -4,6 +4,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -98,6 +99,9 @@ import java.util.Map;
 import java.util.Set;
 
 import de.freehamburger.adapters.RelatedAdapter;
+import de.freehamburger.exo.ExoFactory;
+import de.freehamburger.exo.MediaSourceHelper;
+import de.freehamburger.exo.PlayerListener;
 import de.freehamburger.model.Audio;
 import de.freehamburger.model.Content;
 import de.freehamburger.model.Dictionary;
@@ -105,10 +109,8 @@ import de.freehamburger.model.News;
 import de.freehamburger.model.Related;
 import de.freehamburger.model.StreamQuality;
 import de.freehamburger.model.Video;
-import de.freehamburger.exo.ExoFactory;
+import de.freehamburger.supp.PopupManager;
 import de.freehamburger.util.Log;
-import de.freehamburger.exo.MediaSourceHelper;
-import de.freehamburger.exo.PlayerListener;
 import de.freehamburger.util.PositionedSpan;
 import de.freehamburger.util.PrintUtil;
 import de.freehamburger.util.TextViewImageSpanClickHandler;
@@ -149,7 +151,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private News news;
     private String json;
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
-    private StyledPlayerView topVideoView;    /** Listener for the audio */
+    private StyledPlayerView topVideoView;
+    /** Listener for the audio */
     private final PlayerListener listenerAudio = new PlayerListener(this,true) {
 
         @Override
@@ -298,6 +301,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 this.textViewAudioTitle.setText(audio.getTitle());
                 this.textViewAudioTitle.setSelected(true);
                 this.audioBlock.setVisibility(View.VISIBLE);
+                this.listenerAudio.setCurrentResource(audioUrl);
                 // restore the layout params for the textViewContent
                 RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewContent.getLayoutParams();
                 lp.removeRule(RelativeLayout.BELOW);
@@ -358,6 +362,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     if (this.exoPlayerBottomVideo != null) {
                         this.exoPlayerBottomVideo.setMediaSource(msBottomVideo, true);
                         this.exoPlayerBottomVideo.prepare();
+                        this.listenerBottom.setCurrentResource(uri.toString());
                     }
                     this.bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
                 }
@@ -807,7 +812,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 }
                 if (result.rc != 200 || result.file == null) {
                     Util.deleteFile(temp);
-                    Toast.makeText(this, getString(R.string.error_download_failed, result.msg), Toast.LENGTH_SHORT).show();
+                    Util.makeSnackbar(this, !TextUtils.isEmpty(result.msg) ? getString(R.string.error_download_failed, result.msg) : getString(R.string.error_download_failed2), Snackbar.LENGTH_SHORT).show();
                     return;
                 }
                 JsonReader reader = null;
@@ -1169,7 +1174,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     NewsActivity.this.fab.hide();
                 });
                 this.fab.setOnLongClickListener(v -> {
-                    Toast.makeText(v.getContext(), R.string.action_read_stop, Toast.LENGTH_LONG).show();
+                    new PopupManager().showPopup(v, getString(R.string.action_read_stop), 2_000L);
                     v.setOnLongClickListener(null);
                     return true;
                 });
@@ -1642,7 +1647,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT);
             }
             if (ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) == null) {
-                Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_SHORT).show();
+                if (ctx instanceof Activity) Util.makeSnackbar((Activity)ctx, R.string.error_no_app, Snackbar.LENGTH_SHORT).show();
+                else Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_SHORT).show();
                 return;
             }
             Intent chooserIntent = Intent.createChooser(intent, null);

@@ -125,6 +125,7 @@
     <string name="error_tts_fail_service">Speaking failed because there was a malfunction in the text-to-speech service.</string>
     <string name="error_tts_fail_synthesis">Speaking failed because the text-to-speech engine could not pronounce it.</string>
     <string name="error_unknown_host">has not been found</string>
+    <string name="error_video_unavailable">The video is not available.</string>
     <string name="msg_widget_no_news">No contents at the moment.</string>
 
     <string name="label_archive">Archive</string>

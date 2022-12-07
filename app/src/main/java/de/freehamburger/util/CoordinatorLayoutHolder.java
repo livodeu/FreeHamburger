@@ -2,6 +2,7 @@ package de.freehamburger.util;
 
 import com.google.android.material.snackbar.Snackbar;
 
+import androidx.annotation.Nullable;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 /**
@@ -11,5 +12,5 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout;
 @FunctionalInterface
 public interface CoordinatorLayoutHolder {
 
-    CoordinatorLayout getCoordinatorLayout();
+    @Nullable CoordinatorLayout getCoordinatorLayout();
 }

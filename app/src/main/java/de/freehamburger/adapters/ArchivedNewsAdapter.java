@@ -12,7 +12,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
@@ -34,7 +33,6 @@ import de.freehamburger.Archive;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.R;
 import de.freehamburger.model.ArchivedNews;
-import de.freehamburger.util.CoordinatorLayoutHolder;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
 
@@ -166,8 +164,7 @@ public class ArchivedNewsAdapter extends RecyclerView.Adapter<ArchivedNewsAdapte
             Archive archive = (Archive)ctx;
             final ArchivedNews archivedNews = adapter.list.get(position);
             if (!archivedNews.getFile().isFile()) {
-                if (ctx instanceof CoordinatorLayoutHolder) Snackbar.make(((CoordinatorLayoutHolder)ctx).getCoordinatorLayout(), R.string.error_archived_retrieval, Snackbar.LENGTH_SHORT).show();
-                else Toast.makeText(ctx, R.string.error_archived_retrieval, Toast.LENGTH_SHORT).show();
+                Util.makeSnackbar(archive, R.string.error_archived_retrieval, Snackbar.LENGTH_SHORT).show();
                 return;
             }
             if (v == this.buttonDelete) {

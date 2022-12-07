@@ -19,17 +19,18 @@ import android.widget.RadioButton;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.google.android.material.snackbar.Snackbar;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import de.freehamburger.R;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.TextFilter;
-import de.freehamburger.util.CoordinatorLayoutHolder;
+import de.freehamburger.util.Util;
 
 /**
  *
@@ -274,8 +275,8 @@ public class FilterView extends RelativeLayout implements TextWatcher, CompoundB
             CharSequence contentDescription = v.getContentDescription();
             if (TextUtils.isEmpty(contentDescription)) return false;
             Context ctx = v.getContext();
-            if (ctx instanceof CoordinatorLayoutHolder) {
-                Snackbar.make(((CoordinatorLayoutHolder)ctx).getCoordinatorLayout(), contentDescription, Snackbar.LENGTH_SHORT).show();
+            if (ctx instanceof Activity) {
+                Util.makeSnackbar((Activity)ctx, contentDescription, Snackbar.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(v.getContext(), contentDescription, Toast.LENGTH_SHORT).show();
             }

@@ -1,10 +1,10 @@
 package de.freehamburger.exo;
 
 import android.app.Activity;
-import android.widget.Toast;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
@@ -13,9 +13,6 @@ import com.google.android.material.snackbar.Snackbar;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
-import de.freehamburger.BuildConfig;
-import de.freehamburger.util.CoordinatorLayoutHolder;
-import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
 
 /**
@@ -29,22 +26,18 @@ public class PlayerListener implements Player.Listener {
     private final boolean showErrors;
     protected int exoPlayerState = 0; // 0 is not a defined Player.State so this means undefined
     protected boolean exoPlayerPlayWhenReady = false;
+    protected String currentResource;
 
     /**
-     * Returns a String representation of a Player's playback state.
-     * For debug only.
-     * @param playbackState com.google.android.exoplayer2.Player.State
-     * @return String representation
+     * Constructor.
+     *
+     * @param activity   Activity this listener is used in
+     * @param showErrors true to display playback errors, false to suppress them
      */
-    @NonNull
-    private static String playbackState(@Player.State int playbackState) {
-        switch (playbackState) {
-            case Player.STATE_BUFFERING: return "buffering";
-            case Player.STATE_ENDED: return "ended";
-            case Player.STATE_IDLE: return "idle";
-            case Player.STATE_READY: return "ready";
-        }
-        return String.valueOf(playbackState);
+    public PlayerListener(@NonNull Activity activity, boolean showErrors) {
+        super();
+        this.refActivity = new WeakReference<>(activity);
+        this.showErrors = showErrors;
     }
 
     /**
@@ -66,15 +59,20 @@ public class PlayerListener implements Player.Listener {
     }
 
     /**
-     * Constructor.
-     *
-     * @param activity   Activity this listener is used in
-     * @param showErrors true to display playback errors, false to suppress them
+     * Returns a String representation of a Player's playback state.
+     * For debug only.
+     * @param playbackState com.google.android.exoplayer2.Player.State
+     * @return String representation
      */
-    public PlayerListener(@NonNull Activity activity, boolean showErrors) {
-        super();
-        this.refActivity = new WeakReference<>(activity);
-        this.showErrors = showErrors;
+    @NonNull
+    private static String playbackState(@Player.State int playbackState) {
+        switch (playbackState) {
+            case Player.STATE_BUFFERING: return "buffering";
+            case Player.STATE_ENDED: return "ended";
+            case Player.STATE_IDLE: return "idle";
+            case Player.STATE_READY: return "ready";
+        }
+        return String.valueOf(playbackState);
     }
 
     /**
@@ -117,18 +115,14 @@ public class PlayerListener implements Player.Listener {
     @Override
     @CallSuper
     public void onPlayerError(@NonNull PlaybackException error) {
-        if (BuildConfig.DEBUG) Log.w(TAG, "onPlayerError(" + error + ")");
         if (!this.showErrors) return;
         Activity activity = this.refActivity.get();
         if (activity == null) return;
         String msg = Util.playbackExceptionMsg(activity, error);
-        if (activity instanceof CoordinatorLayoutHolder) {
-            Snackbar sb = Snackbar.make(((CoordinatorLayoutHolder)activity).getCoordinatorLayout(), msg, Snackbar.LENGTH_LONG);
-            Util.setSnackbarFont(sb, Util.CONDENSED, 14f);
-            sb.show();
-        } else {
-            Toast.makeText(activity.getApplicationContext(), msg, Toast.LENGTH_LONG).show();
-        }
+        Snackbar sb = Util.makeSnackbar(activity, msg, Snackbar.LENGTH_INDEFINITE);
+        Util.setSnackbarFont(sb, Util.CONDENSED, 14f);
+        sb.setAction(android.R.string.ok, (v) -> sb.dismiss());
+        sb.show();
     }
 
     /**
@@ -136,5 +130,14 @@ public class PlayerListener implements Player.Listener {
      * Default implementation does not do anything.
      */
     public void onPlayerStateOrOnPlayWhenReadyChanged() {
+    }
+
+    /**
+     * Sets the current resource.
+     * This can, for example, be used for reporting playback failures.
+     * @param currentResource current resource
+     */
+    public void setCurrentResource(@Nullable String currentResource) {
+        this.currentResource = currentResource != null ? currentResource.trim() : null;
     }
 }
