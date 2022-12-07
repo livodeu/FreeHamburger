@@ -220,14 +220,40 @@ public class WebViewActivity extends AppCompatActivity {
                 finish();
                 return;
             }
-            //noinspection ConstantConditions
             url = Util.makeHttps(url);
-            this.webView.loadUrl(url);
+            Uri uri = Uri.parse(url);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            if (App.isSchemeAllowed(scheme)) {
+                if (App.isHostAllowed(host)) {
+                    this.webView.loadUrl(url);
+                } else {
+                    Toast.makeText(this, getString(R.string.error_link_not_supported, host), Toast.LENGTH_LONG).show();
+                    finish();
+                }
+            } else {
+                Toast.makeText(this, getString(R.string.error_link_not_supported, !TextUtils.isEmpty(scheme) ? scheme : url), Toast.LENGTH_LONG).show();
+                finish();
+            }
         } else {
             Intent intent = getIntent();
             String url = intent.getStringExtra(EXTRA_URL);
             if (url != null) {
-                this.webView.loadUrl(Util.makeHttps(url));
+                url = Util.makeHttps(url);
+                Uri uri = Uri.parse(url);
+                String scheme = uri.getScheme();
+                String host = uri.getHost();
+                if (App.isSchemeAllowed(scheme)) {
+                    if (App.isHostAllowed(host)) {
+                        this.webView.loadUrl(uri.toString());
+                    } else {
+                        Toast.makeText(this, getString(R.string.error_link_not_supported, host), Toast.LENGTH_LONG).show();
+                        finish();
+                    }
+                } else {
+                    Toast.makeText(this, getString(R.string.error_link_not_supported, !TextUtils.isEmpty(scheme) ? scheme : url), Toast.LENGTH_LONG).show();
+                    finish();
+                }
             }
         }
     }

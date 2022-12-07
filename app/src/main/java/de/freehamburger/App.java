@@ -401,6 +401,15 @@ public class App extends Application implements Application.ActivityLifecycleCal
     }
 
     /**
+     * Returns {@code true} if the given uri scheme is "https".
+     * @param scheme scheme to check
+     * @return {@code true} / {@code false}
+     */
+    public static boolean isSchemeAllowed(@Nullable String scheme) {
+        return "https".equalsIgnoreCase(scheme);
+    }
+
+    /**
      * Closes the {@link #client OkHttpClient}.
      */
     private void closeClient() {
