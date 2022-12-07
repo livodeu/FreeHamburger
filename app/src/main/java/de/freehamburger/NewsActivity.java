@@ -158,7 +158,15 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         @Override
         public void onPlayerError(@NonNull PlaybackException error) {
             super.onPlayerError(error);
-            NewsActivity.this.buttonAudio.setEnabled(false);
+            // hide audio block
+            ObjectAnimator.ofFloat(NewsActivity.this.audioBlock, "alpha", 1f, 0f).setDuration(750L).start();
+            NewsActivity.this.handler.postDelayed(() -> {
+                NewsActivity.this.audioBlock.setVisibility(View.GONE);
+                // adjust the layout params for the textViewContent to be directly below textViewTitle
+                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) NewsActivity.this.textViewContent.getLayoutParams();
+                lp.removeRule(RelativeLayout.BELOW);
+                lp.addRule(RelativeLayout.BELOW, R.id.textViewTitle);
+                }, 750L);
         }
 
         @Override
@@ -197,9 +205,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         /** {@inheritDoc} */
         @Override
         public void onPlayerError(@NonNull PlaybackException error) {
-            // if bottom sheet is collapsed, hide it completely
+            NewsActivity.this.textViewBottomVideoPeek.setText(getString(R.string.error_video_unavailable));
+            NewsActivity.this.handler.postDelayed(() -> hideBottomSheet(),4_000L);
+            // if bottom sheet is collapsed, hide it completely and return
             if (isBottomSheetCollapsed()) {
-                hideBottomSheet();
                 return;
             }
             if (isBottomSheetHidden()) return;
