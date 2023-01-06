@@ -1086,6 +1086,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         this.sourceForMenuItem.put(R.id.action_section_wirtschaft, Source.WIRTSCHAFT);
         this.sourceForMenuItem.put(R.id.action_section_sport, Source.SPORT);
         this.sourceForMenuItem.put(R.id.action_section_regional, Source.REGIONAL);
+        this.sourceForMenuItem.put(R.id.action_section_wissen, Source.WISSEN);
         this.sourceForMenuItem.put(R.id.action_section_video, Source.VIDEO);
         this.sourceForMenuItem.put(R.id.action_section_channels, Source.CHANNELS);
         this.sourceForMenuItem.put(R.id.action_section_weather, Source.WEATHER);

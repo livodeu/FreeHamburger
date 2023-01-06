@@ -43,6 +43,12 @@
         android:icon="@drawable/ic_place_black_24dp"
         android:title="@string/action_section_regional"/>
     <item
+        android:id="@+id/action_section_wissen"
+        android:alphabeticShortcut="k"
+        android:visible="true"
+        android:icon="@drawable/ic_baseline_lightbulb_black_24"
+        android:title="@string/action_section_wissen"/>
+    <item
         android:id="@+id/action_section_iv"
         android:alphabeticShortcut="f"
         android:visible="true"

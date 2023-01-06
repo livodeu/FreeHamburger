@@ -144,6 +144,7 @@
     <string name="action_section_weather">Wetter</string>
     <string name="action_section_wirtschaft">Wirtschaft</string>
     <string name="action_section_wirtschaft_short">Wirtsch.</string>
+    <string name="action_section_wissen">Wissen</string>
     <string name="action_section_regional">Regionen</string>
     <string name="action_quality_select">Bitte Videoqualität wählen</string>
     <string name="label_sections">Kategorien</string>

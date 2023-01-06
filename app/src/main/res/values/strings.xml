@@ -45,6 +45,7 @@
     <string name="action_section_weather">Weather</string>
     <string name="action_section_wirtschaft">Economy</string>
     <string name="action_section_wirtschaft_short">Economy</string>
+    <string name="action_section_wissen">Knowledge</string>
     <string name="action_select_regions">Regions</string>
     <string name="action_settings">Settings</string>
     <string name="action_settings_more">More…</string>
