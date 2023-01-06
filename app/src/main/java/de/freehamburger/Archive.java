@@ -350,7 +350,9 @@ public class Archive extends HamburgerActivity {
     @MainThread
     private void loadFiles() {
         this.files = new ArrayList<>(loadAll(this.folder));
-        if (this.files.isEmpty()) finish();
+        if (this.files.isEmpty() && !Util.TEST) {
+            finish();
+        }
         final List<ArchivedNews> list = new ArrayList<>(this.files.size());
         for (File file : this.files) {
             if (file == null) continue;
