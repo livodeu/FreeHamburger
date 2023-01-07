@@ -1,15 +1,16 @@
 package de.freehamburger.adapters;
 
 import android.content.Context;
-import android.os.Build;
-import androidx.annotation.ColorInt;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.List;
 
@@ -68,19 +69,11 @@ public class RegionsAdapter extends BaseAdapter {
     /** {@inheritDoc} */
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        TextView tv;
+        final TextView tv;
         if (convertView instanceof TextView) {
             tv = (TextView) convertView;
         } else {
-            tv = new TextView(this.ctx);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                tv.setTextAppearance(R.style.TextAppearance_Material3_BodyMedium);
-            } else {
-                tv.setTextAppearance(this.ctx, R.style.TextAppearance_Material3_BodyMedium);
-            }
-            tv.setMaxLines(1);
-            tv.setPadding(32, 4, 8, 4);
-            tv.setFocusable(false);
+            tv = (TextView) LayoutInflater.from(this.ctx).inflate(R.layout.region_view, parent, false);
         }
         tv.setText(getItem(position).toString());
         tv.setTextColor(this.checked[position] ? this.colorAccent : this.colorText);
