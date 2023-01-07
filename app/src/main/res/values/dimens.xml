@@ -44,6 +44,7 @@
     <dimen name="widget_radius">16dp</dimen>
     <dimen name="widget_radius_half">8dp</dimen>
     <dimen name="widget_inner_padding">4dp</dimen>
+    <dimen name="widget_min_size">48dp</dimen>
     <dimen name="widget_max_textsize">18sp</dimen>
     <dimen name="widget_min_textsize">10sp</dimen>
 

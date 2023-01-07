@@ -35,6 +35,7 @@
         android:imeOptions="actionDone|flagNoPersonalizedLearning"
         android:importantForAutofill="no"
         android:inputType="text|textNoSuggestions|textFilter"
+        android:minHeight="@dimen/widget_min_size"
         />
 
     <ImageButton
@@ -48,6 +49,8 @@
         android:contentDescription="@string/hint_filter_button_delete"
         android:focusable="true"
         android:focusableInTouchMode="false"
+        android:minWidth="@dimen/widget_min_size"
+        android:minHeight="@dimen/widget_min_size"
         android:padding="8dp"
         app:srcCompat="@drawable/ic_delete_onprimary_24dp" />
 
