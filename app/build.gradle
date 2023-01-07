@@ -110,9 +110,9 @@ dependencies {
 
     // https://developer.android.com/jetpack/androidx/releases/test
     androidTestImplementation 'androidx.test:core:1.5.0'
-    androidTestImplementation 'androidx.test:runner:1.5.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     androidTestImplementation 'androidx.test:rules:1.5.0'
 
-    testImplementation 'androidx.test:runner:1.5.1'
+    testImplementation 'androidx.test:runner:1.5.2'
 }
