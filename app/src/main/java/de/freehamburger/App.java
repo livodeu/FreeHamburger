@@ -15,7 +15,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.RingtoneManager;
-import android.net.TrafficStats;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -61,9 +60,7 @@ import de.freehamburger.prefs.PrefsHelper;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
-import okhttp3.Connection;
 import okhttp3.ConnectionSpec;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.TlsVersion;
 
@@ -297,17 +294,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 .tlsVersions(TlsVersion.TLS_1_2, TlsVersion.TLS_1_3)
                 .build();
         builder.connectionSpecs(Collections.singletonList(connectionSpec));
-        //
-        Interceptor stats = chain -> {
-            try {
-                Connection connection = chain.connection();
-                if (connection != null) TrafficStats.tagSocket(connection.socket());
-            } catch (Throwable t) {
-                if (BuildConfig.DEBUG) Log.e(TAG, t.toString(), t);
-            }
-            return chain.proceed(chain.request());
-        };
-        builder.addNetworkInterceptor(stats);
         //
         return builder.build();
     }
