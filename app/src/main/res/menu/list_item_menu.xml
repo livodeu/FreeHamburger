@@ -6,20 +6,24 @@
         android:orderInCategory="5"
         android:title="@string/action_view_in_browser" />
 
-    <item
-        android:id="@+id/action_share_news"
-        android:orderInCategory="10"
-        android:title="@string/action_share_news" />
+    <group android:id="@+id/group_share">
 
-    <item
-        android:id="@+id/action_share_image"
-        android:orderInCategory="20"
-        android:title="@string/action_share_image" />
+        <item
+            android:id="@+id/action_share_news"
+            android:orderInCategory="10"
+            android:title="@string/action_share_news" />
 
-    <item
-        android:id="@+id/action_share_video"
-        android:orderInCategory="30"
-        android:title="@string/action_share_video" />
+        <item
+            android:id="@+id/action_share_image"
+            android:orderInCategory="20"
+            android:title="@string/action_share_image" />
+
+        <item
+            android:id="@+id/action_share_video"
+            android:orderInCategory="30"
+            android:title="@string/action_share_video" />
+
+    </group>
 
     <item
         android:id="@+id/action_view_picture"
@@ -30,6 +34,5 @@
     <item
         android:id="@+id/action_print_picture"
         android:orderInCategory="50"
-        android:title="@string/action_print_pic"
-        />
+        android:title="@string/action_print_pic" />
 </menu>

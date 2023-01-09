@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
@@ -593,6 +594,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             if (position < 0) return;
             NewsAdapterController ma = (NewsAdapterController) ctx;
             ma.getMenuInflater().inflate(R.menu.list_item_menu, menu);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) menu.setGroupDividerEnabled(true);
             NewsRecyclerAdapter adapter = ma.getAdapter();
             adapter.contextMenuIndex = position;
             //
