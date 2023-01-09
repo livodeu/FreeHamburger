@@ -2,22 +2,22 @@ package de.freehamburger.model;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
+import android.view.Window;
+import android.widget.Toast;
+
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import android.view.Window;
-import android.widget.Toast;
+import androidx.preference.PreferenceManager;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import androidx.preference.PreferenceManager;
-
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import de.freehamburger.App;
 import de.freehamburger.R;
@@ -132,7 +132,7 @@ public enum Region {
                     if (f.isFile()) {
                         Util.deleteFile(f);
                     }
-                    Toast.makeText(app, app.getResources().getQuantityString(R.plurals.msg_regions_selected, newRegionSet.size(), newRegionSet.size()), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity, app.getResources().getQuantityString(R.plurals.msg_regions_selected, newRegionSet.size(), newRegionSet.size()), Toast.LENGTH_SHORT).show();
                 })
                 ;
         AlertDialog ad = builder.create();
