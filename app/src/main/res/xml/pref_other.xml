@@ -1,5 +1,5 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <SwitchPreferenceCompat
         app:defaultValue="@bool/pref_play_intro_default"
@@ -16,22 +16,14 @@
         app:summaryOn="@string/label_yes"
         app:title="@string/pref_title_show_share_target" />
 
-    <SwitchPreferenceCompat
-        app:defaultValue="@bool/pref_text_selection_default"
-        app:key="pref_text_selection"
-        app:singleLineTitle="false"
-        app:summaryOff="@string/label_no"
-        app:summaryOn="@string/label_yes"
-        app:title="@string/pref_title_text_selection" />
-
     <Preference
-        app:key="pref_import_archive"
         app:icon="@drawable/ic_baseline_unarchive_content_24"
+        app:key="pref_import_archive"
         app:title="@string/action_archive_import_ext">
         <intent
-            android:targetPackage="de.freehamburger"
-            android:targetClass="de.freehamburger.Archive"
             android:action="@string/appaction_archive_import"
+            android:targetClass="de.freehamburger.Archive"
+            android:targetPackage="de.freehamburger"
             />
     </Preference>
 

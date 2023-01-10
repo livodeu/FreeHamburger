@@ -339,7 +339,6 @@
     <string name="pref_title_cols_portrait_short">Vertikal: %1$s</string>
     <string name="pref_header_video">Video</string>
     <string name="pref_title_pip_enabled">Bild-in-Bild-Modus verwenden</string>
-    <string name="pref_title_text_selection">Experimentell: Textauswahl erlauben</string>
     <string name="pref_summary_pip_off">Der Bild-in-Bild-Modus wird nicht verwendet.</string>
     <string name="pref_summary_pip_on">Der Bild-in-Bild-Modus wird bei Vollbildvideos verwendet.</string>
     <plurals name="msg_widget_dont_disable_updates">
