@@ -86,13 +86,13 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.4.2'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'androidx.preference:preference:1.2.0'
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     // https://github.com/material-components/material-components-android
-    implementation 'com.google.android.material:material:1.6.1'
+    implementation 'com.google.android.material:material:1.7.0'
     // https://github.com/square/okhttp
     //noinspection GradleDependency
     implementation 'com.squareup.okhttp3:okhttp:4.10.0'
@@ -107,6 +107,11 @@ dependencies {
     implementation 'com.google.android.exoplayer:extension-okhttp:2.18.2'
 
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
+
+    // this is to eliminate "Duplicate class androidx.lifecycle.ViewModelLazy" and "Duplicate class androidx.lifecycle.ViewTreeViewModelKt"
+    // in lifecycle-viewmodel-2.5.0-runtime and lifecycle-viewmodel-ktx-2.3.1-runtime
+    // which occurs when using material:1.7.0 and beyond
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1'
 
     // https://developer.android.com/jetpack/androidx/releases/test
     androidTestImplementation 'androidx.test:core:1.5.0'
