@@ -18,6 +18,8 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
@@ -74,6 +76,14 @@ public class WebViewActivity extends AppCompatActivity {
     private static final String SCHEME_HTTP = "http";
     private static final String SCHEME_HTTPS = "https";
     private static final String TAG = "WebViewActivity";
+    WebView webView;
+    private News news;
+    /** vertical scroll position as a fraction of the page's height (can thus be larger than 1) */
+    private float currentScrollY = 0f;
+    /** {@code true} while the page is loading */
+    private boolean loading;
+    /** set to {@code true} when the device's configuration has changed*/
+    private boolean configurationJustChanged;
 
     /**
      * Initiates a download via the system's {@link DownloadManager}.
@@ -94,14 +104,16 @@ public class WebViewActivity extends AppCompatActivity {
         dm.enqueue(r);
     }
 
-    WebView webView;
-    private News news;
-    /** vertical scroll position as a fraction of the page's height (can thus be larger than 1) */
-    private float currentScrollY = 0f;
-    /** {@code true} while the page is loading */
-    private boolean loading;
-    /** set to {@code true} when the device's configuration has changed*/
-    private boolean configurationJustChanged;
+    @Nullable
+    private String extractUrl() {
+        if (this.news == null) {
+            Intent intent = getIntent();
+            return intent.getStringExtra(EXTRA_URL);
+        }
+        String url = this.news.getDetailsWeb();
+        if (TextUtils.isEmpty(url)) url = this.news.getShareUrl();
+        return url;
+    }
 
     /**
      * Returns a {@link PageFinishedListener PageFinishedListener} which gets notified when a page has been loaded. Defaults to null.
@@ -128,7 +140,6 @@ public class WebViewActivity extends AppCompatActivity {
         super.onConfigurationChanged(newConfig);
     }
 
-    /** {@inheritDoc} */
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -195,11 +206,41 @@ public class WebViewActivity extends AppCompatActivity {
     }
 
     /** {@inheritDoc} */
+    @Override public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.web_menu, menu);
+        return true;
+    }
+
+    /** {@inheritDoc} */
     @Override
     protected void onDestroy() {
         this.webView.clearCache(true);
         CookieManager.getInstance().removeAllCookies(null);
         super.onDestroy();
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (R.id.action_open_in_browser == item.getItemId()) {
+            String url = extractUrl();
+            if (TextUtils.isEmpty(url)) return true;
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(url));
+            try {
+                startActivity(intent);
+            } catch (Exception ignored) {
+                Toast.makeText(this, R.string.error_no_app, Toast.LENGTH_SHORT).show();
+            }
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem itemOpenInBrowser = menu.findItem(R.id.action_open_in_browser);
+        if (itemOpenInBrowser != null) itemOpenInBrowser.setEnabled(!TextUtils.isEmpty(extractUrl()));
+        return true;
     }
 
     /** {@inheritDoc} */
@@ -213,8 +254,7 @@ public class WebViewActivity extends AppCompatActivity {
             return;
         }
         if (this.news != null) {
-            String url = this.news.getDetailsWeb();
-            if (TextUtils.isEmpty(url)) url = this.news.getShareUrl();
+            String url = extractUrl();
             if (TextUtils.isEmpty(url)) {
                 Toast.makeText(this, R.string.error_no_further_details, Toast.LENGTH_LONG).show();
                 finish();
@@ -304,6 +344,16 @@ public class WebViewActivity extends AppCompatActivity {
                 ".7z", ".apk", ".arw", ".bin", ".bz2", ".cr2", ".deb", ".dng", ".doc", ".docx", ".epub", ".exe",
                 ".gz", ".iso", ".jar", ".nef", ".ods", ".odt", ".pdf", ".ppt", ".rar", ".tgz", ".ttf", ".vhd", ".xls", ".xlsx", ".xz", ".zip"
         };
+        private final Handler handler = new Handler();
+        private final WebViewActivity activity;
+        /**
+         * Constructor.
+         * @param activity WebViewActivity
+         */
+        private HamburgerWebViewClient(@NonNull WebViewActivity activity) {
+            super();
+            this.activity = activity;
+        }
 
         /**
          * Checks whether the given resource should be downloaded.
@@ -354,23 +404,6 @@ public class WebViewActivity extends AppCompatActivity {
             }
             return false;
         }
-        private final Handler handler = new Handler();
-        private final WebViewActivity activity;
-
-        /**
-         * Constructor.
-         * @param activity WebViewActivity
-         */
-        private HamburgerWebViewClient(@NonNull WebViewActivity activity) {
-            super();
-            this.activity = activity;
-        }
-
-        /** {@inheritDoc} */
-        @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
-            this.activity.loading = true;
-            super.onPageStarted(view, url, favicon);
-        }
 
         /** {@inheritDoc} */
         @Override
@@ -415,6 +448,12 @@ public class WebViewActivity extends AppCompatActivity {
                 sb.show();
                 view.goBack();
             }
+        }
+
+        /** {@inheritDoc} */
+        @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+            this.activity.loading = true;
+            super.onPageStarted(view, url, favicon);
         }
 
         /** {@inheritDoc} */
