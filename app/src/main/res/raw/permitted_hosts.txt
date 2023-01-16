@@ -34,3 +34,5 @@ tagesschau.akamaized.net
 wdr.de
 wdrhf.akamaized.net
 akamaihd.net
+ardaudiothek.de
+ardmediathek.de

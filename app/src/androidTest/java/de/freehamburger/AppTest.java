@@ -413,10 +413,12 @@ public class AppTest {
     public void testHostAllowed() {
         final String[] hosts = new String[] {
                 "https://www.google.com", "https://www.tagesschau.de", App.URL_PREFIX, App.URL_TELETEXT, "https://www.facebook.com",
+                "https://accounts.ard.de",
                 "http://www.google.com", "http://www.tagesschau.de"
         };
         final boolean[] allowed = new boolean[] {
                 false, true, true, true, false,
+                false,
                 false, true
         };
         final int n = hosts.length;

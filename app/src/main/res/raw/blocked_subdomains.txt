@@ -1,0 +1,2 @@
+# subdomains of hosts to be blocked that are otherwise permitted via the permitted_hosts file
+accounts.ard.de

@@ -230,8 +230,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** used to build a preferences key to store the most recent <em>user-initiated</em> update of a {@link Source} */
     private static final String PREFS_PREFIX_MOST_RECENT_MANUAL_UPDATE = "latest_manual_";
     private static final String TAG = "App";
-    private static final Set<String> PERMITTED_HOSTS = new HashSet<>(30);
-    private static final Set<String> PERMITTED_HOSTS_NO_SCRIPT = new HashSet<>(2);
+    private static final Set<String> PERMITTED_HOSTS = new HashSet<>(38);
+    private static final Set<String> BLOCKED_SUBDOMAINS = new HashSet<>(1);
+    private static final Set<String> PERMITTED_HOSTS_NO_SCRIPT = new HashSet<>(3);
 
     /*
      * For older apps, possible app versions and os versions are merged into the user agent.
@@ -360,6 +361,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
         if (host == null) return false;
         for (String allowedHost : PERMITTED_HOSTS) {
             if (host.endsWith(allowedHost)) {
+                for (String blockedSubdomain : BLOCKED_SUBDOMAINS) {
+                    if (host.endsWith(blockedSubdomain)) {
+                        if (BuildConfig.DEBUG) Log.w(TAG, "Host " + host + " (subdomain) is not allowed!");
+                        return false;
+                    }
+                }
                 return true;
             }
         }
@@ -666,7 +673,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
         new Thread() {
             @Override
             public void run() {
-                PERMITTED_HOSTS.addAll(Util.loadResourceTextFile(App.this, R.raw.permitted_hosts, 36, true));
+                PERMITTED_HOSTS.addAll(Util.loadResourceTextFile(App.this, R.raw.permitted_hosts, 38, true));
+                BLOCKED_SUBDOMAINS.addAll(Util.loadResourceTextFile(App.this, R.raw.blocked_subdomains, 1, true));
                 PERMITTED_HOSTS_NO_SCRIPT.addAll(Util.loadResourceTextFile(App.this, R.raw.permitted_hosts_no_js, 2, true));
             }
         }.start();
