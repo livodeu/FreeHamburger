@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.text.Editable;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.freehamburger.FilterActivity;
+import de.freehamburger.R;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.TextFilter;
 import de.freehamburger.views.FilterView;
@@ -126,8 +128,9 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     @Override
     @NonNull
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        FilterView v = new FilterView(this.filterActivity);
-        v.getButtonDelete().setOnClickListener(this.filterActivity::onDeleteClicked);
+        FilterView v = (FilterView) LayoutInflater.from(filterActivity).inflate(R.layout.textfilter_view, parent, false);
+        v.init();
+        v.findViewById(R.id.buttonDelete).setOnClickListener(this.filterActivity::onDeleteClicked);
         return new FilterAdapter.ViewHolder(v);
     }
 

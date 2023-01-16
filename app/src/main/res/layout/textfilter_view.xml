@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<de.freehamburger.views.FilterView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:layout_marginStart="8dp"
     android:layout_marginEnd="8dp"
     android:layout_marginBottom="8dp"
@@ -14,21 +15,19 @@
         android:id="@+id/textViewLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@id/editTextPhrase"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
         android:layout_marginEnd="8dp"
         android:gravity="center_vertical"
         android:text="@string/label_filter"
-        android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
+        android:textAppearance="@android:style/TextAppearance.Material.Medium"
+        app:layout_constraintBottom_toBottomOf="@id/editTextPhrase"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
         android:id="@+id/editTextPhrase"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_toStartOf="@id/buttonDelete"
-        android:layout_toEndOf="@id/textViewLabel"
+        android:layout_marginStart="8dp"
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:hint="@string/hint_filter"
@@ -36,31 +35,35 @@
         android:importantForAutofill="no"
         android:inputType="text|textNoSuggestions|textFilter"
         android:minHeight="@dimen/widget_min_size"
-        />
+        app:layout_constraintEnd_toStartOf="@id/buttonDelete"
+        app:layout_constraintStart_toEndOf="@id/textViewLabel"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageButton
         android:id="@+id/buttonDelete"
         style="@android:style/Widget.Material.ImageButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@id/editTextPhrase"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
         android:contentDescription="@string/hint_filter_button_delete"
         android:focusable="true"
         android:focusableInTouchMode="false"
         android:minWidth="@dimen/widget_min_size"
         android:minHeight="@dimen/widget_min_size"
         android:padding="8dp"
+        app:layout_constraintBottom_toBottomOf="@id/editTextPhrase"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_delete_onprimary_24dp" />
 
     <RadioGroup
-        android:layout_width="match_parent"
+        android:id="@+id/radioGroup"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textViewLabel"
-        android:layout_alignParentStart="true"
         android:checkedButton="@+id/radioButtonAnywhere"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewLabel">
 
         <RadioButton
             android:id="@+id/radioButtonAnywhere"
@@ -68,7 +71,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_weight="0.333"
-            android:text="@string/label_filter_anywhere"/>
+            android:text="@string/label_filter_anywhere" />
 
         <RadioButton
             android:id="@+id/radioButtonAtStart"
@@ -76,13 +79,13 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_weight="0.333"
-            android:text="@string/label_filter_at_start"/>
+            android:text="@string/label_filter_at_start" />
 
         <RadioButton
             android:id="@+id/radioButtonAtEnd"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="0.333"
-            android:text="@string/label_filter_at_end"/>
+            android:text="@string/label_filter_at_end" />
     </RadioGroup>
-</RelativeLayout>
+</de.freehamburger.views.FilterView>

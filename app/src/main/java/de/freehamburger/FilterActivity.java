@@ -112,7 +112,7 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
      * @param button the 'clear/delete' button next to the filter phrase
      */
     public void onDeleteClicked(View button) {
-        ViewParent parent = button.getParent().getParent();
+        ViewParent parent = button.getParent();
         if (!(parent instanceof FilterView)) return;
         FilterView filterView = (FilterView)parent;
         EditText editTextPhrase = filterView.findViewById(R.id.editTextPhrase);

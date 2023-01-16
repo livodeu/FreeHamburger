@@ -9,18 +9,16 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RadioButton;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -35,7 +33,7 @@ import de.freehamburger.util.Util;
 /**
  *
  */
-public class FilterView extends RelativeLayout implements TextWatcher, CompoundButton.OnCheckedChangeListener {
+public class FilterView extends ConstraintLayout implements TextWatcher, CompoundButton.OnCheckedChangeListener {
 
     private static final String PREF_1F601_SHOWN = "pref_1f601_shown";
     private final TextSetter textSetter = new TextSetter();
@@ -53,7 +51,6 @@ public class FilterView extends RelativeLayout implements TextWatcher, CompoundB
      */
     public FilterView(Context context) {
         super(context);
-        init(context);
     }
 
     /**
@@ -63,7 +60,6 @@ public class FilterView extends RelativeLayout implements TextWatcher, CompoundB
      */
     public FilterView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context);
     }
 
     /**
@@ -74,14 +70,12 @@ public class FilterView extends RelativeLayout implements TextWatcher, CompoundB
      */
     public FilterView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context);
     }
 
     /** {@inheritDoc} */
     @Override
     public void afterTextChanged(final Editable s) {
         if (this.handler != null) this.handler.removeCallbacks(this.textSetter);
-        //if (BuildConfig.DEBUG) android.util.Log.i("FilterView", "afterTextChanged('" + s + "')");
         if (this.reflistener != null) {
             Listener listener = this.reflistener.get();
             if (listener != null) listener.textChanged(s);
@@ -158,20 +152,10 @@ public class FilterView extends RelativeLayout implements TextWatcher, CompoundB
         }, 250L);
     }
 
-    @NonNull
-    public ImageButton getButtonDelete() {
-        return this.buttonDelete;
-    }
-
     /**
      * Initialisation.
-     * @param ctx Context
-     * @throws NullPointerException if {@code ctx} is {@code null}
      */
-    private void init(Context ctx) {
-        LayoutInflater inflater = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        if (inflater == null) return;
-        inflater.inflate(R.layout.textfilter_view, this);
+    public void init() {
         this.editTextPhrase = findViewById(R.id.editTextPhrase);
         this.radioButtonAnywhere = findViewById(R.id.radioButtonAnywhere);
         this.radioButtonAtStart = findViewById(R.id.radioButtonAtStart);
@@ -278,7 +262,7 @@ public class FilterView extends RelativeLayout implements TextWatcher, CompoundB
             if (ctx instanceof Activity) {
                 Util.makeSnackbar((Activity)ctx, contentDescription, Snackbar.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(v.getContext(), contentDescription, Toast.LENGTH_SHORT).show();
+                Toast.makeText(ctx, contentDescription, Toast.LENGTH_SHORT).show();
             }
             return true;
         }
