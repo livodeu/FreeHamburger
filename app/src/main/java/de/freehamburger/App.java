@@ -69,7 +69,18 @@ import okhttp3.TlsVersion;
  */
 public class App extends Application implements Application.ActivityLifecycleCallbacks, SharedPreferences.OnSharedPreferenceChangeListener {
 
-    public static final String URL_PREFIX = "https://www.tagesschau.de/api2/";
+    public static final int BACKGROUND_AUTO = 0;
+    public static final int BACKGROUND_DAY = 2;
+    public static final int BACKGROUND_NIGHT = 1;
+    /** String: default maximum 'disk' cache size in MB */
+    public static final String DEFAULT_CACHE_MAX_SIZE = "20";
+    /** default maximum 'disk' cache size in MB */
+    public static final long DEFAULT_CACHE_MAX_SIZE_MB = Long.parseLong(DEFAULT_CACHE_MAX_SIZE);
+    public static final boolean DEFAULT_LOAD_OVER_MOBILE = true;
+    public static final boolean DEFAULT_LOAD_VIDEOS_OVER_MOBILE = false;
+    /** String: default maximum memory cache size in MB (must be &gt; 0) */
+    public static final String DEFAULT_MEM_CACHE_MAX_SIZE = "20";
+    public static final int DEFAULT_MEM_CACHE_MAX_SIZE_MB = Integer.parseInt(DEFAULT_MEM_CACHE_MAX_SIZE);
     /** components to be excluded when sharing content */
     @TargetApi(Build.VERSION_CODES.N)
     public static final ComponentName[] EXCLUDED_SEND_TARGETS = new ComponentName[] {
@@ -79,79 +90,35 @@ public class App extends Application implements Application.ActivityLifecycleCal
             // setting images from this app as profile photos would be weird
             new ComponentName("com.samsung.android.app.contacts","com.samsung.android.contacts.editor.SetProfilePhotoActivity")
     };
-    /** the user agent to be used in the http requests */
-    public static final String USER_AGENT;
     /** the directory that shared files are copied to (in the {@link #getCacheDir() cache dir}) */
     public static final String EXPORTS_DIR = "exports";
     /** the name of the file that imported fonts will be stored in (in the {@link #getFilesDir() files dir}) */
     public static final String FONT_FILE = "font.ttf";
     /** the data will be re-loaded if the data in the local file is older than this */
     public static final long LOCAL_FILE_MAXAGE = 15 * 60_000L;
+    /** if this is true, filters will be applied to the categories being displayed - the user can hide categories this way */
+    public static final String PREF_APPLY_FILTERS_TO_CATEGORIES = "pref_apply_filters_to_cats";
+    public static final boolean PREF_APPLY_FILTERS_TO_CATEGORIES_DEFAULT = false;
+    /** boolean: ask before leaving the app */
+    public static final String PREF_ASK_BEFORE_FINISH = "pref_ask_before_finish";
+    public static final boolean PREF_ASK_BEFORE_FINISH_DEFAULT = true;
+    /** int: 0 automatic; 1 dark; 2 light; see {@link BackgroundSelection} */
+    public static final String PREF_BACKGROUND = "pref_background";
     /** String: maximum 'disk' cache size in MB */
     public static final String PREF_CACHE_MAX_SIZE = "pref_cache_max_size";
     /** the minimum valid value for the 'disk' max cache size in bytes */
     public static final long PREF_CACHE_MAX_SIZE_MIN = 4_194_304L;
-    /** String: default maximum 'disk' cache size in MB */
-    public static final String DEFAULT_CACHE_MAX_SIZE = "20";
-    /** default maximum 'disk' cache size in MB */
-    public static final long DEFAULT_CACHE_MAX_SIZE_MB = Long.parseLong(DEFAULT_CACHE_MAX_SIZE);
-    /** the minimum valid value for the memory max cache size in bytes */
-    public static final long PREF_MEM_CACHE_MAX_SIZE_MIN = 1_048_576L;
-    /** the maximum valid value for the memory max cache size in bytes */
-    public static final long PREF_MEM_CACHE_MAX_SIZE_MAX = 100L << 20;
-    /** String: maximum memory cache size in MB */
-    public static final String PREF_MEM_CACHE_MAX_SIZE = "pref_mem_cache_max_size";
-    /** String: default maximum memory cache size in MB (must be &gt; 0) */
-    public static final String DEFAULT_MEM_CACHE_MAX_SIZE = "20";
-    public static final int DEFAULT_MEM_CACHE_MAX_SIZE_MB = Integer.parseInt(DEFAULT_MEM_CACHE_MAX_SIZE);
-    /** int: 0 automatic; 1 dark; 2 light; see {@link BackgroundSelection} */
-    public static final String PREF_BACKGROUND = "pref_background";
+    public static final String PREF_CLICK_FOR_CATS = "pref_click_for_cats";
+    public static final boolean PREF_CLICK_FOR_CATS_DEFAULT = true;
+    /** ColorSpace to use when decoding bitmaps (apparently not [yet] supported by Picasso, see {@link com.squareup.picasso.RequestHandler#createBitmapOptions(Request)}) */
+    public static final String PREF_COLORSPACE = "pref_colorspace";
     /** int: number of columns in landscape orientation - set to 0 to apply defaults */
     public static final String PREF_COLS_LANDSCAPE = "pref_cols_landscape";
     /** int: number of columns in portrait orientation - set to 0 to apply defaults */
     public static final String PREF_COLS_PORTRAIT = "pref_cols_portrait";
-    /** if this is true, filters will be applied to the categories being displayed - the user can hide categories this way */
-    public static final String PREF_APPLY_FILTERS_TO_CATEGORIES = "pref_apply_filters_to_cats";
-    public static final boolean PREF_APPLY_FILTERS_TO_CATEGORIES_DEFAULT = false;
-    public static final String PREF_LOAD_OVER_MOBILE = "pref_load_over_mobile";
-    public static final boolean DEFAULT_LOAD_OVER_MOBILE = true;
-    public static final String PREF_LOAD_VIDEOS_OVER_MOBILE = "pref_load_videos_over_mobile";
-    public static final boolean DEFAULT_LOAD_VIDEOS_OVER_MOBILE = false;
-    /** boolean: open web links internally instead of posting an {@link Intent#ACTION_VIEW} intent */
-    public static final String PREF_OPEN_LINKS_INTERNALLY = "pref_open_links_internally";
-    public static final boolean PREF_OPEN_LINKS_INTERNALLY_DEFAULT = true;
-    /** boolean: show a link for htmlEmbed content */
-    public static final String PREF_SHOW_EMBEDDED_HTML_LINKS = "pref_show_enbedded_html_links";
-    public static final boolean PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT = true;
-    /** boolean: show where the shared content went */
-    public static final String PREF_SHOW_LATEST_SHARE_TARGET = "pref_show_share_target";
-    public static final boolean PREF_SHOW_LATEST_SHARE_TARGET_DEFAULT = false;
-    /** String: DIRECT, HTTP or SOCKS */
-    public static final String PREF_PROXY_TYPE = "pref_proxy_type";
-    public static final String PREF_REGIONS = "pref_regions";
-    /** boolean: allow text selection in News content view */
-    public static final String PREF_TEXT_SELECTION = "pref_text_selection";
-    public static final boolean PREF_TEXT_SELECTION_DEFAULT = true;
-    /** int: number of times the topline marquee animation is repeated (see also <a href="https://developer.android.com/reference/android/widget/TextView.html?hl=en#attr_android:marqueeRepeatLimit">here</a>) */
-    public static final String PREF_TOPLINE_MARQUEE = "pref_topline_marquee";
-    /** boolean: controls whether time is displayed in a absolute way ("12.34.56 12:34") (false) or in a relative way ("10 minutes ago") (true) */
-    public static final String PREF_TIME_MODE_RELATIVE = "pref_time_mode";
-    public static final boolean PREF_TIME_MODE_RELATIVE_DEFAULT = true;
-    /** boolean: ask before leaving the app */
-    public static final String PREF_ASK_BEFORE_FINISH = "pref_ask_before_finish";
-    public static final boolean PREF_ASK_BEFORE_FINISH_DEFAULT = true;
-    /** boolean: show or hide top video in news - the default depends on the device size and is therefore defined in the resources as {@link R.bool#pref_show_topvideo_default pref_show_topvideo_default} */
-    public static final String PREF_SHOW_TOP_VIDEO = "pref_show_top_video";
-    /** int: 0 closes the app; 1 navigates to home category; 2 navigates to recent section; see {@link BackButtonBehaviour} */
-    public static final String PREF_USE_BACK_IN_APP = "pref_use_back";
-    /** boolean */
-    public static final String PREF_WARN_MUTE = "pref_warn_mute";
-    public static final boolean PREF_WARN_MUTE_DEFAULT = true;
-    /** boolean: show errors in web pages */
-    public static final String PREF_SHOW_WEB_ERRORS = "pref_show_web_errors";
-    public static final boolean PREF_SHOW_WEB_ERRORS_DEFAULT = true;
-    /** String: proxyserver:port */
-    public static final String PREF_PROXY_SERVER = "pref_proxy_server";
+    /** boolean -  See <a href="https://en.wikipedia.org/wiki/Quotation_mark#German">here</a> */
+    public static final String PREF_CORRECT_WRONG_QUOTATION_MARKS = "pref_correct_quotation_marks";
+    public static final boolean PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT = false;
     /** String set */
     public static final String PREF_FILTERS = "pref_filters";
     /** boolean */
@@ -160,79 +127,112 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** int: percentage value (range between @integer/min_magnification_text and @integer/max_magnification_text) */
     public static final String PREF_FONT_ZOOM = "pref_font_zoom";
     public static final int PREF_FONT_ZOOM_DEFAULT = 100;
-    /** boolean: allow to close dialogs by swiping (see {@link android.view.Window#FEATURE_SWIPE_TO_DISMISS}; seems not to work on tablets! */
-    public static final String PREF_SWIPE_TO_DISMISS = "pref_swipe_to_dismiss";
-    public static final String PREF_CLICK_FOR_CATS = "pref_click_for_cats";
-    public static final boolean PREF_CLICK_FOR_CATS_DEFAULT = true;
+    public static final String PREF_LOAD_OVER_MOBILE = "pref_load_over_mobile";
+    public static final String PREF_LOAD_VIDEOS_OVER_MOBILE = "pref_load_videos_over_mobile";
+    /** String: maximum memory cache size in MB */
+    public static final String PREF_MEM_CACHE_MAX_SIZE = "pref_mem_cache_max_size";
+    /** the maximum valid value for the memory max cache size in bytes */
+    public static final long PREF_MEM_CACHE_MAX_SIZE_MAX = 100L << 20;
+    /** the minimum valid value for the memory max cache size in bytes */
+    public static final long PREF_MEM_CACHE_MAX_SIZE_MIN = 1_048_576L;
+    /** boolean: open web links internally instead of posting an {@link Intent#ACTION_VIEW} intent */
+    public static final String PREF_OPEN_LINKS_INTERNALLY = "pref_open_links_internally";
+    public static final boolean PREF_OPEN_LINKS_INTERNALLY_DEFAULT = true;
     /** boolean */
     public static final String PREF_PLAY_INTRO = "pref_play_intro";
     public static final boolean PREF_PLAY_INTRO_DEFAULT = true;
     /** boolean */
     public static final String PREF_POLL = "pref_poll";
-    public static final boolean PREF_POLL_DEFAULT = false;
+    /** boolean */
+    public static final String PREF_POLL_ASK_SWITCHOFF = "pref_poll_ask_switchoff";
+    public static final boolean PREF_POLL_ASK_SWITCHOFF_DEFAULT = true;
     /** boolean */
     public static final String PREF_POLL_BREAKING_ONLY = "pref_poll_breaking_only";
     public static final boolean PREF_POLL_BREAKING_ONLY_DEFAULT = true;
-    /** boolean */
-    public static final String PREF_POLL_OVER_MOBILE = "pref_poll_over_mobile";
-    public static final boolean PREF_POLL_OVER_MOBILE_DEFAULT = false;
+    public static final boolean PREF_POLL_DEFAULT = false;
+    /** long: set to the current timestamp if scheduling the background job had failed */
+    public static final String PREF_POLL_FAILED = "pref_poll_failed";
     /** <b>String</b>: polling interval in minutes */
     public static final String PREF_POLL_INTERVAL = "pref_poll_interval";
     public static final int PREF_POLL_INTERVAL_DEFAULT = 15;
     /** <b>String</b>: polling interval during the night in minutes */
     public static final String PREF_POLL_INTERVAL_NIGHT = "pref_poll_interval_night";
-    /** long: set to the current timestamp if scheduling the background job had failed */
-    public static final String PREF_POLL_FAILED = "pref_poll_failed";
-    /** float */
-    public static final String PREF_POLL_NIGHT_START = "pref_poll_night_start";
-    public static final float PREF_POLL_NIGHT_START_DEFAULT = 23f;
     /** float */
     public static final String PREF_POLL_NIGHT_END = "pref_poll_night_end";
     public static final float PREF_POLL_NIGHT_END_DEFAULT = 6f;
+    /** float */
+    public static final String PREF_POLL_NIGHT_START = "pref_poll_night_start";
+    public static final float PREF_POLL_NIGHT_START_DEFAULT = 23f;
     /** boolean */
-    public static final String PREF_POLL_ASK_SWITCHOFF = "pref_poll_ask_switchoff";
-    public static final boolean PREF_POLL_ASK_SWITCHOFF_DEFAULT = true;
-    /** boolean -  See <a href="https://en.wikipedia.org/wiki/Quotation_mark#German">here</a> */
-    public static final String PREF_CORRECT_WRONG_QUOTATION_MARKS = "pref_correct_quotation_marks";
-    public static final boolean PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT = false;
-    /** ColorSpace to use when decoding bitmaps (apparently not [yet] supported by Picasso, see {@link com.squareup.picasso.RequestHandler#createBitmapOptions(Request)}) */
-    public static final String PREF_COLORSPACE = "pref_colorspace";
+    public static final String PREF_POLL_OVER_MOBILE = "pref_poll_over_mobile";
+    public static final boolean PREF_POLL_OVER_MOBILE_DEFAULT = false;
+    /** String: proxyserver:port */
+    public static final String PREF_PROXY_SERVER = "pref_proxy_server";
+    /** String: DIRECT, HTTP or SOCKS */
+    public static final String PREF_PROXY_TYPE = "pref_proxy_type";
+    public static final String PREF_REGIONS = "pref_regions";
+    /** boolean: show a link for htmlEmbed content */
+    public static final String PREF_SHOW_EMBEDDED_HTML_LINKS = "pref_show_enbedded_html_links";
+    public static final boolean PREF_SHOW_EMBEDDED_HTML_LINKS_DEFAULT = true;
+    /** boolean: show where the shared content went */
+    public static final String PREF_SHOW_LATEST_SHARE_TARGET = "pref_show_share_target";
+    public static final boolean PREF_SHOW_LATEST_SHARE_TARGET_DEFAULT = false;
+    /** boolean: show or hide top video in news - the default depends on the device size and is therefore defined in the resources as {@link R.bool#pref_show_topvideo_default pref_show_topvideo_default} */
+    public static final String PREF_SHOW_TOP_VIDEO = "pref_show_top_video";
+    /** boolean: show errors in web pages */
+    public static final String PREF_SHOW_WEB_ERRORS = "pref_show_web_errors";
+    public static final boolean PREF_SHOW_WEB_ERRORS_DEFAULT = true;
+    /** boolean: allow to close dialogs by swiping (see {@link android.view.Window#FEATURE_SWIPE_TO_DISMISS}; seems not to work on tablets! */
+    public static final String PREF_SWIPE_TO_DISMISS = "pref_swipe_to_dismiss";
+    /** boolean: allow text selection in News content view */
+    public static final String PREF_TEXT_SELECTION = "pref_text_selection";
+    public static final boolean PREF_TEXT_SELECTION_DEFAULT = true;
+    /** boolean: controls whether time is displayed in a absolute way ("12.34.56 12:34") (false) or in a relative way ("10 minutes ago") (true) */
+    public static final String PREF_TIME_MODE_RELATIVE = "pref_time_mode";
+    public static final boolean PREF_TIME_MODE_RELATIVE_DEFAULT = true;
+    /** int: number of times the topline marquee animation is repeated (see also <a href="https://developer.android.com/reference/android/widget/TextView.html?hl=en#attr_android:marqueeRepeatLimit">here</a>) */
+    public static final String PREF_TOPLINE_MARQUEE = "pref_topline_marquee";
+    /** int: 0 closes the app; 1 navigates to home category; 2 navigates to recent section; see {@link BackButtonBehaviour} */
+    public static final String PREF_USE_BACK_IN_APP = "pref_use_back";
+    /** boolean */
+    public static final String PREF_WARN_MUTE = "pref_warn_mute";
+    public static final boolean PREF_WARN_MUTE_DEFAULT = true;
     public static final TimeZone TIMEZONE = TimeZone.getTimeZone("Europe/Berlin");
-    public static final int BACKGROUND_AUTO = 0;
-    public static final int BACKGROUND_NIGHT = 1;
-    public static final int BACKGROUND_DAY = 2;
+    public static final String URL_PREFIX = "https://www.tagesschau.de/api2/";
+    /** the user agent to be used in the http requests */
+    public static final String USER_AGENT;
+    /** default proxy port (if not set by user) */
+    static final int DEFAULT_PROXY_PORT = 80;
+    static final String EXTRA_CRASH = BuildConfig.APPLICATION_ID + ".crash";
+    static final String EXTRA_SCREENSHOT = BuildConfig.APPLICATION_ID + ".screenshot";
     static final String ORIENTATION_AUTO = "AUTO";
-    static final String ORIENTATION_PORTRAIT = "PORTRAIT";
     static final String ORIENTATION_LANDSCAPE = "LANDSCAPE";
+    static final String ORIENTATION_PORTRAIT = "PORTRAIT";
     /** String, one of {@link Orientation} */
     static final String PREF_ORIENTATION = "pref_orientation";
     @Orientation static final String PREF_ORIENTATION_DEFAULT = ORIENTATION_AUTO;
+    /** the AudioManager stream type to be used throughout the app */
+    static final int STREAM_TYPE = AudioManager.STREAM_MUSIC;
     /** teletext url without page number (must be appended) */
     static final String URL_TELETEXT_WO_PAGE = "https://www.ard-text.de/mobil/";
     /** teletext url */
     static final String URL_TELETEXT = URL_TELETEXT_WO_PAGE + "100";
     /** teletext host */
     static final String URI_TELETEXT_HOST = Uri.parse(URL_TELETEXT).getHost();
-    static final String EXTRA_CRASH = BuildConfig.APPLICATION_ID + ".crash";
-    static final String EXTRA_SCREENSHOT = BuildConfig.APPLICATION_ID + ".screenshot";
+    /** back button behaviour: pressing back navigates to the most recent category (if possible) */
+    static final int USE_BACK_BACK = 2;
     /** back button behaviour: pressing back stops the app (respectively the Android default behaviour) */
     static final int USE_BACK_FINISH = 0;
     /** back button behaviour: pressing back navigates to the 'Home' category (if possible) */
     static final int USE_BACK_HOME = 1;
-    /** back button behaviour: pressing back navigates to the most recent category (if possible) */
-    static final int USE_BACK_BACK = 2;
-    /** the AudioManager stream type to be used throughout the app */
-    static final int STREAM_TYPE = AudioManager.STREAM_MUSIC;
-    /** default proxy port (if not set by user) */
-    static final int DEFAULT_PROXY_PORT = 80;
-    /** used to build a preferences key to store the most recent update of a {@link Source} */
-    private static final String PREFS_PREFIX_MOST_RECENT_UPDATE = "latest_";
+    private static final Set<String> BLOCKED_SUBDOMAINS = new HashSet<>(1);
+    private static final Set<String> PERMITTED_HOSTS = new HashSet<>(38);
+    private static final Set<String> PERMITTED_HOSTS_NO_SCRIPT = new HashSet<>(3);
     /** used to build a preferences key to store the most recent <em>user-initiated</em> update of a {@link Source} */
     private static final String PREFS_PREFIX_MOST_RECENT_MANUAL_UPDATE = "latest_manual_";
+    /** used to build a preferences key to store the most recent update of a {@link Source} */
+    private static final String PREFS_PREFIX_MOST_RECENT_UPDATE = "latest_";
     private static final String TAG = "App";
-    private static final Set<String> PERMITTED_HOSTS = new HashSet<>(38);
-    private static final Set<String> BLOCKED_SUBDOMAINS = new HashSet<>(1);
-    private static final Set<String> PERMITTED_HOSTS_NO_SCRIPT = new HashSet<>(3);
 
     /*
      * For older apps, possible app versions and os versions are merged into the user agent.
@@ -400,6 +400,61 @@ public class App extends Application implements Application.ActivityLifecycleCal
      */
     public static boolean isSchemeAllowed(@Nullable String scheme) {
         return "https".equalsIgnoreCase(scheme);
+    }
+
+    /**
+     * Sets the app's background mode according to the preferences.
+     * @param prefs SharedPreferences
+     * @throws NullPointerException if {@code prefs} is {@code null}
+     */
+    private static void setNightMode(@NonNull SharedPreferences prefs) {
+        @BackgroundSelection int background = prefs.getInt(PREF_BACKGROUND, BACKGROUND_AUTO);
+        switch (background) {
+            case BACKGROUND_DAY:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                break;
+            case BACKGROUND_NIGHT:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                break;
+            case BACKGROUND_AUTO:
+            default:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        }
+    }
+
+    /**
+     * For new behaviour in Android 13 / API 33:<br>
+     * If the user stopped the app from the notification area, ask user whether to stop background updates.
+     * @param prefs SharedPreferences
+     */
+    @TargetApi(Build.VERSION_CODES.R)
+    private void askWhetherToStopPolling(@NonNull final SharedPreferences prefs) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return;
+        // if the latest process exit was user-initiated AND if background updates are active AND if the user wishes to be asked…
+        if (prefs.getBoolean(PREF_POLL_ASK_SWITCHOFF, PREF_POLL_ASK_SWITCHOFF_DEFAULT)
+                && prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)
+                && Util.isRecentExitStopApp(this)) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (this.currentActivity == null || this.currentActivity.isFinishing()) return;
+                AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this.currentActivity)
+                        .setTitle(R.string.pref_header_polling)
+                        .setMessage(R.string.msg_background_switchoff)
+                        .setNeutralButton(R.string.label_dont_ask_again, (dialog, which) -> {
+                            dialog.cancel();
+                            SharedPreferences.Editor ed = prefs.edit();
+                            ed.putBoolean(PREF_POLL_ASK_SWITCHOFF, false);
+                            ed.apply();
+                        })
+                        .setNegativeButton(R.string.label_no, (dialog, which) -> dialog.cancel())
+                        .setPositiveButton(R.string.label_yes, (dialog, which) -> {
+                            dialog.dismiss();
+                            SharedPreferences.Editor ed = prefs.edit();
+                            ed.putBoolean(PREF_POLL, false);
+                            ed.apply();
+                        });
+                builder.show();
+            }, 5_000L);
+        }
     }
 
     /**
@@ -742,41 +797,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
         }.start();
     }
 
-    /**
-     * For new behaviour in Android 13 / API 33:<br>
-     * If the user stopped the app from the notification area, ask user whether to stop background updates.
-     * @param prefs SharedPreferences
-     */
-    @TargetApi(Build.VERSION_CODES.R)
-    private void askWhetherToStopPolling(@NonNull final SharedPreferences prefs) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return;
-        // if the latest process exit was user-initiated AND if background updates are active AND if the user wishes to be asked…
-        if (prefs.getBoolean(PREF_POLL_ASK_SWITCHOFF, PREF_POLL_ASK_SWITCHOFF_DEFAULT)
-                && prefs.getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)
-                && Util.isRecentExitStopApp(this)) {
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                if (this.currentActivity == null || this.currentActivity.isFinishing()) return;
-                AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this.currentActivity)
-                        .setTitle(R.string.pref_header_polling)
-                        .setMessage(R.string.msg_background_switchoff)
-                        .setNeutralButton(R.string.label_dont_ask_again, (dialog, which) -> {
-                            dialog.cancel();
-                            SharedPreferences.Editor ed = prefs.edit();
-                            ed.putBoolean(PREF_POLL_ASK_SWITCHOFF, false);
-                            ed.apply();
-                        })
-                        .setNegativeButton(R.string.label_no, (dialog, which) -> dialog.cancel())
-                        .setPositiveButton(R.string.label_yes, (dialog, which) -> {
-                            dialog.dismiss();
-                            SharedPreferences.Editor ed = prefs.edit();
-                            ed.putBoolean(PREF_POLL, false);
-                            ed.apply();
-                        });
-                builder.show();
-            }, 5_000L);
-        }
-    }
-
     /** {@inheritDoc} */
     @Override
     public void onSharedPreferenceChanged(final SharedPreferences prefs, final String key) {
@@ -880,26 +900,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
             }
         }
         ed.apply();
-    }
-
-    /**
-     * Sets the app's background mode according to the preferences.
-     * @param prefs SharedPreferences
-     * @throws NullPointerException if {@code prefs} is {@code null}
-     */
-    void setNightMode(@NonNull SharedPreferences prefs) {
-        @BackgroundSelection int background = prefs.getInt(PREF_BACKGROUND, BACKGROUND_AUTO);
-        switch (background) {
-            case BACKGROUND_DAY:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                break;
-            case BACKGROUND_NIGHT:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                break;
-            case BACKGROUND_AUTO:
-            default:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-        }
     }
 
     /**
