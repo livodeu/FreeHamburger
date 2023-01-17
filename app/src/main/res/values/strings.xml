@@ -246,6 +246,7 @@
     <string name="msg_background_inactive">Background queries are disabled.</string>
     <string name="msg_background_switchoff">You had requested to stop this app recently. Switch off background updates?</string>
     <string name="msg_breaking_only_disabled">\"Breaking\" news are delivered only via the \"Home\" category</string>
+    <string name="msg_confirm_lookup">Look up the selected text in %1$s?</string>
     <string name="msg_delete_confirm">Really delete \"%1$s\"?</string>
     <string name="msg_filters_disabled">Filters are now disabled.</string>
     <string name="msg_filters_enabled">Filters are now enabled.</string>

@@ -126,6 +126,7 @@
     <string name="error_no_app">Keine installierte App kann dies verarbeiten!</string>
     <string name="error_parsing">Fehler beim Verarbeiten der empfangenen Daten!</string>
     <string name="error_audio_focus_denied">Die Wiedergabe ist im Moment nicht möglich!</string>
+    <string name="msg_confirm_lookup">Den ausgewählten Text in %1$s nachschlagen?</string>
     <string name="action_select_regions">Regionen</string>
     <string name="label_regions">Regionen</string>
     <string name="label_streamquality_adaptive">„Adaptive Streaming”</string>
