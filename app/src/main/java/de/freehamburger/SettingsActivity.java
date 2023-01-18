@@ -273,9 +273,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
     /** {@inheritDoc} */
     @Override
-    public void startActivity(Intent intent) {
-        if (BuildConfig.DEBUG) Log.i(getClass().getSimpleName(), "startActivity(" + intent + ")");
-
+    public void startActivity(final Intent intent) {
         String bai = intent.getStringExtra("com.android.browser.application_id");
         if (BuildConfig.APPLICATION_ID.equals(bai)) {
             // the user has tapped a link in a WebView
@@ -283,11 +281,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 this.helpDialog.dismiss();
                 this.helpDialog = null;
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT);
-            } else {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.removeCategory(Intent.CATEGORY_BROWSABLE);
             if (getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
                 super.startActivity(intent);

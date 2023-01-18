@@ -1652,9 +1652,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             final Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setDataAndType(uri, mime);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT);
-            }
             if (ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) == null) {
                 if (ctx instanceof Activity) Util.makeSnackbar((Activity)ctx, R.string.error_no_app, Snackbar.LENGTH_SHORT).show();
                 else Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_SHORT).show();
