@@ -63,6 +63,7 @@ public enum Region {
     /**
      * @return List of labels of all valid Regions
      */
+    @NonNull
     public static List<String> getValidLabels() {
         final Region[] regions = values();
         final List<String> list = new ArrayList<>(regions.length - 1);
@@ -91,7 +92,6 @@ public enum Region {
      * @return AlertDialog
      * @throws NullPointerException if {@code activity} is {@code null}
      */
-    @SuppressWarnings("ConstantConditions")
     @NonNull
     public static AlertDialog selectRegions(@NonNull Activity activity) {
         final App app = (App)activity.getApplicationContext();
