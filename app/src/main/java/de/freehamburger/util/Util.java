@@ -11,7 +11,6 @@ import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.LabeledIntent;
 import android.content.pm.PackageManager;
@@ -727,7 +726,7 @@ public class Util {
      * @throws Resources.NotFoundException if the given color resource does not exist.
      */
     @ColorInt
-    public static int getColor(@NonNull ContextWrapper ctx, @ColorRes int colorRes) {
+    public static int getColor(@NonNull Context ctx, @ColorRes int colorRes) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return ctx.getResources().getColor(colorRes, ctx.getTheme());
         }

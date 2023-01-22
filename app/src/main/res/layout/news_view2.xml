@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<de.freehamburger.views.NewsView2
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:background="@drawable/bg_news"
     android:clipChildren="false"
     android:clipToPadding="false"
@@ -32,15 +33,14 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         android:textColor="@color/colorContent"
         android:textSize="@dimen/text_size_list_news_topline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         tools:text="@tools:sample/lorem/random" />
 
     <TextView
         android:id="@+id/textViewDate"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textViewTopline"
-        android:layout_alignParentStart="true"
-        android:layout_toStartOf="@+id/textViewFirstSentence"
         android:ellipsize="end"
         android:fontFamily="sans-serif-condensed"
         android:maxLines="1"
@@ -48,6 +48,9 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         android:textColor="@color/colorContent"
         android:textSize="@dimen/text_size_list_news_date"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/textViewTitle"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTopline"
         tools:ignore="RtlSymmetry"
         tools:text="12.34.5678 12:34" />
 
@@ -55,8 +58,6 @@
         android:id="@+id/imageView"
         android:layout_width="@dimen/image_width_normal"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textViewDate"
-        android:layout_alignParentStart="true"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="@dimen/space_between_image_and_text"
         android:layout_marginBottom="8dp"
@@ -68,17 +69,17 @@
         android:maxWidth="@dimen/image_width_normal"
         android:outlineProvider="none"
         android:scaleType="fitCenter"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewDate"
         app:shapeAppearance="?attr/shapeAppearanceMediumComponent"
         tools:ignore="RtlSymmetry"
-        tools:srcCompat="@tools:sample/backgrounds/scenic"/>
+        tools:srcCompat="@tools:sample/backgrounds/scenic" />
 
     <TextView
         android:id="@+id/textViewTitle"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textViewTopline"
-        android:layout_alignParentEnd="true"
-        android:layout_toEndOf="@id/imageView"
+        android:layout_marginStart="@dimen/space_between_image_and_text"
         android:autoSizeTextType="none"
         android:breakStrategy="high_quality"
         android:ellipsize="end"
@@ -88,16 +89,17 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Title"
         android:textColor="@color/colorContent"
         android:textSize="@dimen/text_size_list_news_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/imageView"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTopline"
         tools:ignore="RtlSymmetry,UnusedAttribute"
         tools:text="@tools:sample/lorem/random" />
 
     <TextView
         android:id="@+id/textViewFirstSentence"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textViewTitle"
-        android:layout_alignParentEnd="true"
-        android:layout_toEndOf="@id/imageView"
+        android:layout_marginStart="@dimen/space_between_image_and_text"
         android:breakStrategy="high_quality"
         android:ellipsize="end"
         android:hyphenationFrequency="full"
@@ -106,7 +108,10 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         android:textColor="@color/colorContent"
         android:textSize="@dimen/text_size_list_news_firstsentence"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/imageView"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTitle"
         tools:ignore="RtlSymmetry,UnusedAttribute"
         tools:text="@tools:sample/lorem/random" />
-</RelativeLayout>
+</de.freehamburger.views.NewsView2>
 

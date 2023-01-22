@@ -4,18 +4,16 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.text.TextUtils;
-import android.view.LayoutInflater;
+import android.util.AttributeSet;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import androidx.annotation.CallSuper;
-import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.preference.PreferenceManager;
 
 import java.text.DateFormat;
@@ -32,18 +30,26 @@ import de.freehamburger.util.Util;
 /**
  *
  */
-public class NewsView extends RelativeLayout {
+public class NewsView2 extends ConstraintLayout {
 
+    private static final String TAG = "NewsView2";
     private static final DateFormat DF = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+    /** List of labels of all valid Regions */
     private static final List<String> REGION_LABELS = Region.getValidLabels();
+
+    /** <em>this does not always exist!</em> */
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE) @Nullable
     public TextView textViewTitle;
+    /** Seriously, the topmost line within the View; this always exists */
     @VisibleForTesting
     public TextView textViewTopline;
+    /** Located beneath the {@link #textViewTopline top line}; this always exists */
     @VisibleForTesting
     public TextView textViewDate;
-    @VisibleForTesting @Nullable
+    /** Located beneath the {@link #textViewDate date line}; this always exists */
+    @VisibleForTesting
     public ImageView imageView;
+    /** <em>this does not always exist!</em> */
     @VisibleForTesting @Nullable
     public TextView textViewFirstSentence;
 
@@ -52,9 +58,27 @@ public class NewsView extends RelativeLayout {
      * @param ctx Context
      * @throws NullPointerException if {@code ctx} is {@code null}
      */
-    public NewsView(@NonNull Context ctx) {
+    public NewsView2(@NonNull Context ctx) {
         super(ctx, null, 0, 0);
-        init(ctx);
+    }
+
+    /**
+     * Constructor.
+     * @param context Context
+     * @param attrs AttributeSet
+     */
+    public NewsView2(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    /**
+     * Constructor.
+     * @param context Context
+     * @param attrs AttributeSet
+     * @param defStyleAttr int
+     */
+    public NewsView2(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
     }
 
     /**
@@ -68,42 +92,28 @@ public class NewsView extends RelativeLayout {
         return tag instanceof String ? (String)tag : null;
     }
 
-    /**
-     * Returns the layout resource for this View.
-     * @return layout resource id
-     */
-    @LayoutRes
-    int getLid() {
-        return R.layout.news_view;
-    }
-
     public TextView getTextViewDate() {
-        return textViewDate;
+        return this.textViewDate;
     }
 
     @Nullable
     public TextView getTextViewFirstSentence() {
-        return textViewFirstSentence;
+        return this.textViewFirstSentence;
     }
 
     @Nullable
     public TextView getTextViewTitle() {
-        return textViewTitle;
+        return this.textViewTitle;
     }
 
     public TextView getTextViewTopline() {
-        return textViewTopline;
+        return this.textViewTopline;
     }
 
     /**
      * Initialisation.
-     * @param ctx Context
-     * @throws NullPointerException if {@code ctx} is {@code null}
      */
-    private void init(@NonNull Context ctx) {
-        LayoutInflater inflater = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        if (inflater == null) return;
-        inflater.inflate(getLid(), this);
+    public final void init() {
         this.textViewTopline = findViewById(R.id.textViewTopline);
         this.textViewTitle = findViewById(R.id.textViewTitle);
         this.textViewDate = findViewById(R.id.textViewDate);
@@ -115,29 +125,37 @@ public class NewsView extends RelativeLayout {
      * Sets this view's contents.
      * @param news News
      * @param bitmapGetter BitmapGetter implementation
+     * @param prefs SharedPreferences (optional)
      */
-    @CallSuper
     @UiThread
-    public void setNews(@Nullable final News news, @Nullable BitmapGetter bitmapGetter) {
+    public final void setNews(@Nullable final News news, @Nullable BitmapGetter bitmapGetter, @Nullable SharedPreferences prefs) {
         if (news == null) {
             this.textViewTopline.setText(null);
-            if (this.textViewTitle != null) this.textViewTitle.setText(null);
+            this.textViewTopline.setTag(R.id.original_typeface, null);
             this.textViewDate.setText(null);
-            if (this.textViewFirstSentence != null) this.textViewFirstSentence.setText(null);
-            if (this.imageView != null) {
-                this.imageView.setImageDrawable(null);
-                this.imageView.setElevation(0f);
+            this.textViewDate.setTag(R.id.original_typeface, null);
+            if (this.textViewTitle != null) {
+                this.textViewTitle.setText(null);
+                this.textViewTitle.setTag(R.id.original_typeface, null);
             }
+            if (this.textViewFirstSentence != null) {
+                this.textViewFirstSentence.setText(null);
+                this.textViewFirstSentence.setTag(R.id.original_typeface, null);
+            }
+            this.imageView.setImageDrawable(null);
+            this.imageView.setElevation(0f);
+            this.imageView.setTag(null);
             return;
         }
-        Context ctx = getContext();
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        final Context ctx = getContext();
+
+        if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 
         // the original order is: topline, title, firstSentence
 
         /*
-               news_view.xml
+               news_view2.xml
         |-------------------------------------------|
         | textViewTopline                           |
         | textViewDate      textViewTitle           |
@@ -147,17 +165,7 @@ public class NewsView extends RelativeLayout {
         |                                           |
         |-------------------------------------------|
 
-               news_view_nocontent.xml
-        |-------------------------------------------|
-        | textViewTopline                           |
-        | textViewDate      textViewTitle           |
-        | imageView                                 |
-        |                                           |
-        |                                           |
-        |                                           |
-        |-------------------------------------------|
-
-               news_view_nocontent_notitle.xml
+               news_view_nocontent_notitle2.xml
         |-------------------------------------------|
         | textViewTopline                           |
         | textViewDate      imageView               |
@@ -169,13 +177,16 @@ public class NewsView extends RelativeLayout {
 
          */
 
-        // topline (only the news items from Source.HOME have toplines)
-        String newsTopline = news.getTopline();
-        boolean hasTopline = !TextUtils.isEmpty(newsTopline);
-        boolean titleReplacesTopline = !hasTopline;
-        if (!hasTopline) newsTopline = news.getTitle();
-        if (newsTopline != null) newsTopline = newsTopline.trim();
-        this.textViewTopline.setText(newsTopline);
+        boolean titleWentIntoTopline = false;
+
+        // topline
+        String contentForTopline = news.getTopline();
+        if (TextUtils.isEmpty(contentForTopline)) {
+            contentForTopline = news.getTitle();
+            titleWentIntoTopline = true;
+        }
+        if (contentForTopline != null) contentForTopline = contentForTopline.trim();
+        this.textViewTopline.setText(contentForTopline);
         if (prefs.getBoolean(App.PREF_TOPLINE_MARQUEE, false)) {
             this.textViewTopline.setEllipsize(TextUtils.TruncateAt.MARQUEE);
             this.textViewTopline.setMarqueeRepeatLimit(-1);
@@ -184,39 +195,29 @@ public class NewsView extends RelativeLayout {
             this.textViewTopline.setEllipsize(TextUtils.TruncateAt.END);
         }
         if (news.isBreakingNews()) {
-            this.textViewTopline.setTextColor(getResources().getColor(R.color.colorBreakingNews));
-        } else if (REGION_LABELS.contains(newsTopline)) {
-            this.textViewTopline.setTextColor(getResources().getColor(R.color.colorRegionalNews));
+            this.textViewTopline.setTextColor(Util.getColor(ctx, R.color.colorBreakingNews));
+        } else if (REGION_LABELS.contains(contentForTopline)) {
+            this.textViewTopline.setTextColor(Util.getColor(ctx, R.color.colorRegionalNews));
         } else {
-            this.textViewTopline.setTextColor(getResources().getColor(R.color.colorContent));
+            this.textViewTopline.setTextColor(Util.getColor(ctx, R.color.colorContent));
         }
 
         // title
         if (this.textViewTitle != null) {
-            if (!titleReplacesTopline) {
-                String title = news.getTitle(); if (title != null) title = title.trim();
-                this.textViewTitle.setText(title);
-                this.textViewTitle.setVisibility(View.VISIBLE);
-                if (this.textViewFirstSentence != null) {
-                    RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
-                    lp.removeRule(RelativeLayout.BELOW);
-                    lp.addRule(RelativeLayout.BELOW, R.id.textViewTitle);
-                }
+            if (titleWentIntoTopline) {
+                this.textViewTitle.setText(null);
             } else {
-                this.textViewTitle.setVisibility(View.GONE);
-                if (this.textViewFirstSentence != null) {
-                    RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
-                    lp.removeRule(RelativeLayout.BELOW);
-                    lp.addRule(RelativeLayout.BELOW, R.id.textViewTopline);
-                }
+                String title = news.getTitle();
+                if (title != null) title = title.trim();
+                this.textViewTitle.setText(title);
             }
         }
 
         // date
         Date date = news.getDate();
         if (date != null) {
-            boolean timeMode = prefs.getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
-            if (timeMode) {
+            boolean relativeTime = prefs.getBoolean(App.PREF_TIME_MODE_RELATIVE, App.PREF_TIME_MODE_RELATIVE_DEFAULT);
+            if (relativeTime) {
                 String longDate = Util.getRelativeTime(ctx, date.getTime(), null, false);
                 String shortDate = Util.getRelativeTime(ctx, date.getTime(), null, true);
                 Util.fitText(this.textViewDate, "…", longDate, shortDate);
@@ -231,7 +232,6 @@ public class NewsView extends RelativeLayout {
         if (this.textViewFirstSentence != null) {
             String fs = news.getTextForTextViewFirstSentence();
             if (!TextUtils.isEmpty(fs)) {
-                //noinspection ConstantConditions
                 this.textViewFirstSentence.setText(fs.trim());
                 this.textViewFirstSentence.setVisibility(View.VISIBLE);
             } else {
@@ -240,57 +240,17 @@ public class NewsView extends RelativeLayout {
              }
         }
 
-
         // as the last step, load the image
-        if (this.imageView == null) return;
         TeaserImage image = news.getTeaserImage();
         if (image == null) {
             // it is perfectly normal to have no TeaserImage
             this.imageView.setImageDrawable(null);
             this.imageView.setElevation(0f);
             this.imageView.setTag(null);
-            this.imageView.setVisibility(View.GONE);
-            // make sure the textViewDate is as wide as the imageView would be
-            int imageWidth = getResources().getDimensionPixelSize(R.dimen.image_width_normal);
-            int sbit = getResources().getDimensionPixelSize(R.dimen.space_between_image_and_text);
-            this.textViewDate.setMinWidth(imageWidth + sbit);
-            // let textViewTitle start to the end of textViewDate instead of imageView
-            if (this.textViewTitle != null) {
-                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewTitle.getLayoutParams();
-                lp.removeRule(RelativeLayout.END_OF);
-                lp.addRule(RelativeLayout.END_OF, R.id.textViewDate);
-            }
-            // let textViewFirstSentence start below textViewDate or textViewTitle instead of on the end of textViewDate
-            if (this.textViewFirstSentence != null) {
-                RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
-                lp.removeRule(RelativeLayout.END_OF);
-                lp.addRule(RelativeLayout.ALIGN_PARENT_START);
-                lp.addRule(RelativeLayout.BELOW, this.textViewTitle != null && this.textViewTitle.getVisibility() == View.VISIBLE && this.textViewTitle.getText().length() > 0 ? R.id.textViewTitle : R.id.textViewDate);
-                // adopt the top margin from the imageView
-                lp.topMargin = this.imageView.getLayoutParams() instanceof MarginLayoutParams ? ((MarginLayoutParams)this.imageView.getLayoutParams()).topMargin : 0;
-            }
+            this.imageView.setVisibility(View.INVISIBLE);
             return;
         }
-        // restore imageView, in case it had been removed previously
         this.imageView.setVisibility(View.VISIBLE);
-        // restore min. width of textViewDate (which is normally not set)
-        this.textViewDate.setMinWidth(0);
-        // restore layout parameters of textViewTitle
-        if (this.textViewTitle != null) {
-            RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewTitle.getLayoutParams();
-            lp.removeRule(RelativeLayout.END_OF);
-            lp.addRule(RelativeLayout.END_OF, R.id.imageView);
-        }
-        // restore layout parameters of textViewFirstSentence
-        if (this.textViewFirstSentence != null) {
-            RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) this.textViewFirstSentence.getLayoutParams();
-            lp.removeRule(RelativeLayout.END_OF);
-            lp.removeRule(RelativeLayout.ALIGN_PARENT_START);
-            lp.addRule(RelativeLayout.BELOW, R.id.textViewTitle);
-            lp.addRule(RelativeLayout.END_OF, R.id.imageView);
-            // normally, no top margin
-            lp.topMargin = 0;
-        }
         //
         int imageViewMaxWidth;
         if (this.imageView.getMaxWidth() > 0) {
@@ -298,22 +258,21 @@ public class NewsView extends RelativeLayout {
         } else {
             imageViewMaxWidth = Util.getDisplaySize(ctx).x;
         }
-        // get the image url; if this NewsView was inflated from news_view_nocontent_notitle (no textViewTitle and no textViewFirstSentence), then preferrably in landscape orientation
+        // get the image url; if there is no text in the right-hand part of the view (title or firstSentence), then preferrably in landscape orientation
         boolean landscapePreferred = this.textViewTitle == null && this.textViewFirstSentence == null;
-        //
         final TeaserImage.MeasuredImage measuredImage = image.getBestImageForWidth(imageViewMaxWidth, landscapePreferred ? TeaserImage.FORMAT_LANDSCAPE : TeaserImage.FORMAT_PORTRAIT);
-        this.imageView.setTag(measuredImage != null ? measuredImage.url : null);
+        if (measuredImage == null || measuredImage.url == null || bitmapGetter == null) {
+            this.imageView.setImageBitmap(null);
+            this.imageView.setElevation(0f);
+            return;
+        }
+        this.imageView.setTag(measuredImage.url);
         if (!TextUtils.isEmpty(image.getTitle())) {
             this.imageView.setContentDescription(image.getTitle());
         } else if (!TextUtils.isEmpty(image.getAlttext())) {
             this.imageView.setContentDescription(image.getAlttext());
         } else {
             this.imageView.setContentDescription(null);
-        }
-        if (measuredImage == null || measuredImage.url == null || bitmapGetter == null) {
-            this.imageView.setImageBitmap(null);
-            this.imageView.setElevation(0f);
-            return;
         }
         Bitmap bitmap = bitmapGetter.getCachedBitmap(measuredImage.url);
         if (bitmap != null) {
@@ -332,7 +291,7 @@ public class NewsView extends RelativeLayout {
     @Override
     @NonNull
     public String toString() {
-        return "NewsView \"" + (this.textViewTitle != null ? this.textViewTitle.getText().toString() : "<null>") + "\"";
+        return getClass().getSimpleName() + " \"" + (this.textViewTitle != null ? this.textViewTitle.getText().toString() : "<null>") + "\"";
     }
 
     /**

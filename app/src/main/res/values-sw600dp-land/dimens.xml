@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- sw600dp-land is used for tablets in landscape orientation -->
     <dimen name="image_width_normal">200dp</dimen>
     <dimen name="image_width_wide">300dp</dimen>
 

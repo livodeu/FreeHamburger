@@ -47,12 +47,12 @@ import de.freehamburger.util.Log;
 import de.freehamburger.util.OkHttpDownloader;
 import de.freehamburger.util.OkHttpDownloaderForPicasso;
 import de.freehamburger.util.Util;
-import de.freehamburger.views.NewsView;
+import de.freehamburger.views.NewsView2;
 
 
 /**
  */
-public class HamburgerService extends Service implements Html.ImageGetter, Picasso.Listener, NewsView.BitmapGetter, SharedPreferences.OnSharedPreferenceChangeListener {
+public class HamburgerService extends Service implements Html.ImageGetter, Picasso.Listener, NewsView2.BitmapGetter, SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = "HamburgerService";
 
@@ -98,7 +98,6 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      * Builds the Picasso instance.
      */
     private synchronized void buildPicasso() {
-
         if (this.picasso != null) {
             this.picasso.shutdown();
             this.picasso = null;
@@ -114,7 +113,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
 
         if (USE_FORKJOINPOOL) {
             // https://web.archive.org/web/20110819180102/https://vanillajava.blogspot.com/2011/06/java-secrets-using-executorservice-to.html
-            // http://cs.oswego.edu/pipermail/concurrency-interest/2012-January/008987.html
+            // https://web.archive.org/web/20201112020343/https://www.cs.oswego.edu/pipermail/concurrency-interest/2012-January/008987.html
             this.loaderExecutor = new ForkJoinPool(Runtime.getRuntime().availableProcessors() << 1, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true);
         } else {
             this.loaderExecutor = Executors.newCachedThreadPool();
@@ -154,7 +153,6 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      */
     void createMemoryCache() {
         clearMemoryCache();
-        //noinspection ConstantConditions
         int maxRamCacheSizeInMB = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(App.PREF_MEM_CACHE_MAX_SIZE, App.DEFAULT_MEM_CACHE_MAX_SIZE));
         this.memoryCache = new com.squareup.picasso.LruCache(maxRamCacheSizeInMB << 20);
     }

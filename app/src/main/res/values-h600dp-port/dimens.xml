@@ -1,4 +1,5 @@
 <resources>
+    <!-- h600dp-port is used for tablets AND some phones (SM-A528) in portrait orientation -->
     <dimen name="text_size_menu">16sp</dimen>
     <dimen name="menu_padding_top">24dp</dimen>
     <dimen name="space_between_menu_items">12dp</dimen>

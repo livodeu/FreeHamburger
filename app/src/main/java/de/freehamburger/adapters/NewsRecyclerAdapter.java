@@ -12,6 +12,7 @@ import android.text.TextUtils;
 import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.ContextMenu;
+import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -24,6 +25,7 @@ import androidx.annotation.IntRange;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.UiContext;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.recyclerview.widget.RecyclerView;
@@ -43,9 +45,7 @@ import de.freehamburger.model.Filter;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
 import de.freehamburger.util.Log;
-import de.freehamburger.views.NewsView;
-import de.freehamburger.views.NewsViewNoContent;
-import de.freehamburger.views.NewsViewNoContentNoTitle;
+import de.freehamburger.views.NewsView2;
 
 /**
  * The adapter for the RecyclerView that contains the news list in the {@link de.freehamburger.MainActivity main activity}.
@@ -59,12 +59,15 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     @NonNull private final List<Filter> filters = new ArrayList<>(4);
     private final Handler handler = new Handler();
     /** a NewsView instance for each view type; used to preload News items via {@link #preloader} */
-    private final SparseArray<NewsView> dummyNewsViews = new SparseArray<>(3);
+    private final SparseArray<NewsView2> dummyNewsViews = new SparseArray<>(2);
     /** a ViewHolder instance for each view type */
-    private final SparseArray<ViewHolder> viewholderCache = new SparseArray<>(3);
-    private final Preloader preloader = new Preloader();
+    private final SparseArray<ViewHolder> viewholderCache = new SparseArray<>(2);
+    private final SharedPreferences prefs;
     @App.BackgroundSelection private int background;
     private boolean filtersEnabled;
+    @FloatRange(from = 0.5, to = 2.0)
+    private float zoom;
+    private boolean zoomModified;
     private Thread viewholderCreator;
     private int contextMenuIndex = -1;
     @Nullable private Typeface typeface;
@@ -72,29 +75,35 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     private Source source;
 
     /**
+     * Constructor.
+     * @param activity NewsAdapterActivity
+     * @param typeface Typeface (optional)
+     */
+    public NewsRecyclerAdapter(@NonNull NewsAdapterActivity activity, @Nullable Typeface typeface) {
+        super();
+        this.activity = activity;
+        this.background = activity.getBackground();
+        this.prefs = PreferenceManager.getDefaultSharedPreferences(activity);
+        this.filtersEnabled = this.prefs.getBoolean(App.PREF_FILTERS_APPLY, App.PREF_FILTERS_APPLY_DEFAULT);
+        this.zoom = this.prefs.getInt(App.PREF_FONT_ZOOM, App.PREF_FONT_ZOOM_DEFAULT) / 100f;
+        this.zoomModified = Math.abs(this.zoom - 1f) > 0.001;
+        setHasStableIds(true);
+        setTypeface(typeface);
+    }
+
+    /**
      * Determines the appropriate layout variant,
-     * <ul>
-     *     <li>{@link R.layout#news_view news_view},
-     *     <li>{@link R.layout#news_view_nocontent news_view_nocontent} or
-     *     <li>{@link R.layout#news_view_nocontent_notitle news_view_nocontent_notitle},
-     * </ul>
      * depending on the content of a News object.
      * @param news News
      * @return suitable layout resource
      */
     @LayoutRes
     public static int getViewType(@Nullable final News news) {
-        if (news == null) return R.layout.news_view;
+        if (news == null) return R.layout.news_view2;
         if (News.NEWS_TYPE_VIDEO.equals(news.getType())) {
-            return R.layout.news_view_nocontent_notitle;
+            return R.layout.news_view_nocontent_notitle2;
         }
-        if (news.hasTextForTextViewFirstSentence()) {
-            return R.layout.news_view;
-        }
-        if (news.hasTextForTextViewTitle()) {
-            return R.layout.news_view_nocontent;
-        }
-        return R.layout.news_view_nocontent_notitle;
+        return R.layout.news_view2;
     }
 
     /**
@@ -103,14 +112,14 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
      * @return {@code true} if there is at least one missing cached image for a news item
      */
     public static boolean hasMissingImages(@NonNull NewsAdapterActivity activity) {
-        HamburgerService service = activity.getHamburgerService();
+        final HamburgerService service = activity.getHamburgerService();
         if (service == null) return true;
         // R.dimen.image_width_normal should have been given as android:maxWidth in the NewsView layout file news_view.xml
         final int imgWidth = service.getResources().getDimensionPixelSize(R.dimen.image_width_normal);
         final Set<View> kids = activity.getVisibleNewsViews();
         for (View kid : kids) {
-            if (!(kid instanceof NewsView)) continue;
-            NewsView nv = (NewsView)kid;
+            if (!(kid instanceof NewsView2)) continue;
+            NewsView2 nv = (NewsView2)kid;
             String imageUrl = nv.getImageUrl();
             if (imageUrl == null) continue;
             if (service.getCachedBitmap(imageUrl) == null) {
@@ -123,37 +132,18 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
 
     /**
      * Instantiates a NewsView based on the given layout.
-     * @param ctx Context
+     * @param activity Activity
+     * @param parent ViewGroup
      * @param viewType view layout resource
      * @return NewsView instance
-     * @throws NullPointerException if {@code ctx} is {@code null}
+     * @throws NullPointerException if {@code activity} is {@code null}
      */
     @VisibleForTesting
     @NonNull
-    public static NewsView instantiateView(@NonNull Context ctx, @LayoutRes final int viewType) {
-        NewsView v;
-        if (viewType == R.layout.news_view_nocontent_notitle) {
-            v = new NewsViewNoContentNoTitle(ctx);
-        } else if (viewType == R.layout.news_view_nocontent) {
-            v = new NewsViewNoContent(ctx);
-        } else {
-            v = new NewsView(ctx);
-        }
+    public static NewsView2 instantiateView(@UiContext @NonNull Context activity, @Nullable ViewGroup parent, @LayoutRes int viewType) {
+        NewsView2 v = (NewsView2)LayoutInflater.from(activity).inflate(viewType, parent, false);
+        v.init();
         return v;
-    }
-
-    /**
-     * Constructor.
-     * @param activity NewsAdapterActivity
-     * @param typeface Typeface (optional)
-     */
-    public NewsRecyclerAdapter(@NonNull NewsAdapterActivity activity, @Nullable Typeface typeface) {
-        super();
-        this.activity = activity;
-        this.background = activity.getBackground();
-        this.filtersEnabled = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_FILTERS_APPLY, App.PREF_FILTERS_APPLY_DEFAULT);
-        setHasStableIds(true);
-        setTypeface(typeface);
     }
 
     /**
@@ -218,6 +208,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
      * Attempts to find a News by its {@link News#getExternalId() externalId} field.
      * @param newsExternalId externalId field of News to find
      * @return index or -1
+     * @throws NullPointerException if {@code newsExternalId} is {@code null}
      */
     @IntRange(from = -1)
     public int findNews(@NonNull final String newsExternalId) {
@@ -273,7 +264,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     }
 
     /**
-     * @return timestamp when the data was set
+     * @return timestamp telling when the data was set
      */
     public long getUpdated() {
         return this.updated;
@@ -299,60 +290,56 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     /** {@inheritDoc} */
     @Override
     public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
-        PreferenceManager.getDefaultSharedPreferences(this.activity).registerOnSharedPreferenceChangeListener(this);
+        this.prefs.registerOnSharedPreferenceChangeListener(this);
     }
 
     /** {@inheritDoc} */
     @Override
     @UiThread
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        this.handler.removeCallbacks(this.preloader);
-        final NewsView newsView = (NewsView) holder.itemView;
-        final Resources res = this.activity.getResources();
+        final NewsView2 newsView2 = (NewsView2) holder.itemView;
 
-        // apply the desired typeface magnification
-        @FloatRange(from = 0.5, to = 2.0)
-        final float zoom = PreferenceManager.getDefaultSharedPreferences(this.activity).getInt(App.PREF_FONT_ZOOM, App.PREF_FONT_ZOOM_DEFAULT) / 100f;
-        TextView tvtl = newsView.getTextViewTopline();
-        TextView tvda = newsView.getTextViewDate();
-        TextView tvti = newsView.getTextViewTitle();
-        TextView tvfs = newsView.getTextViewFirstSentence();
-        if (tvtl != null) tvtl.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_topline) * zoom);
-        if (tvda != null) tvda.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_date) * zoom);
-        if (tvti != null) tvti.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_title) * zoom);
-        if (tvfs != null) tvfs.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_firstsentence) * zoom);
+        TextView tvtl = newsView2.getTextViewTopline();
+        TextView tvda = newsView2.getTextViewDate();
+        TextView tvti = newsView2.getTextViewTitle();
+        TextView tvfs = newsView2.getTextViewFirstSentence();
+
+        if (this.zoomModified) {
+            // apply the desired typeface magnification
+            final Resources res = this.activity.getResources();
+            tvtl.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_topline) * this.zoom);
+            tvda.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_date) * this.zoom);
+            if (tvti != null) tvti.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_title) * this.zoom);
+            if (tvfs != null) tvfs.setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.text_size_list_news_firstsentence) * this.zoom);
+        }
 
         // apply the user-defined typeface to the NewsView
         applyTypeface(tvtl, tvda, tvti, tvfs);
 
         HamburgerService service = this.activity.getHamburgerService();
         if (isFiltered()) {
-            newsView.setNews(this.filteredNews.get(position), service);
+            newsView2.setNews(this.filteredNews.get(position), service, this.prefs);
         } else {
-            newsView.setNews(this.newsList.get(position), service);
-        }
-        // if the position is not at the end, load image at the next position into the cache (by applying the next News item to a dummy NewsView)
-        if (position < getItemCount() - 1) {
-            this.preloader.setPosition(position + 1);
-            this.handler.postDelayed(this.preloader, 500L);
+            newsView2.setNews(this.newsList.get(position), service, this.prefs);
         }
     }
 
     /** {@inheritDoc}
+     * <hr>
      *  Returns a {@link ViewHolder} for the given view type.<br>
      *  Attempts to get one from the {@link #viewholderCache cache}; if that fails, creates a new one.<br>
      *  Finally creates another ViewHolder of the same type and puts in the cache (to be used during the next invocation of this method).<br>
-     *  On a low-end (SD410) device, this method takes usually less than a ms if the ViewHolder can be retrieved from the cache and about 10 ms if not.
+     *  Has been proven to improve speed on low-end (SD410) and newer (SD778) devices, though admittedly only in the lower ms range.
      */
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, final int viewType) {
+    public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
         ViewHolder vh;
         synchronized (this.viewholderCache) {
             vh = this.viewholderCache.get(viewType);
         }
         if (vh == null) {
-            vh = new ViewHolder(instantiateView(this.activity, viewType));
+            vh = new ViewHolder(instantiateView(this.activity, parent, viewType));
         } else {
             // remove the ViewHolder from the viewholderCache that we are about to return
             synchronized (this.viewholderCache) {
@@ -364,7 +351,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             this.viewholderCreator = new Thread() {
                 @Override
                 public void run() {
-                    ViewHolder newOne = new ViewHolder(instantiateView(NewsRecyclerAdapter.this.activity, viewType));
+                    ViewHolder newOne = new ViewHolder(instantiateView(NewsRecyclerAdapter.this.activity, parent, viewType));
                     synchronized (NewsRecyclerAdapter.this.viewholderCache) {
                         NewsRecyclerAdapter.this.viewholderCache.put(viewType, newOne);
                     }
@@ -380,10 +367,11 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     /** {@inheritDoc} */
     @Override
     public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
-        PreferenceManager.getDefaultSharedPreferences(this.activity).unregisterOnSharedPreferenceChangeListener(this);
+        this.prefs.unregisterOnSharedPreferenceChangeListener(this);
     }
 
     /** {@inheritDoc} */
+    @SuppressLint("NotifyDataSetChanged")
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
         if (App.PREF_FILTERS_APPLY.equals(key)) {
@@ -395,6 +383,8 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
                 notifyDataSetChanged();
             }, 500L);
         } else if (App.PREF_FONT_ZOOM.equals(key)) {
+            this.zoom = prefs.getInt(App.PREF_FONT_ZOOM, App.PREF_FONT_ZOOM_DEFAULT) / 100f;
+            this.zoomModified = true;
             notifyDataSetChanged();
         }
     }
@@ -402,29 +392,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     /** {@inheritDoc} */
     @Override
     public void onViewRecycled(@NonNull ViewHolder holder) {
-        ((NewsView)holder.itemView).setNews(null, null);
-    }
-
-    /**
-     * Attempts to apply the News at the given position to a dummy NewsView
-     * in order to load the News' image into the cache.
-     * @param position index
-     * @param service HamburgerService
-     */
-    private void preload(int position, @Nullable HamburgerService service) {
-        if (service == null) return;
-        try {
-            News follower = isFiltered() ? this.filteredNews.get(position) : this.newsList.get(position);
-            int viewType = getViewType(follower);
-            NewsView dummyNewsView = this.dummyNewsViews.get(viewType);
-            if (dummyNewsView == null) {
-                dummyNewsView = instantiateView(this.activity, viewType);
-                this.dummyNewsViews.put(viewType, dummyNewsView);
-            }
-            dummyNewsView.setNews(follower, service);
-        } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.w(TAG, "While trying to preload for pos. " + position + ": " + e);
-        }
+        ((NewsView2)holder.itemView).setNews(null, null, null);
     }
 
     /**
@@ -467,6 +435,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
      * Sets the Typeface.
      * @param typeface Typeface
      */
+    @SuppressLint("NotifyDataSetChanged")
     public void setTypeface(@Nullable Typeface typeface) {
         boolean changed = (typeface != null && !typeface.equals(this.typeface)) || (typeface == null && this.typeface != null);
         this.typeface = typeface;
@@ -476,6 +445,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     /**
      * Updates the {@link #filteredNews filtered news list} and calls {@link #notifyDataSetChanged()}.
      */
+    @SuppressLint("NotifyDataSetChanged")
     private void updateFilter() {
         final List<News> oldFilteredList = isFiltered() ? new ArrayList<>(this.filteredNews) : null;
         this.filteredNews.clear();
@@ -540,15 +510,6 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         private float xPosOfEventActionUp, yPosOfEventActionUp;
 
         /**
-         * Throws a RuntimeException.
-         * @param ctx Context
-         * @throws RuntimeException (always)
-         */
-        private static void throwWrongContext(@Nullable Context ctx) {
-            throw new RuntimeException((ctx != null ? ctx.getClass().getName() : "<null>") + " does not implement " + NewsAdapterController.class.getName());
-        }
-
-        /**
          * Constructor.
          * @param v View
          */
@@ -564,6 +525,15 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
                 ViewHolder.this.yPosOfEventActionUp = event.getY();
                 return false;
             });
+        }
+
+        /**
+         * Throws a RuntimeException.
+         * @param ctx Context
+         * @throws RuntimeException (always)
+         */
+        private static void throwWrongContext(@Nullable Context ctx) {
+            throw new RuntimeException((ctx != null ? ctx.getClass().getName() : "<null>") + " does not implement " + NewsAdapterController.class.getName());
         }
 
         /**
@@ -614,27 +584,6 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             menuItemViewImage.setEnabled(hasImage);
             MenuItem menuItemPrintImage = menu.findItem(R.id.action_print_picture);
             menuItemPrintImage.setEnabled(hasImage);
-        }
-    }
-
-    /**
-     * Calls {@link #preload(int, HamburgerService)}.
-     */
-    private class Preloader implements Runnable {
-
-        private int position;
-
-        private Preloader() {
-            super();
-        }
-
-        @Override
-        public void run() {
-            preload(this.position, NewsRecyclerAdapter.this.activity.getHamburgerService());
-        }
-
-        private void setPosition(int p) {
-            this.position = p;
         }
     }
 }

@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="image_width_normal">240dp</dimen>
+    <!-- sw600dp-port is used for tablets in portrait orientation -->
+    <dimen name="image_width_normal">180dp</dimen>
     <dimen name="news_padding">16dp</dimen>
+
+    <dimen name="text_size_list_news_topline">24sp</dimen>
+    <dimen name="text_size_list_news_date">24sp</dimen>
+    <dimen name="text_size_list_news_title">34sp</dimen>
+    <dimen name="text_size_list_news_firstsentence">24sp</dimen>
 </resources>

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<de.freehamburger.views.NewsViewNoContentNoTitle2
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:background="@drawable/bg_news"
     android:clipChildren="false"
     android:clipToPadding="false"
@@ -24,45 +25,52 @@
         android:focusable="true"
         android:shadowColor="@color/colorToplineShadow"
         android:shadowDx="@dimen/topline_shadow_size"
-        android:shadowDy="@dimen/topline_shadow_size" android:shadowRadius="@dimen/topline_shadow_size" android:singleLine="true"
+        android:shadowDy="@dimen/topline_shadow_size"
+        android:shadowRadius="@dimen/topline_shadow_size"
+        android:singleLine="true"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         android:textColor="@color/colorContent"
-        tools:text="@tools:sample/lorem/random"/>
+        android:textSize="@dimen/text_size_list_news_topline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="@tools:sample/lorem/random" />
 
     <TextView
         android:id="@+id/textViewDate"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textViewTopline"
-        android:layout_toStartOf="@+id/imageView"
-        android:layout_alignParentStart="true"
         android:ellipsize="end"
         android:fontFamily="sans-serif-condensed"
         android:maxLines="1"
         android:paddingEnd="@dimen/space_between_image_and_text"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         android:textColor="@color/colorContent"
+        android:textSize="@dimen/text_size_list_news_date"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/imageView"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTopline"
         tools:ignore="RtlSymmetry"
-        tools:text="12.34.5678 12:34"/>
+        tools:text="12.34.5678 12:34" />
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/imageView"
         android:layout_width="@dimen/image_width_wide"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textViewTopline"
-        android:layout_alignParentEnd="true"
         android:adjustViewBounds="true"
         android:contentDescription="@string/hint_pic"
         android:cropToPadding="true"
+        android:drawingCacheQuality="low"
         android:layerType="hardware"
         android:maxWidth="@dimen/image_width_wide"
         android:paddingTop="8dp"
         android:paddingEnd="8dp"
         android:paddingBottom="8dp"
         android:scaleType="fitEnd"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTopline"
         app:shapeAppearance="?attr/shapeAppearanceMediumComponent"
         tools:ignore="RtlSymmetry"
         tools:srcCompat="@tools:sample/backgrounds/scenic" />
 
-</RelativeLayout>
+</de.freehamburger.views.NewsViewNoContentNoTitle2>
 

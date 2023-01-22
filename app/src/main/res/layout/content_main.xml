@@ -43,7 +43,7 @@
             android:layout_alignParentTop="true"
             android:background="@color/colorRecyclerBg"
             android:scrollbars="none"
-            tools:listitem="@layout/news_view"
+            tools:listitem="@layout/news_view2"
             >
             <requestFocus/>
         </androidx.recyclerview.widget.RecyclerView>

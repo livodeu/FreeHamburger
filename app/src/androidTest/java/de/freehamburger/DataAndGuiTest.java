@@ -3,9 +3,11 @@ package de.freehamburger;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertSame;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
@@ -15,18 +17,23 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.hardware.display.DisplayManager;
 import android.net.Uri;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.JsonReader;
+import android.view.Display;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.GravityCompat;
 import androidx.lifecycle.Lifecycle;
@@ -63,7 +70,8 @@ import de.freehamburger.model.Source;
 import de.freehamburger.model.TextFilter;
 import de.freehamburger.supp.SearchHelper;
 import de.freehamburger.util.Util;
-import de.freehamburger.views.NewsView;
+import de.freehamburger.views.NewsView2;
+import de.freehamburger.views.NewsViewNoContentNoTitle2;
 
 /**
  * Tests the data download and its representation in the gui.
@@ -186,28 +194,30 @@ public class DataAndGuiTest {
 
     @Test
     public void testDrawer() {
-        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            assertNotNull(activity.drawerLayout);
-            if (activity.drawerLayout.isDrawerOpen(GravityCompat.END)) activity.drawerLayout.closeDrawer(GravityCompat.END, false);
-            assertFalse(activity.drawerLayout.isDrawerOpen(GravityCompat.END));
-            KeyEvent keLeft = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT);
-            activity.dispatchKeyEvent(keLeft);
-            assertTrue("Drawer is not open", activity.drawerLayout.isDrawerOpen(GravityCompat.END));
-            KeyEvent keRight = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
-            activity.dispatchKeyEvent(keRight);
-            assertFalse("Drawer is not closed", activity.drawerLayout.isDrawerOpen(GravityCompat.END));
-            //
-            boolean tapToOpen = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_CLICK_FOR_CATS, App.PREF_CLICK_FOR_CATS_DEFAULT);
-            if (tapToOpen) {
-                assertTrue("ClockView text does not have a listener", activity.clockView.hasOnTextClickListener());
-            } else {
-                assertFalse("ClockView text has a listener", activity.clockView.hasOnTextClickListener());
-            }
-            //
-            activity.finish();
-        });
+        try (ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class)) {
+            asn.moveToState(Lifecycle.State.RESUMED);
+            asn.onActivity(activity -> {
+                assertNotNull(activity.drawerLayout);
+                if (activity.drawerLayout.isDrawerOpen(GravityCompat.END))
+                    activity.drawerLayout.closeDrawer(GravityCompat.END, false);
+                assertFalse(activity.drawerLayout.isDrawerOpen(GravityCompat.END));
+                KeyEvent keLeft = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT);
+                activity.dispatchKeyEvent(keLeft);
+                assertTrue("Drawer is not open", activity.drawerLayout.isDrawerOpen(GravityCompat.END));
+                KeyEvent keRight = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT);
+                activity.dispatchKeyEvent(keRight);
+                assertFalse("Drawer is not closed", activity.drawerLayout.isDrawerOpen(GravityCompat.END));
+                //
+                boolean tapToOpen = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(App.PREF_CLICK_FOR_CATS, App.PREF_CLICK_FOR_CATS_DEFAULT);
+                if (tapToOpen) {
+                    assertTrue("ClockView text does not have a listener", activity.clockView.hasOnTextClickListener());
+                } else {
+                    assertFalse("ClockView text has a listener", activity.clockView.hasOnTextClickListener());
+                }
+                //
+                activity.finish();
+            });
+        }
     }
 
     /**
@@ -263,39 +273,40 @@ public class DataAndGuiTest {
 
     @Test
     public void testMainActivity() {
-        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            // drawer
-            assertNotNull(activity.drawerLayout);
-            com.google.android.material.navigation.NavigationView navigationView = activity.findViewById(R.id.navigationView);
-            assertNotNull(navigationView);
-            View kid0 = navigationView.getChildAt(0);
-            assertNotNull(kid0);
-            assertTrue(kid0 instanceof RecyclerView);
-            // swipe refresh
-            assertTrue(activity.findViewById(R.id.swiperefresh) instanceof SwipeRefreshLayout);
-            // CoordinatorLayout
-            assertTrue(activity.findViewById(R.id.coordinator_layout) instanceof CoordinatorLayout);
-            // fab
-            assertTrue(activity.findViewById(R.id.fab) instanceof FloatingActionButton);
-            // quick view
-            assertTrue(activity.findViewById(R.id.quickView) instanceof ImageView);
-            // Recycler
-            RecyclerView recyclerView = activity.findViewById(R.id.recyclerView);
-            assertNotNull(recyclerView);
-            assertNotNull(recyclerView.getLayoutManager());
-            NewsRecyclerAdapter adapter = activity.getAdapter();
-            assertNotNull(adapter);
-            // clock
-            assertNotNull(activity.clockView);
-            // blocking plane
-            assertNotNull(activity.findViewById(R.id.plane));
-            // intro steps
-            assertEquals(MainActivity.INTRO_DELAYS.length, activity.introSteps.length);
-            //
-            activity.finish();
-        });
+        try (ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class)) {
+            asn.moveToState(Lifecycle.State.RESUMED);
+            asn.onActivity(activity -> {
+                // drawer
+                assertNotNull(activity.drawerLayout);
+                com.google.android.material.navigation.NavigationView navigationView = activity.findViewById(R.id.navigationView);
+                assertNotNull(navigationView);
+                View kid0 = navigationView.getChildAt(0);
+                assertNotNull(kid0);
+                assertTrue(kid0 instanceof RecyclerView);
+                // swipe refresh
+                assertTrue(activity.findViewById(R.id.swiperefresh) instanceof SwipeRefreshLayout);
+                // CoordinatorLayout
+                assertTrue(activity.findViewById(R.id.coordinator_layout) instanceof CoordinatorLayout);
+                // fab
+                assertTrue(activity.findViewById(R.id.fab) instanceof FloatingActionButton);
+                // quick view
+                assertTrue(activity.findViewById(R.id.quickView) instanceof ImageView);
+                // Recycler
+                RecyclerView recyclerView = activity.findViewById(R.id.recyclerView);
+                assertNotNull(recyclerView);
+                assertNotNull(recyclerView.getLayoutManager());
+                NewsRecyclerAdapter adapter = activity.getAdapter();
+                assertNotNull(adapter);
+                // clock
+                assertNotNull(activity.clockView);
+                // blocking plane
+                assertNotNull(activity.findViewById(R.id.plane));
+                // intro steps
+                assertEquals(MainActivity.INTRO_DELAYS.length, activity.introSteps.length);
+                //
+                activity.finish();
+            });
+        }
     }
 
     /** tests the correct application of filters to the categories menu */
@@ -312,24 +323,25 @@ public class DataAndGuiTest {
         SharedPreferences.Editor ed = prefs.edit();
         ed.putStringSet(App.PREF_FILTERS, testFilters);
         ed.apply();
-        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            com.google.android.material.navigation.NavigationView nv = activity.findViewById(R.id.navigationView);
-            assertNotNull(nv);
-            Menu menu = nv.getMenu();
-            assertNotNull(menu);
-            final int n = menu.size();
-            for (int i = 0; i < n; i++) {
-                if (!menu.getItem(i).isVisible()) continue;
-                String menuTitle = menu.getItem(i).getTitle().toString().toLowerCase(Locale.GERMAN);
-                assertNotEquals("Found category \"" + hideMe + "\"!", hideMe, menuTitle);
-            }
-            SharedPreferences.Editor ed2 = prefs.edit();
-            ed2.putStringSet(App.PREF_FILTERS, preferredFilters);
-            assertTrue(ed2.commit());
-            activity.finish();
-        });
+        try(ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class)) {
+            asn.moveToState(Lifecycle.State.RESUMED);
+            asn.onActivity(activity -> {
+                com.google.android.material.navigation.NavigationView nv = activity.findViewById(R.id.navigationView);
+                assertNotNull(nv);
+                Menu menu = nv.getMenu();
+                assertNotNull(menu);
+                final int n = menu.size();
+                for (int i = 0; i < n; i++) {
+                    if (!menu.getItem(i).isVisible()) continue;
+                    String menuTitle = menu.getItem(i).getTitle().toString().toLowerCase(Locale.GERMAN);
+                    assertNotEquals("Found category \"" + hideMe + "\"!", hideMe, menuTitle);
+                }
+                SharedPreferences.Editor ed2 = prefs.edit();
+                ed2.putStringSet(App.PREF_FILTERS, preferredFilters);
+                assertTrue(ed2.commit());
+                activity.finish();
+            });
+        }
     }
 
     /**
@@ -337,85 +349,101 @@ public class DataAndGuiTest {
      */
     @Test
     public void testNewsActivity() {
-        ActivityScenario<NewsActivity> asn = ActivityScenario.launch(NewsActivity.class);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            // ensure that required Views are present
-            View fab = activity.findViewById(R.id.fab);
-            assertNotNull(fab);
-            StyledPlayerView topVideoView = activity.findViewById(R.id.topVideoView);
-            assertNotNull(topVideoView);
-            View textViewTitle = activity.findViewById(R.id.textViewTitle);
-            assertNotNull(textViewTitle);
-            View audioBlock = activity.findViewById(R.id.audioBlock);
-            assertNotNull(audioBlock);
-            View buttonAudio = activity.findViewById(R.id.buttonAudio);
-            assertNotNull(buttonAudio);
-            View textViewAudioTitle = activity.findViewById(R.id.textViewAudioTitle);
-            assertNotNull(textViewAudioTitle);
-            View recyclerViewRelated = activity.findViewById(R.id.recyclerViewRelated);
-            assertNotNull(recyclerViewRelated);
-            View dividerRelated = activity.findViewById(R.id.dividerRelated);
-            assertNotNull(dividerRelated);
-            TextView textViewRelated = activity.findViewById(R.id.textViewRelated);
-            assertNotNull(textViewRelated);
-            ViewGroup bottomVideoBlock = activity.findViewById(R.id.bottomVideoBlock);
-            assertNotNull(bottomVideoBlock);
-            View textViewBottomVideoPeek = activity.findViewById(R.id.textViewBottomVideoPeek);
-            assertNotNull(textViewBottomVideoPeek);
-            StyledPlayerView bottomVideoView = activity.findViewById(R.id.bottomVideoView);
-            assertNotNull(bottomVideoView);
-            View textViewBottomVideoViewOverlay = activity.findViewById(R.id.textViewBottomVideoViewOverlay);
-            assertNotNull(textViewBottomVideoViewOverlay);
-            View bottomVideoViewWrapper = activity.findViewById(R.id.bottomVideoViewWrapper);
-            assertNotNull(bottomVideoViewWrapper);
-            // make sure that the ExoPlayer instances exist
-            if (activity.loadVideo) {
-                assertNotNull(activity.exoPlayerTopVideo);
-                assertNotNull(activity.exoPlayerBottomVideo);
-                assertNotNull(topVideoView.getPlayer());
-                assertNotNull(bottomVideoView.getPlayer());
-                // this makes sure that the ExoPlayers were built in the ExoFactory
-                assertTrue(activity.exoPlayerTopVideo.getAnalyticsCollector() instanceof ExoFactory.NirvanaAnalyticsCollector);
-                assertTrue(activity.exoPlayerBottomVideo.getAnalyticsCollector() instanceof ExoFactory.NirvanaAnalyticsCollector);
-            }
-            if (activity.exoPlayerAudio != null) {
-                // this makes sure that the ExoPlayer was built in the ExoFactory
-                assertTrue(activity.exoPlayerAudio.getAnalyticsCollector() instanceof ExoFactory.NirvanaAnalyticsCollector);
-            }
-            // make sure that some Views react to clicks
-            assertTrue(buttonAudio.hasOnClickListeners());
-            // hasOnLongClickListeners() is available only from Android 11 (R) on
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) assertTrue(buttonAudio.hasOnLongClickListeners());
-            assertTrue(textViewBottomVideoPeek.hasOnClickListeners());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) assertTrue(textViewBottomVideoPeek.hasOnLongClickListeners());
-            assertTrue(bottomVideoViewWrapper.hasOnClickListeners());
-            if (activity.loadVideo) {
-                assertNotNull(topVideoView.getVideoSurfaceView());
-                assertTrue(topVideoView.getVideoSurfaceView().hasOnClickListeners());
-            }
-            // make sure the top video View is not visible if videos must not be shown
-            if (!activity.loadVideo) {
-                assertFalse(topVideoView.getVisibility() == View.VISIBLE);
-            }
-            //
-            assertNotNull(activity.bottomSheetBehavior);
-            //
-            Intent intent = activity.getIntent();
-            assertNotNull(intent);
-            News news = (News) intent.getSerializableExtra(NewsActivity.EXTRA_NEWS);
-            assertNull(news);
-            //
-            activity.finish();
-        });
+        try (ActivityScenario<NewsActivity> asn = ActivityScenario.launch(NewsActivity.class)) {
+            asn.moveToState(Lifecycle.State.RESUMED);
+            asn.onActivity(activity -> {
+                // ensure that required Views are present
+                View fab = activity.findViewById(R.id.fab);
+                assertNotNull(fab);
+                StyledPlayerView topVideoView = activity.findViewById(R.id.topVideoView);
+                assertNotNull(topVideoView);
+                View textViewTitle = activity.findViewById(R.id.textViewTitle);
+                assertNotNull(textViewTitle);
+                View audioBlock = activity.findViewById(R.id.audioBlock);
+                assertNotNull(audioBlock);
+                View buttonAudio = activity.findViewById(R.id.buttonAudio);
+                assertNotNull(buttonAudio);
+                View textViewAudioTitle = activity.findViewById(R.id.textViewAudioTitle);
+                assertNotNull(textViewAudioTitle);
+                View recyclerViewRelated = activity.findViewById(R.id.recyclerViewRelated);
+                assertNotNull(recyclerViewRelated);
+                View dividerRelated = activity.findViewById(R.id.dividerRelated);
+                assertNotNull(dividerRelated);
+                TextView textViewRelated = activity.findViewById(R.id.textViewRelated);
+                assertNotNull(textViewRelated);
+                ViewGroup bottomVideoBlock = activity.findViewById(R.id.bottomVideoBlock);
+                assertNotNull(bottomVideoBlock);
+                View textViewBottomVideoPeek = activity.findViewById(R.id.textViewBottomVideoPeek);
+                assertNotNull(textViewBottomVideoPeek);
+                StyledPlayerView bottomVideoView = activity.findViewById(R.id.bottomVideoView);
+                assertNotNull(bottomVideoView);
+                View textViewBottomVideoViewOverlay = activity.findViewById(R.id.textViewBottomVideoViewOverlay);
+                assertNotNull(textViewBottomVideoViewOverlay);
+                View bottomVideoViewWrapper = activity.findViewById(R.id.bottomVideoViewWrapper);
+                assertNotNull(bottomVideoViewWrapper);
+                // make sure that the ExoPlayer instances exist
+                if (activity.loadVideo) {
+                    assertNotNull(activity.exoPlayerTopVideo);
+                    assertNotNull(activity.exoPlayerBottomVideo);
+                    assertNotNull(topVideoView.getPlayer());
+                    assertNotNull(bottomVideoView.getPlayer());
+                    // this makes sure that the ExoPlayers were built in the ExoFactory
+                    assertTrue(activity.exoPlayerTopVideo.getAnalyticsCollector() instanceof ExoFactory.NirvanaAnalyticsCollector);
+                    assertTrue(activity.exoPlayerBottomVideo.getAnalyticsCollector() instanceof ExoFactory.NirvanaAnalyticsCollector);
+                }
+                if (activity.exoPlayerAudio != null) {
+                    // this makes sure that the ExoPlayer was built in the ExoFactory
+                    assertTrue(activity.exoPlayerAudio.getAnalyticsCollector() instanceof ExoFactory.NirvanaAnalyticsCollector);
+                }
+                // make sure that some Views react to clicks
+                assertTrue(buttonAudio.hasOnClickListeners());
+                // hasOnLongClickListeners() is available only from Android 11 (R) on
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                    assertTrue(buttonAudio.hasOnLongClickListeners());
+                assertTrue(textViewBottomVideoPeek.hasOnClickListeners());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                    assertTrue(textViewBottomVideoPeek.hasOnLongClickListeners());
+                assertTrue(bottomVideoViewWrapper.hasOnClickListeners());
+                if (activity.loadVideo) {
+                    assertNotNull(topVideoView.getVideoSurfaceView());
+                    assertTrue(topVideoView.getVideoSurfaceView().hasOnClickListeners());
+                }
+                // make sure the top video View is not visible if videos must not be shown
+                if (!activity.loadVideo) {
+                    assertFalse(topVideoView.getVisibility() == View.VISIBLE);
+                }
+                //
+                assertNotNull(activity.bottomSheetBehavior);
+                //
+                Intent intent = activity.getIntent();
+                assertNotNull(intent);
+                News news = (News) intent.getSerializableExtra(NewsActivity.EXTRA_NEWS);
+                assertNull(news);
+                //
+                activity.finish();
+            });
+        }
+    }
+
+    @NonNull
+    @RequiresApi(Build.VERSION_CODES.R)
+    static Context getVisualContext(@NonNull Context ctx) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return ctx;
+        DisplayManager dm = (DisplayManager) ctx.getSystemService(Context.DISPLAY_SERVICE);
+        Display primaryDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
+        Context dctx = ctx.createDisplayContext(primaryDisplay);
+        //noinspection deprecation
+        return dctx.createWindowContext(WindowManager.LayoutParams.TYPE_TOAST, null);
     }
 
     /**
-     * Tests the application of {@link News} objects to {@link NewsView NewsViews}.
+     * Tests the application of {@link News} objects to {@link NewsView2 NewsViews}.
      */
     @Test
     @MediumTest
+    @RequiresApi(Build.VERSION_CODES.R)
     public void testNewsView() {
+        assumeTrue("This test needs API 30",Build.VERSION.SDK_INT >= Build.VERSION_CODES.R);
         assertNotNull(file);
         if (!file.isFile() || file.length() == 0L) {
             try {
@@ -435,21 +463,31 @@ public class DataAndGuiTest {
         assertNotNull("News list is null", list);
         assertTrue("News list is empty", list.size() > 0);
 
-        NewsView nv;
+        final Context visualContext = getVisualContext(ctx);
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        final List<String> REGION_LABELS = Region.getValidLabels();
+
+        NewsView2 nv;
         for (News news : list) {
             assertNotNull(news);
             //
-            nv = NewsRecyclerAdapter.instantiateView(ctx, NewsRecyclerAdapter.getViewType(news));
+            nv = NewsRecyclerAdapter.instantiateView(visualContext, null, NewsRecyclerAdapter.getViewType(news));
             assertNotNull(nv);
+
             // all NewsView subtypes have these 3 views
             assertNotNull(nv.textViewDate);
             assertNotNull(nv.textViewTopline);
             assertNotNull(nv.imageView);
             //
+            assertNotNull(nv.textViewDate.getLayoutParams());
+            assertNotNull(nv.textViewTopline.getLayoutParams());
+            assertNotNull(nv.imageView.getLayoutParams());
+            //
             @News.NewsType String type = news.getType();
             if (news.getTitle() != null && !news.getTitle().contains("Wetter")) {
                 assertNotNull(type);
             }
+            boolean hasTopline = !TextUtils.isEmpty(news.getTopline());
             boolean hasTitle = !TextUtils.isEmpty(news.getTitle());
             boolean hasFirstSentence = !TextUtils.isEmpty(news.getFirstSentence());
             boolean hasShorttext= !TextUtils.isEmpty(news.getShorttext());
@@ -457,19 +495,34 @@ public class DataAndGuiTest {
             boolean hasTextFor3rdView = hasFirstSentence || hasShorttext || hasPlainText;
             // video type
             if (News.NEWS_TYPE_VIDEO.equals(type)) {
+                assertTrue(nv instanceof NewsViewNoContentNoTitle2);
                 assertNull(nv.textViewTitle);
                 assertNull(nv.textViewFirstSentence);
                 continue;
             }
-            if (hasTitle && !hasTextFor3rdView) {
-                assertNull(nv.textViewFirstSentence);
-            }
-            if (!hasTitle && !hasTextFor3rdView) {
-                assertNull(nv.textViewTitle);
-                assertNull(nv.textViewFirstSentence);
-            }
             // apply the News
-            nv.setNews(news, null);
+            nv.setNews(news, null, prefs);
+            //
+            if (hasTopline) {
+                // news topline text should have gone into textViewTopline
+                assertTrue(TextUtils.equals(nv.textViewTopline.getText(), news.getTopline()));
+            } else if (hasTitle) {
+                // news title text should have gone into textViewTopline
+                assertTrue(TextUtils.equals(nv.textViewTopline.getText(), news.getTitle()));
+            }
+            if (prefs.getBoolean(App.PREF_TOPLINE_MARQUEE, false)) {
+                assertTrue(nv.textViewTopline.isSelected());
+                assertSame(TextUtils.TruncateAt.MARQUEE, nv.textViewTopline.getEllipsize());
+            } else {
+                assertNotSame(TextUtils.TruncateAt.MARQUEE, nv.textViewTopline.getEllipsize());
+            }
+            if (news.isBreakingNews()) {
+                assertEquals(nv.textViewTopline.getCurrentTextColor(), Util.getColor(ctx, R.color.colorBreakingNews));
+            } else if (REGION_LABELS.contains(nv.textViewTopline.getText().toString())) {
+                assertEquals(nv.textViewTopline.getCurrentTextColor(), Util.getColor(ctx, R.color.colorRegionalNews));
+            } else {
+                assertEquals(nv.textViewTopline.getCurrentTextColor(), Util.getColor(ctx, R.color.colorContent));
+            }
             // date
             if (news.getDate() != null) {
                 assertFalse(TextUtils.isEmpty(nv.textViewDate.getText()));
@@ -490,16 +543,27 @@ public class DataAndGuiTest {
     public void testPictureActivity() {
         Intent intent = new Intent(ctx, PictureActivity.class);
         intent.setData(Uri.parse("https://www.tagesschau.de/res/assets/image/favicon/apple-touch-icon-144x144.png"));
-        ActivityScenario<PictureActivity> asn = ActivityScenario.launch(intent);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            View pv = activity.findViewById(R.id.pictureView);
-            assertTrue(pv instanceof com.github.chrisbanes.photoview.PhotoView);
-            com.github.chrisbanes.photoview.PhotoView phv = (com.github.chrisbanes.photoview.PhotoView)pv;
-            try {Thread.sleep(2_000L);} catch (Exception ignored) {}
-            assertNotNull("No service!", activity.service);
-            try {Thread.sleep(2_000L);} catch (Exception ignored) {}
-        });
+        ActivityScenario<PictureActivity> asn = null;
+        try {
+            asn = ActivityScenario.launch(intent);
+            asn.moveToState(Lifecycle.State.RESUMED);
+            asn.onActivity(activity -> {
+                View pv = activity.findViewById(R.id.pictureView);
+                assertTrue(pv instanceof com.github.chrisbanes.photoview.PhotoView);
+                com.github.chrisbanes.photoview.PhotoView phv = (com.github.chrisbanes.photoview.PhotoView) pv;
+                try {
+                    Thread.sleep(2_000L);
+                } catch (Exception ignored) {
+                }
+                assertNotNull("No service!", activity.service);
+                try {
+                    Thread.sleep(2_000L);
+                } catch (Exception ignored) {
+                }
+            });
+        } catch (Throwable ignored) {
+            if (asn != null) Util.close(asn);
+        }
     }
 
     /**
