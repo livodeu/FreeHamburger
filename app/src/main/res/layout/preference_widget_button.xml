@@ -2,6 +2,7 @@
 <!--suppress AndroidDomInspection -->
 <!-- see also: https://android.googlesource.com/platform/frameworks/support/+/refs/heads/androidx-master-dev/preference/preference/res/layout/preference.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -12,6 +13,7 @@
     android:minHeight="?android:attr/listPreferredItemHeight"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
+    android:translationZ="20dp"
     tools:ignore="RtlSymmetry">
 
     <LinearLayout
@@ -22,8 +24,8 @@
         android:minWidth="56dp"
         android:orientation="horizontal"
         android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        >
+        android:paddingBottom="4dp">
+
         <ImageView
             android:id="@android:id/icon"
             android:layout_width="wrap_content"
@@ -42,8 +44,7 @@
         android:layout_marginTop="6dip"
         android:layout_marginEnd="6dip"
         android:layout_marginBottom="6dip"
-        android:layout_weight="1"
-        >
+        android:layout_weight="1">
 
         <TextView
             android:id="@android:id/title"
@@ -54,7 +55,7 @@
             android:singleLine="true"
             android:textAppearance="?android:attr/textAppearanceListItem"
             android:textColor="?android:attr/textColorPrimary"
-            tools:text="@tools:sample/lorem/random"/>
+            tools:text="@tools:sample/lorem/random" />
 
         <TextView
             android:id="@android:id/summary"
@@ -65,7 +66,7 @@
             android:maxLines="2"
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:textColor="?android:attr/textColorSecondary"
-            tools:text="@tools:sample/lorem/random"/>
+            tools:text="@tools:sample/lorem/random" />
 
     </RelativeLayout>
 
@@ -74,33 +75,21 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:gravity="center_vertical"
-        android:orientation="vertical"
-        >
+        android:orientation="vertical">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/button"
             style="@style/Widget.Material3.Button"
             android:layout_width="48dip"
             android:layout_height="48dip"
-            android:background="@drawable/bg_button_round"
-            android:elevation="16dp"
             android:focusable="false"
-            android:fontFamily="monospace"
             android:gravity="center"
-            android:includeFontPadding="false"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
             android:minWidth="48dip"
-            android:paddingStart="1dp"
-            android:paddingTop="0dp"
-            android:paddingEnd="0dp"
-            android:paddingBottom="1dp"
             android:scrollbars="none"
-            android:shadowDy="8"
-            android:shadowRadius="4"
-            android:text="⚆"
-            android:textAlignment="center"
-            android:textColor="@android:color/white"
-            android:textSize="36dp"
-            tools:ignore="HardcodedText,SpUsage" />
+            app:icon="@drawable/ic_arrow_right_opc_24dp"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Material3.Button"
+            />
     </LinearLayout>
-
 </LinearLayout>

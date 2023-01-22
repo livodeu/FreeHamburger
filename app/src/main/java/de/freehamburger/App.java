@@ -56,6 +56,7 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import de.freehamburger.model.Source;
+import de.freehamburger.prefs.ButtonPreference;
 import de.freehamburger.prefs.PrefsHelper;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.Log;
@@ -405,20 +406,21 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /**
      * Sets the app's background mode according to the preferences.
      * @param prefs SharedPreferences
+     * @param delay delay in ms
      * @throws NullPointerException if {@code prefs} is {@code null}
      */
-    private static void setNightMode(@NonNull SharedPreferences prefs) {
+    private void setNightMode(@NonNull SharedPreferences prefs, long delay) {
         @BackgroundSelection int background = prefs.getInt(PREF_BACKGROUND, BACKGROUND_AUTO);
         switch (background) {
             case BACKGROUND_DAY:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                this.handler.postDelayed(() -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO), delay);
                 break;
             case BACKGROUND_NIGHT:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                this.handler.postDelayed(() -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES), delay);
                 break;
             case BACKGROUND_AUTO:
             default:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+                this.handler.postDelayed(() -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM), delay);
         }
     }
 
@@ -781,7 +783,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.registerOnSharedPreferenceChangeListener(this);
-        setNightMode(prefs);
+        setNightMode(prefs, 0L);
 
         FileDeleter.run();
 
@@ -804,7 +806,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
             // OkHttpClient needs to be rebuilt next time
             closeClient();
         } else if (PREF_BACKGROUND.equals(key)) {
-            setNightMode(prefs);
+            setNightMode(prefs, ButtonPreference.ROTATION);
         }
     }
 

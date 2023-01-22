@@ -1,9 +1,13 @@
 package de.freehamburger.prefs;
 
+import android.animation.Animator;
 import android.animation.AnimatorSet;
+import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.animation.TimeAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.media.AudioAttributes;
@@ -14,11 +18,7 @@ import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
-import android.widget.Button;
 import android.widget.TextView;
-
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
 
 import androidx.annotation.ArrayRes;
 import androidx.annotation.ColorInt;
@@ -28,6 +28,12 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RawRes;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceViewHolder;
+
+import com.google.android.material.button.MaterialButton;
+
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+
 import de.freehamburger.BuildConfig;
 import de.freehamburger.R;
 
@@ -45,7 +51,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
     private static final float INITIAL_ROTATION = 270f;
     private static final float PI180 = (float)(Math.PI / 180.);
     /** rotation period in ms */
-    private static final long ROTATION = 333L;
+    public static final long ROTATION = 333L;
     private static final float SHADOW_BLUR = 4f;
     private static final float SHADOW_X = 4f;
     private static final float SHADOW_Y = 4f;
@@ -54,7 +60,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
 
     private View layout;
 
-    private Button button;
+    private MaterialButton button;
     @IntRange(from = 0) private int selectedIndex = 0;
     @NonNull private final CharSequence[] states;
     @Nullable private int[] colors;
@@ -125,9 +131,9 @@ public class ButtonPreference extends Preference implements View.OnClickListener
     public void onBindViewHolder(@NonNull PreferenceViewHolder holder) {
         super.onBindViewHolder(holder);
 
-        this.button = (Button)holder.findViewById(R.id.button);
+        this.button = (MaterialButton) holder.findViewById(R.id.button);
         if (this.colors != null) {
-            this.button.setTextColor(this.colors[this.selectedIndex]);
+            this.button.setIconTint(ColorStateList.valueOf(this.colors[this.selectedIndex]));
         }
         this.button.setOnClickListener(this);
 
@@ -201,6 +207,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
         this.selectedIndex = getPersistedInt(this.selectedIndex);
     }
 
+    @SuppressLint("ObjectAnimatorBinding")
     private void rotate(boolean quick) {
         float nextRotation = INITIAL_ROTATION + this.selectedIndex * 360f / (this.states.length);
         while (nextRotation <= 0f) nextRotation += 360f;
@@ -223,7 +230,7 @@ public class ButtonPreference extends Preference implements View.OnClickListener
             float r = nextRotation * PI180;
             this.button.setShadowLayer(SHADOW_BLUR, SHADOW_X * (float)Math.sin(r), SHADOW_Y * (float)Math.cos(r), makeShadowColor(this.button.getCurrentTextColor()));
             if (this.colors != null) {
-                this.button.setTextColor(this.colors[this.selectedIndex]);
+                this.button.setIconTint(ColorStateList.valueOf(this.colors[this.selectedIndex]));
             }
         } else {
             ObjectAnimator rotator = ObjectAnimator.ofFloat(this.button, "rotation", nextRotation).setDuration(ROTATION);
@@ -232,7 +239,14 @@ public class ButtonPreference extends Preference implements View.OnClickListener
             ta.setTimeListener(new ShadowUpdater(this.button));
             ObjectAnimator phaser = null;
             if (this.colors != null) {
-                phaser = ObjectAnimator.ofArgb(this.button, "textColor", this.button.getCurrentTextColor(), this.colors[this.selectedIndex]).setDuration(ROTATION);
+                phaser = ObjectAnimator.ofObject(this.button, "iconTint", new ArgbEvaluator() {
+                    @Override
+                    public Object evaluate(float fraction, Object startValue, Object endValue) {
+                        int c = (int)super.evaluate(fraction, startValue, endValue);
+                        return ColorStateList.valueOf(c);
+                    }
+                },
+                this.button.getIconTint().getDefaultColor(), this.colors[this.selectedIndex]).setDuration(ROTATION);
             }
 
             AnimatorSet set = new AnimatorSet();
@@ -242,6 +256,24 @@ public class ButtonPreference extends Preference implements View.OnClickListener
             } else {
                 set.playTogether(rotator, ta);
             }
+            set.setDuration(ROTATION);
+            rotator.addListener(new Animator.AnimatorListener() {
+                @Override public void onAnimationStart(@NonNull Animator animation) {
+                }
+
+                @Override public void onAnimationEnd(@NonNull Animator animation) {
+                    ta.setTimeListener(null);
+                    ta.end();
+                }
+
+                @Override public void onAnimationCancel(@NonNull Animator animation) {
+                    ta.setTimeListener(null);
+                    ta.end();
+                }
+
+                @Override public void onAnimationRepeat(@NonNull Animator animation) {
+                }
+            });
             set.start();
         }
     }
