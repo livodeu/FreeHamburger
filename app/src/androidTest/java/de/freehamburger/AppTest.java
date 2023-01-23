@@ -233,13 +233,14 @@ public class AppTest {
         Assume.assumeFalse("Device is locked.", km.isDeviceLocked());
         App app = (App)ctx.getApplicationContext();
         assertNull(app.getCurrentActivity());
-        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            assertNotNull(activity);
-            assertNotNull(app.getCurrentActivity());
-            activity.finish();
-        });
+        try (ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class)) {
+            asn.moveToState(Lifecycle.State.RESUMED);
+            asn.onActivity(activity -> {
+                assertNotNull(activity);
+                assertNotNull(app.getCurrentActivity());
+                activity.finish();
+            });
+        }
     }
 
     /**
@@ -534,13 +535,14 @@ public class AppTest {
                 fail("Undefined background value of " + background);
         }
 
-        ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            if (background == App.BACKGROUND_DAY) assertFalse(Util.isNightMode(activity));
-            else if (background == App.BACKGROUND_NIGHT) assertTrue(Util.isNightMode(activity));
-            activity.finish();
-        });
+        try (ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class)) {
+            asn.moveToState(Lifecycle.State.RESUMED);
+            asn.onActivity(activity -> {
+                if (background == App.BACKGROUND_DAY) assertFalse(Util.isNightMode(activity));
+                else if (background == App.BACKGROUND_NIGHT) assertTrue(Util.isNightMode(activity));
+                activity.finish();
+            });
+        }
     }
 
     /**
@@ -581,6 +583,8 @@ public class AppTest {
     @MediumTest
     public void testShortcutInvocation() {
         assumeTrue("This test needs API 26 (O)", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O);
+        KeyguardManager km = (KeyguardManager) ctx.getSystemService(Context.KEYGUARD_SERVICE);
+        Assume.assumeFalse("Device is locked.", km.isDeviceLocked());
         ShortcutManager shortcutManager = (ShortcutManager)ctx.getSystemService(Context.SHORTCUT_SERVICE);
         assertNotNull(shortcutManager);
         assumeTrue("ShortcutManager does not support pinned shortcuts", shortcutManager.isRequestPinShortcutSupported());
@@ -601,8 +605,9 @@ public class AppTest {
                     @Override
                     public void run() {
                         try {
-                            sleep(1000);
+                            sleep(1_000);
                             Activity current = app.getCurrentActivity();
+                            // this will fail if the device is locked
                             assertTrue("Current activity is " + current, current instanceof MainActivity);
                             assertTrue(((MainActivity)current).handleShortcutIntent(intent));
                         } catch (Exception e) {
@@ -638,18 +643,19 @@ public class AppTest {
     public void testTheme() {
         KeyguardManager km = (KeyguardManager) ctx.getSystemService(Context.KEYGUARD_SERVICE);
         Assume.assumeFalse("Device is locked.", km.isDeviceLocked());
-        ActivityScenario<NewsActivity> asn = ActivityScenario.launch(NewsActivity.class);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            assertNotNull(activity);
-            boolean overflowButton = activity.hasMenuOverflowButton();
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-            @App.BackgroundSelection int backgroundSelection = HamburgerActivity.applyTheme(activity, prefs,false);
-            assertTrue(backgroundSelection == App.BACKGROUND_AUTO || backgroundSelection == App.BACKGROUND_DAY || backgroundSelection == App.BACKGROUND_NIGHT);
-            int resid = HamburgerActivity.applyTheme(activity,true);
-            assertTrue(resid != 0);
-            activity.finish();
-        });
+        try (ActivityScenario<NewsActivity> asn = ActivityScenario.launch(NewsActivity.class)) {
+            asn.moveToState(Lifecycle.State.RESUMED);
+            asn.onActivity(activity -> {
+                assertNotNull(activity);
+                boolean overflowButton = activity.hasMenuOverflowButton();
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+                @App.BackgroundSelection int backgroundSelection = HamburgerActivity.applyTheme(activity, prefs, false);
+                assertTrue(backgroundSelection == App.BACKGROUND_AUTO || backgroundSelection == App.BACKGROUND_DAY || backgroundSelection == App.BACKGROUND_NIGHT);
+                int resid = HamburgerActivity.applyTheme(activity, true);
+                assertTrue(resid != 0);
+                activity.finish();
+            });
+        }
     }
 
     /**
