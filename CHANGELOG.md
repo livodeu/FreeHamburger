@@ -68,11 +68,14 @@ _2022-11_
 
 ## 1.4
 
-_202x-xx_
+_2023-01_
 
 * Changed: The app targets API level 33 now.
 * Fixed: Pictures would be scaled down when rotating the device from portrait to landscape
+* New: The "Knowledge" category has been added
 * New: Articles (excluding media contents) may be archived
 * New: Text selection is now possible within articles, selected words may be passed to dictionaries
-* Upgrade: A library has been updated:
+* Upgrade: Several libraries have been updated:
+  * appcompat 1.4.1 → 1.6.0 [release](https://developer.android.com/jetpack/androidx/releases/appcompat?hl=en#1.6.0)
   * exoplayer 2.17.1 → 2.18.2 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)
+  * material 1.6.1 → 1.7.0 [comparison](https://github.com/material-components/material-components-android/compare/1.6.1...1.7.0)
