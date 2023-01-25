@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="general_category" translatable="false">general_category</string>
+    <string name="appearance_category" translatable="false">appearance_category</string>
+    <string name="storage_category" translatable="false">storage_category</string>
+    <string name="data_category" translatable="false">data_category</string>
+    <string name="video_category" translatable="false">video_category</string>
+    <string name="polling_category" translatable="false">polling_category</string>
+    <string name="other_category" translatable="false">other_category</string>
+</resources>
