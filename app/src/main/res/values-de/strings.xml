@@ -311,6 +311,7 @@
     <string name="pref_cat_cols">Spalten</string>
     <string name="pref_cat_opts">Optionen</string>
     <string name="pref_cat_text">Text</string>
+    <string name="pref_title_request_ignore_batt_optimizations">Optimierung des Akkuverbrauchs beenden</string>
     <string name="pref_title_poll_over_mobile">Im Mobilnetz</string>
     <string name="label_related">☛ Mehr zum Thema</string>
     <string name="action_help">Hilfe</string>

@@ -726,7 +726,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         }
 
         /** {@inheritDoc} */
-        @Override
+        @SuppressLint("BatteryLife") @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.pref_polling, rootKey);
             setHasOptionsMenu(true);
@@ -927,6 +927,8 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 });
             }
 
+            configurePrefRequestIgnoreBattOptimizations(activity);
+
             long statStart = prefs.getLong(UpdateJobService.PREF_STAT_START, 0L);
             int jobsSoFar = prefs.getInt(UpdateJobService.PREF_STAT_COUNT, 0);
             long receivedSoFar = prefs.getLong(UpdateJobService.PREF_STAT_RECEIVED, 0L);
@@ -978,6 +980,38 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             return super.onOptionsItemSelected(item);
         }
 
+        /**
+         * Configures the preference that allows to request ignoring battery optimizations.
+         * @param ctx Context
+         */
+        private void configurePrefRequestIgnoreBattOptimizations(@Nullable final Context ctx) {
+            Preference prefRequestIgnoreBattOptimizations = findPreference("pref_request_ignore_batt_optimizations");
+            if (prefRequestIgnoreBattOptimizations == null) return;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ctx != null) {
+                String pkg = ctx.getPackageName();
+                PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
+                if (pm.isIgnoringBatteryOptimizations(pkg)) {
+                    prefRequestIgnoreBattOptimizations.setOnPreferenceClickListener(null);
+                    prefRequestIgnoreBattOptimizations.setVisible(false);
+                } else {
+                    prefRequestIgnoreBattOptimizations.setOnPreferenceClickListener(preference -> {
+                        @SuppressLint("BatteryLife") Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + pkg));
+                        if (!(ctx instanceof Activity)) i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        try {
+                            ctx.startActivity(i);
+                        } catch (Exception e) {
+                            if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+                            Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_SHORT).show();
+                        }
+                        return true;
+                    });
+                    prefRequestIgnoreBattOptimizations.setVisible(true);
+                }
+            } else {
+                prefRequestIgnoreBattOptimizations.setVisible(false);
+            }
+        }
+
         @Override
         public void onResume() {
             super.onResume();
@@ -987,6 +1021,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                     && PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_POLL, App.PREF_POLL_DEFAULT)) {
                 new Handler().postDelayed(this::checkBucket, 3_000L);
             }
+            configurePrefRequestIgnoreBattOptimizations(ctx);
         }
 
     }

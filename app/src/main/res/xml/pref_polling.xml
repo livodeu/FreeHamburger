@@ -65,6 +65,15 @@
         />
 
     <Preference
+        android:dependency="pref_poll"
+        android:icon="@drawable/ic_baseline_battery_std_content_24"
+        android:key="pref_request_ignore_batt_optimizations"
+        android:title="@string/pref_title_request_ignore_batt_optimizations"
+        app:allowDividerAbove="true"
+        app:singleLineTitle="false"
+        />
+
+    <Preference
         android:key="pref_poll_stats"
         android:title="@string/pref_title_poll_stats"
         app:allowDividerAbove="true"
