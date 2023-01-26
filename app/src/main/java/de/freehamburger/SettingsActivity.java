@@ -18,10 +18,14 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.os.PowerManager;
+import android.provider.Settings;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -57,6 +61,7 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 import androidx.preference.SeekBarPreference;
 import androidx.preference.SwitchPreferenceCompat;
+import androidx.preference.TwoStatePreference;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
@@ -76,6 +81,7 @@ import de.freehamburger.prefs.SummarizingEditTextPreference;
 import de.freehamburger.supp.PopupManager;
 import de.freehamburger.util.EditTextIntegerLimiter;
 import de.freehamburger.util.Log;
+import de.freehamburger.util.PermissionUtil;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
 import de.freehamburger.widget.WidgetProvider;
@@ -86,8 +92,9 @@ import de.freehamburger.widget.WidgetProvider;
 public class SettingsActivity extends AppCompatActivity implements ServiceConnection, PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
 
     static final String ACTION_CONFIGURE_BACKGROUND_UPDATES = "de.freehamburger.configure.backgroundupdates";
-    private static final String TAG = "SettingsActivity";
     private static final String EXTRA_STORAGE_ACTIVITY = "de.freehamburger.extra.storage.activity";
+    private static final int REQUEST_CODE_GET_NOTIFICATION_PERMISSION = 1234;
+    private static final String TAG = "SettingsActivity";
     @Nullable
     private HamburgerService service;
     /** {@code true} if the user has clicked "Manage Storage" in the system settings for this app - identified by:<ol><li>{@link Intent} action is {@link Intent#ACTION_VIEW ACTION_VIEW},</li><li>Intent data is {@code null}</li></ol> */
@@ -210,17 +217,40 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         // Instantiate the new Fragment
         Bundle args = pref.getExtras();
         FragmentManager fm = getSupportFragmentManager();
-        Fragment fragment = fm.getFragmentFactory().instantiate(
-                getClassLoader(),
-                pref.getFragment());
+        Fragment fragment = fm.getFragmentFactory().instantiate(getClassLoader(), Objects.requireNonNull(pref.getFragment()));
         fragment.setArguments(args);
         fragment.setTargetFragment(caller, 0);
         // Replace the existing Fragment with the new Fragment
         fm.beginTransaction()
-                .replace(R.id.settings, fragment)
+                .replace(R.id.settings, fragment, pref.getKey())
                 .addToBackStack(null)
+                .setBreadCrumbTitle(pref.getTitle())
                 .commit();
         return true;
+    }
+
+    @SuppressLint("RestrictedApi")
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == REQUEST_CODE_GET_NOTIFICATION_PERMISSION) {
+            if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                final int[] widgetIds = AppWidgetManager.getInstance(this).getAppWidgetIds(new ComponentName(this, WidgetProvider.class));
+                if (widgetIds == null || widgetIds.length == 0) {
+                    // no widgets exist, therefore we don't have to poll
+                    Fragment f = getSupportFragmentManager().findFragmentByTag(getString(R.string.polling_category));
+                    if (f instanceof PreferenceFragmentCompat) {
+                        Preference prefPoll = ((PreferenceFragmentCompat)f).findPreference("pref_poll");
+                        if (prefPoll instanceof TwoStatePreference) {
+                            ((TwoStatePreference)prefPoll).setChecked(false);
+                            final CharSequence summary = ((TwoStatePreference)prefPoll).getSummaryOff();
+                            ((TwoStatePreference)prefPoll).setSummaryOff(getString(R.string.pref_title_poll_off_permission_denied));
+                            new Handler(Looper.getMainLooper()).postDelayed(() -> ((TwoStatePreference)prefPoll).setSummaryOff(summary), 4_000L);
+                        }
+                    }
+                }
+            }
+            return;
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     /** {@inheritDoc} */
@@ -677,6 +707,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
     public static class PollingPreferenceFragment extends PreferenceFragmentCompat {
 
         private final Handler handler = new Handler();
+        private SwitchPreferenceCompat prefPoll;
         private Preference prefPollStats;
         /** minimum polling interval in minutes */
         private int min;
@@ -739,16 +770,15 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             this.min = 1;
             this.maxNightInterval = Math.round(UpdateJobService.getNightDuration(prefs) * 60f);
 
-            SwitchPreferenceCompat prefPoll = findPreference(App.PREF_POLL);
-            if (prefPoll != null) {
+            this.prefPoll = findPreference(App.PREF_POLL);
+            if (this.prefPoll != null) {
                 long failedBefore = prefs.getLong(App.PREF_POLL_FAILED, 0L);
                 if (failedBefore != 0L) {
                     String date = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(new Date(failedBefore));
-                    prefPoll.setSummaryOn(getString(R.string.pref_title_poll_on) + '\n' + getString(R.string.error_poll_failed, date));
-                    prefPoll.setSummaryOff(getString(R.string.pref_title_poll_off) + '\n' + getString(R.string.error_poll_failed, date));
+                    this.prefPoll.setSummaryOn(getString(R.string.pref_title_poll_on) + '\n' + getString(R.string.error_poll_failed, date));
+                    this.prefPoll.setSummaryOff(getString(R.string.pref_title_poll_off) + '\n' + getString(R.string.error_poll_failed, date));
                 }
-                prefPoll.setOnPreferenceChangeListener((preference, newValue) -> {
-                    if (BuildConfig.DEBUG) Log.i(TAG, App.PREF_POLL + ": " + newValue);
+                this.prefPoll.setOnPreferenceChangeListener((preference, newValue) -> {
                     this.handler.removeCallbacks(activity.updatesController);
                     this.handler.postDelayed(activity.updatesController, 1_000L);
                     if (Boolean.FALSE.equals(newValue)) {
@@ -759,12 +789,14 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                             // ask user to enable updates because there is at least one widget
                             Snackbar sb = Util.makeSnackbar(activity, getResources().getQuantityString(R.plurals.msg_widget_dont_disable_updates, widgetIds.length, widgetIds.length), Snackbar.LENGTH_INDEFINITE);
                             sb.setAction(android.R.string.ok, v -> {
-                                prefPoll.setChecked(true);
-                                Objects.requireNonNull(prefPoll.getOnPreferenceChangeListener()).onPreferenceChange(prefPoll, true);
+                                this.prefPoll.setChecked(true);
+                                Objects.requireNonNull(this.prefPoll.getOnPreferenceChangeListener()).onPreferenceChange(this.prefPoll, true);
                             });
                             Util.setSnackbarMaxLines(sb, 3);
                             sb.show();
                         }
+                    } else {
+                        PermissionUtil.checkNotifications(activity, REQUEST_CODE_GET_NOTIFICATION_PERMISSION);
                     }
                     return true;
                 });

@@ -27,6 +27,7 @@
         <item quantity="one">%1$d Datei übersprungen</item>
         <item quantity="other">%1$d Dateien übersprungen</item>
     </plurals>
+    <string name="msg_notification_permission_rationale">Um Benachrichtigungen darstellen zu können ist eine Systemberechtigung erforderlich. Anfordern?</string>
     <string name="error_archived_already">Der Artikel wurde bereits archiviert.</string>
     <string name="error_archived_failure">Der Artikel wurde nicht archiviert!</string>
     <string name="error_archived_retrieval">Der Artikel konnte nicht geladen werden!</string>
@@ -294,6 +295,7 @@
     <string name="pref_hint_poll_quicksettings">Hintergrundaktualisierungen ein-/ausschalten.</string>
     <string name="pref_title_poll_on">Aktiv.</string>
     <string name="pref_title_poll_off">Inaktiv.</string>
+    <string name="pref_title_poll_off_permission_denied">Inaktiv da Erlaubnis für Benachrichtigungen verweigert.</string>
     <string name="error_poll_maximum_interval">Das Intervall darf höchstens %1$d Minuten betragen.</string>
     <string name="error_poll_minimum_interval">Das Intervall muss mindestens %1$d Minuten betragen.</string>
     <string name="msg_found">„%1$s” wurde %2$dx gefunden.</string>

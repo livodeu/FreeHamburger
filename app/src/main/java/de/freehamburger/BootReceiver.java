@@ -71,6 +71,10 @@ public class BootReceiver extends BroadcastReceiver {
         NotificationManager nm = (NotificationManager) app.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (!nm.areNotificationsEnabled()) return;
+        }
+
         @SuppressLint("InlinedApi")
         final Notification.Builder builder = new Notification.Builder(app)
                 .setSmallIcon(R.drawable.ic_notification)

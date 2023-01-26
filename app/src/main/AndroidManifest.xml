@@ -175,7 +175,6 @@
             android:exported="false"
             android:icon="@drawable/ic_build_black_24dp"
             android:label="@string/action_settings"
-            android:noHistory="true"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme.Launcher">
             <meta-data
@@ -217,6 +216,23 @@
             android:exported="false"
             android:label="@string/action_view_picture"
             android:noHistory="true">
+        </activity>
+
+        <activity
+            android:name=".IntentLauncher"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+            android:exported="false"
+            android:noHistory="true"
+            android:theme="@style/AppTheme.Launcher"
+            android:windowSoftInputMode="stateHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="launcher"
+                    android:scheme="launcher" />
+            </intent-filter>
         </activity>
 
         <receiver android:name=".BootReceiver"

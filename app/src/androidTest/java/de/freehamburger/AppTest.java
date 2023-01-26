@@ -27,6 +27,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.FeatureInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.content.pm.ShortcutManager;
 import android.content.res.Resources;
@@ -429,6 +430,15 @@ public class AppTest {
             assertNotNull(host);
             assertEquals("Host " + host + " is allowed", allowed[i], App.isHostAllowed(host));
         }
+    }
+
+    @Test
+    @SmallTest
+    public void testIntentLauncher() {
+        Intent intent = new Intent();
+        intent.setData(Uri.parse(IntentLauncher.SCHEME + "://" + IntentLauncher.HOST + "/android.settings.APPLICATION_DETAILS_SETTINGS?data=package:de.freehamburger"));
+        ResolveInfo ri = ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        assertNotNull(ri);
     }
 
     @Test

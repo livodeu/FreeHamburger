@@ -267,6 +267,7 @@
     </plurals>
     <string name="msg_justamoment">Just a moment, please…</string>
     <string name="msg_not_found">Not found: \"%1$s\"</string>
+    <string name="msg_notification_permission_rationale">A permission is required in order to display notifications. Grant?</string>
     <string name="msg_not_modified">Not modified.</string>
     <string name="msg_print_cancelled">Printing cancelled.</string>
     <string name="msg_print_failed">Printing failed.</string>
@@ -343,6 +344,7 @@
     <string name="pref_title_poll_nightis">Night is</string>
     <string name="pref_title_poll_on">Active.</string>
     <string name="pref_title_poll_off">Inactive.</string>
+    <string name="pref_title_poll_off_permission_denied">Inactive as notification permission denied.</string>
     <string name="pref_title_poll_breaking_only">Show \"breaking\" news only</string>
     <string name="pref_title_poll_over_mobile">Over mobile networks</string>
     <string name="pref_title_poll_stats">Data usage</string>
