@@ -1847,11 +1847,14 @@ public class Util {
             close(in);
         }
         String textColorForCss = makeCssColor(activity, R.color.color_onPrimaryContainer);
+        String aColorForCss = makeCssColor(activity, R.color.colorAccent);
         String bgColorForCss = makeCssColor(activity, R.color.color_primaryContainer);
         CharSequence cs = TextUtils.replace(sb,
                 new String[] {"<style></style>"},
-                new CharSequence[] {"<style>body{color:#" + textColorForCss + ";background:#" + bgColorForCss + ";margin:10px 20px 0px 20px" + "}</style>"}
-                );
+                new CharSequence[] {
+                        "<style>body{color:#" + textColorForCss + ";background:#" + bgColorForCss + ";margin:10px 20px 0px 20px}a{color:#" + aColorForCss + ";}</style>"
+                }
+        );
         webView.loadDataWithBaseURL("about:blank", cs.toString(), "text/html", "UTF-8", null);
         AlertDialog.Builder builder = new MaterialAlertDialogBuilder(activity)
                 .setTitle(R.string.action_help)
