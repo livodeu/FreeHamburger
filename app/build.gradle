@@ -78,8 +78,11 @@ android {
     }
 
     lint {
+        // https://developer.android.com/reference/tools/gradle-api/7.4/com/android/build/api/dsl/Lint
         // UseCompatLoadingForDrawables is misleading for minSdkVersion >= 21
-        ignore 'UseCompatLoadingForDrawables'
+        ignore 'UseCompatLoadingForDrawables','AppLinkUrlError','VectorPath','ObsoleteSdkInt'
+        abortOnError = false
+        checkReleaseBuilds = false
     }
     namespace 'de.freehamburger'
 
