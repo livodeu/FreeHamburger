@@ -1,21 +1,24 @@
 package de.freehamburger.adapters;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
-import android.view.View;
-import android.view.ViewGroup;
 
 import java.util.List;
 
 import de.freehamburger.HamburgerActivity;
+import de.freehamburger.R;
 import de.freehamburger.model.Related;
 import de.freehamburger.views.RelatedView;
-import de.freehamburger.views.RelatedViewVertical;
 
 /**
  *
@@ -24,7 +27,7 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.ViewHold
 
     @NonNull private final HamburgerActivity activity;
     private Related[] related;
-    private RecyclerView rv;
+    private RecyclerView recyclerView;
 
     /**
      * Constructor.
@@ -61,39 +64,44 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.ViewHold
     /** {@inheritDoc} */
     @Override
     public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
-        this.rv = recyclerView;
+        this.recyclerView = recyclerView;
     }
 
     /** {@inheritDoc} */
     @Override
     public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
-        this.rv = null;
+        this.recyclerView = null;
     }
 
     /** {@inheritDoc} */
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int i) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         RelatedView relatedView = (RelatedView) holder.itemView;
-        relatedView.setRelated(this.related[i]);
+        relatedView.setRelated(this.related[position]);
     }
 
     /** {@inheritDoc} */
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        if (this.rv != null) {
-            RecyclerView.LayoutManager lm = this.rv.getLayoutManager();
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (this.recyclerView != null) {
+            RecyclerView.LayoutManager lm = this.recyclerView.getLayoutManager();
             if (lm instanceof GridLayoutManager || lm instanceof StaggeredGridLayoutManager) {
-                return new RelatedAdapter.ViewHolder(new RelatedViewVertical(this.activity));
+                RelatedView rv = (RelatedView) LayoutInflater.from(this.activity).inflate(R.layout.related_view_vert, parent, false);
+                rv.init();
+                return new RelatedAdapter.ViewHolder(rv);
             }
         }
-        return new RelatedAdapter.ViewHolder(new RelatedView(this.activity));
+        RelatedView rv = (RelatedView) LayoutInflater.from(this.activity).inflate(R.layout.related_view, parent, false);
+        rv.init();
+        return new RelatedAdapter.ViewHolder(rv);
     }
 
     /**
      * Sets the data.
      * @param related List of Related objects
      */
+    @SuppressLint("NotifyDataSetChanged")
     public void setRelated(@Nullable List<Related> related) {
         if (related == null) {
             this.related = null;
@@ -119,10 +127,9 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.ViewHold
         @Override
         public void onClick(View v) {
             Context ctx = v.getContext();
-            if (ctx instanceof OnRelatedClickListener) {
-                int position = getBindingAdapterPosition();
-                ((OnRelatedClickListener)ctx).onRelatedClicked(position);
-            }
+            if (!(ctx instanceof OnRelatedClickListener)) return;
+            int position = getBindingAdapterPosition();
+            ((OnRelatedClickListener)ctx).onRelatedClicked(position);
         }
     }
 

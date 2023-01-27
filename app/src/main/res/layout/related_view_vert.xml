@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<de.freehamburger.views.RelatedView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:focusable="true"
     android:focusableInTouchMode="false"
     android:foreground="?android:attr/selectableItemBackground"
@@ -22,7 +22,7 @@
         android:scaleType="fitStart"
         app:shapeAppearance="?attr/shapeAppearanceSmallComponent"
         tools:ignore="ContentDescription"
-        tools:src="@tools:sample/backgrounds/scenic"/>
+        tools:src="@tools:sample/backgrounds/scenic" />
 
     <ImageView
         android:id="@+id/imageViewType"
@@ -34,8 +34,7 @@
         android:visibility="gone"
         tools:ignore="ContentDescription"
         tools:src="@drawable/ic_videocam_content_24dp"
-        tools:visibility="visible"
-        />
+        tools:visibility="visible" />
 
     <TextView
         android:id="@+id/textViewDate"
@@ -45,7 +44,7 @@
         android:layout_alignParentStart="true"
         android:layout_marginTop="8dp"
         android:textColor="@color/colorContent"
-        tools:text="12.34.5678"/>
+        tools:text="12.34.5678" />
 
     <TextView
         android:id="@+id/textViewTitle"
@@ -60,5 +59,5 @@
         android:maxLines="3"
         android:textColor="@color/colorContent"
         tools:ignore="UnusedAttribute"
-        tools:text="@tools:sample/lorem/random"/>
-</RelativeLayout>
+        tools:text="@tools:sample/lorem/random" />
+</de.freehamburger.views.RelatedView>

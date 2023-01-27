@@ -128,8 +128,8 @@ import okhttp3.Call;
  */
 public class NewsActivity extends HamburgerActivity implements AudioManager.OnAudioFocusChangeListener, RelatedAdapter.OnRelatedClickListener, ServiceConnection {
 
-    static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
     static final String EXTRA_JSON = BuildConfig.APPLICATION_ID + ".extra.json";
+    static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
     /** boolean; if true, the ActionBar will not show the home arrow which would lead the user to the MainActivity */
     static final String EXTRA_NO_HOME_AS_UP = "extra_no_home_as_up";
     /** pictures are scaled to this percentage of the available width */
@@ -139,7 +139,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private final AudioAttributes aa = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setLegacyStreamType(App.STREAM_TYPE).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();
     private final MediaSourceHelper mediaSourceHelper = new MediaSourceHelper();
     /** strong references required for image loading (PictureLoader discards Targets that are not referenced anymore!) */
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     private final Set<SpannableImageTarget> spannableImageTargets = new HashSet<>();
     /** Listener for the top video */
     private final PlayerListener listenerTop = new PlayerListener(this,false);
@@ -147,12 +146,13 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     @VisibleForTesting boolean loadVideo;
     @Nullable @VisibleForTesting ExoPlayer exoPlayerTopVideo;
     @Nullable @VisibleForTesting ExoPlayer exoPlayerBottomVideo;
+    @VisibleForTesting @Nullable
+    ExoPlayer exoPlayerAudio;
     /** passed with the Intent as extra {@link #EXTRA_NEWS} */
     private News news;
     private String json;
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
-    private StyledPlayerView topVideoView;
-    /** Listener for the audio */
+    private StyledPlayerView topVideoView;    /** Listener for the audio */
     private final PlayerListener listenerAudio = new PlayerListener(this,true) {
 
         @Override
@@ -195,7 +195,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private TextView textViewBottomVideoPeek;
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
     private StyledPlayerView bottomVideoView;
-    private TextView textViewBottomVideoViewOverlay;
     /** Listener for the bottom video */
     private final PlayerListener listenerBottom = new PlayerListener(this,true) {
 
@@ -237,8 +236,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             }
         }
     };
-    @VisibleForTesting @Nullable
-    ExoPlayer exoPlayerAudio;
+    private TextView textViewBottomVideoViewOverlay;
     @Nullable
     private TextToSpeech tts;
     private boolean ttsInitialised = false;
@@ -427,7 +425,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.textViewContent.setText(null);
         } else {
             List<PositionedSpan> additionalSpans = new ArrayList<>();
-            assert htmlText != null;
 
             Spanned spanned = Util.fromHtml(this, htmlText, this.service);
 
@@ -892,6 +889,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     /** {@inheritDoc} */
     @Override public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        selectRelatedLayoutManager();
         // to have images occupy all the available space we apply the News again
         applyNews();
     }
@@ -922,8 +920,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.textViewContent.setOnTouchListener(new TextViewImageSpanClickHandler());
         }
         this.recyclerViewRelated = findViewById(R.id.recyclerViewRelated);
-        // determine number of Related columns; one every 2 inches, but not less than 2
-        this.recyclerViewRelated.setLayoutManager(new GridLayoutManager(this, Math.max(2, (int)(Util.getDisplayDim(this).x / 2f))));
+        selectRelatedLayoutManager();
+        //this.recyclerViewRelated.setLayoutManager(new GridLayoutManager(this, Math.max(2, (int)(Util.getDisplayDim(this).x / 1.5f))));
         this.recyclerViewRelated.setAdapter(new RelatedAdapter(this));
         // fling actions to recyclerViewRelated will be dispatched to its grandparent ScrollView (without this, fling actions on recyclerViewRelated would stutter…)
         this.recyclerViewRelated.setOnFlingListener(new RecyclerView.OnFlingListener() {
@@ -1423,6 +1421,14 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         return requestResult;
     }
 
+    private void selectRelatedLayoutManager() {
+        // determine number of Related columns; one every 1.5 inches, but not less than 2
+        final int columnCount = Math.max(2, (int)(Util.getDisplayDim(this).x / 1.5f));
+        RecyclerView.LayoutManager current = this.recyclerViewRelated.getLayoutManager();
+        if (current instanceof GridLayoutManager && ((GridLayoutManager)current).getSpanCount() == columnCount) return;
+        this.recyclerViewRelated.setLayoutManager(new GridLayoutManager(this, columnCount));
+    }
+
     /**
      * Sets the audio volume.
      * @param value [0..1]
@@ -1776,5 +1782,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             super.updateDrawState(ds);
         }
     }
+
+
 
 }

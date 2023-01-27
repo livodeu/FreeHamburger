@@ -3,17 +3,15 @@ package de.freehamburger.views;
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
+
 import java.text.DateFormat;
 
-import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import de.freehamburger.HamburgerActivity;
 import de.freehamburger.HamburgerService;
 import de.freehamburger.R;
@@ -39,7 +37,6 @@ public class RelatedView extends RelativeLayout {
      */
     public RelatedView(Context context) {
         super(context);
-        init(context);
     }
 
     /**
@@ -49,7 +46,6 @@ public class RelatedView extends RelativeLayout {
      */
     public RelatedView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context);
     }
 
     /**
@@ -60,7 +56,6 @@ public class RelatedView extends RelativeLayout {
      */
     public RelatedView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context);
     }
 
     @Nullable
@@ -68,15 +63,7 @@ public class RelatedView extends RelativeLayout {
         return related;
     }
 
-    @LayoutRes
-    int getLayoutId() {
-        return R.layout.related_view;
-    }
-
-    private void init(@NonNull Context ctx) {
-        LayoutInflater inflater = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        if (inflater == null) return;
-        inflater.inflate(getLayoutId(), this);
+    public final void init() {
         imageViewRelated = findViewById(R.id.imageViewRelated);
         imageViewType = findViewById(R.id.imageViewType);
         imageViewRelated.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
@@ -104,6 +91,7 @@ public class RelatedView extends RelativeLayout {
                 imageViewType.setVisibility(View.VISIBLE);
                 imageViewType.setImageResource(R.drawable.ic_videocam_content_24dp);
             } else {
+                // the type is usually "story", sometimes "webview"
                 imageViewType.setVisibility(View.GONE);
             }
             Context ctx = getContext();
