@@ -239,9 +239,10 @@ public class DataAndGuiTest {
         // must be a 'story' for a meaningful test
         Assume.assumeTrue(News.NEWS_TYPE_STORY.equals(news0.getType()));
         // get a phrase from the News to test against
+        String whatPartOfNews = "firstSentence";
         String partofNews = news0.getFirstSentence();
-        if (partofNews == null || partofNews.indexOf(' ') <= 0) partofNews = news0.getTopline();
-        if (partofNews == null || partofNews.indexOf(' ') <= 0) partofNews = news0.getTitle();
+        if (partofNews == null || partofNews.indexOf(' ') <= 0) {partofNews = news0.getTopline(); whatPartOfNews = "topLine";}
+        if (partofNews == null || partofNews.indexOf(' ') <= 0) {partofNews = news0.getTitle(); whatPartOfNews = "title";}
         assertNotNull(partofNews);
         partofNews = partofNews.toLowerCase(Locale.GERMAN);
         int space = partofNews.indexOf(' ');
@@ -251,24 +252,24 @@ public class DataAndGuiTest {
         String notPartOfNews = "donald loves adi!";
         // tf1 should NOT let news0 pass because it is directly derived from it
         TextFilter tf1 = new TextFilter(partofNews);
-        assertFalse(tf1 + " accepts " + news0, tf1.accept(news0));
+        assertFalse(tf1 + " (from " + whatPartOfNews + ") accepts " + news0, tf1.accept(news0));
         // tf1i is the inversed tf1
         TextFilter tf1i = new TextFilter(partofNews, false, true);
-        assertTrue(tf1i + " does not accept " + news0, tf1i.accept(news0));
+        assertTrue(tf1i + " (from " + whatPartOfNews + ") does not accept " + news0, tf1i.accept(news0));
         // tf2 should let news0 pass because it contains a phrase very unlikely to occur in the News
         TextFilter tf2 = new TextFilter(notPartOfNews);
-        assertTrue(tf2 + " does not accept " + news0, tf2.accept(news0));
+        assertTrue(tf2 + " (from " + whatPartOfNews + ") does not accept " + news0, tf2.accept(news0));
         // tf2i is the inversed tf2
         TextFilter tf2i = new TextFilter(notPartOfNews, false, true);
-        assertFalse(tf2i + " accepts " + news0, tf2i.accept(news0));
+        assertFalse(tf2i + " (from " + whatPartOfNews + ") accepts " + news0, tf2i.accept(news0));
         // tf3 should NOT let news0 pass because it is directly derived from it
         TextFilter tf3 = new TextFilter(firstWord, true, false, false, false);
-        assertFalse(tf3 + " accepts " + news0, tf3.accept(news0));
+        assertFalse(tf3 + " (from " + whatPartOfNews + ") accepts " + news0, tf3.accept(news0));
         // tf4 and tf5 should let news0 pass because HTML tags should not be included in the comparison
         TextFilter tf4 = new TextFilter("<em>", false, false, false, false);
-        assertTrue(tf4 + " does not accept " + news0, tf4.accept(news0));
+        assertTrue(tf4 + " (from " + whatPartOfNews + ") does not accept " + news0, tf4.accept(news0));
         TextFilter tf5 = new TextFilter("<br>", false, false, false, false);
-        assertTrue(tf5 + " does not accept " + news0, tf5.accept(news0));
+        assertTrue(tf5 + " (from " + whatPartOfNews + ") does not accept " + news0, tf5.accept(news0));
     }
 
     @Test

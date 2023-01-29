@@ -195,6 +195,7 @@ public class AppTest {
         br.onReceive(ctx, new Intent(Intent.ACTION_BOOT_COMPLETED));
         NotificationManager nm = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         assertNotNull(nm);
+        assumeTrue("Notifications are not enabled for " + BuildConfig.APPLICATION_ID, nm.areNotificationsEnabled());
         StatusBarNotification[] n = nm.getActiveNotifications();
         assertTrue("No active notifications", n.length > 0);
         // a little time to have a look at the notification
