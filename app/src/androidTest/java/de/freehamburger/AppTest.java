@@ -195,6 +195,7 @@ public class AppTest {
         br.onReceive(ctx, new Intent(Intent.ACTION_BOOT_COMPLETED));
         NotificationManager nm = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         assertNotNull(nm);
+        assumeTrue("Notifications are not enabled for " + BuildConfig.APPLICATION_ID, nm.areNotificationsEnabled());
         StatusBarNotification[] n = nm.getActiveNotifications();
         assertTrue("No active notifications", n.length > 0);
         // a little time to have a look at the notification
@@ -787,7 +788,7 @@ public class AppTest {
         // MainActivity should start now (but this will fail if the device is locked)…
         KeyguardManager km = (KeyguardManager) app.getSystemService(Context.KEYGUARD_SERVICE);
         Assume.assumeFalse("Device is locked.", km.isDeviceLocked());
-        try {Thread.sleep(2_000L);} catch (Exception ignored) {}
+        try {Thread.sleep(5_000L);} catch (Exception ignored) {}
         assertTrue("No current activity!", app.hasCurrentActivity());
         try {Thread.sleep(2_000L);} catch (Exception ignored) {}
     }
