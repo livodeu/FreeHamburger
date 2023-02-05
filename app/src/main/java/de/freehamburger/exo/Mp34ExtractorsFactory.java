@@ -10,7 +10,7 @@ import com.google.android.exoplayer2.extractor.mp4.Mp4Extractor;
 /**
  * See <a href="https://google.github.io/ExoPlayer/shrinking.html">here</a>.
  */
-class Mp34ExtractorsFactory implements ExtractorsFactory {
+public class Mp34ExtractorsFactory implements ExtractorsFactory {
 
     /** {@inheritDoc} */
     @Override

@@ -74,7 +74,6 @@ import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -666,11 +665,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
      * Initialises the ExoPlayers.
      */
     private void initPlayers() {
-        DefaultTrackSelector dts = new DefaultTrackSelector(this);
         // create ExoPlayer instances
         if (this.loadVideo) {
-            this.exoPlayerTopVideo = ExoFactory.makeExoPlayer(this, dts);
-            this.exoPlayerBottomVideo = ExoFactory.makeExoPlayer(this, dts);
+            this.exoPlayerTopVideo = ExoFactory.makeExoPlayer(this);
+            this.exoPlayerBottomVideo = ExoFactory.makeExoPlayer(this);
             //
             View backSeconds = this.bottomVideoView.findViewById(R.id.exo_rew_with_amount);
             if (backSeconds != null) backSeconds.setVisibility(View.GONE);
@@ -693,7 +691,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         } else {
             this.topVideoView.setVisibility(View.GONE);
         }
-        this.exoPlayerAudio = ExoFactory.makeExoPlayer(this, dts);
+        this.exoPlayerAudio = ExoFactory.makeExoPlayer(this);
         // listen to state changes
         if (this.exoPlayerTopVideo != null) this.exoPlayerTopVideo.addListener(this.listenerTop);
         if (this.exoPlayerBottomVideo != null) this.exoPlayerBottomVideo.addListener(this.listenerBottom);
@@ -1284,6 +1282,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     public void onServiceConnected(ComponentName name, IBinder service) {
         super.onServiceConnected(name, service);
         applyNews();
+        reportFullyDrawn();
     }
 
     /** {@inheritDoc} */

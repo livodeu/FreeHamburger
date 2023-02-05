@@ -69,10 +69,13 @@ import org.xmlpull.v1.XmlPullParser;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.text.DateFormat;
 import java.util.List;
 import java.util.Set;
 
+import de.freehamburger.exo.ExoFactory;
 import de.freehamburger.exo.MediaSourceHelper;
 import de.freehamburger.model.Blob;
 import de.freehamburger.model.BlobParser;
@@ -586,6 +589,23 @@ public class AppTest {
             assertNotNull(c.proxy());
         } else {
             assertNull(c.proxy());
+        }
+    }
+
+    @Test
+    @SmallTest
+    public void testPostCreate() {
+        final String method = "postCreate";
+        try {
+            Method postCreate = App.class.getDeclaredMethod(method);
+            assertTrue("App." + method + "() is not private", Modifier.isPrivate(postCreate.getModifiers()));
+            Thread.sleep(1_000L);
+            // ExoFactory.makeExoPlayer() should have been invoked from within App.onCreate() via postCreate()
+            assertTrue("ExoFactory.makeExoPlayer() has not been called at least once!", ExoFactory.isInitialised());
+        } catch (NoSuchMethodException nsm) {
+            fail("Missing method App." + method + "()");
+        } catch (Exception e) {
+            fail(e.toString());
         }
     }
 

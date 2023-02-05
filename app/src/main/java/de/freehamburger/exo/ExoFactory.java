@@ -15,35 +15,58 @@ import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.decoder.DecoderCounters;
 import com.google.android.exoplayer2.decoder.DecoderReuseEvaluation;
 import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.trackselection.TrackSelector;
+
+import org.jetbrains.annotations.TestOnly;
 
 import java.util.List;
 
+import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.util.Log;
+import de.freehamburger.util.Util;
 
 /**
  * The place where ExoPlayer instances are assembled.
  */
 public final class ExoFactory {
 
+    private static final NirvanaAnalyticsCollector NAC = new NirvanaAnalyticsCollector();
     private static final String TAG = "ExoFactory";
+    private static volatile boolean initialised = false;
+
+    private ExoFactory() {
+    }
+
+    @TestOnly
+    @VisibleForTesting
+    public static boolean isInitialised() {
+        if (!Util.TEST) throw new RuntimeException("isInitialised() called from non-test code!");
+        return initialised;
+    }
 
     /**
      * Builds an ExoPlayer instance.
      * @param ctx Context
-     * @param ts TrackSelector (optional)
      * @return ExoPlayer
+     * @throws NullPointerException if {@code ctx} is {@code null}
      */
     @NonNull
-    public static ExoPlayer makeExoPlayer(@NonNull Context ctx, @Nullable TrackSelector ts) {
-        return new ExoPlayer.Builder(ctx)
-                .setTrackSelector(ts != null ? ts : new DefaultTrackSelector(ctx))
-                .setAnalyticsCollector(new NirvanaAnalyticsCollector())
+    public static ExoPlayer makeExoPlayer(@NonNull Context ctx) {
+        long t = System.currentTimeMillis();
+        final ExoSupply exoSupply = ((App)ctx.getApplicationContext()).getExoSupply();
+        ExoPlayer exoPlayer = new ExoPlayer.Builder(ctx, exoSupply.getRenderersFactory(), exoSupply.getMediaSourceFactory())
+                .setTrackSelector(exoSupply.getTrackSelector())
+                .setAnalyticsCollector(NAC)
+                .setLoadControl(exoSupply.getLoadControl())
                 .setUsePlatformDiagnostics(false)
                 .setUseLazyPreparation(true)
                 .build();
+        if (BuildConfig.DEBUG) {
+            t = System.currentTimeMillis() - t;
+            if (t > 40L) Log.w(TAG, "Building ExoPlayer took " + t + " ms");
+            initialised = true;
+        }
+        return exoPlayer;
     }
 
     @VisibleForTesting
@@ -137,5 +160,4 @@ public final class ExoFactory {
         public void updateMediaPeriodQueueInfo(@NonNull List<MediaSource.MediaPeriodId> queue, @Nullable MediaSource.MediaPeriodId readingPeriod) {
         }
     }
-
 }

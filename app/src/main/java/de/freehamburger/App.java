@@ -30,10 +30,21 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.StringDef;
 import androidx.annotation.VisibleForTesting;
+import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.exoplayer2.DefaultLoadControl;
+import com.google.android.exoplayer2.DefaultRenderersFactory;
+import com.google.android.exoplayer2.LoadControl;
+import com.google.android.exoplayer2.RenderersFactory;
+import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
+import com.google.android.exoplayer2.extractor.ExtractorsFactory;
+import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.material.color.DynamicColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.squareup.picasso.Request;
@@ -55,6 +66,9 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import de.freehamburger.exo.ExoFactory;
+import de.freehamburger.exo.ExoSupply;
+import de.freehamburger.exo.Mp34ExtractorsFactory;
 import de.freehamburger.model.Source;
 import de.freehamburger.prefs.ButtonPreference;
 import de.freehamburger.prefs.PrefsHelper;
@@ -68,7 +82,7 @@ import okhttp3.TlsVersion;
 /**
  *
  */
-public class App extends Application implements Application.ActivityLifecycleCallbacks, SharedPreferences.OnSharedPreferenceChangeListener {
+public class App extends Application implements Application.ActivityLifecycleCallbacks, ExoSupply, SharedPreferences.OnSharedPreferenceChangeListener {
 
     public static final int BACKGROUND_AUTO = 0;
     public static final int BACKGROUND_DAY = 2;
@@ -269,6 +283,12 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Nullable
     private LatestShare latestShare;
 
+    private ExtractorsFactory exo_ef;
+    private MediaSource.Factory exo_mf;
+    private TrackSelector exo_ts;
+    private LoadControl exo_lc;
+    private RenderersFactory exo_rf;
+
     /**
      * Creates an OkHttpClient instance.
      * @param ctx Context
@@ -404,27 +424,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     }
 
     /**
-     * Sets the app's background mode according to the preferences.
-     * @param prefs SharedPreferences
-     * @param delay delay in ms
-     * @throws NullPointerException if {@code prefs} is {@code null}
-     */
-    private void setNightMode(@NonNull SharedPreferences prefs, long delay) {
-        @BackgroundSelection int background = prefs.getInt(PREF_BACKGROUND, BACKGROUND_AUTO);
-        switch (background) {
-            case BACKGROUND_DAY:
-                this.handler.postDelayed(() -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO), delay);
-                break;
-            case BACKGROUND_NIGHT:
-                this.handler.postDelayed(() -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES), delay);
-                break;
-            case BACKGROUND_AUTO:
-            default:
-                this.handler.postDelayed(() -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM), delay);
-        }
-    }
-
-    /**
      * For new behaviour in Android 13 / API 33:<br>
      * If the user stopped the app from the notification area, ask user whether to stop background updates.
      * @param prefs SharedPreferences
@@ -498,9 +497,37 @@ public class App extends Application implements Application.ActivityLifecycleCal
         return Util.getOccupiedSpace(Util.listFiles(getCacheDir()));
     }
 
+    @NonNull
+    public ExoSupply getExoSupply() {
+        return this;
+    }
+
+    @NonNull @Override public ExtractorsFactory getExtractorsFactory() {
+        if (this.exo_ef == null) {
+            this.exo_ef = new Mp34ExtractorsFactory();
+        }
+        return this.exo_ef;
+    }
+
     @Nullable
     public LatestShare getLatestShare() {
         return this.latestShare;
+    }
+
+    /** {@inheritDoc} */
+    @NonNull
+    public LoadControl getLoadControl() {
+        if (this.exo_lc == null) {
+            this.exo_lc = new DefaultLoadControl();
+        }
+        return this.exo_lc;
+    }
+
+    @NonNull @Override public MediaSource.Factory getMediaSourceFactory() {
+        if (this.exo_mf == null) {
+            this.exo_mf = new DefaultMediaSourceFactory(this, getExtractorsFactory());
+        }
+        return exo_mf;
     }
 
     /**
@@ -589,6 +616,24 @@ public class App extends Application implements Application.ActivityLifecycleCal
             this.client = createOkHttpClient(this, getCacheDir(), getMaxDiskCacheSize());
         }
         return this.client;
+    }
+
+    /** {@inheritDoc} */
+    @NonNull
+    public RenderersFactory getRenderersFactory() {
+        if (this.exo_rf == null) {
+            this.exo_rf = new DefaultRenderersFactory(this);
+        }
+        return this.exo_rf;
+    }
+
+    /** {@inheritDoc} */
+    @NonNull
+    public TrackSelector getTrackSelector() {
+        if (this.exo_ts == null) {
+            this.exo_ts = new DefaultTrackSelector(this);
+        }
+        return this.exo_ts;
     }
 
     /**
@@ -793,8 +838,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         new Thread() {
             @Override
             public void run() {
-                Util.clearExports(App.this, 120_000L);
-                Util.clearAppWebview(App.this);
+                postCreate();
             }
         }.start();
     }
@@ -815,8 +859,35 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public void onTrimMemory(int level) {
         if (level > android.content.ComponentCallbacks2.TRIM_MEMORY_MODERATE) {
             closeClient();
+            this.exo_ef = null;
+            this.exo_lc = null;
+            this.exo_rf = null;
+            this.exo_ts = null;
         }
         super.onTrimMemory(level);
+    }
+
+    /**
+     * Performs some one-time initialisations after a cold start.
+     * Run on a worker thread.
+     */
+    @WorkerThread
+    private void postCreate() {
+        Util.clearExports(this, 120_000L);
+        Util.clearAppWebview(this);
+        // new DefaultExtractorsFactory() is fast
+        this.exo_ef = new DefaultExtractorsFactory();
+        // new DefaultMediaSourceFactory() is fast
+        this.exo_mf = new DefaultMediaSourceFactory(this, this.exo_ef);
+        // new DefaultTrackSelector might take a few dozen milliseconds
+        this.exo_ts = new DefaultTrackSelector(this);
+        // new DefaultLoadControl() is fast
+        this.exo_lc = new DefaultLoadControl();
+        // new DefaultRenderersFactory() is fast
+        this.exo_rf = new DefaultRenderersFactory(this);
+        // creating the first ever ExoPlayer takes quite a while on slower devices (ca. 200 ms)
+        // by building a dummy ExoPlayer here the time needed to build relevant ones later is reduced significantly
+        ExoFactory.makeExoPlayer(this);
     }
 
     /**
@@ -902,6 +973,27 @@ public class App extends Application implements Application.ActivityLifecycleCal
             }
         }
         ed.apply();
+    }
+
+    /**
+     * Sets the app's background mode according to the preferences.
+     * @param prefs SharedPreferences
+     * @param delay delay in ms
+     * @throws NullPointerException if {@code prefs} is {@code null}
+     */
+    private void setNightMode(@NonNull SharedPreferences prefs, long delay) {
+        @BackgroundSelection int background = prefs.getInt(PREF_BACKGROUND, BACKGROUND_AUTO);
+        switch (background) {
+            case BACKGROUND_DAY:
+                this.handler.postDelayed(() -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO), delay);
+                break;
+            case BACKGROUND_NIGHT:
+                this.handler.postDelayed(() -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES), delay);
+                break;
+            case BACKGROUND_AUTO:
+            default:
+                this.handler.postDelayed(() -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM), delay);
+        }
     }
 
     /**

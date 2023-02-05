@@ -142,7 +142,7 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
      */
     private void initPlayer() {
         // create ExoPlayer instance
-        this.exoPlayerVideo = ExoFactory.makeExoPlayer(this, null);
+        this.exoPlayerVideo = ExoFactory.makeExoPlayer(this);
         // assign the ExoPlayer instance to the video view
         this.playerView.setPlayer(this.exoPlayerVideo);
         View backSeconds = playerView.findViewById(R.id.exo_rew_with_amount);
