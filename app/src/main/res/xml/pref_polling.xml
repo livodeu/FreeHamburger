@@ -38,22 +38,24 @@
         android:defaultValue="@integer/pref_poll_interval_default"
         android:dependency="pref_poll"
         android:dialogIcon="@drawable/ic_schedule_content_24dp"
+        android:dialogLayout="@layout/pref_edittext"
         android:hint="@string/pref_hint_poll_interval"
         android:icon="@drawable/ic_schedule_content_24dp"
         android:inputType="text|number"
         android:key="pref_poll_interval"
-        android:title="@string/pref_hint_poll_interval"
+        android:title="@string/pref_title_poll_interval"
         />
 
     <de.freehamburger.prefs.SummarizingEditTextPreference
         android:defaultValue="@integer/pref_poll_interval_default"
         android:dependency="pref_poll"
         android:dialogIcon="@drawable/ic_schedule_content_24dp"
+        android:dialogLayout="@layout/pref_edittext"
         android:hint="@string/pref_hint_poll_interval_night"
         android:icon="@drawable/ic_schedule_content_24dp"
         android:inputType="text|number"
         android:key="pref_poll_interval_night"
-        android:title="@string/pref_hint_poll_interval_night"
+        android:title="@string/pref_title_poll_interval_night"
         />
 
     <Preference

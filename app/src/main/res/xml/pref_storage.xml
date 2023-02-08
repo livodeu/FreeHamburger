@@ -3,6 +3,7 @@
     <EditTextPreference
         android:defaultValue="@integer/pref_cache_max_size_default"
         android:dialogIcon="@drawable/ic_storage_content_24dp"
+        android:dialogLayout="@layout/pref_edittext"
         android:hint="@string/pref_hint_pref_cache_max_size"
         android:icon="@drawable/ic_storage_content_24dp"
         android:inputType="number"
@@ -13,8 +14,8 @@
         android:title="@string/pref_title_pref_cache_max_size"/>
 
     <Preference
+        android:icon="@drawable/ic_delete_forever_content_24dp"
         android:key="pref_clear_cache"
         android:title="@string/action_clear_cache"
-        android:icon="@drawable/ic_delete_forever_content_24dp"
         />
 </PreferenceScreen>

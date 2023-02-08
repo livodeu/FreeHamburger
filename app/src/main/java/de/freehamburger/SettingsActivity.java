@@ -67,6 +67,7 @@ import androidx.preference.TwoStatePreference;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.File;
 import java.io.IOException;
@@ -114,14 +115,23 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
      * @param imeFlags IME flags
      * @param min min. allowed value
      * @param max max. allowed value
+     * @throws NullPointerException if {@code editText} is {@code null}
      */
     @SuppressWarnings("SameParameterValue")
-    static void configIntegerEditText(@NonNull final EditText editText, CharSequence hint, int imeFlags, long min, long max) {
+    static void configIntegerEditText(@NonNull final EditText editText, @Nullable CharSequence hint, int imeFlags, long min, long max) {
         editText.setInputType(InputType.TYPE_CLASS_NUMBER);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) imeFlags |= EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;
         editText.setImeOptions(imeFlags);
-        editText.setHint(hint);
-        editText.addTextChangedListener(new EditTextIntegerLimiter(editText, min, max));
+        if (hint != null) {
+            View wrapper = editText.getRootView().findViewById(R.id.editTextValueWrapper);
+            if (wrapper instanceof TextInputLayout) {
+                TextInputLayout parent = (TextInputLayout) wrapper;
+                parent.setHelperText(hint);
+            } else {
+                editText.setHint(hint);
+            }
+        }
+        if (min > Long.MIN_VALUE || max < Long.MAX_VALUE) editText.addTextChangedListener(new EditTextIntegerLimiter(editText, min, max));
     }
 
     /** {@inheritDoc} */
@@ -724,7 +734,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             final int bucket = usm.getAppStandbyBucket();
             // bucket will be 5 if the app is whitelisted, 10 if the app is active
             View v = getView();
-            View anchor = v != null ? Util.findTextView(v.findViewById(android.R.id.list), getString(R.string.pref_hint_poll_interval)) : null;
+            View anchor = v != null ? Util.findTextView(v.findViewById(android.R.id.list), getString(R.string.pref_title_poll_interval)) : null;
             if (anchor == null) anchor = a.getWindow().getDecorView();
             @StringRes final int msg;
             switch (bucket) {
@@ -890,7 +900,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             if (prefPollInterval != null) {
                 prefPollInterval.setStringRes(R.string.label_every_minutes);
                 prefPollInterval.setDefaultValue(String.valueOf(App.PREF_POLL_INTERVAL_DEFAULT));
-                prefPollInterval.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+                prefPollInterval.setOnBindEditTextListener(editText -> configIntegerEditText(editText, getString(R.string.pref_hint_poll_interval),EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN, PollingPreferenceFragment.this.min, Long.MAX_VALUE));
                 prefPollInterval.setOnPreferenceChangeListener((preference, o) -> {
                     int interval;
                     try {
@@ -916,7 +926,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             if (prefPollIntervalNight != null) {
                 prefPollIntervalNight.setStringRes(R.string.label_every_minutes);
                 prefPollIntervalNight.setDefaultValue(String.valueOf(App.PREF_POLL_INTERVAL_DEFAULT));
-                prefPollIntervalNight.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+                prefPollIntervalNight.setOnBindEditTextListener(editText -> configIntegerEditText(editText, getString(R.string.pref_hint_poll_interval_night),EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN, PollingPreferenceFragment.this.min, Long.MAX_VALUE));
                 prefPollIntervalNight.setOnPreferenceChangeListener((preference, o) -> {
                     int interval;
                     try {

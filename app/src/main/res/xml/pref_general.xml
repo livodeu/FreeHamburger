@@ -49,6 +49,7 @@
     <EditTextPreference
         android:defaultValue="@integer/pref_mem_cache_max_size_default"
         android:dialogIcon="@drawable/ic_memory_content_24dp"
+        android:dialogLayout="@layout/pref_edittext"
         android:hint="@string/pref_hint_pref_cache_max_size"
         android:icon="@drawable/ic_memory_content_24dp"
         android:inputType="number"

@@ -287,11 +287,13 @@
     <string name="action_section_sport">Sport</string>
     <string name="action_section_video">Video</string>
     <string name="pref_header_polling">Hintergrundaktualisierungen</string>
+    <string name="pref_hint_poll_interval">in Minuten</string>
+    <string name="pref_hint_poll_interval_night">in Minuten</string>
     <string name="pref_title_filters_apply_cats">auf Kategorien anwenden</string>
     <string name="pref_title_poll">Hintergrund&#173;aktualisierungen</string>
     <string name="pref_title_poll_breaking_only">Nur Eilmeldungen</string>
-    <string name="pref_hint_poll_interval">Abfrageintervall</string>
-    <string name="pref_hint_poll_interval_night">Abfrageintervall nachts</string>
+    <string name="pref_title_poll_interval">Abfrageintervall</string>
+    <string name="pref_title_poll_interval_night">Abfrageintervall nachts</string>
     <string name="pref_hint_poll_quicksettings">Hintergrundaktualisierungen ein-/ausschalten.</string>
     <string name="pref_title_poll_on">Aktiv.</string>
     <string name="pref_title_poll_off">Inaktiv.</string>

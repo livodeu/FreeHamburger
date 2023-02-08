@@ -309,8 +309,8 @@
     <string name="pref_header_video">Video</string>
 
     <string name="pref_hint_pref_cache_max_size">Max. cache size in MB</string>
-    <string name="pref_hint_poll_interval">Interval</string>
-    <string name="pref_hint_poll_interval_night">Interval during nighttime</string>
+    <string name="pref_hint_poll_interval">in minutes</string>
+    <string name="pref_hint_poll_interval_night">in minutes</string>
     <string name="pref_hint_poll_quicksettings">Toggle background updates.</string>
     <string name="pref_hint_proxy_server">Server:Port</string>
     <string name="pref_summary_font_import_replace">Replace \"%1$s\"</string>
@@ -332,6 +332,8 @@
     <string name="pref_title_cols_portrait_short">Portrait: %1$s</string>
     <string name="pref_title_filters_apply_cats">Apply to categories</string>
     <string name="pref_title_font_zoom">Text magnification</string>
+    <string name="pref_title_poll_interval">Interval</string>
+    <string name="pref_title_poll_interval_night">Interval during nighttime</string>
     <string name="pref_title_show_top_video">Illustrative videos</string>
     <string name="pref_title_show_top_video_off">Illustrative videos will not be shown</string>
     <string name="pref_title_show_top_video_on">Illustrative videos will be shown</string>
