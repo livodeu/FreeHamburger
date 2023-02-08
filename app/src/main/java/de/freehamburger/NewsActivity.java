@@ -439,7 +439,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 pos = end + xsmallEnd.length();
             }
 
-            //final boolean textSelectable = this.textViewContent.isTextSelectable();
             this.textViewContent.setTextIsSelectable(false);
             this.textViewContent.setText(spanned, TextView.BufferType.SPANNABLE);
             this.textViewContent.setVisibility(View.VISIBLE);
@@ -788,10 +787,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
     private boolean isTopVideoPlaying() {
         return this.listenerTop.isExoPlayerPlayWhenReady() && this.listenerTop.getExoPlayerState() == Player.STATE_READY;
-    }
-
-    private boolean isUrlCached(@Nullable String url) {
-        return this.service != null && this.service.getCachedBitmap(url) != null;
     }
 
     /**

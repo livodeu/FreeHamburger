@@ -14,6 +14,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.AbstractMap;
 import java.util.EnumMap;
+import java.util.Set;
 
 /**
  *
@@ -178,6 +179,21 @@ public class TeaserImage implements Serializable {
         }
         Quality q = this.images.keySet().iterator().next();
         return new MeasuredImage(this.images.get(q), q.width, q.height);
+    }
+
+    /**
+     * Returns a MeasuredImage of the given width and height, or null.
+     * @param width requested width
+     * @param height requested height
+     * @return MeasuredImage
+     */
+    @Nullable
+    public MeasuredImage getExact(final int width, final int height) {
+        final Set<Quality> qualities = this.images.keySet();
+        for (Quality q : qualities) {
+            if (q.width == width && q.height == height) return new MeasuredImage(this.images.get(q), width, height);
+        }
+        return null;
     }
 
     @Nullable

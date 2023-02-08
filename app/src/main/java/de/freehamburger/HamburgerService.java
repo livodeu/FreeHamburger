@@ -6,7 +6,6 @@ import android.content.ComponentCallbacks2;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.PaintDrawable;
 import android.net.Uri;
@@ -18,30 +17,30 @@ import android.text.Html;
 import android.util.TypedValue;
 import android.widget.ImageView;
 
+import androidx.annotation.AnyThread;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
+import androidx.annotation.UiThread;
 
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Request;
 import com.squareup.picasso.RequestCreator;
 import com.squareup.picasso.Target;
 
 import java.io.File;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Locale;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 
-import de.freehamburger.util.BitmapTarget;
 import de.freehamburger.util.Downloader;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.OkHttpDownloader;
@@ -54,50 +53,29 @@ import de.freehamburger.views.NewsView2;
  */
 public class HamburgerService extends Service implements Html.ImageGetter, Picasso.Listener, NewsView2.BitmapGetter, SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private static final String TAG = "HamburgerService";
-
     static final boolean USE_FORKJOINPOOL = true;
-
+    private static final Drawable EMPTY_DRAWABLE = new PaintDrawable(0);
+    private static final String TAG = "HamburgerService";
+    /** the delay [ms] after which {@link #cacheFiller} willl be invoked whenever a picture/image address is added or removed to/from {@link #cacheables} */
+    private static final long CACHEFILLER_DELAY = 250L;
     private final HamburgerServiceBinder binder = new HamburgerServiceBinder(this);
     private final Handler handler = new Handler();
-    /** key: url, value: Picasso cache key (see {@link com.squareup.picasso.Utils}) */
-    private final Map<String, String> cacheKeys = Collections.synchronizedMap(new HashMap<>(32));
+    /** urls of pictures/images to be loaded into the memory cache */
+    private final Set<String> cacheables = new HashSet<>();
+    /** loads pictures/images into the memory cache - delegates to Picasso */
+    private final CacheFiller cacheFiller = new CacheFiller();
     /** see <a href="https://developer.android.com/training/articles/perf-tips.html#PackageInner">https://developer.android.com/training/articles/perf-tips.html#PackageInner</a> */
     private Picasso picasso;
     private ExecutorService loaderExecutor;
     private com.squareup.picasso.LruCache memoryCache;
-
-    /**
-     * Generates a Picasso cache key.<br>
-     * <em>Must be adjusted if the parameters given to Picasso in {@link PictureLoader PictureLoader}
-     * (like, for example, {@link RequestCreator#centerCrop() centerCrop} or {@link RequestCreator#resize(int, int) resize}) change!</em><br>
-     * See {@link com.squareup.picasso.Utils#createKey(Request, StringBuilder)}.
-     * @param url image url
-     * @param width image width
-     * @param height image height
-     * @return Picasso cache key
-     */
-    @NonNull
-    private static String makeCacheKey(String url, int width, int height) {
-        // 17 is Gravity.CENTER - see com.squareup.picasso.RequestCreator.centerCrop()
-        return url + '\n' + "resize:" + width + 'x' + height + '\n' + "centerCrop:17" + '\n';
-    }
-
-    /**
-     * Adds a bitmap to the Picasso cache.
-     * @param uri image url
-     * @param bitmap bitmap
-     */
-    void addToCache(@NonNull String uri, @NonNull Bitmap bitmap) {
-        String cacheKey = makeCacheKey(uri, bitmap.getWidth(), bitmap.getHeight());
-        this.cacheKeys.put(uri, cacheKey);
-        this.memoryCache.set(cacheKey, bitmap);
-    }
+    /** to be re-used */
+    @Nullable private PaintDrawable latestPaintDrawable;
 
     /**
      * Builds the Picasso instance.
      */
     private synchronized void buildPicasso() {
+        if (BuildConfig.DEBUG) Log.i(TAG, "buildPicasso()");
         if (this.picasso != null) {
             this.picasso.shutdown();
             this.picasso = null;
@@ -122,12 +100,13 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         createMemoryCache();
         // start Picasso
         this.picasso = new Picasso.Builder(this)
-                .memoryCache(this.memoryCache)
-                .downloader(new OkHttpDownloaderForPicasso(this))
                 .defaultBitmapConfig(Bitmap.Config.RGB_565)
-                .loggingEnabled(BuildConfig.DEBUG)
-                .listener(this)
+                .downloader(new OkHttpDownloaderForPicasso(this))
                 .executor(this.loaderExecutor)
+                //.indicatorsEnabled(BuildConfig.DEBUG)   // arpanet: red, floppy: blue, ram: green
+                .listener(this)
+                .loggingEnabled(false)
+                .memoryCache(this.memoryCache)
                 .build();
     }
 
@@ -145,7 +124,6 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     private void clearMemoryCache() {
         if (this.memoryCache == null) return;
         this.memoryCache.clear();
-        this.cacheKeys.clear();
     }
 
     /**
@@ -154,19 +132,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     void createMemoryCache() {
         clearMemoryCache();
         int maxRamCacheSizeInMB = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(this).getString(App.PREF_MEM_CACHE_MAX_SIZE, App.DEFAULT_MEM_CACHE_MAX_SIZE));
-        this.memoryCache = new com.squareup.picasso.LruCache(maxRamCacheSizeInMB << 20);
-    }
-
-    /**
-     * Returns a bitmap from the Picasso memory cache.
-     * @param url image uri
-     * @return Bitmap
-     */
-    @Nullable
-    public Bitmap getCachedBitmap(@Nullable String url) {
-        if (url == null || url.length() < 8) return null;
-        String key = this.cacheKeys.get(url.charAt(4) == ':' ? "https:" + url.substring(5) : url);  // http -> https
-        return key != null ? this.memoryCache.get(key) : null;
+        this.memoryCache = new com.squareup.picasso.LruCache(Math.min((int)App.PREF_MEM_CACHE_MAX_SIZE_MAX, maxRamCacheSizeInMB << 20));
     }
 
     /** {@inheritDoc}
@@ -177,11 +143,8 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      * */
     @Override
     public Drawable getDrawable(@NonNull String source) {
-        Bitmap cached = getCachedBitmap(source);
-        if (cached != null) {
-            return new BitmapDrawable(getResources(), cached);
-        }
-        return getResources().getDrawable(R.drawable.placeholder, getTheme());
+        // the returned Drawable is invisible
+        return EMPTY_DRAWABLE;
     }
 
     /**
@@ -232,6 +195,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      * @param uri picture URL
      * @param target target
      */
+    @AnyThread
     @RequiresPermission(Manifest.permission.INTERNET)
     public void loadImage(@NonNull String uri, @NonNull Target target) {
         this.handler.post(new PictureLoader(this, uri, null, target, null));
@@ -247,6 +211,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
      * @throws NullPointerException if {@code url} is {@code null}
      */
     @RequiresPermission(Manifest.permission.INTERNET)
+    @UiThread
     public void loadImageIntoImageView(@NonNull String url, @Nullable final ImageView dest, int imageWidth, int imageHeight) {
         if (url.length() < 8) {
             if (BuildConfig.DEBUG) Log.e(TAG, "Cannot load image from \"" + url + "\"!");
@@ -270,13 +235,53 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         } else if (url.startsWith("http:")) {
             url = "https" + url.substring(4);
         }
+        loadIntoCacheCancel(url);
         if (imageWidth > 0 && imageHeight > 0) {
-            PaintDrawable pd = new PaintDrawable(android.graphics.Color.TRANSPARENT);
-            pd.setIntrinsicWidth(imageWidth);
-            pd.setIntrinsicHeight(imageHeight);
+            PaintDrawable pd;
+            if (this.latestPaintDrawable != null && this.latestPaintDrawable.getIntrinsicWidth() == imageWidth && this.latestPaintDrawable.getIntrinsicHeight() == imageHeight) {
+                pd = this.latestPaintDrawable;
+            } else {
+                pd = new PaintDrawable(android.graphics.Color.TRANSPARENT);
+                pd.setIntrinsicWidth(imageWidth);
+                pd.setIntrinsicHeight(imageHeight);
+                this.latestPaintDrawable = pd;
+            }
             this.handler.post(new PictureLoader(this, url, dest, null, pd, (float)imageWidth / (float)imageHeight));
         } else {
             this.handler.post(new PictureLoader(this, url, dest, null, null));
+        }
+    }
+
+    /**
+     * Loads pictures into the memory cache.
+     * @param uris addresses of pics to load
+     */
+    @AnyThread
+    @RequiresPermission(Manifest.permission.INTERNET)
+    public void loadIntoCache(@NonNull Collection<String> uris) {
+        this.handler.removeCallbacks(this.cacheFiller);
+        boolean invoke;
+        synchronized (this.cacheables) {
+            this.cacheables.addAll(uris);
+            invoke = !this.cacheables.isEmpty();
+        }
+        if (invoke) this.handler.postDelayed(this.cacheFiller, CACHEFILLER_DELAY);
+    }
+
+    /**
+     * Removes the given picture from those about to be loaded into the cache.
+     * @param uri address of pic not to load
+     */
+    @AnyThread
+    private void loadIntoCacheCancel(@NonNull String uri) {
+        this.handler.removeCallbacks(this.cacheFiller);
+        int waiting;
+        synchronized (this.cacheables) {
+            this.cacheables.remove(uri);
+            waiting = this.cacheables.size();
+        }
+        if (waiting > 0) {
+            this.handler.postDelayed(this.cacheFiller, CACHEFILLER_DELAY);
         }
     }
 
@@ -304,6 +309,64 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).registerOnSharedPreferenceChangeListener(this);
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public void onDestroy() {
+        PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).unregisterOnSharedPreferenceChangeListener(this);
+        if (this.picasso != null) {
+            this.picasso.shutdown();
+            this.picasso = null;
+        }
+        if (!this.loaderExecutor.isShutdown()) {
+            this.loaderExecutor.shutdown();
+        }
+        this.loaderExecutor = null;
+        this.memoryCache = null;
+        super.onDestroy();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onImageLoadFailed(Picasso picasso, Uri uri, Exception e) {
+        if (BuildConfig.DEBUG) {
+            String s = e.toString();
+            /*
+             HTTP 504 Gateway Timeout (https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.5)
+             occurs with message "Unsatisfiable Request (only-if-cached)"
+             when request headers contained "Cache-Control: max-stale=2147483647, only-if-cached"
+             and com.squareup.picasso.NetworkPolicy was 4
+             */
+            if (s.contains("HTTP 504")) return;
+            if (s.contains("NetworkRequestHandler$ResponseException")) Log.e(TAG, "Loading image from '" + uri + "' failed: " + e.getMessage(), e);
+            else Log.e(TAG, "Loading image from '" + uri + "' failed: " + e, e);
+        }
+        if (e instanceof IllegalStateException) {
+            if (BuildConfig.DEBUG) Log.e(TAG, "onImageLoadFailed(…, " + uri + ", " + e + ")", e);
+            buildPicasso();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (App.PREF_PROXY_SERVER.equals(key) || App.PREF_PROXY_TYPE.equals(key) || App.PREF_MEM_CACHE_MAX_SIZE.equals(key)) {
+            // Picasso needs to be rebuilt;
+            // If Picasso's downloader were changed, we'd get a "java.lang.IllegalStateException: cache is closed"
+            buildPicasso();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onTrimMemory(int level) {
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_MODERATE) {
+            clearMemoryCache();
+        }
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
+            stopSelf();
+        }
+    }
+
     /**
      * Invokes {@link #startService(Intent)}
      * @param attempt attempt counter
@@ -324,64 +387,6 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
             }
             if (BuildConfig.DEBUG) Log.w(TAG, "onCreate() - startService(): " + e, e, 4);
             new Handler().postDelayed(() -> start(attempt + 1), 5_000L);
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void onDestroy() {
-        PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).unregisterOnSharedPreferenceChangeListener(this);
-        if (this.picasso != null) {
-            this.picasso.shutdown();
-            this.picasso = null;
-        }
-        if (!this.loaderExecutor.isShutdown()) {
-            this.loaderExecutor.shutdown();
-        }
-        this.loaderExecutor = null;
-        this.memoryCache = null;
-        this.cacheKeys.clear();
-        super.onDestroy();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void onImageLoadFailed(Picasso picasso, Uri uri, Exception e) {
-        if (BuildConfig.DEBUG) {
-            String s = e.toString();
-            /*
-             HTTP 504 Gateway Timeout (https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.5)
-             occurs with message "Unsatisfiable Request (only-if-cached)"
-             when request headers contained "Cache-Control: max-stale=2147483647, only-if-cached"
-             and com.squareup.picasso.NetworkPolicy was 4
-             */
-            if (s.contains("HTTP 504")) return;
-            if (s.contains("NetworkRequestHandler$ResponseException")) Log.e(TAG, "Loading image from '" + uri + "' failed: " + e.getMessage(), e);
-            else Log.e(TAG, "Loading image from '" + uri + "' failed: " + e, e);
-        }
-        if (e instanceof IllegalStateException) {
-            //TODO check this
-            buildPicasso();
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (App.PREF_PROXY_SERVER.equals(key) || App.PREF_PROXY_TYPE.equals(key)) {
-            // Picasso needs to be rebuilt; otherwise we'd get a "java.lang.IllegalStateException: cache is closed" because the 'downloader' cannot be changed once Picasso is built
-            buildPicasso();
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void onTrimMemory(int level) {
-        if (level >= ComponentCallbacks2.TRIM_MEMORY_MODERATE) {
-            clearMemoryCache();
-        }
-        if (level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
-            stopSelf();
         }
     }
 
@@ -504,18 +509,15 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
         @Override
         @MainThread
         public void run() {
-            if (this.url == null || !this.url.toLowerCase(Locale.US).startsWith("http")) {
-                return;
-            }
-            HamburgerService service = this.refService.get();
+            if (this.url == null || !this.url.toLowerCase(Locale.US).startsWith("http")) return;
+            final HamburgerService service = this.refService.get();
             if (service == null || service.picasso == null) return;
             Target target = this.refTarget != null ? this.refTarget.get() : null;
             if (target != null) {
                 if (service.cannotDownload()) return;
-                service.picasso
-                        .load(this.url)
-                        .noPlaceholder()
-                        .into(target);
+                RequestCreator rc = service.picasso.load(this.url);
+                if (this.placeholder != null) rc.placeholder(this.placeholder); else rc.noPlaceholder();
+                rc.into(target);
             } else if (this.dest != null) {
                 int normalImageWidth = service.getResources().getDimensionPixelSize(R.dimen.image_width_normal);
                 // get width and height of the ImageView
@@ -527,31 +529,40 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
                     this.height = normalImageWidth;
                 }
                 // load via Picasso (https://square.github.io/picasso/)
-                if (service.picasso == null) {
-                    return;
-                }
-                // for the Picasso cache key, see com.squareup.picasso.Utils.createKey()
-                String cacheKey = makeCacheKey(this.url, this.width, this.height);
-                service.cacheKeys.put(this.url, cacheKey);
-
+                if (service.picasso == null) return;
                 // first try the cache (NetworkPolicy.OFFLINE)
-                RequestCreator rc = service.picasso.load(this.url);
-                if (this.placeholder != null) rc.placeholder(this.placeholder); else rc.noPlaceholder();
-                rc
+                service.picasso.load(this.url)
                         .networkPolicy(NetworkPolicy.OFFLINE)
                         .resize(this.width, this.height)
                         .noFade()   // without noFade(), the picture would be dimmed before display
+                        .noPlaceholder()
                         .centerCrop()
                         .into(this.dest, this);
 
             } else {
-                if (BuildConfig.DEBUG) Log.e(TAG, "PictureLoader for " + url + " with both dest and target null!");
                 if (service.cannotDownload()) return;
+                // Performing Picasso fetch
                 service.picasso
                         .load(this.url)
+                        .priority(Picasso.Priority.LOW)
                         .noPlaceholder()
-                        .error(R.drawable.ic_warning_red_24dp)
-                        .into(new BitmapTarget(this.url));
+                        .noFade()
+                        .fetch(null);
+            }
+        }
+    }
+
+    /**
+     * Invokes {@link PictureLoader PictureLoaders} for each url in {@link #cacheables}.
+     */
+    private final class CacheFiller implements Runnable {
+        /** {@inheritDoc} */
+        @Override public void run() {
+            synchronized (HamburgerService.this.cacheables) {
+                for (String cacheable : HamburgerService.this.cacheables) {
+                    HamburgerService.this.handler.post(new PictureLoader(HamburgerService.this, cacheable, null, null, null));
+                }
+                HamburgerService.this.cacheables.clear();
             }
         }
     }

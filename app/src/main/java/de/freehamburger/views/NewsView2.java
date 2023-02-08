@@ -2,9 +2,9 @@ package de.freehamburger.views;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Size;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -126,9 +126,11 @@ public class NewsView2 extends ConstraintLayout {
      * @param news News
      * @param bitmapGetter BitmapGetter implementation
      * @param prefs SharedPreferences (optional)
+     * @return size of the bitmap being loaded into the {@link #imageView ImageView}
      */
     @UiThread
-    public final void setNews(@Nullable final News news, @Nullable BitmapGetter bitmapGetter, @Nullable SharedPreferences prefs) {
+    @Nullable
+    public final Size setNews(@Nullable final News news, @Nullable BitmapGetter bitmapGetter, @Nullable SharedPreferences prefs) {
         if (news == null) {
             this.textViewTopline.setText(null);
             this.textViewTopline.setTag(R.id.original_typeface, null);
@@ -145,7 +147,7 @@ public class NewsView2 extends ConstraintLayout {
             this.imageView.setImageDrawable(null);
             this.imageView.setElevation(0f);
             this.imageView.setTag(null);
-            return;
+            return null;
         }
 
         final Context ctx = getContext();
@@ -248,7 +250,7 @@ public class NewsView2 extends ConstraintLayout {
             this.imageView.setElevation(0f);
             this.imageView.setTag(null);
             this.imageView.setVisibility(View.INVISIBLE);
-            return;
+            return null;
         }
         this.imageView.setVisibility(View.VISIBLE);
         //
@@ -264,7 +266,7 @@ public class NewsView2 extends ConstraintLayout {
         if (measuredImage == null || measuredImage.url == null || bitmapGetter == null) {
             this.imageView.setImageBitmap(null);
             this.imageView.setElevation(0f);
-            return;
+            return null;
         }
         this.imageView.setTag(measuredImage.url);
         if (!TextUtils.isEmpty(image.getTitle())) {
@@ -274,17 +276,12 @@ public class NewsView2 extends ConstraintLayout {
         } else {
             this.imageView.setContentDescription(null);
         }
-        Bitmap bitmap = bitmapGetter.getCachedBitmap(measuredImage.url);
-        if (bitmap != null) {
-            this.imageView.setElevation(getResources().getDimensionPixelSize(R.dimen.news_image_elevation));
-            this.imageView.setImageBitmap(bitmap);
-            return;
-        }
         // clear the image before loading it
         this.imageView.setImageBitmap(null);
         this.imageView.setElevation(0f);
         //
         bitmapGetter.loadImageIntoImageView(measuredImage.url, this.imageView, measuredImage.width, measuredImage.height);
+        return new Size(measuredImage.width, measuredImage.height);
     }
 
     /** {@inheritDoc} */
@@ -295,17 +292,10 @@ public class NewsView2 extends ConstraintLayout {
     }
 
     /**
-     * Retrieves a bitmap either synchronously from a cache or asynchronously from a remote resource.
+     * Retrieves a bitmap asynchronously from a remote resource.
      */
+    @FunctionalInterface
     public interface BitmapGetter {
-
-        /**
-         * Returns a bitmap from the memory cache.
-         * @param url image uri
-         * @return Bitmap
-         */
-        @Nullable
-        Bitmap getCachedBitmap(@NonNull String url);
 
         /**
          * Loads a picture into the given ImageView.

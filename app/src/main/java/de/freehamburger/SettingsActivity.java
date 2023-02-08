@@ -33,10 +33,12 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.EditText;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
@@ -105,6 +107,23 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
     private AlertDialog helpDialog;
     private UpdatesController updatesController;
 
+    /**
+     * Configures an EditText that is used to enter integer values.
+     * @param editText EditText to configure
+     * @param hint hint to set
+     * @param imeFlags IME flags
+     * @param min min. allowed value
+     * @param max max. allowed value
+     */
+    @SuppressWarnings("SameParameterValue")
+    static void configIntegerEditText(@NonNull final EditText editText, CharSequence hint, int imeFlags, long min, long max) {
+        editText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) imeFlags |= EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;
+        editText.setImeOptions(imeFlags);
+        editText.setHint(hint);
+        editText.addTextChangedListener(new EditTextIntegerLimiter(editText, min, max));
+    }
+
     /** {@inheritDoc} */
     @Override
     public void onBackPressed() {
@@ -172,15 +191,19 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        // setup the WebView that might be used to display the help (it will be reused every time because constructing that thing takes quite some time)
-        this.webViewForHelp = new WebView(this);
-        WebSettings ws = this.webViewForHelp.getSettings();
-        ws.setBlockNetworkLoads(true);
-        ws.setAllowContentAccess(false);
-        ws.setGeolocationEnabled(false);
-        this.webViewForHelp.setNetworkAvailable(false);
-        this.webViewForHelp.setBackgroundColor(getResources().getColor(R.color.colorPrimarySemiTrans));
-        this.webViewForHelp.setWebChromeClient(new NonLoggingWebChromeClient());
+        // onCreate() runs significantly faster if the WebView initialisation (three-digits runtime in ms on slower devices) is postponed.
+        // As the webview is accessed only via the menu, it may be assumed that the user is not faster than the delay given in postDelayed().
+        // Setup the WebView that might be used to display the help (it will be reused every time because constructing that thing takes quite some time)
+        new Handler().postDelayed(() -> {
+            this.webViewForHelp = new WebView(this);
+            WebSettings ws = this.webViewForHelp.getSettings();
+            ws.setBlockNetworkLoads(true);
+            ws.setAllowContentAccess(false);
+            ws.setGeolocationEnabled(false);
+            this.webViewForHelp.setNetworkAvailable(false);
+            this.webViewForHelp.setBackgroundColor(getResources().getColor(R.color.colorPrimarySemiTrans));
+            this.webViewForHelp.setWebChromeClient(new NonLoggingWebChromeClient());
+        }, 333L);
 
         this.updatesController = new UpdatesController(this);
 
@@ -524,7 +547,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_appearance_de, sa.webViewForHelp);
+                if (sa != null && sa.webViewForHelp != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_appearance_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -560,11 +583,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             Preference prefClearCache = findPreference("pref_clear_cache");
 
             this.prefMaxCacheSize.setDefaultValue(App.DEFAULT_CACHE_MAX_SIZE);
-            this.prefMaxCacheSize.setOnBindEditTextListener(editText -> {
-                editText.setInputType(InputType.TYPE_CLASS_NUMBER);
-                editText.setHint(getString(R.string.pref_hint_pref_cache_max_size));
-                editText.addTextChangedListener(new EditTextIntegerLimiter(editText, App.PREF_CACHE_MAX_SIZE_MIN >> 20, Long.MAX_VALUE));
-            });
+            this.prefMaxCacheSize.setOnBindEditTextListener(editText -> configIntegerEditText(editText, getString(R.string.pref_hint_pref_cache_max_size),  EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN, App.PREF_CACHE_MAX_SIZE_MIN >> 20, Long.MAX_VALUE));
             this.prefMaxCacheSize.setOnPreferenceChangeListener((preference, o) -> {
                 App app = (App)getActivity().getApplicationContext();
                 long maxCacheSize;
@@ -599,7 +618,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_storage_de, sa.webViewForHelp);
+                if (sa != null && sa.webViewForHelp != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_storage_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -612,8 +631,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class GeneralPreferenceFragment extends PreferenceFragmentCompat {
 
-        private String originalMaxMemCacheSize;
-        private boolean memCacheSizeModified;
+        private final Handler handler = new Handler(Looper.getMainLooper());
 
         /** {@inheritDoc} */
         @Override
@@ -630,45 +648,38 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             SettingsActivity activity = (SettingsActivity)getActivity();
             if (activity == null) return;
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
-            this.originalMaxMemCacheSize = prefs.getString(App.PREF_MEM_CACHE_MAX_SIZE, App.DEFAULT_MEM_CACHE_MAX_SIZE);
+            String originalMaxMemCacheSize = prefs.getString(App.PREF_MEM_CACHE_MAX_SIZE, App.DEFAULT_MEM_CACHE_MAX_SIZE);
 
             EditTextPreference prefMaxMemCacheSize = findPreference(App.PREF_MEM_CACHE_MAX_SIZE);
 
             if (prefMaxMemCacheSize != null) {
                 prefMaxMemCacheSize.setDefaultValue(App.DEFAULT_MEM_CACHE_MAX_SIZE);
-                prefMaxMemCacheSize.setOnBindEditTextListener(editText -> {
-                    editText.setInputType(InputType.TYPE_CLASS_NUMBER);
-                    editText.setHint(R.string.pref_hint_pref_cache_max_size);
-                    editText.addTextChangedListener(new EditTextIntegerLimiter(editText, App.PREF_MEM_CACHE_MAX_SIZE_MIN >> 20, App.PREF_MEM_CACHE_MAX_SIZE_MAX >> 20));
-                });
+                prefMaxMemCacheSize.setOnBindEditTextListener(editText -> configIntegerEditText(editText, getString(R.string.pref_hint_pref_cache_max_size),EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN,App.PREF_MEM_CACHE_MAX_SIZE_MIN >> 20,App.PREF_MEM_CACHE_MAX_SIZE_MAX >> 20));
                 prefMaxMemCacheSize.setOnPreferenceChangeListener((preference, o) -> {
-                    int maxCacheSize;
+                    final int maxCacheSize;
                     try {
                         maxCacheSize = Integer.parseInt(o.toString().trim()) << 20;
                     } catch (NumberFormatException nfe) {
                         return false;
-                    } catch (Exception ignored) {
-                        maxCacheSize = App.DEFAULT_MEM_CACHE_MAX_SIZE_MB << 20;
                     }
                     if (maxCacheSize < App.PREF_MEM_CACHE_MAX_SIZE_MIN || maxCacheSize > App.PREF_MEM_CACHE_MAX_SIZE_MAX) {
                         return false;
                     }
 
-                    if (activity.service != null) {
+                    // update the displayed amount currently used after the preference has actually been modified
+                    this.handler.postDelayed(() -> {
+                        if (activity.service == null) return;
                         int current = activity.service.getMemoryCacheSize();
                         if (current < 1_048_576) {
                             preference.setSummary(getString(R.string.label_current_cache_size_kb, current >> 10, maxCacheSize >> 20));
                         } else {
                             preference.setSummary(getString(R.string.label_current_cache_size, current >> 20, maxCacheSize >> 20));
                         }
-                    }
-                    if (!originalMaxMemCacheSize.equals(o.toString().trim())) {
-                        memCacheSizeModified = true;
-                    }
+                    }, 400L);
                     return true;
                 });
                 //noinspection ConstantConditions
-                prefMaxMemCacheSize.getOnPreferenceChangeListener().onPreferenceChange(prefMaxMemCacheSize, this.originalMaxMemCacheSize);
+                prefMaxMemCacheSize.getOnPreferenceChangeListener().onPreferenceChange(prefMaxMemCacheSize, originalMaxMemCacheSize);
             }
         }
 
@@ -678,25 +689,11 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_general_de, sa.webViewForHelp);
+                if (sa != null && sa.webViewForHelp != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_general_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
         }
-
-        /** {@inheritDoc} */
-        @Override
-        public void onPause() {
-            if (this.memCacheSizeModified) {
-                SettingsActivity activity = (SettingsActivity) getActivity();
-                if (activity != null && activity.service != null) {
-                    this.memCacheSizeModified = false;
-                    activity.service.createMemoryCache();
-                }
-            }
-            super.onPause();
-        }
-
 
     }
 
@@ -746,6 +743,38 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             }
             if (msg != 0) {
                 new PopupManager().showPopup(anchor, getString(msg), 4_000L);
+            }
+        }
+
+        /**
+         * Configures the preference that allows to request ignoring battery optimizations.
+         * @param ctx Context
+         */
+        private void configurePrefRequestIgnoreBattOptimizations(@Nullable final Context ctx) {
+            Preference prefRequestIgnoreBattOptimizations = findPreference("pref_request_ignore_batt_optimizations");
+            if (prefRequestIgnoreBattOptimizations == null) return;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ctx != null) {
+                String pkg = ctx.getPackageName();
+                PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
+                if (pm.isIgnoringBatteryOptimizations(pkg)) {
+                    prefRequestIgnoreBattOptimizations.setOnPreferenceClickListener(null);
+                    prefRequestIgnoreBattOptimizations.setVisible(false);
+                } else {
+                    prefRequestIgnoreBattOptimizations.setOnPreferenceClickListener(preference -> {
+                        @SuppressLint("BatteryLife") Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + pkg));
+                        if (!(ctx instanceof Activity)) i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        try {
+                            ctx.startActivity(i);
+                        } catch (Exception e) {
+                            if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+                            Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_SHORT).show();
+                        }
+                        return true;
+                    });
+                    prefRequestIgnoreBattOptimizations.setVisible(true);
+                }
+            } else {
+                prefRequestIgnoreBattOptimizations.setVisible(false);
             }
         }
 
@@ -1006,42 +1035,10 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_polling_de, sa.webViewForHelp);
+                if (sa != null && sa.webViewForHelp != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_polling_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
-        }
-
-        /**
-         * Configures the preference that allows to request ignoring battery optimizations.
-         * @param ctx Context
-         */
-        private void configurePrefRequestIgnoreBattOptimizations(@Nullable final Context ctx) {
-            Preference prefRequestIgnoreBattOptimizations = findPreference("pref_request_ignore_batt_optimizations");
-            if (prefRequestIgnoreBattOptimizations == null) return;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ctx != null) {
-                String pkg = ctx.getPackageName();
-                PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
-                if (pm.isIgnoringBatteryOptimizations(pkg)) {
-                    prefRequestIgnoreBattOptimizations.setOnPreferenceClickListener(null);
-                    prefRequestIgnoreBattOptimizations.setVisible(false);
-                } else {
-                    prefRequestIgnoreBattOptimizations.setOnPreferenceClickListener(preference -> {
-                        @SuppressLint("BatteryLife") Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + pkg));
-                        if (!(ctx instanceof Activity)) i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        try {
-                            ctx.startActivity(i);
-                        } catch (Exception e) {
-                            if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
-                            Toast.makeText(ctx, R.string.error_no_app, Toast.LENGTH_SHORT).show();
-                        }
-                        return true;
-                    });
-                    prefRequestIgnoreBattOptimizations.setVisible(true);
-                }
-            } else {
-                prefRequestIgnoreBattOptimizations.setVisible(false);
-            }
         }
 
         @Override
@@ -1091,7 +1088,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_video_de, sa.webViewForHelp);
+                if (sa != null && sa.webViewForHelp != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_video_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -1192,7 +1189,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             int id = item.getItemId();
             if (id == R.id.action_help) {
                 SettingsActivity sa = (SettingsActivity)getActivity();
-                if (sa != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_data_de, sa.webViewForHelp);
+                if (sa != null && sa.webViewForHelp != null) sa.helpDialog = Util.showHelp(sa, R.raw.help_settings_data_de, sa.webViewForHelp);
                 return true;
             }
             return super.onOptionsItemSelected(item);

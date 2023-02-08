@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.util.Size;
 import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -44,6 +45,7 @@ import de.freehamburger.R;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
+import de.freehamburger.model.TeaserImage;
 import de.freehamburger.util.Log;
 import de.freehamburger.views.NewsView2;
 
@@ -63,6 +65,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     /** a ViewHolder instance for each view type */
     private final SparseArray<ViewHolder> viewholderCache = new SparseArray<>(2);
     private final SharedPreferences prefs;
+    private boolean preloading = false;
     @App.BackgroundSelection private int background;
     private boolean filtersEnabled;
     @FloatRange(from = 0.5, to = 2.0)
@@ -104,30 +107,6 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             return R.layout.news_view_nocontent_notitle2;
         }
         return R.layout.news_view2;
-    }
-
-    /**
-     * Checks whether the service's memory cache contains bitmaps for all the <em>visible</em> {@link NewsView views}.
-     * @param activity NewsAdapterActivity
-     * @return {@code true} if there is at least one missing cached image for a news item
-     */
-    public static boolean hasMissingImages(@NonNull NewsAdapterActivity activity) {
-        final HamburgerService service = activity.getHamburgerService();
-        if (service == null) return true;
-        // R.dimen.image_width_normal should have been given as android:maxWidth in the NewsView layout file news_view.xml
-        final int imgWidth = service.getResources().getDimensionPixelSize(R.dimen.image_width_normal);
-        final Set<View> kids = activity.getVisibleNewsViews();
-        for (View kid : kids) {
-            if (!(kid instanceof NewsView2)) continue;
-            NewsView2 nv = (NewsView2)kid;
-            String imageUrl = nv.getImageUrl();
-            if (imageUrl == null) continue;
-            if (service.getCachedBitmap(imageUrl) == null) {
-                if (BuildConfig.DEBUG) Log.i(TAG, "Missing cached image for " + nv);
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -317,10 +296,25 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
         applyTypeface(tvtl, tvda, tvti, tvfs);
 
         HamburgerService service = this.activity.getHamburgerService();
+        final Size bitmapSize;
         if (isFiltered()) {
-            newsView2.setNews(this.filteredNews.get(position), service, this.prefs);
+            bitmapSize = newsView2.setNews(this.filteredNews.get(position), service, this.prefs);
         } else {
-            newsView2.setNews(this.newsList.get(position), service, this.prefs);
+            bitmapSize = newsView2.setNews(this.newsList.get(position), service, this.prefs);
+        }
+        if (service != null && bitmapSize != null && !this.preloading) {
+            this.preloading = true;
+            final int n = getItemCount();
+            final List<String> cacheUs = new ArrayList<>(n - 1);
+            for (int i = 0; i < n; i++) {
+                if (i == position) continue;
+                TeaserImage image = this.newsList.get(i).getTeaserImage();
+                if (image == null) continue;
+                TeaserImage.MeasuredImage measuredImage = image.getExact(bitmapSize.getWidth(), bitmapSize.getHeight());
+                if (measuredImage == null || TextUtils.isEmpty(measuredImage.url)) continue;
+                cacheUs.add(measuredImage.url);
+            }
+            service.loadIntoCache(cacheUs);
         }
     }
 

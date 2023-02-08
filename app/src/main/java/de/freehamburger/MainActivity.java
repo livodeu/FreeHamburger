@@ -677,7 +677,6 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             if (TextUtils.isEmpty(msg)) msg = e.toString();
             if (BuildConfig.DEBUG) Log.e(TAG, msg);
             if (showMsgUponFail) {
-                //noinspection ConstantConditions
                 if (msg.contains("EACCES")) {
                     Snackbar.make(this.coordinatorLayout, R.string.error_permission_denied, Snackbar.LENGTH_LONG).show();
                 } else {
@@ -1760,8 +1759,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 boolean adapterIsEmpty = this.newsAdapter.getItemCount() == 0;
                 boolean adapterDataIsOld = System.currentTimeMillis() - this.newsAdapter.getUpdated() >= App.LOCAL_FILE_MAXAGE;
                 boolean wrongSource = this.currentSource != this.newsAdapter.getSource();
-                boolean missingImages = NewsRecyclerAdapter.hasMissingImages(this);
-                if (adapterDataIsOld || adapterIsEmpty || wrongSource || missingImages) {
+                if (adapterDataIsOld || adapterIsEmpty || wrongSource) {
                     onRefreshUseCache(false);
                 }
             }
@@ -1985,7 +1983,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             // don't hide active category!
             if (item.isChecked()) continue;
             // hide category if its displayed name matches one of the filters
-            String titleLower = item.getTitle().toString().toLowerCase(Locale.GERMAN);
+            String titleLower = item.getTitle() != null ? item.getTitle().toString().toLowerCase(Locale.GERMAN) : "";
             boolean visible = true;
             for (Filter filter : filters) {
                 if (!(filter instanceof TextFilter)) continue;
