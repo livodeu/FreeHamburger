@@ -223,15 +223,12 @@ public class WebViewActivity extends AppCompatActivity {
     @Override public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (R.id.action_open_in_browser == item.getItemId()) {
             String url = extractUrl();
-            if (TextUtils.isEmpty(url)) {
-                Toast.makeText(this, R.string.error_no_app, Toast.LENGTH_SHORT).show();
-                return true;
-            }
+            if (TextUtils.isEmpty(url)) return true;
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(Uri.parse(url));
             try {
                 startActivity(intent);
-            } catch (Exception e) {
+            } catch (Exception ignored) {
                 Toast.makeText(this, R.string.error_no_app, Toast.LENGTH_SHORT).show();
             }
             return true;
@@ -242,16 +239,7 @@ public class WebViewActivity extends AppCompatActivity {
     /** {@inheritDoc} */
     @Override public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem itemOpenInBrowser = menu.findItem(R.id.action_open_in_browser);
-        if (itemOpenInBrowser != null) {
-            String url = extractUrl();
-            Uri uri = url != null ? Uri.parse(url) : null;
-            String host = uri != null ? uri.getHost() : null;
-            itemOpenInBrowser.setVisible(host != null
-                    // exclude those hosts defined in the manifest as handled by this app
-                    && !getString(R.string.viewable_host_1).equalsIgnoreCase(host)
-                    && !getString(R.string.viewable_host_2).equalsIgnoreCase(host)
-            );
-        }
+        if (itemOpenInBrowser != null) itemOpenInBrowser.setEnabled(!TextUtils.isEmpty(extractUrl()));
         return true;
     }
 
