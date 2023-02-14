@@ -866,6 +866,16 @@ public class AppTest {
         assertNotNull(split);
         assertEquals(2, split.size());
         assertEquals("01234", split.get(0));
+        //
+        assertEquals("1.4", Util.trimNumber("oiajsd1.4mifas,"));
+        assertEquals("1.4", Util.trimNumber("oiajsd1.4"));
+        assertEquals("1.4", Util.trimNumber("1.4mifas,"));
+        assertEquals("1.4", Util.trimNumber("1.4"));
+        assertEquals("0.75", Util.trimNumber("0.75"));
+        assertEquals(".75", Util.trimNumber(".75 litres"));
+        assertEquals("123", Util.trimNumber("123"));
+        assertEquals("", Util.trimNumber("ABC"));
+        assertEquals("", Util.trimNumber(""));
     }
 
     @Test

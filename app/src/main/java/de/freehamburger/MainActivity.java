@@ -34,6 +34,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.JsonReader;
@@ -123,6 +124,7 @@ import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
 import de.freehamburger.views.ClockView;
 import de.freehamburger.widget.WidgetProvider;
+import de.freehamburger.version.*;
 
 public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLayout.OnRefreshListener {
 
@@ -870,29 +872,29 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
         @App.BackButtonBehaviour int useBack = PreferenceManager.getDefaultSharedPreferences(this).getInt(App.PREF_USE_BACK_IN_APP, App.USE_BACK_FINISH);
         switch (useBack) {
-                case App.USE_BACK_FINISH:
+            case App.USE_BACK_FINISH:
+                maybeQuit();
+                return;
+            case App.USE_BACK_HOME:
+                if (this.currentSource != Source.HOME) {
+                    this.listPositionToRestore = 0;
+                    this.recentSources.clear();
+                    changeSource(Source.HOME, false, false);
+                } else {
                     maybeQuit();
-                    return;
-                case App.USE_BACK_HOME:
-                    if (this.currentSource != Source.HOME) {
-                        this.listPositionToRestore = 0;
-                        this.recentSources.clear();
-                        changeSource(Source.HOME, false, false);
-                    } else {
-                        maybeQuit();
-                    }
-                    return;
-                case App.USE_BACK_BACK:
-                    if (!this.recentSources.isEmpty()) {
-                        this.currentSource = this.recentSources.pop();
-                        this.listPositionToRestore = 0;
-                        updateTitle();
-                        updateMenu();
-                        onRefreshUseCache(false);
-                    } else {
-                        maybeQuit();
-                    }
-                    return;
+                }
+                return;
+            case App.USE_BACK_BACK:
+                if (!this.recentSources.isEmpty()) {
+                    this.currentSource = this.recentSources.pop();
+                    this.listPositionToRestore = 0;
+                    updateTitle();
+                    updateMenu();
+                    onRefreshUseCache(false);
+                } else {
+                    maybeQuit();
+                }
+                return;
         }
 
         super.onBackPressed();
@@ -1094,14 +1096,14 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         updateMenu();
         // react to selections being made in the navigation menu
         navigationView.setNavigationItemSelectedListener(menuItem -> {
-                 // ignore if intro is playing
-                if (this.intro != null && this.intro.isPlaying()) return true;
-                // when item is tapped, close drawer (after a brief pause to let the user see the new selection)
-                this.handler.postDelayed(() -> this.drawerLayout.closeDrawer(navigationView, true), 150L);
-                // select source that matches the menu item
-                changeSource(this.sourceForMenuItem.get(menuItem.getItemId()), true, false);
-                return true;
-            });
+            // ignore if intro is playing
+            if (this.intro != null && this.intro.isPlaying()) return true;
+            // when item is tapped, close drawer (after a brief pause to let the user see the new selection)
+            this.handler.postDelayed(() -> this.drawerLayout.closeDrawer(navigationView, true), 150L);
+            // select source that matches the menu item
+            changeSource(this.sourceForMenuItem.get(menuItem.getItemId()), true, false);
+            return true;
+        });
         // refresh via top-bottom swipe
         this.swipeRefreshLayout = findViewById(R.id.swiperefresh);
         if (this.swipeRefreshLayout != null) {
@@ -1152,7 +1154,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                         MainActivity.this.fab.hide(null);
                     }
                 }
-             });
+            });
 
         } else {
             this.fab.hide(null);
@@ -1255,52 +1257,76 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return true;
         }
         if (id == R.id.action_info) {
-            final boolean swipeToDismiss = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_SWIPE_TO_DISMISS, false);
-            final SpannableStringBuilder info = new SpannableStringBuilder().append('\n');
-            SpannableString title = new SpannableString(getString(R.string.app_name));
-            title.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            SpannableString version = new SpannableString(BuildConfig.VERSION_NAME);
-            version.setSpan(new RelativeSizeSpan(0.75f), 0, version.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            info.append(title).append(' ').append(version);
-            info.append("\n\n").append(getString(R.string.app_build_date, DateFormat.getDateTimeInstance().format(new Date(BuildConfig.BUILD_TIME))));
-            info.append("\n\n").append(getString(R.string.app_license));
-            AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this)
-                    .setTitle(R.string.action_info)
-                    .setMessage(info)
-                    .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
-                    .setNeutralButton(R.string.label_license, (dialog, which) -> {
-                        dialog.dismiss();
-                        List<String> l = Util.loadResourceTextFile(MainActivity.this, R.raw.agpl, 544, false);
-                        StringBuilder sb = new StringBuilder(34523);
-                        for (String line : l) sb.append(line).append('\n');
-                        @SuppressLint("InflateParams")
-                        ScrollView sv = (ScrollView)getLayoutInflater().inflate(R.layout.multi_text_view, null);
-                        TextView tv = sv.findViewById(R.id.textView);
-                        // reduce text width for small to medium devices
-                        if (Util.getDisplayDim(MainActivity.this).x < 8f) {
-                            tv.setTextScaleX(0.75f);
+            ReleaseChecker.check(this, releases -> this.handler.post(() -> {
+                final boolean swipeToDismiss = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_SWIPE_TO_DISMISS, false);
+                final SpannableStringBuilder info = new SpannableStringBuilder().append('\n');
+                SpannableString title = new SpannableString(getString(R.string.app_name));
+                title.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                SpannableString version = new SpannableString(BuildConfig.VERSION_NAME);
+                version.setSpan(new RelativeSizeSpan(0.75f), 0, version.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                info.append(title).append(' ').append(version);
+                info.append("\n\n").append(getString(R.string.app_build_date, DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(new Date(BuildConfig.BUILD_TIME))));
+                info.append("\n\n").append(getString(R.string.app_license));
+                if (releases != null && releases.length > 0) {
+                    info.append("\n\n");
+                    final int n = releases.length;
+                    for (int i = 0; i < n; i++) {
+                        Release release = releases[i];
+                        if (release == null) continue;
+                        String releaseInfo;
+                        if (release.getPublishedAt() > 0L) releaseInfo = getString(R.string.msg_release_latest, release.getPrettyTagName(), DateFormat.getDateInstance(DateFormat.SHORT).format(new Date(release.getPublishedAt())));
+                        else releaseInfo = getString(R.string.msg_release_latest_no_date, release.getPrettyTagName());
+                        boolean newerReleaseAvailable = ReleaseChecker.isNewerReleaseAvailable(release);
+                        if (release.getRepo() == Release.REPO_GITHUB && newerReleaseAvailable) {
+                            info.append(Util.createClickable(this, releaseInfo, ReleaseChecker.makeBrowseGithubIntent(release)));
+                        } else if (release.getRepo() == Release.REPO_FDROID && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && newerReleaseAvailable) {
+                            info.append(Util.createClickable(this, releaseInfo, ReleaseChecker.makeBrowseFdroidIntent(this)));
+                        } else {
+                            info.append(releaseInfo);
                         }
-                        tv.setText(sb);
-                        tv.setContentDescription(getString(R.string.label_license));
-                        ClipboardManager cm = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
-                        AlertDialog.Builder lb = new MaterialAlertDialogBuilder(MainActivity.this)
-                                .setTitle(R.string.label_license)
-                                .setView(sv)
-                                .setPositiveButton(android.R.string.ok, (dialog1, which1) -> dialog1.dismiss());
-                        if (cm != null) {
-                            lb.setNeutralButton(android.R.string.copy, (dialog12, which12) -> {
-                                cm.setPrimaryClip(ClipData.newPlainText("AGPL-3.0", sb));
-                                Snackbar.make(coordinatorLayout, R.string.msg_text_copied, Snackbar.LENGTH_SHORT).show();
-                            });
-                        }
-                        this.infoDialog = lb.create();
-                        if (swipeToDismiss) this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
-                        this.infoDialog.show();
-                    })
-                    ;
-            this.infoDialog = builder.create();
-            if (swipeToDismiss) this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
-            this.infoDialog.show();
+                        if (i < n - 1) info.append("\n");
+                    }
+                }
+                AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this)
+                        .setTitle(R.string.action_info)
+                        .setMessage(info)
+                        .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
+                        .setNeutralButton(R.string.label_license, (dialog, which) -> {
+                            dialog.dismiss();
+                            List<String> l = Util.loadResourceTextFile(MainActivity.this, R.raw.agpl, 544, false);
+                            StringBuilder sb = new StringBuilder(34523);
+                            for (String line : l) sb.append(line).append('\n');
+                            @SuppressLint("InflateParams")
+                            ScrollView sv = (ScrollView)getLayoutInflater().inflate(R.layout.multi_text_view, null);
+                            TextView tv = sv.findViewById(R.id.textView);
+                            // reduce text width for small to medium devices
+                            if (Util.getDisplayDim(MainActivity.this).x < 8f) {
+                                tv.setTextScaleX(0.75f);
+                            }
+                            tv.setText(sb);
+                            tv.setContentDescription(getString(R.string.label_license));
+                            ClipboardManager cm = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                            AlertDialog.Builder lb = new MaterialAlertDialogBuilder(MainActivity.this)
+                                    .setTitle(R.string.label_license)
+                                    .setView(sv)
+                                    .setPositiveButton(android.R.string.ok, (dialog1, which1) -> dialog1.dismiss());
+                            if (cm != null) {
+                                lb.setNeutralButton(android.R.string.copy, (dialog12, which12) -> {
+                                    cm.setPrimaryClip(ClipData.newPlainText("AGPL-3.0", sb));
+                                    Snackbar.make(coordinatorLayout, R.string.msg_text_copied, Snackbar.LENGTH_SHORT).show();
+                                });
+                            }
+                            this.infoDialog = lb.create();
+                            if (swipeToDismiss) this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+                            this.infoDialog.show();
+                        })
+                        ;
+                this.infoDialog = builder.create();
+                if (swipeToDismiss) this.infoDialog.supportRequestWindowFeature(Window.FEATURE_SWIPE_TO_DISMISS);
+                this.infoDialog.show();
+                View msg = this.infoDialog.findViewById(android.R.id.message);
+                if (msg instanceof TextView) ((TextView) msg).setMovementMethod(LinkMovementMethod.getInstance());
+            }));
         }
         // --- the following commands are for debug only ---
         if (id == R.id.action_show_updates) {
@@ -1470,7 +1496,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /** {@inheritDoc} */
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-       boolean network = Util.isNetworkAvailable(this);
+        boolean network = Util.isNetworkAvailable(this);
         MenuItem itemTeletext = menu.findItem(R.id.action_teletext);
         itemTeletext.setVisible(network);
         // pinned shortcuts are available only from Oreo on and only in some launchers (https://developer.android.com/guide/topics/ui/shortcuts/creating-shortcuts#pinned)
@@ -1625,7 +1651,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
              */
             boolean fileIsQuiteNew = System.currentTimeMillis() - app.getMostRecentUpdate(this.currentSource) < App.LOCAL_FILE_MAXAGE;
             if (cacheOnly || fileIsQuiteNew || !networkAvailable) {
-            parseLocalFileAsync(localFile);
+                parseLocalFileAsync(localFile);
                 if (!cacheOnly && !networkAvailable) {
                     showNoNetworkSnackbar();
                 }
@@ -1640,8 +1666,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
         // if there is no local file or if it is too old, download the resource
         this.swipeRefreshLayout.setRefreshing(true);
-            onRefresh();
-        }
+        onRefresh();
+    }
 
     /** {@inheritDoc} */
     @SuppressLint("NotifyDataSetChanged")

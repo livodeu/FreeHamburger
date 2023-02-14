@@ -284,6 +284,8 @@
     <string name="intro_5">Hoffentlich finden Sie die App nützlich!</string>
     <string name="label_ca">ca.</string>
     <string name="label_filter">Filter</string>
+    <string name="msg_release_latest">Neueste Version: %1$s vom %2$s</string>
+    <string name="msg_release_latest_no_date">Neueste Version: %1$s</string>
     <string name="action_section_sport">Sport</string>
     <string name="action_section_video">Video</string>
     <string name="pref_header_polling">Hintergrundaktualisierungen</string>

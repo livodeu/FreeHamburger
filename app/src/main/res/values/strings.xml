@@ -278,6 +278,8 @@
         <item quantity="one">%1$d region selected.</item>
         <item quantity="other">%1$d regions selected.</item>
     </plurals>
+    <string name="msg_release_latest">Latest release: %1$s from %2$s</string>
+    <string name="msg_release_latest_no_date">Latest release: %1$s</string>
     <string name="msg_search_sugg_deleted_locale">Search suggestions have been cleared due to the recent change of locale!</string>
     <string name="msg_shared_with">Passed to %1$s</string>
     <string name="msg_shortcut_exists">The shortcut already exists.</string>

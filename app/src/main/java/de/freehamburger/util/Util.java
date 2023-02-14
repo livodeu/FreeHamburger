@@ -41,10 +41,12 @@ import android.system.Os;
 import android.text.Editable;
 import android.text.Html;
 import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
+import android.text.style.ClickableSpan;
 import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -338,6 +340,22 @@ public class Util {
         }
         if (!ok) deleteFile(dest);
         return ok;
+    }
+
+    @NonNull
+    public static SpannableString createClickable(@NonNull final Context ctx, @NonNull CharSequence cs, @NonNull final Intent intent) {
+        SpannableString spannableString = new SpannableString(cs);
+        spannableString.setSpan(new ClickableSpan() {
+            @Override
+            public void onClick(@NonNull View widget) {
+                try {
+                    ctx.startActivity(intent);
+                } catch (Exception e) {
+                    if (BuildConfig.DEBUG) Log.e(TAG, e.toString(), e);
+                }
+            }
+        }, 0, cs.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return spannableString;
     }
 
     /**
@@ -1907,6 +1925,24 @@ public class Util {
             if (p >= n) break;
         }
         return list;
+    }
+
+    @NonNull
+    public static String trimNumber(@NonNull String s) {
+        char firstChar;
+        int length = s.length();
+        int start = 0;
+        while (start < length && ((firstChar = s.charAt(start)) < '+' || firstChar == ',' || firstChar == '/' || firstChar > '9')) {
+            start++;
+        }
+        while (start < length) {
+            char lastChar = s.charAt(length - 1);
+            if (lastChar >= '0' && lastChar <= '9') {
+                break;
+            }
+            length--;
+        }
+        return (start > 0 || length < s.length()) ? s.substring(start, length) : s;
     }
 
 }
