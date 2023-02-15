@@ -232,19 +232,24 @@ public class Content implements Serializable {
                 Box box = ce.getBox();
                 if (box != null) {
                     // add the box, followed by a <br>
-                    htmlTextBuilder.append("<").append(TAG_BOX).append(" style=\"background-color:lightgray\"").append('>');
-                    String boxTitle = box.getTitle();
+                    htmlTextBuilder.append("<").append(TAG_BOX).append('>');
+                    final String boxTitle = box.getTitle();
+                    final Box.Image boxImage = box.getImage();
+                    final String boxText = box.getText();
+                    final String boxLink = box.getLink();
+                    boolean brAppended = false;
                     if (!TextUtils.isEmpty(boxTitle)) {
                         // add the box title
-                        //FIXME apparently, a <h6> causes the background color not being applied because in Html.setSpanFromMark() 'where' equals 'len'…
-                        htmlTextBuilder.append("<font color=\"").append(colorBox).append("\">").append(boxTitle).append("</font>");
+                        // apparently, a <h6> causes the background color not being applied because in Html.setSpanFromMark() 'where' equals 'len'…
+                        htmlTextBuilder.append("<font color=\"").append(colorBox).append("\">").append(boxTitle).append("</font><br>");
+                        brAppended = true;
                     }
-                    Box.Image boxImage = box.getImage();
                     if (boxImage != null && !TextUtils.isEmpty(boxImage.getUrl())) {
+                        // in case we didn't append a <br> after the title, append one now
+                        if (!brAppended) htmlTextBuilder.append("<br>");
                         // add the box image, followed by a <br>
-                        htmlTextBuilder.append("<br><img src=\"").append(boxImage.getUrl()).append("\"/><br>");
+                        htmlTextBuilder.append("<img src=\"").append(boxImage.getUrl()).append("\"/><br>");
                     }
-                    String boxText = box.getText();
                     if (!TextUtils.isEmpty(boxText)) {
                         htmlTextBuilder
                                 .append("<font color=\"").append(colorBox).append("\"><").append(TAG_BOX_TEXT).append('>')
@@ -256,7 +261,6 @@ public class Content implements Serializable {
                         // appending a <br> directly after boxText and before TAG_BOX_TEXT avoids a strange vertical gap before the last line
                         htmlTextBuilder.append("<br></").append(TAG_BOX_TEXT).append("></font>");
                     }
-                    String boxLink = box.getLink();
                     if (!TextUtils.isEmpty(boxLink)) {
                         htmlTextBuilder.append("<font color=\"").append(colorBox).append("\"><").append(TAG_BOX_LINK).append('>')
                         // e.g.: "link": "<a href=\"https://www.server.nl/api7/buitenland/guldenvlies.json\" type=\"intern\">meer</a>",
