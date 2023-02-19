@@ -41,6 +41,7 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.MediumTest;
 
@@ -53,7 +54,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -191,6 +195,58 @@ public class DataAndGuiTest {
             }
         }
     }
+
+    /**
+     * Tests that a list of News objects is sorted correctly.
+     */
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Test
+    @MediumTest
+    @FlakyTest(detail = "Depends on randomly generated data")
+    public void testSortNews() {
+        final DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+        final int n = 100;
+        final List<News> unsortedlist = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            unsortedlist.add(News.getRandomNews(false));
+        }
+        final ArrayList<News> list = new ArrayList<>(unsortedlist);
+        Collections.sort(list);
+        News before = null;
+        final List<String> successes = new ArrayList<>(n);
+        final List<String> failures = new ArrayList<>(0);
+        for (News news : list) {
+            if (before != null) {
+                if (News.WEATHER_AT_BOTTOM && news.getType() != null && before.getType() == null) {
+                    failures.add("F: News with no type should appear after news with type!");
+                } else if (News.WEATHER_AT_BOTTOM && news.getType() == null && before.getType() != null) {
+                    successes.add("S: News with no type appears after news with type.");
+                } else if (news.getDate() != null) {
+                    if (before.getDate() != null) {
+                        boolean ok = news.getDate().before(before.getDate());
+                        if (ok) successes.add("S: News with date " + df.format(news.getDate()) + " and type '" + news.getType() + "' chronologically before (and thus listed behind): " + df.format(before.getDate()) + " with type '" + before.getType() + "'");
+                        else    failures.add("F: News with date " + df.format(news.getDate()) + " and type '" + news.getType() + "' not chronologically before (but listed behind): " + df.format(before.getDate()) + " with type '" + before.getType() + "'");
+                    } else if (News.LIVESTREAM_AT_TOP) {
+                        successes.add("S: News without date appears before News with a date (" + df.format(news.getDate()) + ")");
+                    } else {
+                        // in this case, the date is not a sort criterium: LIVESTREAM_AT_TOP is false and before.date is null
+                    }
+                } else if (News.LIVESTREAM_AT_TOP) {
+                    if (before.getDate() != null) failures.add("F: News without a date should not appear after News with a date (" + df.format(before.getDate()) + ")");
+                }
+            }
+            before = news;
+        }
+
+        final boolean noFails = failures.isEmpty();
+        final StringBuilder msg = new StringBuilder().append(successes.size()).append(" successes, ").append(failures.size()).append(" failures:\n");
+        for (String f : failures) msg.append(f).append("\n");
+        if (!noFails) {
+            for (String success : successes) System.out.println(success);
+        }
+        assertTrue(msg.toString(), noFails);
+    }
+
 
     @Test
     public void testDrawer() {

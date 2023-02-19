@@ -13,6 +13,8 @@ import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.JsonToken;
 
+import org.jetbrains.annotations.TestOnly;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.annotation.Retention;
@@ -48,9 +50,13 @@ public final class News implements Comparable<News>, Serializable {
     public static final String FILE_TAG_REGIONAL = ".rnews";
     @Flag
     public static final int FLAG_INCLUDE_HTMLEMBED = 1;
+    /** News with <em>no</em> {@link #ts timestamp} respectively <em>no</em> {@link #date date} should be listed at the top */
+    @VisibleForTesting public static final boolean LIVESTREAM_AT_TOP = true;
     public static final String NEWS_TYPE_STORY = "story";
     public static final String NEWS_TYPE_VIDEO = "video";
     public static final String NEWS_TYPE_WEBVIEW = "webview";
+    /** News with <em>no</em> {@link #type} should be listed at the bottom */
+    @VisibleForTesting public static final boolean WEATHER_AT_BOTTOM = true;
     private static final String TAG = "News";
     private static long nextid = 1L;
     /** the streams of differenty qualities (highest number found was all 7 StreamQualities) */
@@ -60,7 +66,6 @@ public final class News implements Comparable<News>, Serializable {
     private final Set<String> geotags = new HashSet<>(4);
     private final Set<Region> regions = new HashSet<>(2);
     private final boolean regional;
-
     boolean breakingNews;
     @Nullable Content content;
     /** {@code true} if this News has undergone corrective processing according to the User's preferences */
@@ -96,7 +101,7 @@ public final class News implements Comparable<News>, Serializable {
      * Constructor.
      * @param regional {@code true} if the News originates in the "regional" part of the json data
      */
-    private News(boolean regional) {
+     private News(boolean regional) {
         super();
         this.regional = regional;
     }
@@ -144,6 +149,23 @@ public final class News implements Comparable<News>, Serializable {
             output = Html.fromHtml(input).toString();
         }
         return output;
+    }
+
+    @TestOnly
+    @VisibleForTesting
+    @NonNull
+    public static News getRandomNews(boolean regional) {
+        assert Util.TEST;
+        final News news = new News(regional);
+        if (Math.random() < 0.1) {
+            news.ts = 0L;
+            news.date = null;
+        } else {
+            news.ts = System.currentTimeMillis() - (long) (Math.random() * 1_000_000_000.);
+            news.date = new Date(news.ts);
+        }
+        news.type = Math.random() < 0.95 ? NEWS_TYPE_STORY : null;
+        return news;
     }
 
     /**
@@ -315,14 +337,21 @@ public final class News implements Comparable<News>, Serializable {
 
     /** {@inheritDoc} */
     @Override
-    public int compareTo(@NonNull News o) {
-        if (type == null) {
-            if (o.type != null) return 1;
+    public int compareTo(@NonNull final News o) {
+        if (WEATHER_AT_BOTTOM) {
+            // News with no type (weather) will be at the bottom of the list
+            if (type == null) {
+                if (o.type != null) return 1;
+            } else if (o.type == null) return -1;
+            // else: both are non-null or null => no sort criterium
         }
         //
-        if (o.date == null) {
-            // live streams do not have a date; this way they appear at the top of lists
-            return date == null ? 0 : 1;
+        if (LIVESTREAM_AT_TOP) {
+            if (o.date == null) {
+                // live streams do not have a date; this way they appear at the top of lists
+                if (date != null) return 1;
+            } else if (date == null) return -1;
+            // else: both are non-null or null => no sort criterium
         }
         int tsComparison = Long.compare(o.ts, ts);
         if (tsComparison != 0) return tsComparison;
