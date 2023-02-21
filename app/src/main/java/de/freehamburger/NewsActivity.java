@@ -417,11 +417,42 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             this.recyclerViewRelated.setVisibility(View.GONE);
         }
 
+        // if desired, replace all URLSpans linking to permitted hosts with InternalURLSpans which allows to open the urls internally
+        final boolean internalLinks = prefs.getBoolean(App.PREF_OPEN_LINKS_INTERNALLY, App.PREF_OPEN_LINKS_INTERNALLY_DEFAULT);
+
         //
         String htmlText = content != null ? content.getHtmlText() : null;
         if (TextUtils.isEmpty(htmlText)) {
             this.textViewContent.setVisibility(View.GONE);
             this.textViewContent.setText(null);
+            // if there isn't anything to display, then try the news' detailsWeb url
+            if (!validAudio && !validBottomVideo) {
+                boolean userSentAway = false;
+                String detailsWeb = this.news.getDetailsWeb();
+                if (detailsWeb != null && detailsWeb.startsWith("https://")) {
+                    Uri uri = Uri.parse(detailsWeb);
+                    Intent passon;
+                    if (internalLinks && uri.getHost() != null && App.isHostAllowed(uri.getHost().toLowerCase(Locale.ROOT))) {
+                        passon = new Intent(this, WebViewActivity.class);
+                        passon.putExtra(WebViewActivity.EXTRA_NEWS, this.news);
+                    } else {
+                        passon = new Intent(Intent.ACTION_VIEW);
+                        passon.setDataAndType(uri, "text/html");
+                    }
+                    passon.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_NO_USER_ACTION);
+                    if (getPackageManager().resolveActivity(passon, PackageManager.MATCH_DEFAULT_ONLY) != null) {
+                        startActivity(passon);
+                        // finish() makes sure that a BACK action from the subsequent WebViewActivity does not lead back here to this NewsActivity but the MainActivity instead
+                        finish();
+                        userSentAway = true;
+                    }
+                }
+                if (!userSentAway) {
+                    Snackbar.make(this.coordinatorLayout, R.string.msg_news_nocontent, Snackbar.LENGTH_LONG).show();
+                    // see com.google.android.material.snackbar.SnackbarManager.LONG_DURATION_MS
+                    this.handler.postDelayed(this::finish, 2_750L);
+                }
+            }
         } else {
             List<PositionedSpan> additionalSpans = new ArrayList<>();
 
@@ -490,9 +521,6 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     spannable.setSpan(new BackgroundSpan(backgroundColor), start, end, Spanned.SPAN_INCLUSIVE_INCLUSIVE);
                 }
             }
-
-            // if desired, replace all URLSpans linking to permitted hosts with InternalURLSpans which allows to open the urls internally
-            boolean internalLinks = prefs.getBoolean(App.PREF_OPEN_LINKS_INTERNALLY, App.PREF_OPEN_LINKS_INTERNALLY_DEFAULT);
 
             URLSpan[] urlSpans = spannable.getSpans(0, spannable.length(), URLSpan.class);
             if (urlSpans != null) {

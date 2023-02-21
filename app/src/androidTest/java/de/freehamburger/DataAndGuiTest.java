@@ -12,6 +12,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
+import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.ContentValues;
 import android.content.Context;
@@ -54,6 +55,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -479,6 +481,35 @@ public class DataAndGuiTest {
                 //
                 activity.finish();
             });
+        }
+    }
+
+    /**
+     * Tests that News without text content but with a valid {@link News#getDetailsWeb() detailsWeb} field
+     * get opened in WebViewActivity.<br>
+     * {@link App#PREF_OPEN_LINKS_INTERNALLY} must be set to true for this test to work
+     */
+    @Test
+    public void testNewsActivityWithNoContent() {
+        Assume.assumeTrue("Links to be opened internally for this test", PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(App.PREF_OPEN_LINKS_INTERNALLY, App.PREF_OPEN_LINKS_INTERNALLY_DEFAULT));
+        News news = News.getRandomNews(false);
+        try {
+            Field dw = news.getClass().getDeclaredField("detailsWeb");
+            dw.setAccessible(true);
+            dw.set(news, "https://www.tagesschau.de");
+        } catch (Exception e) {
+            fail(e.toString());
+        }
+        Intent intent = new Intent(ctx, NewsActivity.class);
+        intent.putExtra(NewsActivity.EXTRA_NEWS, news);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        ctx.startActivity(intent);
+        try {
+            Thread.sleep(2_000L);
+            Activity a = ((App)ctx.getApplicationContext()).getCurrentActivity();
+            assertTrue("Current activity is not WebViewActivity but " + a, a instanceof WebViewActivity);
+        } catch (InterruptedException e) {
+            fail(e.toString());
         }
     }
 
