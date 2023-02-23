@@ -39,6 +39,8 @@ import de.freehamburger.model.Source;
 public class SearchHelper {
     
     public static final char WORD_SOURCE_SEPARATOR = '#';
+    /** see <a href="https://developer.android.com/guide/topics/search/searchable-config#searchSuggestIntentAction">searchable-config</a> */
+    public static final String SEARCH_SUGGEST_ACTION = "de.freehamburger.search_suggest_intent_action";
     private static final String TAG = "SearchHelper";
     /** words excluded from the search suggestions */
     private static final Set<String> EXCLUDED_SET = new HashSet<>(Arrays.asList(

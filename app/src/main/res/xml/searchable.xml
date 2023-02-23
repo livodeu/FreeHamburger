@@ -10,7 +10,7 @@ flagNoFullscreen prevents the search ui from occupying the whole screen in lands
     android:label="@string/app_name"
     android:queryAfterZeroResults="true"
     android:searchSuggestAuthority="@string/app_search_auth"
-    android:searchSuggestIntentAction="@string/app_search_action"
+    android:searchSuggestIntentAction="de.freehamburger.search_suggest_intent_action"
     android:searchSuggestIntentData="@string/app_search_sid"
     android:searchSuggestSelection=" ?"
     android:searchSuggestThreshold="0"

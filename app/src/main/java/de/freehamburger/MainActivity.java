@@ -486,8 +486,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             }
             return;
         }
-        if (Intent.ACTION_SEARCH.equals(action) || getString(R.string.app_search_action).equals(action)) {
-            // R.string.app_search_action is set in searchable.xml
+        if (Intent.ACTION_SEARCH.equals(action) || SearchHelper.SEARCH_SUGGEST_ACTION.equals(action)) {
+            // R.string.action_search_suggest_intent is set in searchable.xml
             /*
             if the user has picked a suggestion, intent.getData().getLastPathSegment() will contain "suggestion#source" (something like "a61#NEWS",
             see SearchContentProvider.SUGGESTION_PROJECTION, from SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID)

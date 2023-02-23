@@ -61,15 +61,26 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:theme="@style/AppTheme.Launcher">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.INFO" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
             <intent-filter>
                 <action android:name="android.intent.action.SEARCH" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+
+            <intent-filter>
+                <!-- see searchable.xml -->
+                <action android:name="de.freehamburger.search_suggest_intent_action" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content"/>
+            </intent-filter>
+
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
 
@@ -89,6 +100,7 @@
                     android:host="@string/viewable_host_2"
                     android:scheme="https" />
             </intent-filter>
+
             <intent-filter android:label="@string/action_font_use">
                 <action android:name="android.intent.action.VIEW" />
 
@@ -100,6 +112,7 @@
                 <data android:host="*" />
                 <data android:mimeType="application/x-font-ttf" />
             </intent-filter>
+
             <intent-filter android:label="@string/action_font_use">
                 <action android:name="android.intent.action.VIEW" />
 
@@ -115,6 +128,7 @@
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
+
             <meta-data
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />

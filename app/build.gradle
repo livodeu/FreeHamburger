@@ -48,7 +48,6 @@ android {
             applicationIdSuffix ".debug"
             versionNameSuffix "-debug"
             manifestPlaceholders = [name: "@string/app_name_debug", icon: "@mipmap/ic_launcher_debug", roundicon: "@mipmap/ic_launcher_round_debug"]
-            resValue "string", "app_search_action", defaultConfig.applicationId + applicationIdSuffix + '.ACTION_SEARCH'
             resValue "string", "app_search_auth", defaultConfig.applicationId + applicationIdSuffix + '.SearchContentProvider'
             resValue "string", "app_search_sid", "content://" + defaultConfig.applicationId + applicationIdSuffix + '/sid'
             resValue "string", "main_action_font_delete", defaultConfig.applicationId + applicationIdSuffix + '.action.font_delete'
@@ -58,7 +57,6 @@ android {
         }
         release {
             manifestPlaceholders = [name: "@string/app_name", icon: "@mipmap/ic_launcher", roundicon: "@mipmap/ic_launcher_round"]
-            resValue "string", "app_search_action", defaultConfig.applicationId + '.ACTION_SEARCH'
             resValue "string", "app_search_auth", defaultConfig.applicationId + '.SearchContentProvider'
             resValue "string", "app_search_sid", "content://" + defaultConfig.applicationId + '/sid'
             resValue "string", "main_action_font_delete", defaultConfig.applicationId + '.action.font_delete'
