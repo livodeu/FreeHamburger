@@ -33,6 +33,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
@@ -117,11 +118,15 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 
 import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
+import de.freehamburger.HamburgerActivity;
+import de.freehamburger.HamburgerService;
 import de.freehamburger.MainActivity;
 import de.freehamburger.PictureActivity;
 import de.freehamburger.R;
 import de.freehamburger.model.Content;
+import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
+import de.freehamburger.model.TeaserImage;
 import de.freehamburger.supp.ShareReceiver;
 
 /**
@@ -1706,7 +1711,7 @@ public class Util {
      * @param url URL
      * @param title title (optional)
      * @param preview (optional)
-     * @throws NullPointerException if {@code ctx} is {@code null}
+     * @throws NullPointerException if {@code ctx} or {@code url} are {@code null}
      */
     public static void sendUrl(@NonNull Context ctx, @NonNull String url, @Nullable CharSequence title, @Nullable Bitmap preview) {
         url = makeHttps(url);
@@ -1785,10 +1790,43 @@ public class Util {
      * @param ctx Context
      * @param url URL
      * @param title title (optional)
-     * @throws NullPointerException if {@code ctx} is {@code null}
+     * @throws NullPointerException if {@code ctx} or {@code url} are {@code null}
      */
     public static void sendUrl(@NonNull Context ctx, @NonNull String url, @Nullable CharSequence title) {
         sendUrl(ctx, url, title, null);
+    }
+
+    /**
+     * Shares the given url via {@link Intent#ACTION_SEND ACTION_SEND}. Displays an error message if there isn't any suitable app installed.<br>
+     * Uses a preview image from the given News object, if available.<br>
+     * If no News object is given, identical to {@link #sendUrl(Context, String, CharSequence)}.
+     * @param activity HamburgerActivity
+     * @param url URL
+     * @param title title (optional)
+     * @param news News to take a preview image from (optional)
+     * @throws NullPointerException if {@code activity} or {@code url} are {@code null}
+     */
+    @AnyThread
+    public static void sendUrlWithNewsPreview(@NonNull HamburgerActivity activity, @NonNull String url, @Nullable CharSequence title, @Nullable News news) {
+        final HamburgerService service = activity.getHamburgerService();
+        if (service == null || news == null) {
+            sendUrl(activity, url, title);
+            return;
+        }
+        TeaserImage teaserImage = news.getTeaserImage();
+        final String previewUrl = teaserImage != null ? teaserImage.getBestImage() : null;
+        if (previewUrl == null) {
+            sendUrl(activity, url, title);
+            return;
+        }
+        new Thread() {
+            @Override public void run() {
+                // this must run on a worker thread
+                Bitmap preview = service.loadImageFromCache(previewUrl);
+                //
+                new Handler(Looper.getMainLooper()).post(() -> sendUrl(activity, url, title, preview));
+            }
+        }.start();
     }
 
     /**

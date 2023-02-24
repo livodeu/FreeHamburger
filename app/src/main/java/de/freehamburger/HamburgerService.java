@@ -23,6 +23,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.UiThread;
+import androidx.annotation.WorkerThread;
 
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.NetworkPolicy;
@@ -199,6 +200,24 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     @RequiresPermission(Manifest.permission.INTERNET)
     public void loadImage(@NonNull String uri, @NonNull Target target) {
         this.handler.post(new PictureLoader(this, uri, null, target, null));
+    }
+
+    /**
+     * Attempts to load a picture <em>synchronously</em> from the cache.<br>
+     * May not be run on the main thread!
+     * @param uri picture URL
+     * @return Bitmap or null
+     */
+    @WorkerThread
+    @Nullable
+    public Bitmap loadImageFromCache(@NonNull String uri) {
+        if (this.picasso == null) return null;
+        try {
+            return this.picasso.load(uri).networkPolicy(NetworkPolicy.OFFLINE).noFade().get();
+        } catch (Exception e) {
+            if (BuildConfig.DEBUG) Log.e(TAG, "While trying to load " + uri + " from the cache: " + e);
+        }
+        return null;
     }
 
     /**

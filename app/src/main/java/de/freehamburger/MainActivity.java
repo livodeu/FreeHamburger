@@ -17,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ShortcutManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -61,6 +62,7 @@ import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
+import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AlertDialog;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -122,9 +124,10 @@ import de.freehamburger.util.PrintUtil;
 import de.freehamburger.util.SpaceBetween;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
+import de.freehamburger.version.Release;
+import de.freehamburger.version.ReleaseChecker;
 import de.freehamburger.views.ClockView;
 import de.freehamburger.widget.WidgetProvider;
-import de.freehamburger.version.*;
 
 public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLayout.OnRefreshListener {
 
@@ -936,17 +939,23 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return true;
         }
         if (id == R.id.action_share_video) {
-            // share bottom video if present (the top video (from News.streams) is generally not interesting and thus ignored here)
-            News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
-            if (!news.hasBottomVideo()) return true;
-            @SuppressWarnings("ConstantConditions")
-            List<Video> videoList = news.getContent().getVideoList();
-            if (BuildConfig.DEBUG && videoList.size() > 1) Log.w(TAG, "Has more than one video: " + news);
-            //
-            final Map<StreamQuality, String> streams = videoList.get(0).getStreams();
+            final News news = this.newsAdapter.getItem(this.newsAdapter.getContextMenuIndex());
+            final Map<StreamQuality, String> streams;
+            if (!news.getStreams().isEmpty()) {
+                // share stream video if present
+                streams = news.getStreams();
+            } else if (news.hasBottomVideo()) {
+                // share bottom video if present (the top video (from News.streams) is generally not interesting and thus ignored here)
+                @SuppressWarnings("ConstantConditions")
+                List<Video> videoList = news.getContent().getVideoList();
+                if (BuildConfig.DEBUG && videoList.size() > 1) Log.w(TAG, "Has more than one video: " + news);
+                //
+                streams = videoList.get(0).getStreams();
+            } else {
+                return true;
+            }
             if (streams.size() > 1) {
                 CharSequence[] items = new CharSequence[streams.size()];
-                int i = 0;
                 final List<StreamQuality> qualities = new ArrayList<>(streams.keySet());
                 Collections.sort(qualities, (o1, o2) -> {
                     int w1 = o1.getWidth();
@@ -955,17 +964,20 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     if (w1 == -1) return 1; else if (w2 == -1) return -1;
                     return Integer.compare(w1, w2);
                 });
+                int i = 0;
                 for (StreamQuality q : qualities) {
-                    int labelRes = q.getLabel();
+                    @StringRes int labelRes = q.getLabel();
                     int width = q.getWidth();
-                    items[i++] = labelRes > -1 ? (width > 0 ? getString(labelRes, width) : getString(labelRes)) : q.name();
+                    items[i++] = labelRes != Resources.ID_NULL ? (width > 0 ? getString(labelRes, width) : getString(labelRes)) : q.name();
                 }
                 AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this)
                         .setTitle(R.string.action_quality_select)
                         .setItems(items, (dialog, which) -> {
                             StreamQuality selectedQuality = qualities.get(which);
                             String source = streams.get(selectedQuality);
-                            if (source != null) Util.sendUrl(this, source, news.getTitle());
+                            if (source != null) {
+                                Util.sendUrlWithNewsPreview(MainActivity.this, source, news.getTitle(), news);
+                            }
                             dialog.dismiss();
                         })
                         .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());
@@ -989,7 +1001,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 }
                 d.show();
             } else {
-                Util.sendUrl(this, streams.values().iterator().next(), news.getTitle());
+                Util.sendUrlWithNewsPreview(this, streams.values().iterator().next(), news.getTitle(), news);
             }
             return true;
         }

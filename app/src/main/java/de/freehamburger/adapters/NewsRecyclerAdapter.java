@@ -564,7 +564,8 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
             //
             final News news = adapter.getItem(position);
             boolean hasWebLink = news != null && !TextUtils.isEmpty(news.getDetailsWeb());
-            boolean hasVideo = news != null && news.hasBottomVideo();
+            // allow sharing videos if a) there is one in the content part of STORY-type news or b) if there is one in the streams of VIDEO-type news
+            boolean hasVideo = news != null && (news.hasBottomVideo() || (News.NEWS_TYPE_VIDEO.equals(news.getType()) && !news.getStreams().isEmpty()));
             boolean hasImage = news != null && news.getTeaserImage() != null && news.getTeaserImage().hasImage();
             MenuItem menuItemViewInBrowser = menu.findItem(R.id.action_view_in_browser);
             menuItemViewInBrowser.setEnabled(hasWebLink);
