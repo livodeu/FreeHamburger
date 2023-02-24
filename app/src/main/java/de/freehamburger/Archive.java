@@ -18,6 +18,7 @@ import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
+import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.MainThread;
@@ -65,7 +66,7 @@ import de.freehamburger.util.Util;
 /**
  * Manages News items that have been stored on the device.
  */
-public class Archive extends HamburgerActivity {
+public class Archive extends HamburgerActivity implements ActivityResultCallback<Uri> {
 
     /** subfolder within the app's files folder */
     @VisibleForTesting
@@ -89,7 +90,7 @@ public class Archive extends HamburgerActivity {
     private ActivityResultLauncher<String> getZipContent;
     /** checks zip archives before they are unwrapped */
     private ArchiveChecker archiveChecker;
-    private boolean invokedBySettings;
+    private boolean goBackToSettings;
 
     /**
      * Determines whether there are any News items stored.
@@ -350,9 +351,6 @@ public class Archive extends HamburgerActivity {
     @MainThread
     private void loadFiles() {
         this.files = new ArrayList<>(loadAll(this.folder));
-        if (this.files.isEmpty() && !Util.TEST) {
-            finish();
-        }
         final List<ArchivedNews> list = new ArrayList<>(this.files.size());
         for (File file : this.files) {
             if (file == null) continue;
@@ -360,6 +358,12 @@ public class Archive extends HamburgerActivity {
         }
         Collections.sort(list);
         this.adapter.setItems(list);
+        invalidateOptionsMenu();
+    }
+
+    /** {@inheritDoc} */
+    @Override public void onActivityResult(Uri result) {
+        onArchiveSelected(result);
     }
 
     /** {@inheritDoc} */
@@ -385,46 +389,51 @@ public class Archive extends HamburgerActivity {
         this.recyclerViewArchive.setAdapter(this.adapter);
         this.folder = new File(getFilesDir(), DIR);
         this.adapter.setTypeface(Util.loadFont(this));
+        this.getZipContent = registerForActivityResult(new ActivityResultContracts.GetContent(), this);
+    }
 
-        this.getZipContent = registerForActivityResult(new ActivityResultContracts.GetContent(), result -> {
-            if (result == null) {
-                if (this.invokedBySettings) {
-                    startActivity(new Intent(this, SettingsActivity.class));
-                    finish();
-                }
-                return;
+    /**
+     * The user has selected a zip archive to import.
+     * @param archive zip archive
+     */
+    private void onArchiveSelected(@Nullable final Uri archive) {
+        if (archive == null) {
+            if (this.goBackToSettings) {
+                startActivity(new Intent(this, SettingsActivity.class));
+                finish();
             }
-            // get display name and size of the data that 'result' points to
-            long fileSize = 0L;
-            String displayName = result.getLastPathSegment();
-            final String finalDisplayName;
-            Cursor cursor = getContentResolver().query(result, null, null, null, null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
-                if (sizeIndex > -1) fileSize = cursor.getLong(sizeIndex);
-                int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                if (nameIndex > -1) displayName = cursor.getString(nameIndex);
-            }
-            Util.close(cursor);
-            finalDisplayName = displayName;
-            // impose a hard size limit to avoid whatever huge files would cause (ANR, explosions, radiation accidents etc.)
-            if (fileSize > ARCHIVE_MAX_SIZE) {
-                Snackbar sb = Snackbar.make(this.coordinatorLayout, getString(R.string.error_archive_import_failed, finalDisplayName), Snackbar.LENGTH_LONG);
-                sb.setTextMaxLines(3);
-                sb.show();
-            }
-            // on a reasonably fast device the next message might never be read…
-            Snackbar.make(this.coordinatorLayout, getString(R.string.msg_archive_importing, finalDisplayName), Snackbar.LENGTH_SHORT).show();
-            // check the zip archive and, if successful, import the data
-            this.archiveChecker = new ArchiveChecker(this, result, () -> importArchive(result), () -> {
-                Snackbar sb = Snackbar.make(this.coordinatorLayout, getString(R.string.error_archive_import_failed, finalDisplayName), Snackbar.LENGTH_LONG);
-                sb.setTextMaxLines(3);
-                sb.show();
-            });
-            this.archiveChecker.start();
-            // disable the import menu item for now
-            invalidateOptionsMenu();
+            return;
+        }
+        // get display name and size of the data that 'result' points to
+        long fileSize = 0L;
+        String displayName = archive.getLastPathSegment();
+        final String finalDisplayName;
+        Cursor cursor = getContentResolver().query(archive, null, null, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+            if (sizeIndex > -1) fileSize = cursor.getLong(sizeIndex);
+            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+            if (nameIndex > -1) displayName = cursor.getString(nameIndex);
+        }
+        Util.close(cursor);
+        finalDisplayName = displayName;
+        // impose a hard size limit to avoid whatever huge files would cause (ANR, explosions, radiation accidents etc.)
+        if (fileSize > ARCHIVE_MAX_SIZE) {
+            Snackbar sb = Snackbar.make(this.coordinatorLayout, getString(R.string.error_archive_import_failed, finalDisplayName), Snackbar.LENGTH_LONG);
+            sb.setTextMaxLines(3);
+            sb.show();
+        }
+        // on a reasonably fast device the next message might never be read…
+        Snackbar.make(this.coordinatorLayout, getString(R.string.msg_archive_importing, finalDisplayName), Snackbar.LENGTH_SHORT).show();
+        // check the zip archive and, if successful, import the data
+        this.archiveChecker = new ArchiveChecker(this, archive, () -> importArchive(archive), () -> {
+            Snackbar sb = Snackbar.make(this.coordinatorLayout, getString(R.string.error_archive_import_failed, finalDisplayName), Snackbar.LENGTH_LONG);
+            sb.setTextMaxLines(3);
+            sb.show();
         });
+        this.archiveChecker.start();
+        // disable the import menu item for now
+        invalidateOptionsMenu();
     }
 
     /** {@inheritDoc} */
@@ -435,6 +444,9 @@ public class Archive extends HamburgerActivity {
 
     /** {@inheritDoc} */
     @Override public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        // once the user interacts with this Activity, don't go back to Settings (if the user arrived from there)
+        this.goBackToSettings = false;
+        //
         final int id = item.getItemId();
         if (id == R.id.action_archive_clear) {
             String msg = getString(R.string.msg_archive_delete_all, NumberFormat.getNumberInstance().format(Util.getOccupiedSpace(this.files) / 1_000L));
@@ -474,8 +486,13 @@ public class Archive extends HamburgerActivity {
     }
 
     /** {@inheritDoc} */
-    @Override public boolean onPrepareOptionsMenu(Menu menu) {
+    @Override public boolean onPrepareOptionsMenu(final Menu menu) {
+        final boolean hasFiles = !this.files.isEmpty();
+        MenuItem menuItemClear = menu.findItem(R.id.action_archive_clear);
+        MenuItem menuItemExmport = menu.findItem(R.id.action_archive_export);
         MenuItem menuItemImport = menu.findItem(R.id.action_archive_import);
+        menuItemClear.setEnabled(hasFiles);
+        menuItemExmport.setEnabled(hasFiles);
         menuItemImport.setEnabled(this.archiveChecker == null || !this.archiveChecker.isAlive());
         return true;
     }
@@ -487,9 +504,12 @@ public class Archive extends HamburgerActivity {
 
         if (getString(R.string.appaction_archive_import).equals(getIntent().getAction())) {
             getIntent().setAction(null);
-            this.invokedBySettings = true;
+            this.goBackToSettings = true;
             this.getZipContent.launch(MIME_ARCHIVE);
+            return;
         }
+        // finish if we don't have any archived files and if we are not importing currently
+        if (this.files.isEmpty() && (this.archiveChecker == null || !this.archiveChecker.isAlive())) finish();
     }
 
     /**
