@@ -65,6 +65,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -1048,7 +1049,11 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         ActionBar ab = getSupportActionBar();
         if (ab != null) {
             boolean noHomeAsUp = intent.getBooleanExtra(EXTRA_NO_HOME_AS_UP, false);
-            if (!noHomeAsUp) ab.setDisplayHomeAsUpEnabled(true);
+            if (!noHomeAsUp) {
+                ab.setDisplayHomeAsUpEnabled(true);
+                Toolbar toolbar = findViewById(R.id.toolbar);
+                setHomeArrowTooltipText(toolbar, getString(R.string.hint_back_to_main));
+            }
         }
 
         this.news = (News) intent.getSerializableExtra(EXTRA_NEWS);

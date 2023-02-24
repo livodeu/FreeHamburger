@@ -68,6 +68,7 @@
 
     <string name="hint_archive_button_delete">Click to delete the archived news</string>
     <string name="hint_audio_content_play">Play audio content</string>
+    <string name="hint_back_to_main">Back to the news overview</string>
     <string name="hint_filter">The phrase to filter</string>
     <string name="hint_filter_add">Use the + button to add a new filter</string>
     <string name="hint_filter_button_clear">Click to clear the phrase</string>

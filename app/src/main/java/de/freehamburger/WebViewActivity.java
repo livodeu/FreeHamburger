@@ -41,6 +41,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
@@ -181,7 +182,11 @@ public class WebViewActivity extends AppCompatActivity {
         ActionBar ab = getDelegate().getSupportActionBar();
         if (ab != null) {
             boolean noHomeAsUp = getIntent().getBooleanExtra(EXTRA_NO_HOME_AS_UP, false);
-            if (!noHomeAsUp) ab.setDisplayHomeAsUpEnabled(true);
+            if (!noHomeAsUp) {
+                ab.setDisplayHomeAsUpEnabled(true);
+                Toolbar toolbar = findViewById(R.id.toolbar);
+                HamburgerActivity.setHomeArrowTooltipText(toolbar, getString(R.string.hint_back_to_main));
+            }
         }
 
         this.news = (News)getIntent().getSerializableExtra(EXTRA_NEWS);

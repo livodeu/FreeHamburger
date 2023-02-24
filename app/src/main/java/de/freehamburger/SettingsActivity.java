@@ -193,12 +193,18 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings_activity);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        if (toolbar != null) setSupportActionBar(toolbar);
+        final com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        assert toolbar != null;
+        setSupportActionBar(toolbar);
 
-        if (!this.isManageStorageActivity && !this.fromBackgroundTile) {
+        boolean fromAppSettings = Intent.ACTION_APPLICATION_PREFERENCES.equals(getIntent().getAction());
+        if (!this.isManageStorageActivity && !this.fromBackgroundTile && !fromAppSettings) {
             ActionBar actionBar = getSupportActionBar();
-            if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(true);
+            // display ← in the top left corner to go back to the MainActivity
+            if (actionBar != null) {
+                actionBar.setDisplayHomeAsUpEnabled(true);
+                HamburgerActivity.setHomeArrowTooltipText(toolbar, getString(R.string.hint_back_to_main));
+            }
         }
 
         // onCreate() runs significantly faster if the WebView initialisation (three-digits runtime in ms on slower devices) is postponed.

@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -23,6 +24,7 @@ import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -119,6 +121,22 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Coo
         if (background == App.BACKGROUND_AUTO) background = Util.isNightMode(activity) ? App.BACKGROUND_NIGHT : App.BACKGROUND_DAY;
         applyTheme(activity, again);
         return background;
+    }
+
+    /**
+     * Overrides the default tooltip text for the ← button in the top-left corner.
+     * @param toolbar Toolbar
+     * @param ttip tooltip text to set
+     */
+    @TargetApi(Build.VERSION_CODES.O)
+    static void setHomeArrowTooltipText(@Nullable final Toolbar toolbar, @Nullable final CharSequence ttip) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || toolbar == null) return;
+        for (int i = 0; i < toolbar.getChildCount(); i++) {
+            View child = toolbar.getChildAt(i);
+            if (!(child instanceof ImageButton)) continue;
+            child.setTooltipText(ttip);
+            break;
+        }
     }
 
     @App.BackgroundSelection

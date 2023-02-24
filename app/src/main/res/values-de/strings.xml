@@ -27,6 +27,7 @@
         <item quantity="one">%1$d Datei übersprungen</item>
         <item quantity="other">%1$d Dateien übersprungen</item>
     </plurals>
+    <string name="hint_back_to_main">Zurück zur Nachrichtenübersicht</string>
     <string name="msg_notification_permission_rationale">Um Benachrichtigungen darstellen zu können ist eine Systemberechtigung erforderlich. Anfordern?</string>
     <string name="error_archived_already">Der Artikel wurde bereits archiviert.</string>
     <string name="error_archived_failure">Der Artikel wurde nicht archiviert!</string>
