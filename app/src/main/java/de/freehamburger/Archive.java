@@ -290,6 +290,9 @@ public class Archive extends HamburgerActivity implements ActivityResultCallback
     private void importArchive(@Nullable final Uri uri) {
         if (uri == null || this.files == null) return;
         final List<File> filesSnapshot = new ArrayList<>(this.files);
+        if (!this.folder.isDirectory()) {
+            if (!this.folder.mkdirs()) return;
+        }
         new Thread() {
             @Override public void run() {
                 InputStream in = null;
@@ -325,7 +328,7 @@ public class Archive extends HamburgerActivity implements ActivityResultCallback
                         restoredCounter++;
                     }
                 } catch (Exception e) {
-                    if (BuildConfig.DEBUG) Log.e(TAG, "While importing from " + uri + ": " + e);
+                    if (BuildConfig.DEBUG) Log.e(TAG, "While importing from " + uri + ": " + e, e);
                 } finally {
                     Util.close(out, in);
                 }
