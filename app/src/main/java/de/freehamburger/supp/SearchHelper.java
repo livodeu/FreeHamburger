@@ -156,7 +156,7 @@ public class SearchHelper {
      * @param ctx Context
      * @return {@code true} if the operation finished without error
      */
-    static boolean deleteAllSearchSuggestions(@NonNull Context ctx) {
+    public static boolean deleteAllSearchSuggestions(@NonNull Context ctx) {
         try {
             Uri uri = Uri.parse("content://" + ctx.getString(R.string.app_search_auth));
             ContentResolver cr = ctx.getContentResolver();
