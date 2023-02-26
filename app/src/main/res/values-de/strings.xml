@@ -15,6 +15,14 @@
     <string name="action_open_app">App öffnen</string>
     <string name="action_print">Drucken</string>
     <string name="error_video_unavailable">Das Video ist nicht verfügbar.</string>
+    <string name="msg_nfc_write_confirm">„%1$s” auf dem Chip speichern?</string>
+    <string name="error_nfc_other">Der Chip konnte nicht beschrieben werden!</string>
+    <string name="msg_nfc_write_success">„%1$s” wurde auf dem Chip gespeichert.</string>
+    <string name="error_nfc_conn_lost">Die Verbindung zum Chip wurde unterbrochen!</string>
+    <string name="error_nfc_io">Es ist ein Ein-/Ausgabefehler aufgetreten!</string>
+    <string name="error_nfc_not_ndef">Der Chip ist nicht NDEF-formatiert!</string>
+    <string name="error_nfc_not_writeable">Der Chip ist nicht beschreibbar!</string>
+    <string name="error_nfc_too_long">Die Daten sind für den Chip zu lang!</string>
     <string name="label_archive">Archiv</string>
     <string name="label_confirmation">Bestätigung</string>
     <string name="msg_archive_delete_all">Alle archivierten Artikel löschen?\nDies kann nicht rückgängig gemacht werden!\nEs werden %1$s kB Speicherplatz freigegeben.</string>
@@ -94,6 +102,8 @@
     <string name="hint_search">Suche</string>
     <string name="error_no_further_details">Keine weiteren Details verfügbar.</string>
     <string name="hint_pic">Die Illustration für diesen Artikel</string>
+    <string name="msg_nfc_disabled">NFC ist ausgeschaltet.</string>
+    <string name="msg_nfc_info">&lt;html&gt;&lt;a href=\"https://de.m.wikipedia.org/wiki/Near_Field_Communication\"&gt;NFC&lt;/a&gt; kann in der Nachrichten&amp;shy;übersicht benutzt werden um ein Lese&amp;shy;zeichen für die aktuelle Kategorie auf einem leeren Chip zu speichern.&lt;/html&gt;</string>
     <string name="action_settings">Einstellungen</string>
     <string name="action_settings_more">Weitere…</string>
     <string name="error_download_failed">Ladevorgang fehlgeschlagen:\n%1$s</string>
@@ -222,6 +232,7 @@
     <string name="pref_title_proxy_server">Proxyserver</string>
     <string name="pref_title_proxy_type">Proxytyp</string>
     <string name="msg_search_sugg_deleted_locale">Die Suchvorschläge wurden wegen der Sprachänderung zurückgesetzt!</string>
+    <string name="pref_title_nfc_use">NFC verwenden</string>
     <string name="action_filter">Filter</string>
     <string name="hint_widget_source">Quelle für Widget: %1$s</string>
     <string name="hint_filter">zu filternder Text</string>

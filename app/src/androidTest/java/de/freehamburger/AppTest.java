@@ -306,7 +306,8 @@ public class AppTest {
                 R.bool.pref_poll_over_mobile_default,
                 R.bool.pref_show_share_target_default,
                 R.bool.pref_time_mode_default,
-                R.bool.pref_warn_mute_default
+                R.bool.pref_warn_mute_default,
+                R.bool.pref_nfc_use_default
         };
         final boolean[] appBoolValues = new boolean[] {
                 App.PREF_ASK_BEFORE_FINISH_DEFAULT,
@@ -323,7 +324,8 @@ public class AppTest {
                 App.PREF_POLL_OVER_MOBILE_DEFAULT,
                 App.PREF_SHOW_LATEST_SHARE_TARGET_DEFAULT,
                 App.PREF_TIME_MODE_RELATIVE_DEFAULT,
-                App.PREF_WARN_MUTE_DEFAULT
+                App.PREF_WARN_MUTE_DEFAULT,
+                App.PREF_NFC_USE_DEFAULT
         };
         final int[] resIntValues = new int[] {
                 R.integer.pref_font_zoom_default,

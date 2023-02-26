@@ -47,6 +47,7 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.util.DisplayMetrics;
 import android.view.Menu;
@@ -1864,6 +1865,18 @@ public class Util {
         if (textView == null) return;
         if (font != null) textView.setTypeface(font);
         if (textSize >= 1f) textView.setTextSize(textSize);
+    }
+
+    /**
+     * Makes links within a Snackbar clickable.
+     * @param s Snackbar
+     */
+    public static void setSnackbarLinksClickable(@Nullable Snackbar s) {
+        if (s == null) return;
+        Snackbar.SnackbarLayout snackLayout = (Snackbar.SnackbarLayout) s.getView();
+        TextView textView = snackLayout.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (textView == null) return;
+        textView.setMovementMethod(LinkMovementMethod.getInstance());
     }
 
     /**

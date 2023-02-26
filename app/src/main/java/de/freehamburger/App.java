@@ -151,6 +151,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final long PREF_MEM_CACHE_MAX_SIZE_MAX = 100L << 20;
     /** the minimum valid value for the memory max cache size in bytes */
     public static final long PREF_MEM_CACHE_MAX_SIZE_MIN = 1_048_576L;
+    public static final String PREF_NFC_USE = "pref_nfc_use";
+    public static final boolean PREF_NFC_USE_DEFAULT = false;
     /** boolean: open web links internally instead of posting an {@link Intent#ACTION_VIEW} intent */
     public static final String PREF_OPEN_LINKS_INTERNALLY = "pref_open_links_internally";
     public static final boolean PREF_OPEN_LINKS_INTERNALLY_DEFAULT = true;
@@ -380,7 +382,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
      * @param host host in lowercase chars
      * @return {@code true} / {@code false}
      */
-    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     public static synchronized boolean isHostAllowed(@Nullable final String host) {
         if (host == null) return false;
         for (String allowedHost : PERMITTED_HOSTS) {
@@ -540,13 +541,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
         return this.exo_lc;
     }
 
-    @NonNull @Override public MediaSource.Factory getMediaSourceFactory() {
-        if (this.exo_mf == null) {
-            this.exo_mf = new DefaultMediaSourceFactory(this, getExtractorsFactory());
-        }
-        return exo_mf;
-    }
-
     /**
      * @param source Source
      * @return the local file that the json data is stored in (does not necessarily exist)
@@ -576,6 +570,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
             }
         }
         return Math.max(maxCacheSize, 1_048_576L);
+    }
+
+    @NonNull @Override public MediaSource.Factory getMediaSourceFactory() {
+        if (this.exo_mf == null) {
+            this.exo_mf = new DefaultMediaSourceFactory(this, getExtractorsFactory());
+        }
+        return exo_mf;
     }
 
     /**

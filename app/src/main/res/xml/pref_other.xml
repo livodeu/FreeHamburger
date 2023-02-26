@@ -10,6 +10,7 @@
 
     <SwitchPreferenceCompat
         app:defaultValue="@bool/pref_show_share_target_default"
+        app:icon="@drawable/ic_share_content_24dp"
         app:key="pref_show_share_target"
         app:singleLineTitle="false"
         app:summaryOff="@string/label_no"
@@ -26,5 +27,13 @@
             android:targetPackage="de.freehamburger"
             />
     </Preference>
+
+    <SwitchPreferenceCompat
+        app:defaultValue="@bool/pref_nfc_use_default"
+        app:icon="@drawable/ic_baseline_nfc_content_24"
+        app:key="pref_nfc_use"
+        app:summaryOff="@string/label_no"
+        app:summaryOn="@string/label_yes"
+        app:title="@string/pref_title_nfc_use" />
 
 </PreferenceScreen>

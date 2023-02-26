@@ -17,6 +17,7 @@
     <bool name="pref_topline_marquee_default">false</bool>
     <bool name="pref_time_mode_default">true</bool>
     <bool name="pref_warn_mute_default">true</bool>
+    <bool name="pref_nfc_use_default">false</bool>
     <integer name="pref_cache_max_size_default">15</integer>
     <integer name="pref_font_zoom_default">100</integer>
     <integer name="pref_mem_cache_max_size_default">20</integer>

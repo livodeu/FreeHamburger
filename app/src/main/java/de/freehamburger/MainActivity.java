@@ -26,18 +26,18 @@ import android.graphics.Typeface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.nfc.NfcAdapter;
+import android.nfc.Tag;
+import android.nfc.tech.Ndef;
+import android.nfc.tech.NdefFormatable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceActivity;
 import android.provider.Settings;
-import android.text.Spannable;
 import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
-import android.text.style.RelativeSizeSpan;
-import android.text.style.StyleSpan;
 import android.util.JsonReader;
 import android.util.SparseArray;
 import android.util.TypedValue;
@@ -113,6 +113,7 @@ import de.freehamburger.model.StreamQuality;
 import de.freehamburger.model.TeaserImage;
 import de.freehamburger.model.TextFilter;
 import de.freehamburger.model.Video;
+import de.freehamburger.supp.NfcHelper;
 import de.freehamburger.supp.PopupManager;
 import de.freehamburger.supp.SearchContentProvider;
 import de.freehamburger.supp.SearchHelper;
@@ -124,7 +125,6 @@ import de.freehamburger.util.PrintUtil;
 import de.freehamburger.util.SpaceBetween;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
-import de.freehamburger.version.Release;
 import de.freehamburger.version.ReleaseChecker;
 import de.freehamburger.views.ClockView;
 import de.freehamburger.widget.WidgetProvider;
@@ -420,6 +420,53 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private void handleIntent(@Nullable Intent intent) {
         if (intent == null) intent = getIntent();
         final String action = intent.getAction();
+
+        if (NfcHelper.ACTION_FOREGROUND_DISPATCH.equals(action)) {
+            Uri uri = NfcHelper.extraxtNfcUrl(intent);
+            if (uri != null) {
+                Source source = NfcHelper.sourceFromUri(uri);
+                if (source != null) {
+                    // a tag that had been written before
+                    changeSource(source, true, false);
+                    return;
+                }
+            }
+            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+            if (tag != null) {
+                Ndef ndef = Ndef.get(tag);
+                if (ndef == null || !ndef.isWritable()) {
+                    Snackbar.make(this.coordinatorLayout, R.string.error_nfc_not_writeable, Snackbar.LENGTH_SHORT).show();
+                    return;
+                }
+                NfcHelper.write(this, tag, this.currentSource);
+            }
+            return;
+        }
+
+        if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(action)
+                || NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
+            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+            if (tag != null) {
+                Ndef ndef = Ndef.get(tag);
+                if (ndef == null || !ndef.isWritable()) {
+                    NdefFormatable ndefFormatable = NdefFormatable.get(tag);
+                    if (ndefFormatable == null) {
+                        Snackbar.make(this.coordinatorLayout, R.string.error_nfc_not_writeable, Snackbar.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+                NfcHelper.write(this, tag, this.currentSource);
+            }
+            return;
+        }
+
+        if (android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
+            Uri uri = NfcHelper.extraxtNfcUrl(intent);
+            if (uri == null) return;
+            Source source = NfcHelper.sourceFromUri(uri);
+            if (source != null) changeSource(source, true, false);
+            return;
+        }
 
         if (ACTION_SHOW_NEWS.equals(action)) {
             // to not invite jerks, don't cast to News here just yet
@@ -1271,34 +1318,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (id == R.id.action_info) {
             ReleaseChecker.check(this, releases -> this.handler.post(() -> {
                 final boolean swipeToDismiss = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_SWIPE_TO_DISMISS, false);
-                final SpannableStringBuilder info = new SpannableStringBuilder().append('\n');
-                SpannableString title = new SpannableString(getString(R.string.app_name));
-                title.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                SpannableString version = new SpannableString(BuildConfig.VERSION_NAME);
-                version.setSpan(new RelativeSizeSpan(0.75f), 0, version.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                info.append(title).append(' ').append(version);
-                info.append("\n\n").append(getString(R.string.app_build_date, DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(new Date(BuildConfig.BUILD_TIME))));
-                info.append("\n\n").append(getString(R.string.app_license));
-                if (releases != null && releases.length > 0) {
-                    info.append("\n\n");
-                    final int n = releases.length;
-                    for (int i = 0; i < n; i++) {
-                        Release release = releases[i];
-                        if (release == null) continue;
-                        String releaseInfo;
-                        if (release.getPublishedAt() > 0L) releaseInfo = getString(R.string.msg_release_latest, release.getPrettyTagName(), DateFormat.getDateInstance(DateFormat.SHORT).format(new Date(release.getPublishedAt())));
-                        else releaseInfo = getString(R.string.msg_release_latest_no_date, release.getPrettyTagName());
-                        boolean newerReleaseAvailable = ReleaseChecker.isNewerReleaseAvailable(release);
-                        if (release.getRepo() == Release.REPO_GITHUB && newerReleaseAvailable) {
-                            info.append(Util.createClickable(this, releaseInfo, ReleaseChecker.makeBrowseGithubIntent(release)));
-                        } else if (release.getRepo() == Release.REPO_FDROID && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && newerReleaseAvailable) {
-                            info.append(Util.createClickable(this, releaseInfo, ReleaseChecker.makeBrowseFdroidIntent(this)));
-                        } else {
-                            info.append(releaseInfo);
-                        }
-                        if (i < n - 1) info.append("\n");
-                    }
-                }
+                CharSequence info = InfoActivity.makeInfo(this, releases);
                 AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this)
                         .setTitle(R.string.action_info)
                         .setMessage(info)
@@ -1490,6 +1510,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         this.pausedAt = System.currentTimeMillis();
         unregisterReceiver(this.connectivityReceiver);
         if (this.infoDialog != null && this.infoDialog.isShowing()) this.infoDialog.dismiss();
+        NfcHelper.disableForegroundDispatch(this);
         if (this.intro != null && this.intro.isPlaying()) {
             this.intro.cancel();
             // play the intro again next time
@@ -1726,6 +1747,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         boolean hasTemporaryFilter = this.newsAdapter.setFilters(TextFilter.createTextFiltersFromPreferences(this));
         this.clockView.setTint(hasTemporaryFilter ? Util.getColor(this, R.color.colorFilter) : Color.TRANSPARENT);
 
+        NfcHelper.enableForegroundDispatch(this);
+
         // let the user open the categories drawer via clicking the title (useful if the phone uses nav. gestures)
         if (prefs.getBoolean(App.PREF_CLICK_FOR_CATS, App.PREF_CLICK_FOR_CATS_DEFAULT)) {
             this.clockView.setOnTextClickListener(v -> this.drawerLayout.openDrawer(GravityCompat.END, true));
@@ -1809,6 +1832,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         super.onSharedPreferenceChanged(prefs, key);
         if (App.PREF_FILTERS.equals(key) || App.PREF_APPLY_FILTERS_TO_CATEGORIES.equals(key)) {
             updateMenu();
+        } else if (App.PREF_NFC_USE.equals(key)) {
+            NfcHelper.toggleNfcUse(this, ".MainActivityNfc", prefs);
         }
     }
 

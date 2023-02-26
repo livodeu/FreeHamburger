@@ -19,6 +19,7 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.nfc.NfcAdapter;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -26,6 +27,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.text.Html;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -1226,6 +1228,39 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
         public void onCreatePreferences(Bundle savedInstanceState, String rootXml) {
             setPreferencesFromResource(R.xml.pref_other, rootXml);
             setHasOptionsMenu(false);
+
+            Activity activity = getActivity();
+            if (!(activity instanceof SettingsActivity)) return;
+            SettingsActivity settingsActivity = (SettingsActivity)activity;
+
+            Preference prefUseNfc = findPreference(App.PREF_NFC_USE);
+            if (prefUseNfc != null) {
+                NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(activity);
+                boolean hasNfc = nfcAdapter != null;
+                prefUseNfc.setVisible(hasNfc);
+                if (hasNfc) {
+                    prefUseNfc.setOnPreferenceChangeListener((preference, newValue) -> {
+                        if (Boolean.TRUE.equals(newValue)) {
+                            View v = getView();
+                            if (v == null) v = activity.getWindow().getDecorView();
+                            Snackbar sb;
+                            if (!nfcAdapter.isEnabled()) {
+                                sb = Snackbar.make(v, R.string.msg_nfc_disabled, Snackbar.LENGTH_INDEFINITE);
+                                sb.setAction(R.string.action_settings, v1 -> {
+                                    try {startActivity(new Intent(Settings.ACTION_NFC_SETTINGS));} catch (Exception ignored) {}
+                                });
+                            } else {
+                                sb = Snackbar.make(v, Html.fromHtml(getString(R.string.msg_nfc_info)), Snackbar.LENGTH_INDEFINITE);
+                                sb.setAction(android.R.string.ok, v1 -> sb.dismiss());
+                                Util.setSnackbarMaxLines(sb, 5);
+                                Util.setSnackbarLinksClickable(sb);
+                            }
+                            sb.show();
+                        }
+                        return true;
+                    });
+                }
+            }
         }
     }
 

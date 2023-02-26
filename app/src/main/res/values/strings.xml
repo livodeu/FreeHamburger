@@ -106,6 +106,12 @@
     <string name="error_http_410">The resource is no longer available!</string>
     <string name="error_invalid_not_a_number">Invalid. Must be a number.</string>
     <string name="error_link_not_supported">This app does not support %1$s.</string>
+    <string name="error_nfc_conn_lost">The connection has been lost!</string>
+    <string name="error_nfc_io">An I/O error occurred!</string>
+    <string name="error_nfc_not_ndef">The tag is not properly NDEF-formatted!</string>
+    <string name="error_nfc_not_writeable">The tag is not writeable!</string>
+    <string name="error_nfc_other">Failed to write the NFC tag!</string>
+    <string name="error_nfc_too_long">The tag cannot store the data as it is too long!</string>
     <string name="error_no_app">No installed app can handle this!</string>
     <string name="error_no_further_details">There are no further details for this.</string>
     <string name="error_no_network">No network.</string>
@@ -268,6 +274,10 @@
     </plurals>
     <string name="msg_justamoment">Just a moment, please…</string>
     <string name="msg_news_nocontent">This article has got no content!</string>
+    <string name="msg_nfc_disabled">NFC is currently diabled.</string>
+    <string name="msg_nfc_info">&lt;html&gt;NFC can be used in the overview to store a bookmark on a suitable tag.&lt;/html&gt;</string>
+    <string name="msg_nfc_write_confirm">Store \"%1$s\" on the NFC tag?</string>
+    <string name="msg_nfc_write_success">Stored \"%1$s\" on the NFC tag.</string>
     <string name="msg_not_found">Not found: \"%1$s\"</string>
     <string name="msg_notification_permission_rationale">A permission is required in order to display notifications. Grant?</string>
     <string name="msg_not_modified">Not modified.</string>
@@ -336,6 +346,7 @@
     <string name="pref_title_cols_portrait_short">Portrait: %1$s</string>
     <string name="pref_title_filters_apply_cats">Apply to categories</string>
     <string name="pref_title_font_zoom">Text magnification</string>
+    <string name="pref_title_nfc_use">Use NFC</string>
     <string name="pref_title_poll_interval">Interval</string>
     <string name="pref_title_poll_interval_night">Interval during nighttime</string>
     <string name="pref_title_show_top_video">Illustrative videos</string>

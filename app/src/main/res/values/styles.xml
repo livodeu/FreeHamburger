@@ -109,6 +109,13 @@
         <item name="android:windowBackground">@drawable/color_primary_to_grey_gradient</item>
     </style>
 
+    <style name="AppTheme.Transparent">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
+    </style>
+
     <style name="AppTheme.NoOverflowButton">
         <item name="actionOverflowButtonStyle">@null</item>
     </style>
