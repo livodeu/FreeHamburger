@@ -215,6 +215,23 @@ public class AppTest {
         }
     }
 
+    @Test
+    public void testBuildConfig() {
+        final Class<?> c = BuildConfig.class;
+        try {
+            Field fBuildTime = c.getDeclaredField("BUILD_TIME");
+            Object buildTime = fBuildTime.get(c);
+            assertTrue(buildTime instanceof Long);
+            assertTrue(((long)buildTime) > 1_600_000_000_000L);
+            Field fVersionName = c.getDeclaredField("VERSION_NAME");
+            Object versionName= fVersionName.get(c);
+            assertTrue(versionName instanceof String);
+            assertTrue(((String)versionName).toLowerCase(java.util.Locale.ROOT).contains("debug"));
+        } catch (Exception e) {
+            fail(e.toString());
+        }
+    }
+
     /**
      * Tests whether cleartext (http) traffic is allowed.<br>
      * Does not test whether the given host is allowed!

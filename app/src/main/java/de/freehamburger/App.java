@@ -72,6 +72,7 @@ import de.freehamburger.exo.Mp34ExtractorsFactory;
 import de.freehamburger.model.Source;
 import de.freehamburger.prefs.ButtonPreference;
 import de.freehamburger.prefs.PrefsHelper;
+import de.freehamburger.supp.SearchHelper;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
@@ -247,6 +248,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
     private static final String PREFS_PREFIX_MOST_RECENT_MANUAL_UPDATE = "latest_manual_";
     /** used to build a preferences key to store the most recent update of a {@link Source} */
     private static final String PREFS_PREFIX_MOST_RECENT_UPDATE = "latest_";
+    /** long: last known value of {@link BuildConfig#BUILD_TIME}; defaults to 0 */
+    private static final String PREF_LAST_KNOWN_BUILD_DATE = "pref_last_known_build_date";
     private static final String TAG = "App";
 
     /*
@@ -456,6 +459,20 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 builder.show();
             }, 5_000L);
         }
+    }
+
+    /**
+     * Clears search suggestions if this is a new build.
+     */
+    @AnyThread
+    private void clearSearchSuggestionsOnNewBuild() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (prefs.getLong(PREF_LAST_KNOWN_BUILD_DATE, 0L) == BuildConfig.BUILD_TIME) return;
+        // stored search suggestions contain resource ids; these change with every build and therefore must be deleted now
+        SearchHelper.deleteAllSearchSuggestions(this);
+        SharedPreferences.Editor ed = prefs.edit();
+        ed.putLong(PREF_LAST_KNOWN_BUILD_DATE, BuildConfig.BUILD_TIME);
+        ed.apply();
     }
 
     /**
@@ -873,6 +890,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
      */
     @WorkerThread
     private void postCreate() {
+        clearSearchSuggestionsOnNewBuild();
         Util.clearExports(this, 120_000L);
         Util.clearAppWebview(this);
         // new DefaultExtractorsFactory() is fast
