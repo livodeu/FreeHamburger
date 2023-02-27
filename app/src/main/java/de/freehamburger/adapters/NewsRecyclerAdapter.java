@@ -217,7 +217,7 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
 
     /** {@inheritDoc} */
     @Override
-    public int getItemCount() {
+    public synchronized int getItemCount() {
         return isFiltered() ? this.filteredNews.size() : this.newsList.size();
     }
 
@@ -499,7 +499,8 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     /**
      *
      */
-    static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnCreateContextMenuListener {
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnCreateContextMenuListener {
 
         private float xPosOfEventActionUp, yPosOfEventActionUp;
 

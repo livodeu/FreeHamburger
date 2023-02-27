@@ -332,6 +332,7 @@ public class DataAndGuiTest {
 
     @Test
     public void testMainActivity() {
+        final long allowTimeForFillingEverything = 2_500L;
         try (ActivityScenario<MainActivity> asn = ActivityScenario.launch(MainActivity.class)) {
             asn.moveToState(Lifecycle.State.RESUMED);
             asn.onActivity(activity -> {
@@ -363,8 +364,38 @@ public class DataAndGuiTest {
                 // intro steps
                 assertEquals(MainActivity.INTRO_DELAYS.length, activity.introSteps.length);
                 //
-                activity.finish();
+                activity.handler.postDelayed(() -> {
+                    if (file.isFile() && file.length() > 0L) {
+                        // NewsRecyclerAdapter filled?
+                        assertTrue(adapter.getItemCount() > 0);
+                        News news0 = adapter.getItem(0);
+                        assertNotNull(news0);
+                        // RecyclerView has children?
+                        assertTrue("RecyclerView should have children",recyclerView.getChildCount() > 0);
+                        // NewsView
+                        assertTrue(recyclerView.getChildAt(0) instanceof NewsView2);
+                        NewsView2 newsView = (NewsView2)recyclerView.getChildAt(0);
+                        // ViewHolder
+                        RecyclerView.ViewHolder vh = recyclerView.getChildViewHolder(newsView);
+                        assertNotNull(vh);
+                        assertTrue(vh instanceof NewsRecyclerAdapter.ViewHolder);
+                        assertTrue(vh.getClass().getSimpleName() + " should be OnClickListener for " + newsView.getClass().getSimpleName(), newsView.hasOnClickListeners());
+                        // NewsView content
+                        assertNotNull(newsView.getTextViewDate());
+                        assertNotNull(newsView.getTextViewTopline());
+                        if (news0.getDate() != null) assertFalse("Date should be displayed", TextUtils.isEmpty(newsView.getTextViewDate().getText()));
+                        if (!TextUtils.isEmpty(news0.getTopline()) || !TextUtils.isEmpty(news0.getTitle())) assertFalse("Top line should be filled", TextUtils.isEmpty(newsView.getTextViewTopline().getText()));
+                        //
+                        assertTrue("Long click not handled", newsView.performLongClick());
+                    } else {
+                        assertEquals(0, adapter.getItemCount());
+                        assertEquals(0, recyclerView.getChildCount());
+                    }
+                }, allowTimeForFillingEverything);
+                activity.handler.postDelayed(activity::finish, allowTimeForFillingEverything << 1);
             });
+            // wait here on the worker thread for the stuff above which is happening on the main thread…
+            try {Thread.sleep(200L + (allowTimeForFillingEverything << 1));} catch (Exception ignored) {}
         }
     }
 
