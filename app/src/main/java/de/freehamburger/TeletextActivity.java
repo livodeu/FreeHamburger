@@ -124,7 +124,7 @@ public class TeletextActivity extends WebViewActivity {
 
     /** {@inheritDoc} */
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.action_shortcut_create) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 ShortcutManager sm = (ShortcutManager)getSystemService(SHORTCUT_SERVICE);
