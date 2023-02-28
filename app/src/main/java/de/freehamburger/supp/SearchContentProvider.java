@@ -336,7 +336,7 @@ public class SearchContentProvider extends ContentProvider {
             super(context, SUGGESTIONS_DB, null, DATABASE_VERSION);
         }
 
-        void delete(@NonNull SQLiteDatabase db) {
+        static void delete(@NonNull SQLiteDatabase db) {
             db.execSQL("DROP TABLE IF EXISTS " + SUGGESTIONS);
         }
 
