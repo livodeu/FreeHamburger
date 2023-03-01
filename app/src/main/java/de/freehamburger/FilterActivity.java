@@ -212,13 +212,15 @@ public class FilterActivity extends AppCompatActivity implements CoordinatorLayo
                 ed.putStringSet(App.PREF_FILTERS, preferredFilters);
             }
             ed.apply();
-            if (!enabled) {
-                Toast.makeText(getApplicationContext(), R.string.msg_filters_disabled, Toast.LENGTH_SHORT).show();
-            } else {
-                if (n == 0) {
-                    if (this.filterCountOnResume > 0) Toast.makeText(getApplicationContext(), getString(R.string.msg_filters_removed), Toast.LENGTH_SHORT).show();
+            if (isFinishing()) {
+                if (!enabled) {
+                    Toast.makeText(this, R.string.msg_filters_disabled, Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), getResources().getQuantityString(R.plurals.msg_filters_stored, n, n), Toast.LENGTH_SHORT).show();
+                    if (n == 0) {
+                        if (this.filterCountOnResume > 0) Toast.makeText(this, getString(R.string.msg_filters_removed), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, getResources().getQuantityString(R.plurals.msg_filters_stored, n, n), Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         }
