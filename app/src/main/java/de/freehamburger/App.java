@@ -290,7 +290,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     private ExtractorsFactory exo_ef;
     private MediaSource.Factory exo_mf;
-    private TrackSelector exo_ts;
     private LoadControl exo_lc;
     private RenderersFactory exo_rf;
 
@@ -648,10 +647,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** {@inheritDoc} */
     @NonNull
     public TrackSelector getTrackSelector() {
-        if (this.exo_ts == null) {
-            this.exo_ts = new DefaultTrackSelector(this);
-        }
-        return this.exo_ts;
+        return new DefaultTrackSelector(this);
     }
 
     /**
@@ -880,7 +876,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
             this.exo_ef = null;
             this.exo_lc = null;
             this.exo_rf = null;
-            this.exo_ts = null;
         }
         super.onTrimMemory(level);
     }
@@ -898,8 +893,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
         this.exo_ef = new DefaultExtractorsFactory();
         // new DefaultMediaSourceFactory() is fast
         this.exo_mf = new DefaultMediaSourceFactory(this, this.exo_ef);
-        // new DefaultTrackSelector might take a few dozen milliseconds
-        this.exo_ts = new DefaultTrackSelector(this);
         // new DefaultLoadControl() is fast
         this.exo_lc = new DefaultLoadControl();
         // new DefaultRenderersFactory() is fast
