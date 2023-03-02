@@ -97,6 +97,7 @@ import de.freehamburger.widget.WidgetProvider;
 public class SettingsActivity extends AppCompatActivity implements ServiceConnection, PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
 
     static final String ACTION_CONFIGURE_BACKGROUND_UPDATES = "de.freehamburger.configure.backgroundupdates";
+    static final String EXTRA_FRAGMENT = "de.freehamburger.extra.fragment";
     private static final String EXTRA_STORAGE_ACTIVITY = "de.freehamburger.extra.storage.activity";
     private static final int REQUEST_CODE_GET_NOTIFICATION_PERMISSION = 1234;
     private static final String TAG = "SettingsActivity";
@@ -225,9 +226,24 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
         this.updatesController = new UpdatesController(this);
 
+        PreferenceFragmentCompat fragToStart = null;
+        String fragName = getIntent().getStringExtra(EXTRA_FRAGMENT);
+        if (fragName != null) {
+            try {
+                Class<?> clz = Class.forName(fragName);
+                Object o = clz.newInstance();
+                if (o instanceof PreferenceFragmentCompat) fragToStart = (PreferenceFragmentCompat)o;
+            } catch (Exception e) {
+                if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+            }
+        }
+        if (fragToStart == null) {
+            fragToStart = this.fromBackgroundTile ? new PollingPreferenceFragment() : new RootPreferenceFragment();
+        }
+
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.settings, this.fromBackgroundTile ? new PollingPreferenceFragment() : new RootPreferenceFragment())
+                .replace(R.id.settings, fragToStart)
                 .commit();
     }
 

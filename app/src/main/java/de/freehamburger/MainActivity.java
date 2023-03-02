@@ -67,6 +67,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AlertDialog;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityOptionsCompat;
+import androidx.core.app.TaskStackBuilder;
 import androidx.core.content.FileProvider;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -513,16 +514,19 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
         if (getString(R.string.main_action_font_delete).equals(action)) {
             File fontFile = new File(getFilesDir(), App.FONT_FILE);
+            @StringRes int msg;
             if (fontFile.isFile()) {
                 Util.deleteFile(fontFile);
-                if (this.newsAdapter != null) {
-                    this.newsAdapter.setTypeface(null);
-                }
-                Toast.makeText(getApplicationContext(), R.string.msg_font_deleted, Toast.LENGTH_SHORT).show();
+                if (this.newsAdapter != null) this.newsAdapter.setTypeface(null);
+                msg = R.string.msg_font_deleted;
+            } else {
+                msg = R.string.msg_font_none;
             }
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
             Intent settingsActivityIntent = new Intent(this, SettingsActivity.class);
-            settingsActivityIntent.putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT, SettingsActivity.AppearancePreferenceFragment.class.getName());
-            startActivity(settingsActivityIntent);
+            settingsActivityIntent.putExtra(SettingsActivity.EXTRA_FRAGMENT, SettingsActivity.AppearancePreferenceFragment.class.getName());
+            TaskStackBuilder.create(this).addParentStack(SettingsActivity.class).addNextIntent(settingsActivityIntent).startActivities();
+            finish();
             return;
         }
         if (getString(R.string.main_action_font_import).equals(action)) {
