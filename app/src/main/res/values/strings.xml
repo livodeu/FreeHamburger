@@ -241,12 +241,12 @@
     <string name="msg_archived_success">Archived successfullly.</string>
     <string name="msg_archive_importing">Importing \"%1$s\"…</string>
     <plurals name="msg_archive_import_result1">
-        <item quantity="one">Restored %1$d file</item>
-        <item quantity="other">Restored %1$d files</item>
+        <item quantity="one">Restored %1$d article</item>
+        <item quantity="other">Restored %1$d articles</item>
     </plurals>
     <plurals name="msg_archive_import_result2">
-        <item quantity="one">skipped %1$d file</item>
-        <item quantity="other">skipped %1$d files</item>
+        <item quantity="one">skipped %1$d article</item>
+        <item quantity="other">skipped %1$d articles</item>
     </plurals>
     <string name="msg_background_active">Background queries are scheduled to occur every %1$s minutes.</string>
     <string name="msg_background_active_short">Background queries occur every %1$s min.</string>

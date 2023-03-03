@@ -337,8 +337,13 @@ public class Archive extends HamburgerActivity implements ActivityResultCallback
                 runOnUiThread(() -> {
                     if (isDestroyed() || isFinishing()) {if (BuildConfig.DEBUG) Log.i(TAG, "Not displaying import result"); return;}
                     String msgRestored = getResources().getQuantityString(R.plurals.msg_archive_import_result1, r, r);
-                    String msgSkipped = getResources().getQuantityString(R.plurals.msg_archive_import_result2, s, s);
-                    Snackbar sb = Snackbar.make(Archive.this.coordinatorLayout, msgRestored + ", " + msgSkipped + '.', Snackbar.LENGTH_LONG);
+                    Snackbar sb;
+                    if (s == 0) {
+                        sb = Snackbar.make(Archive.this.coordinatorLayout, msgRestored + '.', Snackbar.LENGTH_LONG);
+                    } else {
+                        String msgSkipped = getResources().getQuantityString(R.plurals.msg_archive_import_result2, s, s);
+                        sb = Snackbar.make(Archive.this.coordinatorLayout, msgRestored + ", " + msgSkipped + '.', Snackbar.LENGTH_LONG);
+                    }
                     sb.setDuration(5_000);
                     sb.setAction(android.R.string.ok, v -> sb.dismiss());
                     sb.show();

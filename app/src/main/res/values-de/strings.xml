@@ -28,12 +28,12 @@
     <string name="msg_archive_delete_all">Alle archivierten Artikel löschen?\nDies kann nicht rückgängig gemacht werden!\nEs werden %1$s kB Speicherplatz freigegeben.</string>
     <string name="msg_archive_importing">Importiere „%1$s”…</string>
     <plurals name="msg_archive_import_result1">
-        <item quantity="one">%1$d Datei wiederhergestellt</item>
-        <item quantity="other">%1$d Dateien wiederhergestellt</item>
+        <item quantity="one">%1$d Artikel wiederhergestellt</item>
+        <item quantity="other">%1$d Artikel wiederhergestellt</item>
     </plurals>
     <plurals name="msg_archive_import_result2">
-        <item quantity="one">%1$d Datei übersprungen</item>
-        <item quantity="other">%1$d Dateien übersprungen</item>
+        <item quantity="one">%1$d Artikel übersprungen</item>
+        <item quantity="other">%1$d Artikel übersprungen</item>
     </plurals>
     <string name="hint_back_to_main">Zurück zur Nachrichtenübersicht</string>
     <string name="msg_notification_permission_rationale">Um Benachrichtigungen darstellen zu können ist eine Systemberechtigung erforderlich. Anfordern?</string>
