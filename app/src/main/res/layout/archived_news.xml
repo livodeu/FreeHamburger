@@ -9,6 +9,7 @@
     android:elevation="@dimen/news_elevation"
     android:focusable="true"
     android:focusableInTouchMode="false"
+    android:foreground="?android:attr/selectableItemBackground"
     android:padding="@dimen/news_padding"
     tools:ignore="UnusedAttribute">
 

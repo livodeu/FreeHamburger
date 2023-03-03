@@ -99,7 +99,7 @@ public class ArchivedNewsAdapter extends RecyclerView.Adapter<ArchivedNewsAdapte
     @NonNull @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         ViewGroup v = (ViewGroup) LayoutInflater.from(parent.getContext()).inflate(R.layout.archived_news, parent, false);
-        return new ArchivedNewsAdapter.ViewHolder(v, this.typeface);
+        return new ViewHolder(v, this.typeface);
     }
 
     /**
@@ -142,7 +142,7 @@ public class ArchivedNewsAdapter extends RecyclerView.Adapter<ArchivedNewsAdapte
             this.textViewDate = v.findViewById(R.id.textViewDate);
             this.textViewTitle = v.findViewById(R.id.textViewTitle);
             this.buttonDelete = v.findViewById(R.id.buttonDelete);
-            this.textViewTitle.setOnClickListener(this);
+            v.setOnClickListener(this);
             this.buttonDelete.setOnClickListener(this);
             if (typeface != null) {
                 this.textViewDate.setTypeface(typeface);
