@@ -422,6 +422,11 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (intent == null) intent = getIntent();
         final String action = intent.getAction();
 
+        if (intent.getComponent() != null && intent.getComponent().getClassName().endsWith(ACTIVITY_ALIAS_WEATHER)) {
+            changeSource(Source.WEATHER, false, false);
+            return;
+        }
+
         if (NfcHelper.ACTION_FOREGROUND_DISPATCH.equals(action)) {
             Uri uri = NfcHelper.extraxtNfcUrl(intent);
             if (uri != null) {

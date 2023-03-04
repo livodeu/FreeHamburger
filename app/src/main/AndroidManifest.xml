@@ -148,6 +148,17 @@
         </activity>
 
         <activity-alias
+            android:name="de.freehamburger.WeatherActivity"
+            android:exported="true"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.APP_WEATHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
             android:name="de.freehamburger.MainActivityNfc"
             android:targetActivity=".MainActivity"
             android:enabled="false"

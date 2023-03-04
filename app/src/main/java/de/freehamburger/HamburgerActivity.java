@@ -58,6 +58,9 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Coo
     static final long HIDE_FAB_AFTER = 2_000L;
     private static final String TAG = "HamburgerActivity";
 
+    /** an activity-alias defined in the manifest; listening to {@link Intent#CATEGORY_APP_WEATHER} */
+    static final String ACTIVITY_ALIAS_WEATHER = ".WeatherActivity";
+
     @NonNull final Handler handler = new Handler();
     HamburgerService service;
     FrequentUpdatesService frequentUpdatesService;
