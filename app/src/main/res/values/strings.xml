@@ -151,6 +151,7 @@
     <string name="label_filter_at_end">at end</string>
     <string name="label_license">License</string>
     <string name="label_link">(External link)</string>
+    <string name="label_never_again">Never!</string>
     <string name="label_sections">Categories</string>
     <string name="label_service">This is the background service for Hamburger that is required to load data from the network</string>
     <string name="label_service_frequentupdates">This is the service for Hamburger that is required to refresh data frequently</string>
@@ -248,6 +249,7 @@
         <item quantity="one">skipped %1$d article</item>
         <item quantity="other">skipped %1$d articles</item>
     </plurals>
+    <string name="msg_associate_domains">Associate this app with internet addresses \"%1$s\" and \"%2$s\"?</string>
     <string name="msg_background_active">Background queries are scheduled to occur every %1$s minutes.</string>
     <string name="msg_background_active_short">Background queries occur every %1$s min.</string>
     <string name="msg_background_inactive">Background queries are disabled.</string>

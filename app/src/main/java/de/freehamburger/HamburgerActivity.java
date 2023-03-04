@@ -14,7 +14,9 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.verify.domain.DomainVerificationUserState;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -66,6 +68,7 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Coo
     FrequentUpdatesService frequentUpdatesService;
     CoordinatorLayout coordinatorLayout;
     @App.BackgroundSelection private int background;
+    Snackbar snackbarAskUserForDomainAssociation;
 
     /**
      * Apply the preferred orientation.
@@ -142,6 +145,68 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Coo
         }
     }
 
+    /**
+     * Lets the user select supported web addresses to be opened in this app.<br>
+     * Need API S, a.k.a Android 12.<br>
+     * See <a href="https://developer.android.com/training/app-links/verify-android-applinks#java">https://developer.android.com/training/app-links/verify-android-applinks#java</a>
+     */
+    @Nullable
+    @TargetApi(Build.VERSION_CODES.S)
+    Snackbar askUserForDomainAssociation() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || isFinishing() || getCoordinatorLayout() == null) return null;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        // don't ask user if it has been requested not do so anymore or if the latest question was presented less than 1 hour ago
+        if (!prefs.getBoolean(App.PREF_ASK_FOR_DOMAIN_ASSOCIATION, App.PREF_ASK_FOR_DOMAIN_ASSOCIATION_DEFAULT)
+                || System.currentTimeMillis() - prefs.getLong(App.PREF_ASK_FOR_DOMAIN_ASSOCIATION_ASKED, 0L) < 3_600_000L) return null;
+        final int snackbarDurationAsk = 10_000;
+        final int snackbarDurationNeverAgain = 4_000;
+        final String host1 = getString(R.string.viewable_host_1);
+        final String host2 = getString(R.string.viewable_host_2);
+        boolean askUser = false;
+        try {
+            int[] domainAssociations = Util.checkDomainAssociation(this, host1, host2);
+            if (domainAssociations == null) return null;
+            for (int da : domainAssociations) {
+                if (da == DomainVerificationUserState.DOMAIN_STATE_NONE) {askUser = true; break;}
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+        }
+        if (!askUser) return null;
+        SharedPreferences.Editor ed = prefs.edit();
+        ed.putLong(App.PREF_ASK_FOR_DOMAIN_ASSOCIATION_ASKED, System.currentTimeMillis());
+        ed.apply();
+        final Snackbar sb = Snackbar.make(getCoordinatorLayout(), getString(R.string.msg_associate_domains, host1, host2), snackbarDurationAsk);
+        Util.setSnackbarMaxLines(sb, 3);
+        sb.setAction(R.string.label_yes, v -> {
+            try {
+                Intent intent = new Intent(Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS, Uri.parse("package:" + getPackageName()));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            } catch (Exception e) {
+                if (BuildConfig.DEBUG) Log.e(TAG, e.toString());
+            }
+        });
+        sb.addCallback(new Snackbar.Callback() {
+            @Override public void onDismissed(Snackbar transientBottomBar, int event) {
+                if (isFinishing()) return;
+                if (event == Snackbar.Callback.DISMISS_EVENT_SWIPE) {
+                    Snackbar sb2 = Snackbar.make(getCoordinatorLayout(), getString(R.string.label_dont_ask_again) + "?", snackbarDurationNeverAgain);
+                    sb2.setAction(R.string.label_never_again, v -> {
+                        SharedPreferences.Editor ed = PreferenceManager.getDefaultSharedPreferences(HamburgerActivity.this).edit();
+                        ed.putBoolean(App.PREF_ASK_FOR_DOMAIN_ASSOCIATION, false);
+                        ed.apply();
+                    });
+                    sb2.show();
+                    Util.fadeSnackbar(sb2, HamburgerActivity.this.handler, snackbarDurationNeverAgain);
+                }
+            }
+        });
+        sb.show();
+        Util.fadeSnackbar(sb, this.handler, snackbarDurationAsk);
+        return sb;
+    }
+
     @App.BackgroundSelection
     public int getBackground() {
         return this.background;
@@ -202,6 +267,10 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Coo
     @CallSuper
     @Override
     protected void onPause() {
+        if (this.snackbarAskUserForDomainAssociation != null) {
+            if (this.snackbarAskUserForDomainAssociation.isShown()) this.snackbarAskUserForDomainAssociation.dismiss();
+            this.snackbarAskUserForDomainAssociation = null;
+        }
         if (this.service != null) {
             try {
                 unbindService(this);

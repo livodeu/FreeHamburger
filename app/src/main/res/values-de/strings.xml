@@ -14,6 +14,8 @@
     <string name="action_filters_enabled">Aktiv</string>
     <string name="action_open_app">App öffnen</string>
     <string name="action_print">Drucken</string>
+    <string name="msg_associate_domains">Mit dieser App immer die Adressen %1$s und %2$s öffnen?</string>
+    <string name="label_never_again">Nie!</string>
     <string name="error_video_unavailable">Das Video ist nicht verfügbar.</string>
     <string name="msg_nfc_write_confirm">„%1$s” auf dem Chip speichern?</string>
     <string name="error_nfc_other">Der Chip konnte nicht beschrieben werden!</string>
