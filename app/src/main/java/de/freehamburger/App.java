@@ -292,7 +292,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     private OkHttpClient client;
     @Nullable
     private LatestShare latestShare;
-
     private ExtractorsFactory exo_ef;
     private MediaSource.Factory exo_mf;
     private LoadControl exo_lc;
@@ -730,7 +729,11 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** {@inheritDoc} */
     @Override
     public void onActivityStarted(@NonNull Activity activity) {
-        /* no-op */
+        if (!BuildConfig.DEBUG && android.app.ActivityManager.isUserAMonkey()) {
+            android.widget.Toast.makeText(activity, "\uD83D\uDC12.", android.widget.Toast.LENGTH_SHORT).show();
+            activity.finishAndRemoveTask();
+            System.exit(0);
+        }
     }
 
     /** {@inheritDoc} */
