@@ -1,6 +1,10 @@
 package de.freehamburger.model;
 
 import android.os.Build;
+import android.text.Html;
+import android.text.TextUtils;
+import android.util.JsonReader;
+import android.util.JsonToken;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
@@ -8,10 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringDef;
 import androidx.annotation.VisibleForTesting;
-import android.text.Html;
-import android.text.TextUtils;
-import android.util.JsonReader;
-import android.util.JsonToken;
 
 import org.jetbrains.annotations.TestOnly;
 
@@ -23,6 +23,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -57,6 +58,8 @@ public final class News implements Comparable<News>, Serializable {
     public static final String NEWS_TYPE_WEBVIEW = "webview";
     /** News with <em>no</em> {@link #type} should be listed at the bottom */
     @VisibleForTesting public static final boolean WEATHER_AT_BOTTOM = true;
+    /** geotags values to skip */
+    private static final Collection<String> GEOTAGS_TO_IGNORE = Collections.singletonList("(Keine Auswahl)");
     private static final String TAG = "News";
     private static long nextid = 1L;
     /** the streams of differenty qualities (highest number found was all 7 StreamQualities) */
@@ -257,7 +260,9 @@ public final class News implements Comparable<News>, Serializable {
                     reader.beginObject();
                     name = reader.nextName();
                     String tag = reader.nextString();
-                    news.geotags.add(tag);
+                    if (!GEOTAGS_TO_IGNORE.contains(tag)) {
+                        news.geotags.add(tag);
+                    }
                     reader.endObject();
                 }
                 reader.endArray();
