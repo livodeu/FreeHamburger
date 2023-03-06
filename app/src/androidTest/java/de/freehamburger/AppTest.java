@@ -175,6 +175,7 @@ public class AppTest {
      */
     @Test
     @LargeTest
+    @RequiresApi(23)
     public void testBootReceiver() {
         // test presence of BootReceiver in manifest
         PackageManager pm = ctx.getPackageManager();
@@ -198,7 +199,9 @@ public class AppTest {
         br.onReceive(ctx, new Intent(Intent.ACTION_BOOT_COMPLETED));
         NotificationManager nm = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         assertNotNull(nm);
-        assumeTrue("Notifications are not enabled for " + BuildConfig.APPLICATION_ID, nm.areNotificationsEnabled());
+        if (Build.VERSION.SDK_INT >= 24) {
+            assumeTrue("Notifications are not enabled for " + BuildConfig.APPLICATION_ID, nm.areNotificationsEnabled());
+        }
         StatusBarNotification[] n = nm.getActiveNotifications();
         assertTrue("No active notifications", n.length > 0);
         // a little time to have a look at the notification
@@ -489,7 +492,6 @@ public class AppTest {
             assertTrue("No app label", ai.labelRes != 0);
             assertTrue("No app icon", ai.icon != 0);
             if (Build.VERSION.SDK_INT >= 26) {
-                //TODO since Util.fitText() has been added, the next line fails…
                 assertEquals(ApplicationInfo.CATEGORY_NEWS, ai.category);
             }
             assertEquals(SettingsActivity.class.getName(), ai.manageSpaceActivityName);
