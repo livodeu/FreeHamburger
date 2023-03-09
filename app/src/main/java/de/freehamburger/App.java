@@ -120,11 +120,14 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final boolean PREF_ASK_BEFORE_FINISH_DEFAULT = true;
     /** boolean: ask user for domain association with www.tagesschau.de and www.ard-text.de */
     public static final String PREF_ASK_FOR_DOMAIN_ASSOCIATION = "pref_ask_for_domain_association";
-    public static final boolean PREF_ASK_FOR_DOMAIN_ASSOCIATION_DEFAULT = true;
     /** long: timestamp when the user has been asked for domain association most recently, defaults to 0 */
     public static final String PREF_ASK_FOR_DOMAIN_ASSOCIATION_ASKED = "pref_ask_for_domain_association_asked";
+    public static final boolean PREF_ASK_FOR_DOMAIN_ASSOCIATION_DEFAULT = true;
     /** int: 0 automatic; 1 dark; 2 light; see {@link BackgroundSelection} */
     public static final String PREF_BACKGROUND = "pref_background";
+    /** int: the selected index out of {@link R.array#entries_background_variant} */
+    public static final String PREF_BACKGROUND_VARIANT_INDEX = "pref_background_variant_index";
+    public static final int PREF_BACKGROUND_VARIANT_INDEX_DEFAULT = 0;
     /** String: maximum 'disk' cache size in MB */
     public static final String PREF_CACHE_MAX_SIZE = "pref_cache_max_size";
     /** the minimum valid value for the 'disk' max cache size in bytes */
@@ -908,7 +911,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         // creating the first ever ExoPlayer takes quite a while on slower devices (ca. 200 ms)
         // by building a dummy ExoPlayer here the time needed to build relevant ones later is reduced significantly
         ExoFactory.makeExoPlayer(this);
-    }
+     }
 
     /**
      * Schedules automatic background updates.

@@ -32,7 +32,6 @@ import de.freehamburger.util.Util;
  */
 public class NewsView2 extends ConstraintLayout {
 
-    private static final String TAG = "NewsView2";
     private static final DateFormat DF = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
     /** List of labels of all valid Regions */
     private static final List<String> REGION_LABELS = Region.getValidLabels();

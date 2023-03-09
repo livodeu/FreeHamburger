@@ -6,8 +6,18 @@
         android:icon="@drawable/ic_wb_sunny_content_24dp"
         android:key="pref_background"
         android:title="@string/pref_title_background"
+        app:allowDividerBelow="false"
         app:colors="@array/colors_list_background"
         app:entries="@array/entries_list_background"
+        />
+
+    <de.freehamburger.prefs.ButtonPreference
+        android:key="pref_background_variant_index"
+        android:title="@string/pref_title_background_variant"
+        app:allowDividerBelow="true"
+        app:colors="@array/colors_list_background_variant"
+        app:entries="@array/entries_background_variant"
+        app:icon="@drawable/ic_baseline_palette_content_24"
         />
 
     <de.freehamburger.prefs.NiceDropDownPreference

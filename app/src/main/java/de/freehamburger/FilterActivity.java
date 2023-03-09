@@ -18,6 +18,13 @@ import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.widget.Toolbar;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.HashSet;
@@ -25,13 +32,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import de.freehamburger.adapters.FilterAdapter;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.TextFilter;
@@ -39,7 +39,7 @@ import de.freehamburger.util.CoordinatorLayoutHolder;
 import de.freehamburger.util.Util;
 import de.freehamburger.views.FilterView;
 
-public class FilterActivity extends AppCompatActivity implements CoordinatorLayoutHolder {
+public class FilterActivity extends StyledActivity implements CoordinatorLayoutHolder {
 
     /** the toggle animation must be run via a Runnable (for whatever reason); this value is an offset in ms for its start */
     private static final long TOGGLE_ANIMATION_OFFSET = 50L;

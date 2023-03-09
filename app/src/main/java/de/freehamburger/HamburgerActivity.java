@@ -55,7 +55,7 @@ import de.freehamburger.util.Util;
 /**
  * Base for {@link MainActivity} and {@link NewsActivity}.
  */
-public abstract class HamburgerActivity extends AppCompatActivity implements CoordinatorLayoutHolder, SharedPreferences.OnSharedPreferenceChangeListener, ServiceConnection {
+public abstract class HamburgerActivity extends StyledActivity implements CoordinatorLayoutHolder, SharedPreferences.OnSharedPreferenceChangeListener, ServiceConnection {
 
     static final long HIDE_FAB_AFTER = 2_000L;
     private static final String TAG = "HamburgerActivity";
@@ -93,13 +93,16 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Coo
     }
 
     @VisibleForTesting
-    @SuppressLint("SwitchIntDef")
+    //@SuppressLint("SwitchIntDef")
     public static int applyTheme(@NonNull final AppCompatActivity activity, final boolean again) {
         // determine whether the Activity should display a ⁝ menu item
         boolean overflowButton = (!(activity instanceof HamburgerActivity) || ((HamburgerActivity) activity).hasMenuOverflowButton());
         @StyleRes final int resid = overflowButton ? R.style.AppTheme : R.style.AppTheme_NoOverflowButton;
         if (again) {
             activity.getTheme().applyStyle(resid, true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                activity.getTheme().rebase();
+            }
         } else {
             activity.setTheme(resid);
         }
@@ -362,6 +365,8 @@ public abstract class HamburgerActivity extends AppCompatActivity implements Coo
         if (prefs == null) return;
         if (App.PREF_BACKGROUND.equals(key)) {
             this.background = applyTheme(this, prefs, true);
+        } else if (App.PREF_BACKGROUND_VARIANT_INDEX.equals(key)) {
+            setWindowBackground(prefs);
         } else if (App.PREF_ORIENTATION.equals(key)) {
             applyOrientation(this, prefs);
         } else if (App.PREF_COLS_PORTRAIT.equals(key) || App.PREF_COLS_LANDSCAPE.equals(key)) {

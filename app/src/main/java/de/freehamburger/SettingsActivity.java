@@ -51,7 +51,6 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityCompat;
@@ -94,7 +93,7 @@ import de.freehamburger.widget.WidgetProvider;
 /**
  *
  */
-public class SettingsActivity extends AppCompatActivity implements ServiceConnection, PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
+public class SettingsActivity extends StyledActivity implements ServiceConnection, SharedPreferences.OnSharedPreferenceChangeListener, PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
 
     static final String ACTION_CONFIGURE_BACKGROUND_UPDATES = "de.freehamburger.configure.backgroundupdates";
     static final String EXTRA_FRAGMENT = "de.freehamburger.extra.fragment";
@@ -171,7 +170,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 .beginTransaction()
                 .replace(R.id.settings, new AppearancePreferenceFragment())
                 .commit();
-        getWindow().getDecorView().setBackgroundColor(getResources().getColor(R.color.colorWindowBackground));
+        setWindowBackground(null);
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
             // update the navigation icon color and the toolbar text color
@@ -209,6 +208,10 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
                 HamburgerActivity.setHomeArrowTooltipText(toolbar, getString(R.string.hint_back_to_main));
             }
         }
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        //StyleUtil.setWindowBackground(this, prefs);
+        prefs.registerOnSharedPreferenceChangeListener(this);
 
         // onCreate() runs significantly faster if the WebView initialisation (three-digits runtime in ms on slower devices) is postponed.
         // As the webview is accessed only via the menu, it may be assumed that the user is not faster than the delay given in postDelayed().
@@ -360,6 +363,18 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
     /** {@inheritDoc} */
     @Override
+    public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+        if (App.PREF_BACKGROUND.equals(key)) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {setWindowBackground(null);}, 750L);
+        } else  if (App.PREF_BACKGROUND_VARIANT_INDEX.equals(key)) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {setWindowBackground(null);}, 500L);
+        }
+    }
+
+    //******************************************************************************************************************
+
+    /** {@inheritDoc} */
+    @Override
     public void startActivity(final Intent intent) {
         String bai = intent.getStringExtra("com.android.browser.application_id");
         if (BuildConfig.APPLICATION_ID.equals(bai)) {
@@ -457,6 +472,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
 
             ButtonPreference prefBackground = findPreference(App.PREF_BACKGROUND);
+            ButtonPreference prefBackgroundVariant = findPreference(App.PREF_BACKGROUND_VARIANT_INDEX);
             Preference prefCorrectQuotationMarks = findPreference(App.PREF_CORRECT_WRONG_QUOTATION_MARKS);
             Preference prefImportFont = findPreference("pref_import_font");
             Preference prefDeleteFont = findPreference("pref_delete_font");
@@ -688,7 +704,7 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
 
             if (prefMaxMemCacheSize != null) {
                 prefMaxMemCacheSize.setDefaultValue(App.DEFAULT_MEM_CACHE_MAX_SIZE);
-                prefMaxMemCacheSize.setOnBindEditTextListener(editText -> configIntegerEditText(editText, getString(R.string.pref_hint_pref_cache_max_size),EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN,App.PREF_MEM_CACHE_MAX_SIZE_MIN >> 20,App.PREF_MEM_CACHE_MAX_SIZE_MAX >> 20));
+                prefMaxMemCacheSize.setOnBindEditTextListener(editText -> configIntegerEditText(editText, getString(R.string.pref_hint_pref_cache_max_size),EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN, App.PREF_MEM_CACHE_MAX_SIZE_MIN >> 20, App.PREF_MEM_CACHE_MAX_SIZE_MAX >> 20));
                 prefMaxMemCacheSize.setOnPreferenceChangeListener((preference, o) -> {
                     final int maxCacheSize;
                     try {
@@ -1229,9 +1245,6 @@ public class SettingsActivity extends AppCompatActivity implements ServiceConnec
             return super.onOptionsItemSelected(item);
         }
     }
-
-
-    //******************************************************************************************************************
 
     @Keep
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)

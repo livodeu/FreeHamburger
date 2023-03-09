@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorBgNews">#ffffffff</color>
+    <color name="colorBgNewsBlackWhite">#fffefeff</color>
+    <!-- these alternative backgrounds should all have saturation 7% and brightness 100% -->
+    <color name="colorBgNewsTurquoise">#ffedffff</color>
+    <color name="colorBgNewsViola">#ffededff</color>
+    <color name="colorBgNewsBlueWhite">#ffededff</color>
+    <!-- end alternative backgrounds -->
     <color name="colorBgNewsGradient">#ffededed</color>
     <color name="colorBgNewsFocused">#c0208bc9</color>
     <color name="colorBgNewsPressed">#c0208bc9</color>
@@ -13,6 +19,8 @@
     <!-- background color for the RecyclerView -->
     <color name="colorRecyclerBg">#ffffffff</color>
 
+    <color name="colorToolbarText">@color/color_onPrimary</color>
+
     <color name="colorBox">#064a91</color>
     <color name="colorBoxBackground">#111288cc</color>
     <color name="colorQuotation">#064a91</color>
@@ -24,8 +32,6 @@
 
     <color name="colorBottomSheetBackground">#ee0f70aa</color>
     <color name="colorBottomSheetText">#ededed</color>
-
-    <color name="colorToolbarText">@color/color_onPrimary</color>
 
     <color name="colorDirtyWhite">#ededed</color>
     <color name="colorWindowBackground">@color/colorDirtyWhite</color>

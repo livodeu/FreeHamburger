@@ -18,6 +18,7 @@ import java.util.List;
 
 import de.freehamburger.FilterActivity;
 import de.freehamburger.R;
+import de.freehamburger.StyledActivity;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.TextFilter;
 import de.freehamburger.views.FilterView;
@@ -25,7 +26,7 @@ import de.freehamburger.views.FilterView;
 /**
  *
  */
-public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder> {
+public class FilterAdapter extends StyledActivity.StyledAdapter<FilterAdapter.ViewHolder> {
 
     private final List<Filter> filters = new ArrayList<>(4);
     @NonNull private final FilterActivity filterActivity;
@@ -80,6 +81,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         FilterView filterView = (FilterView) holder.itemView;
+        super.onBindViewHolder(holder, position);
         //
         Filter filter = this.filters.get(position);
         filterView.setFilter(filter);
@@ -142,6 +144,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.ViewHolder
 
     @SuppressLint("NotifyDataSetChanged")
     public void setFilters(@Nullable List<Filter> filters) {
+        if (this.filters.isEmpty() && (filters == null || filters.isEmpty())) return;
         this.filters.clear();
         if (filters != null) {
             this.filters.addAll(filters);

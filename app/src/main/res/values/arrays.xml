@@ -49,4 +49,20 @@
         <item>#ffededed</item>
     </array>
 
+    <array name="colors_list_background_variant">
+        <item>#ff1a75aa</item>
+        <item>#ff000001</item>
+        <item>#ff290F4D</item>
+        <item>#ff0F4A4D</item>
+        <item>#ff0000f0</item>
+    </array>
+
+    <string-array name="entries_background_variant">
+        <item>normal</item>
+        <item>black-white</item>
+        <item>viola</item>
+        <item>turquoise</item>
+        <item>deepblue-white</item>
+    </string-array>
+
 </resources>

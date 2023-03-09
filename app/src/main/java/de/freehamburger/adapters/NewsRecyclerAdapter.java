@@ -37,11 +37,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import de.freehamburger.App;
 import de.freehamburger.BuildConfig;
 import de.freehamburger.HamburgerService;
 import de.freehamburger.NewsAdapterActivity;
+import de.freehamburger.App;
 import de.freehamburger.R;
+import de.freehamburger.StyledActivity;
 import de.freehamburger.model.Filter;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
@@ -52,7 +53,7 @@ import de.freehamburger.views.NewsView2;
 /**
  * The adapter for the RecyclerView that contains the news list in the {@link de.freehamburger.MainActivity main activity}.
  */
-public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapter.ViewHolder> implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class NewsRecyclerAdapter extends StyledActivity.StyledAdapter<NewsRecyclerAdapter.ViewHolder> implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = "NewsRecyclerAdapter";
     @NonNull private final List<News> newsList = new ArrayList<>(32);
@@ -66,7 +67,6 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     private final SparseArray<ViewHolder> viewholderCache = new SparseArray<>(2);
     private final SharedPreferences prefs;
     private boolean preloading = false;
-    @App.BackgroundSelection private int background;
     private boolean filtersEnabled;
     @FloatRange(from = 0.5, to = 2.0)
     private float zoom;
@@ -85,7 +85,6 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     public NewsRecyclerAdapter(@NonNull NewsAdapterActivity activity, @Nullable Typeface typeface) {
         super();
         this.activity = activity;
-        this.background = activity.getBackground();
         this.prefs = PreferenceManager.getDefaultSharedPreferences(activity);
         this.filtersEnabled = this.prefs.getBoolean(App.PREF_FILTERS_APPLY, App.PREF_FILTERS_APPLY_DEFAULT);
         this.zoom = this.prefs.getInt(App.PREF_FONT_ZOOM, App.PREF_FONT_ZOOM_DEFAULT) / 100f;
@@ -278,6 +277,8 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         final NewsView2 newsView2 = (NewsView2) holder.itemView;
 
+        super.onBindViewHolder(holder, position);
+
         TextView tvtl = newsView2.getTextViewTopline();
         TextView tvda = newsView2.getTextViewDate();
         TextView tvti = newsView2.getTextViewTitle();
@@ -370,10 +371,9 @@ public class NewsRecyclerAdapter extends RecyclerView.Adapter<NewsRecyclerAdapte
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
         if (App.PREF_FILTERS_APPLY.equals(key)) {
             this.filtersEnabled = prefs.getBoolean(key, App.PREF_FILTERS_APPLY_DEFAULT);
-        } else if (App.PREF_BACKGROUND.equals(key)) {
+        } else if (App.PREF_BACKGROUND.equals(key) || App.PREF_BACKGROUND_VARIANT_INDEX.equals(key)) {
             // The activity receives the same info (HamburgerActivity.onSharedPreferenceChanged()) and sets its background accordingly; give it a moment to do so
             this.handler.postDelayed(() -> {
-                NewsRecyclerAdapter.this.background = NewsRecyclerAdapter.this.activity.getBackground();
                 notifyDataSetChanged();
             }, 500L);
         } else if (App.PREF_FONT_ZOOM.equals(key)) {

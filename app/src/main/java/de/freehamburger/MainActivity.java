@@ -33,7 +33,6 @@ import android.nfc.tech.NdefFormatable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.preference.PreferenceActivity;
 import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.TextUtils;

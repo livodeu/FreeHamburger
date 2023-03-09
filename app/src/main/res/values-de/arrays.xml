@@ -31,6 +31,14 @@
         <item>führt zur letzten Kategorie</item>
     </string-array>
 
+    <string-array name="entries_background_variant">
+        <item>normal</item>
+        <item>schwarz-weiß</item>
+        <item>violett</item>
+        <item>türkis</item>
+        <item>tiefblau-weiß</item>
+    </string-array>
+
     <string-array name="entries_list_background">
         <item>automatische Auswahl</item>
         <item>dunkler Hintergrund</item>

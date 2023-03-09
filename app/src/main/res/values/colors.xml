@@ -28,22 +28,6 @@
 
     <color name="colorPrimarySemiTrans">#77006399</color>
 
-    <!--<color name="colorPrimary">#1288cc</color>
-    <color name="colorPrimarySemiTrans">#771288cc</color>
-    <color name="colorPrimaryContainer">#BFE6FA</color>
-    <color name="colorOnPrimaryContainer">#000000</color>
-
-    <color name="colorPrimaryDark">#0f70aa</color>
-
-    <color name="colorPrimaryLight">#BFE6FA</color>
-
-    <color name="colorOnPrimary">#ededed</color>
-    <color name="colorPrimaryInverse">#ed7733</color>
-    <color name="colorSecondary">#123acc</color>
-    <color name="colorOnSecondary">#ededed</color>
-    <color name="colorTertiary">#00cc88</color>
-    <color name="colorOnTertiary">#ededed</color>-->
-
     <color name="colorAccent">#E67F30</color>
     <color name="colorAccentInverse">#1980cf</color>
 

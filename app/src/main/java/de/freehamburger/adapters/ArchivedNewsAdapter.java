@@ -28,15 +28,16 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-import de.freehamburger.App;
 import de.freehamburger.Archive;
 import de.freehamburger.BuildConfig;
+import de.freehamburger.App;
 import de.freehamburger.R;
+import de.freehamburger.StyledActivity;
 import de.freehamburger.model.ArchivedNews;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
 
-public class ArchivedNewsAdapter extends RecyclerView.Adapter<ArchivedNewsAdapter.ViewHolder> {
+public class ArchivedNewsAdapter extends StyledActivity.StyledAdapter<ArchivedNewsAdapter.ViewHolder> {
 
     private static final String TAG = "ArchivedNewsAdapter";
     private final List<ArchivedNews> list = new ArrayList<>();
@@ -65,6 +66,9 @@ public class ArchivedNewsAdapter extends RecyclerView.Adapter<ArchivedNewsAdapte
     /** {@inheritDoc} */
     @Override public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
         ArchivedNews an = this.list.get(position);
+
+        super.onBindViewHolder(holder, position);
+
         if (an == null) {
             holder.textViewDate.setText(null);
             holder.textViewTitle.setText(null);

@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorBgNews">#ff1a75aa</color>
+    <color name="colorBgNewsBlackWhite">#ff000001</color>
+    <!-- these alternative backgrounds should all have saturation 81% and brightness 30% -->
+    <color name="colorBgNewsTurquoise">#ff0f4a4d</color>
+    <color name="colorBgNewsViola">#ff290f4d</color>
+    <color name="colorBgNewsBlueWhite">#ff0f0f4d</color>
+    <!-- end alternative backgrounds -->
     <color name="colorBgNewsGradient">#147199</color>
     <color name="colorBgNewsFocused">#c01e83bd</color>
     <color name="colorBgNewsPressed">#c01e83bd</color>
