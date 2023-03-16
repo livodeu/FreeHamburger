@@ -23,21 +23,35 @@ public class PlayerListener implements Player.Listener {
 
     private static final String TAG = "PlayerListener";
     private final Reference<Activity> refActivity;
+    /**  true to display playback errors, false to suppress them */
     private final boolean showErrors;
+    /** true to finish the Activity after errors have been acknowledged by the user (only applies if {@link #showErrors} is true) */
+    private final boolean finishAfterShow;
     protected int exoPlayerState = 0; // 0 is not a defined Player.State so this means undefined
     protected boolean exoPlayerPlayWhenReady = false;
+
     protected String currentResource;
 
     /**
      * Constructor.
-     *
      * @param activity   Activity this listener is used in
      * @param showErrors true to display playback errors, false to suppress them
      */
     public PlayerListener(@NonNull Activity activity, boolean showErrors) {
+        this(activity, showErrors, showErrors);
+    }
+
+    /**
+     * Constructor.
+     * @param activity   Activity this listener is used in
+     * @param showErrors true to display playback errors, false to suppress them
+     * @param finishAfterShow true to finish the Activity after errors have been acknowledged by the user (only applies if showErrors is true)
+     */
+    private PlayerListener(@NonNull Activity activity, boolean showErrors, boolean finishAfterShow) {
         super();
         this.refActivity = new WeakReference<>(activity);
         this.showErrors = showErrors;
+        this.finishAfterShow = finishAfterShow;
     }
 
     /**
@@ -116,12 +130,12 @@ public class PlayerListener implements Player.Listener {
     @CallSuper
     public void onPlayerError(@NonNull PlaybackException error) {
         if (!this.showErrors) return;
-        Activity activity = this.refActivity.get();
-        if (activity == null) return;
+        final Activity activity = this.refActivity.get();
+        if (activity == null || activity.isDestroyed()) return;
         String msg = Util.playbackExceptionMsg(activity, error);
         Snackbar sb = Util.makeSnackbar(activity, msg, Snackbar.LENGTH_INDEFINITE);
         Util.setSnackbarFont(sb, Util.CONDENSED, 14f);
-        sb.setAction(android.R.string.ok, (v) -> sb.dismiss());
+        sb.setAction(android.R.string.ok, (v) -> {sb.dismiss(); if (this.finishAfterShow) activity.finish();});
         sb.show();
     }
 

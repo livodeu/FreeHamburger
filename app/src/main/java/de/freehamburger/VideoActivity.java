@@ -159,7 +159,6 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
             public void onPlayerError(@NonNull PlaybackException error) {
                 abandonAudioFocus(null);
                 super.onPlayerError(error);
-                finish();
             }
 
             /** {@inheritDoc} */
