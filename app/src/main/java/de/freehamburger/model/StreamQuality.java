@@ -1,6 +1,7 @@
 package de.freehamburger.model;
 
 import android.content.Context;
+
 import androidx.annotation.IntRange;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -11,22 +12,23 @@ import de.freehamburger.R;
 import de.freehamburger.util.Util;
 
 /**
- *
+ * "podcastvideom_ias" : "https://adaptive.tagesschau.de/i/video/100s/2023/0317/TV-100s-1841.,webs,webm,webl,.h264.mp4.csmil/master.m3u8",
+ * "adaptivestreaming" : "https://adaptive.tagesschau.de/i/video/100s/2023/0317/TV-100s-1841.,webs,webm,webl,webxl,.h264.mp4.csmil/master.m3u8"
  */
 public enum StreamQuality {
-    /** 320 x 180 */
+    /** 320 x 180 = 57600 */
     H264S(R.string.label_streamquality_s, 320),
-    /** 480 x 270 */
-    PODCASTVIDEOM(-1, 480),
-    /** 512 x 288 */
+    /** 480 x 270 = 129600 */
+    PODCASTVIDEOM(R.string.label_streamquality_m, 480),
+    /** 512 x 288 = 147456 */
     H264M(R.string.label_streamquality_m, 512),
-    /** 960 x 540 */
+    /** 960 x 540 = 518400 */
     H264L(R.string.label_streamquality_l, 960),
-    /** 1280 x 720 */
+    /** 1280 x 720 = 921600 */
     H264XL(R.string.label_streamquality_xl, 1280),
-    /** unknown dimensions */
-    PODCASTVIDEOM_IAS(-1, -1),
-    /** unknown dimensions;<br><em>NOTE: as of March to June 2020, these URLs do not work as they point to hls.….de which only works with http: but NOT with https:!</em> */
+    /** adaptive streaming with dimensions from 256x144 to 960x540 */
+    PODCASTVIDEOM_IAS(R.string.label_streamquality_adaptive_small, -1),
+    /** adaptive streaming with dimensions from 480x270 to 1920x1080 */
     ADAPTIVESTREAMING(R.string.label_streamquality_adaptive, -1);
 
     /** StreamQuality array where XL is preferred; after that ordered by descending quality */

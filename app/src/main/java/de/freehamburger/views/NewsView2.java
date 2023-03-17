@@ -25,6 +25,7 @@ import de.freehamburger.R;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Region;
 import de.freehamburger.model.TeaserImage;
+import de.freehamburger.util.ResourceUtil;
 import de.freehamburger.util.Util;
 
 /**
@@ -196,11 +197,11 @@ public class NewsView2 extends ConstraintLayout {
             this.textViewTopline.setEllipsize(TextUtils.TruncateAt.END);
         }
         if (news.isBreakingNews()) {
-            this.textViewTopline.setTextColor(Util.getColor(ctx, R.color.colorBreakingNews));
+            this.textViewTopline.setTextColor(ResourceUtil.getColor(ctx, R.color.colorBreakingNews));
         } else if (REGION_LABELS.contains(contentForTopline)) {
-            this.textViewTopline.setTextColor(Util.getColor(ctx, R.color.colorRegionalNews));
+            this.textViewTopline.setTextColor(ResourceUtil.getColor(ctx, R.color.colorRegionalNews));
         } else {
-            this.textViewTopline.setTextColor(Util.getColor(ctx, R.color.colorContent));
+            this.textViewTopline.setTextColor(ResourceUtil.getColor(ctx, R.color.colorContent));
         }
 
         // title

@@ -74,6 +74,7 @@ import de.freehamburger.model.TextFilter;
 import de.freehamburger.util.Downloader;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.OkHttpDownloader;
+import de.freehamburger.util.ResourceUtil;
 import de.freehamburger.util.Util;
 import de.freehamburger.widget.WidgetProvider;
 
@@ -874,7 +875,7 @@ public class UpdateJobService extends JobService implements Downloader.Downloade
         NotificationChannel nc = null;
         if (news.isBreakingNews()) {
             this.summary.setHipri();
-            builder.setColor(Util.getColor(this, R.color.colorAccent));
+            builder.setColor(ResourceUtil.getColor(this, R.color.colorAccent));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 builder.setColorized(true);
                 nc = app.getNotificationChannelHiPri();

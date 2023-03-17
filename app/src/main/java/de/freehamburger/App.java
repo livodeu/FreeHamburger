@@ -75,6 +75,7 @@ import de.freehamburger.prefs.PrefsHelper;
 import de.freehamburger.supp.SearchHelper;
 import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.Log;
+import de.freehamburger.util.ResourceUtil;
 import de.freehamburger.util.Util;
 import okhttp3.ConnectionSpec;
 import okhttp3.OkHttpClient;
@@ -800,9 +801,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
         new Thread() {
             @Override
             public void run() {
-                PERMITTED_HOSTS.addAll(Util.loadResourceTextFile(App.this, R.raw.permitted_hosts, 38, true));
-                BLOCKED_SUBDOMAINS.addAll(Util.loadResourceTextFile(App.this, R.raw.blocked_subdomains, 1, true));
-                PERMITTED_HOSTS_NO_SCRIPT.addAll(Util.loadResourceTextFile(App.this, R.raw.permitted_hosts_no_js, 2, true));
+                PERMITTED_HOSTS.addAll(ResourceUtil.loadResourceTextFile(App.this, R.raw.permitted_hosts, 38, true));
+                BLOCKED_SUBDOMAINS.addAll(ResourceUtil.loadResourceTextFile(App.this, R.raw.blocked_subdomains, 1, true));
+                PERMITTED_HOSTS_NO_SCRIPT.addAll(ResourceUtil.loadResourceTextFile(App.this, R.raw.permitted_hosts_no_js, 2, true));
             }
         }.start();
 

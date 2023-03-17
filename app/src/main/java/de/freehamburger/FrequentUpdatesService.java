@@ -36,7 +36,7 @@ import java.util.List;
 
 import de.freehamburger.prefs.PrefsHelper;
 import de.freehamburger.util.Log;
-import de.freehamburger.util.Util;
+import de.freehamburger.util.ResourceUtil;
 
 /**
  * Provides updates more frequently than {@link UpdateJobService}.<br>
@@ -295,7 +295,7 @@ public class FrequentUpdatesService extends Service implements SharedPreferences
             if (this.errorMsg != null && this.errorCode >= 400) {
                 // error state
                 msg = this.errorMsg.length() > 0 ? getString(R.string.error_download_failed, this.errorMsg) : getString(R.string.error_download_failed2);
-                this.builder.setColor(Util.getColor(this, R.color.color_error)).setShowWhen(true);
+                this.builder.setColor(ResourceUtil.getColor(this, R.color.color_error)).setShowWhen(true);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) this.builder.setColorized(true);
             } else {
                 // normal state

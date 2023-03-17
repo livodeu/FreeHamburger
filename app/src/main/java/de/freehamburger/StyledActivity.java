@@ -18,7 +18,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import de.freehamburger.util.Util;
+import de.freehamburger.util.ResourceUtil;
 
 public abstract class StyledActivity extends AppCompatActivity {
 
@@ -77,7 +77,7 @@ public abstract class StyledActivity extends AppCompatActivity {
             case BACKGROUND_VARIANT_NORMAL:
             default: colorRes = R.color.colorWindowBackground;
         }
-        window.setBackgroundDrawable(new ColorDrawable(Util.getColor(this, colorRes)));
+        window.setBackgroundDrawable(new ColorDrawable(ResourceUtil.getColor(this, colorRes)));
     }
 
     /**

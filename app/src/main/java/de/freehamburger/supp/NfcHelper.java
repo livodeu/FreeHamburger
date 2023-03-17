@@ -54,6 +54,7 @@ import de.freehamburger.R;
 import de.freehamburger.model.Source;
 import de.freehamburger.util.CoordinatorLayoutHolder;
 import de.freehamburger.util.Log;
+import de.freehamburger.util.ResourceUtil;
 import de.freehamburger.util.Util;
 
 public class NfcHelper {
@@ -290,7 +291,7 @@ public class NfcHelper {
                             color = 0;
                             msg = ctx.getString(R.string.msg_nfc_write_success, sourceLabel);
                         } else {
-                            color = Util.getColor(ctx, R.color.color_error);
+                            color = ResourceUtil.getColor(ctx, R.color.color_error);
                             msg = getErrorMsg(ctx, result);
                         }
                         if (cl != null) {Snackbar sb = Snackbar.make(cl, msg, Snackbar.LENGTH_LONG); if (color != 0) sb.setTextColor(color); sb.show();}

@@ -61,6 +61,7 @@ import de.freehamburger.adapters.ArchivedNewsAdapter;
 import de.freehamburger.model.ArchivedNews;
 import de.freehamburger.model.News;
 import de.freehamburger.util.Log;
+import de.freehamburger.util.ResourceUtil;
 import de.freehamburger.util.Util;
 
 /**
@@ -486,7 +487,7 @@ public class Archive extends HamburgerActivity implements ActivityResultCallback
             ws.setAllowContentAccess(false);
             ws.setGeolocationEnabled(false);
             webViewForHelp.setNetworkAvailable(false);
-            webViewForHelp.setBackgroundColor(Util.getColor(this, R.color.colorPrimarySemiTrans));
+            webViewForHelp.setBackgroundColor(ResourceUtil.getColor(this, R.color.colorPrimarySemiTrans));
             Util.showHelp(this, R.raw.help_archive_de, webViewForHelp);
             return true;
         }

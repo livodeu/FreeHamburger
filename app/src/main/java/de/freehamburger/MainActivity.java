@@ -17,7 +17,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.ShortcutManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -95,6 +94,7 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -122,6 +122,7 @@ import de.freehamburger.util.FileDeleter;
 import de.freehamburger.util.Intro;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.PrintUtil;
+import de.freehamburger.util.ResourceUtil;
 import de.freehamburger.util.SpaceBetween;
 import de.freehamburger.util.TtfInfo;
 import de.freehamburger.util.Util;
@@ -206,14 +207,14 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 this.popupManager.showPopup(this.drawerLayout, getString(R.string.intro_1), 4_500L, false);
             },
             // apply a reddish hue to the drawer
-            () -> findViewById(R.id.navigationView).setBackgroundTintList(ColorStateList.valueOf(Util.getColor(this, R.color.colorIntro))),
+            () -> findViewById(R.id.navigationView).setBackgroundTintList(ColorStateList.valueOf(ResourceUtil.getColor(this, R.color.colorIntro))),
             // reset drawer color
             () -> findViewById(R.id.navigationView).setBackgroundTintList(null),
             // close drawer
             () -> this.drawerLayout.closeDrawer(GravityCompat.END),
             // colorize clock and click it => the menu will be shown, then display "Search, apply filters and change other settings here."
             () -> {
-                this.clockView.setTint(Util.getColor(this, R.color.colorIntro));
+                this.clockView.setTint(ResourceUtil.getColor(this, R.color.colorIntro));
                 this.clockView.performClick();
                 this.popupManager.showPopup(this.coordinatorLayout, getString(R.string.intro_2), 4_500L, false);
             },
@@ -240,7 +241,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 findViewById(R.id.plane).setTranslationY(vh.itemView.getHeight());
                 ColorStateList originalTint = vh.itemView.getBackgroundTintList();
                 vh.itemView.setTag(originalTint);
-                vh.itemView.setBackgroundTintList(ColorStateList.valueOf(Util.getColor(this, R.color.colorIntro)));
+                vh.itemView.setBackgroundTintList(ColorStateList.valueOf(ResourceUtil.getColor(this, R.color.colorIntro)));
                 vh.itemView.setPressed(true);
             },
             // reset the first entry's appearance
@@ -1010,8 +1011,8 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 return true;
             }
             if (streams.size() > 1) {
-                CharSequence[] items = new CharSequence[streams.size()];
                 final List<StreamQuality> qualities = new ArrayList<>(streams.keySet());
+                final List<CharSequence> itemsList = new ArrayList<>(qualities.size());
                 Collections.sort(qualities, (o1, o2) -> {
                     int w1 = o1.getWidth();
                     int w2 = o2.getWidth();
@@ -1019,12 +1020,22 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                     if (w1 == -1) return 1; else if (w2 == -1) return -1;
                     return Integer.compare(w1, w2);
                 });
-                int i = 0;
+                // eliminate all unusable StreamQualities
+                Set<StreamQuality> toskip = new HashSet<>(2);
                 for (StreamQuality q : qualities) {
                     @StringRes int labelRes = q.getLabel();
+                    if (ResourceUtil.isInvalidResource(labelRes)) {toskip.add(q); continue;}
                     int width = q.getWidth();
-                    items[i++] = labelRes != Resources.ID_NULL ? (width > 0 ? getString(labelRes, width) : getString(labelRes)) : q.name();
+                    String label = width > 0 ?
+                            ResourceUtil.getString(this, labelRes, null, width)
+                            :   ResourceUtil.getString(this, labelRes, null);
+                    if (label == null) {toskip.add(q); continue;}
+                    itemsList.add(label);
                 }
+                qualities.removeAll(toskip);
+                //
+                CharSequence[] items = new CharSequence[itemsList.size()];
+                itemsList.toArray(items);
                 AlertDialog.Builder builder = new MaterialAlertDialogBuilder(this)
                         .setTitle(R.string.action_quality_select)
                         .setItems(items, (dialog, which) -> {
@@ -1036,7 +1047,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                             dialog.dismiss();
                         })
                         .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());
-                if (qualities.contains(StreamQuality.ADAPTIVESTREAMING)) {
+                if (qualities.contains(StreamQuality.ADAPTIVESTREAMING) || qualities.contains(StreamQuality.PODCASTVIDEOM_IAS)) {
                     Intent wotswotwot = new Intent(Intent.ACTION_VIEW);
                     wotswotwot.setDataAndType(Uri.parse(getString(R.string.url_wikipedia_http_streaming)), "text/html");
                     if (getPackageManager().resolveActivity(wotswotwot, PackageManager.MATCH_DEFAULT_ONLY) != null) {
@@ -1333,7 +1344,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                         .setPositiveButton(android.R.string.ok, (dialog, which) -> dialog.dismiss())
                         .setNeutralButton(R.string.label_license, (dialog, which) -> {
                             dialog.dismiss();
-                            List<String> l = Util.loadResourceTextFile(MainActivity.this, R.raw.agpl, 544, false);
+                            List<String> l = ResourceUtil.loadResourceTextFile(MainActivity.this, R.raw.agpl, 544, false);
                             StringBuilder sb = new StringBuilder(34523);
                             for (String line : l) sb.append(line).append('\n');
                             @SuppressLint("InflateParams")
@@ -1607,7 +1618,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             // let's remember the Source that we are loading now - in case the user changes it while we are loading...
             private final Source sourceToSetOnSuccess = MainActivity.this.currentSource;
             @ColorInt
-            private final int c = Util.getColor(MainActivity.this, R.color.color_primary);
+            private final int c = ResourceUtil.getColor(MainActivity.this, R.color.color_primary);
 
             /** {@inheritDoc} */
             @Override
@@ -1753,7 +1764,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         super.onResume();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean hasTemporaryFilter = this.newsAdapter.setFilters(TextFilter.createTextFiltersFromPreferences(this));
-        this.clockView.setTint(hasTemporaryFilter ? Util.getColor(this, R.color.colorFilter) : Color.TRANSPARENT);
+        this.clockView.setTint(hasTemporaryFilter ? ResourceUtil.getColor(this, R.color.colorFilter) : Color.TRANSPARENT);
 
         NfcHelper.enableForegroundDispatch(this);
 
@@ -1854,7 +1865,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         if (file == null) return;
         BlobParser blobParser = new BlobParser(this, new BlobParser.BlobParserListener() {
             @ColorInt
-            private final int c = Util.getColor(MainActivity.this, R.color.color_primary);
+            private final int c = ResourceUtil.getColor(MainActivity.this, R.color.color_primary);
 
             @Override
             public void blobParsed(@Nullable Blob blob, boolean ok, @Nullable Throwable oops) {
@@ -1902,7 +1913,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 MainActivity.this.newsAdapter.addFilter(MainActivity.this.searchFilter);
                 boolean hasTemporaryFilter = MainActivity.this.newsAdapter.hasTemporaryFilter();
                 MainActivity.this.clockView.setTime(blobDate != null ? blobDate.getTime() : file.lastModified());
-                MainActivity.this.clockView.setTint(hasTemporaryFilter ? Util.getColor(MainActivity.this, R.color.colorFilter) : 0);
+                MainActivity.this.clockView.setTint(hasTemporaryFilter ? ResourceUtil.getColor(MainActivity.this, R.color.colorFilter) : 0);
                 if (hasTemporaryFilter) {
                     boolean hintResetSearchShown = prefs.getBoolean(SearchContentProvider.PREF_SEARCH_HINT_RESET_SHOWN, false);
                     if (!hintResetSearchShown) {
@@ -2078,7 +2089,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         }
         String s = getString(this.currentSource.getLabel());
         this.clockView.setText(s);
-        setTaskDescription(new ActivityManager.TaskDescription(getString(R.string.app_task_description, s), null, Util.getColor(this, R.color.color_primary)));
+        setTaskDescription(new ActivityManager.TaskDescription(getString(R.string.app_task_description, s), null, ResourceUtil.getColor(this, R.color.color_primary)));
     }
 
     /**

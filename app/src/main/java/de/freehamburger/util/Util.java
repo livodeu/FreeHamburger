@@ -90,14 +90,12 @@ import com.google.android.material.snackbar.Snackbar;
 import org.xml.sax.XMLReader;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
@@ -742,23 +740,6 @@ public class Util {
     }
 
     /**
-     * Translates a color resource to a color value. Wraps getters for pre and post-Marshmallow.
-     * @param ctx ContextWrapper
-     * @param colorRes color resource
-     * @return color value
-     * @throws NullPointerException if {@code ctx} is {@code null}
-     * @throws Resources.NotFoundException if the given color resource does not exist.
-     */
-    @ColorInt
-    public static int getColor(@NonNull Context ctx, @ColorRes int colorRes) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return ctx.getResources().getColor(colorRes, ctx.getTheme());
-        }
-        //noinspection deprecation
-        return ctx.getResources().getColor(colorRes);
-    }
-
-    /**
      * Returns the display size in inches.
      * Examples:<ul>
      * <li>10 inch tablet / landscape:    8.00 x 4.50</li>
@@ -1332,38 +1313,6 @@ public class Util {
         File fontFile = new File(ctx.getFilesDir(), App.FONT_FILE);
         if (!fontFile.isFile()) return null;
         return Typeface.createFromFile(fontFile);
-    }
-
-    /**
-     * Loads a line-based text file from the resources.<br>
-     * Lines that start with # are considered to be a comment.
-     * @param ctx Context
-     * @param rawId raw resource id
-     * @param expextedNumberOfLines expected number of lines to be read
-     * @param trim if {@code true}, trim lines
-     * @return List of Strings, one for each line
-     * @throws IllegalArgumentException if {@code expectedNumberOfLines} is negative
-     */
-    @NonNull
-    public static List<String> loadResourceTextFile(@NonNull Context ctx, @RawRes int rawId, @IntRange(from = 0) int expextedNumberOfLines, final boolean trim) {
-        final List<String> lines = new ArrayList<>(expextedNumberOfLines);
-        InputStream in = null;
-        try {
-            in = ctx.getResources().openRawResource(rawId);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            for (; ; ) {
-                String line = reader.readLine();
-                if (line == null) break;
-                if (trim) line = line.trim();
-                if (line.length() == 0 || line.startsWith("#")) continue;
-                lines.add(line);
-            }
-        } catch (Exception e) {
-            if (BuildConfig.DEBUG) Log.e(TAG, "loadResourceTextFile(..., " + rawId + ", ...): " + e);
-        } finally {
-            close(in);
-        }
-        return lines;
     }
 
     /**
