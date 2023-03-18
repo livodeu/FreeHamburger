@@ -274,7 +274,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         boolean validTopVideo = false;
         boolean validBottomVideo = false;
         // top video from news.streams
-        if (prefs.getBoolean(App.PREF_SHOW_TOP_VIDEO, getResources().getBoolean(R.bool.pref_show_topvideo_default))) {
+        if (prefs.getBoolean(App.PREF_SHOW_TOP_VIDEO, App.PREF_SHOW_TOP_VIDEO_DEFAULT)) {
             String newsVideo = StreamQuality.getStreamsUrl(this, this.news.getStreams());
             if (newsVideo != null && this.exoPlayerTopVideo != null) {
                 Uri videoUri = Uri.parse(Util.makeHttps(newsVideo));

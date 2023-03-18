@@ -189,7 +189,7 @@ public class NewsView2 extends ConstraintLayout {
         }
         if (contentForTopline != null) contentForTopline = contentForTopline.trim();
         this.textViewTopline.setText(contentForTopline);
-        if (prefs.getBoolean(App.PREF_TOPLINE_MARQUEE, false)) {
+        if (prefs.getBoolean(App.PREF_TOPLINE_MARQUEE, App.PREF_TOPLINE_MARQUEE_DEFAULT)) {
             this.textViewTopline.setEllipsize(TextUtils.TruncateAt.MARQUEE);
             this.textViewTopline.setMarqueeRepeatLimit(-1);
             this.textViewTopline.setSelected(true);

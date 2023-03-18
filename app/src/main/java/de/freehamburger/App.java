@@ -206,6 +206,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final boolean PREF_SHOW_LATEST_SHARE_TARGET_DEFAULT = false;
     /** boolean: show or hide top video in news - the default depends on the device size and is therefore defined in the resources as {@link R.bool#pref_show_topvideo_default pref_show_topvideo_default} */
     public static final String PREF_SHOW_TOP_VIDEO = "pref_show_top_video";
+    public static final boolean PREF_SHOW_TOP_VIDEO_DEFAULT = true;
     /** boolean: show errors in web pages */
     public static final String PREF_SHOW_WEB_ERRORS = "pref_show_web_errors";
     public static final boolean PREF_SHOW_WEB_ERRORS_DEFAULT = true;
@@ -219,6 +220,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final boolean PREF_TIME_MODE_RELATIVE_DEFAULT = true;
     /** int: number of times the topline marquee animation is repeated (see also <a href="https://developer.android.com/reference/android/widget/TextView.html?hl=en#attr_android:marqueeRepeatLimit">here</a>) */
     public static final String PREF_TOPLINE_MARQUEE = "pref_topline_marquee";
+    public static final boolean PREF_TOPLINE_MARQUEE_DEFAULT = false;
     /** int: 0 closes the app; 1 navigates to home category; 2 navigates to recent section; see {@link BackButtonBehaviour} */
     public static final String PREF_USE_BACK_IN_APP = "pref_use_back";
     /** boolean */
