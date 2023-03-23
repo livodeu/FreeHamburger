@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 
 import com.google.android.material.snackbar.Snackbar;
 
+import de.freehamburger.BuildConfig;
 import de.freehamburger.R;
 import de.freehamburger.util.CoordinatorLayoutHolder;
 import de.freehamburger.util.Util;
@@ -138,13 +139,20 @@ public class Dictionary {
 
             /** {@inheritDoc} */
             @Override public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-                String selection = textView.getText().subSequence(textView.getSelectionStart(), textView.getSelectionEnd()).toString().trim();
-                final int selectionLength = selection.length();
-                final boolean selectionHasSpace = TextUtils.indexOf(selection, ' ') >= 0;
-                for (int i = 0; i < ALL.length; i++) {
-                    this.items[i].setVisible(selectionLength > 0 && (ALL[i].spaceAllowed || !selectionHasSpace));
+                boolean modified = false;
+                try {
+                    String selection = textView.getText().subSequence(textView.getSelectionStart(), textView.getSelectionEnd()).toString().trim();
+                    final int selectionLength = selection.length();
+                    final boolean selectionHasSpace = TextUtils.indexOf(selection, ' ') >= 0;
+                    for (int i = 0; i < ALL.length; i++) {
+                        this.items[i].setVisible(selectionLength > 0 && (ALL[i].spaceAllowed || !selectionHasSpace));
+                        modified = true;
+                    }
+                    return modified;
+                } catch (RuntimeException re) {
+                    if (BuildConfig.DEBUG) android.util.Log.e(getClass().getSimpleName(), re.toString());
                 }
-                return true;
+                return modified;
             }
         });
 
