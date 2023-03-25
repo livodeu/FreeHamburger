@@ -876,7 +876,13 @@ public class Util {
         if (files == null) return 0L;
         long space = 0L;
         for (File file : files) {
+            if (file.isDirectory()) {
+                File[] subdirFiles = file.listFiles();
+                if (subdirFiles != null) space += getOccupiedSpace(Arrays.asList(subdirFiles));
+                continue;
+            }
             try {
+                // If <a href="https://www.man7.org/linux/man-pages/man2/stat.2.html">this</a> is applicable, the number of blocks must always be multiplied with 512.
                 space += Os.stat(file.getAbsolutePath()).st_blocks << 9;
             } catch (ErrnoException e) {
                 if (BuildConfig.DEBUG) Log.e(TAG, "getOccupiedSpace(" + file + "): " + e);
