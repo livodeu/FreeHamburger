@@ -220,6 +220,46 @@
         <item quantity="one">vor %1$d T.</item>
         <item quantity="other">vor %1$d T.</item>
     </plurals>
+    <plurals name="label_time_rel_weeks">
+        <item quantity="one">vor %1$d Woche</item>
+        <item quantity="other">vor %1$d Wochen</item>
+    </plurals>
+    <plurals name="label_time_rel_weeks_short">
+        <item quantity="one">vor %1$d W.</item>
+        <item quantity="other">vor %1$d W.</item>
+    </plurals>
+    <plurals name="label_time_rel_weeks_plus">
+        <item quantity="one">vor mehr als %1$d Woche</item>
+        <item quantity="other">vor mehr als %1$d Wochen</item>
+    </plurals>
+    <plurals name="label_time_rel_weeks_plus_short">
+        <item quantity="one">vor mehr als %1$d W.</item>
+        <item quantity="other">vor mehr als %1$d W.</item>
+    </plurals>
+    <plurals name="label_time_rel_months">
+        <item quantity="one">vor %1$d Monat</item>
+        <item quantity="other">vor %1$d Monaten</item>
+    </plurals>
+    <plurals name="label_time_rel_months_short">
+        <item quantity="one">vor %1$d M.</item>
+        <item quantity="other">vor %1$d M.</item>
+    </plurals>
+    <plurals name="label_time_rel_months2">
+        <item quantity="one">vor %1$d½ Monaten</item>
+        <item quantity="other">vor %1$d½ Monaten</item>
+    </plurals>
+    <plurals name="label_time_rel_months2_short">
+        <item quantity="one">vor %1$d½ M.</item>
+        <item quantity="other">vor %1$d½ M.</item>
+    </plurals>
+    <plurals name="label_time_rel_years">
+        <item quantity="one">vor %1$d Jahr</item>
+        <item quantity="other">vor %1$d Jahren</item>
+    </plurals>
+    <plurals name="label_time_rel_years_short">
+        <item quantity="one">vor %1$d J.</item>
+        <item quantity="other">vor %1$d J.</item>
+    </plurals>
     <string name="pref_title_click_for_cats">Kategorien öffnen</string>
     <string name="pref_title_click_for_cats_off">nur durch Wischgeste</string>
     <string name="pref_title_click_for_cats_on">durch Wischgeste oder durch Antippen der derzeitigen Kategorie</string>

@@ -137,6 +137,12 @@ public class Util {
     public static final String PROTOCOL_ANDROID_APP = "android-app://";
     /** Determines whether this is a test build. */
     public static final boolean TEST;
+    private static final long MS_PER_MINUTE = 60_000L;
+    private static final long MS_PER_HOUR = 60 * MS_PER_MINUTE;
+    private static final long MS_PER_DAY = 24 * MS_PER_HOUR;
+    private static final long MS_PER_WEEK = 7 * MS_PER_DAY;
+    private static final long MS_PER_MONTH = 365 * MS_PER_DAY / 12;
+    private static final long MS_PER_YEAR = 365 * MS_PER_DAY;
     private static final Typeface NORMAL = Typeface.create("sans-serif", Typeface.NORMAL);
     /** Throwables that might carry important information about a playback failure */
     private static final Collection<Class<? extends Throwable>> POSSIBLE_PLAYBACK_ERROR_CAUSES = Arrays.asList(UnknownHostException.class, SSLPeerUnverifiedException.class, HttpDataSource.InvalidResponseCodeException.class);
@@ -900,12 +906,12 @@ public class Util {
      * @param ctx Context
      * @param timestamp timestamp
      * @param basedOn Date (set to {@code null} to compare time to current time)
-     * @param s true to return a short variant
+     * @param skirt {@code true} to return a short variant
      * @return relative time
      * @throws NullPointerException if {@code ctx} is {@code null} and {@code time} is not {@code null}
      */
     @NonNull
-    public static String getRelativeTime(@NonNull Context ctx, long timestamp, @Nullable Date basedOn, final boolean s) {
+    public static String getRelativeTime(@NonNull Context ctx, long timestamp, @Nullable Date basedOn, final boolean skirt) {
         if (timestamp == 0L) return "";
         final long delta;
         if (basedOn == null) {
@@ -913,32 +919,53 @@ public class Util {
         } else {
             delta = Math.abs(timestamp - basedOn.getTime());
         }
-        if (delta < 60_000L) {
+        final Resources res = ctx.getResources();
+        if (delta < MS_PER_MINUTE) {
             int seconds = (int)(delta / 1_000L);
-            return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_seconds_short : R.plurals.label_time_rel_seconds, seconds, seconds);
+            return res.getQuantityString(skirt ? R.plurals.label_time_rel_seconds_short : R.plurals.label_time_rel_seconds, seconds, seconds);
         }
-        if (delta < 60 * 60_000L) {
-            int minutes = (int)(delta / 60_000L);
-            return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_minutes_short : R.plurals.label_time_rel_minutes, minutes, minutes);
+        if (delta < MS_PER_HOUR) {
+            int minutes = (int)(delta / MS_PER_MINUTE);
+            return res.getQuantityString(skirt ? R.plurals.label_time_rel_minutes_short : R.plurals.label_time_rel_minutes, minutes, minutes);
         }
-        if (delta < 24 * 60 * 60_000L) {
-            double dhours = delta / 3_600_000.;
+        if (delta < MS_PER_DAY) {
+            double dhours = delta / ((double)MS_PER_HOUR);
             int hours = (int)dhours;
             final double frac = dhours - (double)hours;
             if (frac >= 0.125 && frac < 0.375) {
-                return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_hours1_short : R.plurals.label_time_rel_hours1, hours, hours);
+                return res.getQuantityString(skirt ? R.plurals.label_time_rel_hours1_short : R.plurals.label_time_rel_hours1, hours, hours);
             }
             if (frac >= 0.375 && frac < 0.625) {
-                return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_hours2_short : R.plurals.label_time_rel_hours2, hours, hours);
+                return res.getQuantityString(skirt ? R.plurals.label_time_rel_hours2_short : R.plurals.label_time_rel_hours2, hours, hours);
             }
             if (frac >= 0.625 && frac < 0.875) {
-                return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_hours3_short : R.plurals.label_time_rel_hours3, hours, hours);
+                return res.getQuantityString(skirt ? R.plurals.label_time_rel_hours3_short : R.plurals.label_time_rel_hours3, hours, hours);
             }
             if (frac >= 0.875) hours++;
-            return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_hours_short : R.plurals.label_time_rel_hours, hours, hours);
+            return res.getQuantityString(skirt ? R.plurals.label_time_rel_hours_short : R.plurals.label_time_rel_hours, hours, hours);
         }
-        int days = (int)(delta / 86_400_000L);
-        return ctx.getResources().getQuantityString(s ? R.plurals.label_time_rel_days_short : R.plurals.label_time_rel_days, days, days);
+        if (delta < MS_PER_WEEK) {
+            int days = (int)(delta / MS_PER_DAY);
+            return res.getQuantityString(skirt ? R.plurals.label_time_rel_days_short : R.plurals.label_time_rel_days, days, days);
+        }
+        if (delta < MS_PER_MONTH) {
+            int weeks = (int)(delta / MS_PER_WEEK);
+            int days = (int)((delta - (weeks * MS_PER_WEEK)) / MS_PER_DAY);
+            if (days >= 1) {
+                return res.getQuantityString(skirt ? R.plurals.label_time_rel_weeks_plus_short : R.plurals.label_time_rel_weeks_plus, weeks, weeks);
+            }
+            return res.getQuantityString(skirt ? R.plurals.label_time_rel_weeks_short : R.plurals.label_time_rel_weeks, weeks, weeks);
+        }
+        if (delta < MS_PER_YEAR) {
+            int months = (int) (delta / MS_PER_MONTH);
+            int weeks = (int) ((delta - (months * MS_PER_MONTH)) / MS_PER_WEEK);
+            if (weeks >= 2) {
+                return res.getQuantityString(skirt ? R.plurals.label_time_rel_months2_short : R.plurals.label_time_rel_months2, months, months);
+            }
+            return res.getQuantityString(skirt ? R.plurals.label_time_rel_months_short : R.plurals.label_time_rel_months, months, months);
+        }
+        int years = (int)(delta / MS_PER_YEAR);
+        return res.getQuantityString(skirt ? R.plurals.label_time_rel_years_short : R.plurals.label_time_rel_years, years, years);
     }
 
     /**
