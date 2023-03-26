@@ -319,7 +319,7 @@ public class Content implements Serializable {
             }
         }
         content.text = htmlTextBuilder.toString();
-        content.plainText = plainTextBuilder.toString();
+        content.plainText = News.eliminateOddWhitespaceNonNull(plainTextBuilder);
         // cut off trailing <br> elements
         while (content.text.endsWith(HTML_BR)) {
             content.text = content.text.substring(0, content.text.length() - HTML_BR.length());

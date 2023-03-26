@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import de.freehamburger.BuildConfig;
 import de.freehamburger.util.Log;
@@ -60,6 +61,8 @@ public final class News implements Comparable<News>, Serializable {
     @VisibleForTesting public static final boolean WEATHER_AT_BOTTOM = true;
     /** geotags values to skip */
     private static final Collection<String> GEOTAGS_TO_IGNORE = Collections.singletonList("(Keine Auswahl)");
+    /** Pattern representing horizontal white space: <tt>[ \t\xA0&#92;u1680&#92;u180e&#92;u2000-&#92;u200a&#92;u202f&#92;u205f&#92;u3000]</tt> */
+    private static final Pattern PATTERN_WHITE_SPACE = Pattern.compile("\\h+");
     private static final String TAG = "News";
     private static long nextid = 1L;
     /** the streams of differenty qualities (highest number found was all 7 StreamQualities) */
@@ -137,6 +140,31 @@ public final class News implements Comparable<News>, Serializable {
     }
 
     /**
+     * Replaces horizontal white space chars ({@link #PATTERN_WHITE_SPACE "\\h+"}) with an ordinary space (0x20).<br>
+     * A {@code null} input will result in {@code null}.<br>
+     * See also {@link #eliminateOddWhitespaceNonNull(CharSequence)}
+     * @param s CharSequence to inspect
+     * @return String
+     */
+    @Nullable
+    @VisibleForTesting
+    public static String eliminateOddWhitespace(@Nullable CharSequence s) {
+        if (s == null) return null;
+        return eliminateOddWhitespaceNonNull(s);
+    }
+
+    /**
+     * Replaces horizontal white space chars ({@link #PATTERN_WHITE_SPACE "\\h+"}) with an ordinary space (0x20).
+     * See also {@link #eliminateOddWhitespace(CharSequence)}
+     * @param s CharSequence to inspect
+     * @return String
+     */
+    @NonNull
+    static String eliminateOddWhitespaceNonNull(@NonNull CharSequence s) {
+        return PATTERN_WHITE_SPACE.matcher(s).replaceAll(" ");
+    }
+
+    /**
      * Removes HTML elements from a String.
      * @param input input text possibly containing HTML elements
      * @return text without HTML elements
@@ -195,11 +223,11 @@ public final class News implements Comparable<News>, Serializable {
                 continue;
             }
             if ("title".equals(name)) {
-                news.title = fixHtml(reader.nextString());
+                news.title = eliminateOddWhitespace(fixHtml(reader.nextString()));
             } else if ("topline".equals(name)) {
-                news.topline = fixHtml(reader.nextString());
+                news.topline = eliminateOddWhitespace(fixHtml(reader.nextString()));
             } else if ("firstSentence".equals(name)) {
-                news.firstSentence = fixHtml(reader.nextString());
+                news.firstSentence = eliminateOddWhitespace(fixHtml(reader.nextString()));
             } else if ("shareURL".equals(name)) {
                 news.shareUrl = reader.nextString();
             } else if ("shorttext".equals(name)) {
