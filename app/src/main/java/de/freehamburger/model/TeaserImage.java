@@ -26,6 +26,7 @@ public class TeaserImage implements Serializable {
     @Format public static final int FORMAT_SQUARE = 3;
     /** the {@link Quality Qualities} ordered from best to worst */
     private static final Quality[] BEST_QUALITY = new Quality[]{Quality.L, Quality.P2, Quality.M, Quality.P1, Quality.S};
+    private static final Quality[] WORST_QUALITY = new Quality[]{Quality.S, Quality.P1, Quality.M, Quality.P2, Quality.L};
     final AbstractMap<Quality, String> images = new EnumMap<>(Quality.class);
     String title;
     String copyright;
@@ -141,6 +142,15 @@ public class TeaserImage implements Serializable {
     @Nullable
     public String getBestImage() {
         for (Quality q : BEST_QUALITY) {
+            String url = this.images.get(q);
+            if (url != null) return url;
+        }
+        return null;
+    }
+
+    @Nullable
+    public String getSmallestImage() {
+        for (Quality q : WORST_QUALITY) {
             String url = this.images.get(q);
             if (url != null) return url;
         }

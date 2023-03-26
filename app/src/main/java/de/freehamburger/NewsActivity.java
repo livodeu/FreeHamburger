@@ -65,6 +65,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -77,6 +78,7 @@ import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.squareup.picasso.Picasso;
@@ -98,6 +100,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import de.freehamburger.adapters.RecommendationsAdapter;
 import de.freehamburger.adapters.RelatedAdapter;
 import de.freehamburger.exo.ExoFactory;
 import de.freehamburger.exo.MediaSourceHelper;
@@ -105,9 +108,11 @@ import de.freehamburger.exo.PlayerListener;
 import de.freehamburger.model.Audio;
 import de.freehamburger.model.Content;
 import de.freehamburger.model.Dictionary;
+import de.freehamburger.model.Filter;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Related;
 import de.freehamburger.model.StreamQuality;
+import de.freehamburger.model.TextFilter;
 import de.freehamburger.model.Video;
 import de.freehamburger.supp.PopupManager;
 import de.freehamburger.util.Log;
@@ -115,6 +120,7 @@ import de.freehamburger.util.PositionedSpan;
 import de.freehamburger.util.PrintUtil;
 import de.freehamburger.util.TextViewImageSpanClickHandler;
 import de.freehamburger.util.Util;
+import de.freehamburger.views.Coolbar;
 import okhttp3.Call;
 
 /**
@@ -151,8 +157,12 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     /** passed with the Intent as extra {@link #EXTRA_NEWS} */
     private News news;
     private String json;
+    private Recommendations recommendations;
     /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
     private StyledPlayerView topVideoView;    /** Listener for the audio */
+    private AlertDialog dialogRecommendations;
+    private TextView textViewTitle;
+    private ViewGroup /*RelativeLayout*/ audioBlock;
     private final PlayerListener listenerAudio = new PlayerListener(this,true) {
 
         @Override
@@ -174,13 +184,12 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             NewsActivity.this.buttonAudio.setImageResource(isAudioPlaying() ? R.drawable.ic_pause_black_24dp : R.drawable.ic_play_arrow_black_24dp);
         }
     };
-    private TextView textViewTitle;
-    private ViewGroup /*RelativeLayout*/ audioBlock;
     private ImageButton buttonAudio;
     private TextView textViewAudioTitle;
     private TextView textViewContent;
     private RecyclerView recyclerViewRelated;
     private FloatingActionButton fab;
+    private FloatingActionButton fabRecommendations;
     private AudioFocusRequest afr;
     private int maxAudioVolume = -1;
     private int originalAudioVolume = -1;
@@ -241,6 +250,17 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private TextToSpeech tts;
     private boolean ttsInitialised = false;
     private boolean ttsSpeaking = false;
+
+    /**
+     * Adds some effects to the toolbar.
+     * @param toolbar Toolbar
+     */
+    private static void modToolbar(@Nullable final Toolbar toolbar) {
+        if (!(toolbar instanceof Coolbar)) return;
+        Coolbar coolbar = (Coolbar)toolbar;
+        coolbar.letRotate(R.id.action_recommendations);
+        coolbar.stretchOverflowButton();
+    }
 
     /**
      * Abandons the audio focus.
@@ -876,6 +896,51 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         }
     }
 
+    private void offerRecommendations() {
+        if (this.recommendations == null) this.recommendations = new Recommendations(this.news);
+        this.recommendations.call(this, new Recommendations.RecommendationsCallback() {
+            @Override public void onFailure(int code, @Nullable IOException e) {
+                if (BuildConfig.DEBUG) Log.e(TAG, "RecommendationsCallback.onFailure(" + code + ", " + e + ")");
+                if (getCoordinatorLayout() != null) Snackbar.make(getCoordinatorLayout(), R.string.error_recommendations_none, Snackbar.LENGTH_SHORT).show();
+            }
+
+            @Override public void onSuccess(@NonNull List<News> result) {
+                if (BuildConfig.DEBUG) Log.i(TAG, "RecommendationsCallback.onSuccess(" + result + ")");
+                final List<Filter> filters = TextFilter.createTextFiltersFromPreferences(NewsActivity.this);
+                final List<News> usable = new ArrayList<>(result.size());
+                for (News news : result) {
+                    if (News.NEWS_TYPE_STORY.equals(news.getType())
+                            && !TextUtils.isEmpty(news.getTitle())
+                            && !TextUtils.isEmpty(news.getDetails())
+                            && !Filter.refusedByAny(filters, news)) usable.add(news);
+                }
+                if (usable.isEmpty()) {
+                    if (getCoordinatorLayout() != null) Snackbar.make(getCoordinatorLayout(), R.string.error_recommendations_none, Snackbar.LENGTH_SHORT).show();
+                    return;
+                }
+                if (PreferenceManager.getDefaultSharedPreferences(NewsActivity.this).getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
+                    for (News news : usable) News.correct(news);
+                }
+                NewsActivity.this.handler.post(() -> {
+                    RecommendationsAdapter adapter = new RecommendationsAdapter(usable, NewsActivity.super.service);
+                    AlertDialog.Builder builder = new MaterialAlertDialogBuilder(NewsActivity.this)
+                            .setTitle(R.string.action_recommendations)
+                            .setIcon(R.drawable.ic_baseline_recommend_content_24)
+                            .setOnCancelListener(dialog -> adapter.cleanup())
+                            .setOnDismissListener(dialog -> adapter.cleanup())
+                            .setAdapter(adapter, (dialog, which) -> {
+                                News clicked = usable.get(which);
+                                dialog.dismiss();
+                                if (clicked.getDetails() != null) newNewsActivity(clicked.getDetails());
+                            })
+                            .setNegativeButton(R.string.action_close, (dialog, which) -> dialog.cancel())
+                            ;
+                    NewsActivity.this.dialogRecommendations = builder.show();
+                });
+            }
+        });
+    }
+
     /** {@inheritDoc} */
     @Override
     public void onAudioFocusChange(int focusChange) {
@@ -1048,12 +1113,14 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
         ActionBar ab = getSupportActionBar();
         if (ab != null) {
+            Toolbar toolbar = findViewById(R.id.toolbar);
             boolean noHomeAsUp = intent.getBooleanExtra(EXTRA_NO_HOME_AS_UP, false);
             if (!noHomeAsUp) {
                 ab.setDisplayHomeAsUpEnabled(true);
-                Toolbar toolbar = findViewById(R.id.toolbar);
                 setHomeArrowTooltipText(toolbar, getString(R.string.hint_back_to_main));
             }
+            setToolbarTitleMarquee(toolbar);
+            handler.postDelayed(() -> modToolbar(toolbar), 500);
         }
 
         this.news = (News) intent.getSerializableExtra(EXTRA_NEWS);
@@ -1072,6 +1139,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         if (!Util.TEST && this.news == null) {
             finish();
         }
+
+        if (this.news != null) this.recommendations = new Recommendations(this.news);
     }
 
     /** {@inheritDoc} */
@@ -1088,6 +1157,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         if (this.tts != null) {
             this.tts.shutdown();
             this.tts = null;
+        }
+        if (this.recommendations != null) {
+            this.recommendations.cleanup();
+            this.recommendations = null;
         }
         super.onDestroy();
     }
@@ -1147,6 +1220,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                 return true;
             }
         }
+        if (id == R.id.action_recommendations) {
+            offerRecommendations();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -1195,6 +1272,12 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         menuItemArchive.setVisible((this.json != null && new File(this.json).isFile()) || (this.news != null && this.news.getDetails() != null));
         // reading (aloud) is possible once tts has been initialised
         MenuItem menuItemRead = menu.findItem(R.id.action_read);
+        MenuItem menuItemRecommendations = menu.findItem(R.id.action_recommendations);
+        menuItemRecommendations.setVisible(Recommendations.isEnabled(this)
+                && this.news != null
+                && this.news.getSophoraId() != null
+                && (this.recommendations == null || !this.recommendations.hasBeenChecked() || this.recommendations.isAvailable())
+        );
         if (this.tts != null && this.ttsInitialised) {
             menuItemRead.setEnabled(true);
             menuItemRead.setIcon(this.ttsSpeaking ? R.drawable.ic_hearing_ff0000_24dp : R.drawable.ic_hearing_content_24dp);
@@ -1321,6 +1404,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         if (Build.VERSION.SDK_INT > 23) {
             initPlayers();
         }
+        if (this.recommendations != null) this.recommendations.check(this);
     }
 
     /** {@inheritDoc} */
@@ -1809,6 +1893,10 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             super.updateDrawState(ds);
         }
     }
+
+
+
+
 
 
 

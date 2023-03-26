@@ -199,7 +199,20 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     @AnyThread
     @RequiresPermission(Manifest.permission.INTERNET)
     public void loadImage(@NonNull String uri, @NonNull Target target) {
-        this.handler.post(new PictureLoader(this, uri, null, target, null));
+        loadImage(uri, target, null);
+    }
+
+
+    /**
+     * Loads a picture via Picasso into a {@link Target target}.
+     * @param uri picture URL
+     * @param target target
+     * @param placeholder placeholder
+     */
+    @AnyThread
+    @RequiresPermission(Manifest.permission.INTERNET)
+    public void loadImage(@NonNull String uri, @NonNull Target target, @Nullable Drawable placeholder) {
+        this.handler.post(new PictureLoader(this, uri, null, target, placeholder));
     }
 
     /**

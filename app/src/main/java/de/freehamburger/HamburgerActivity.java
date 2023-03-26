@@ -23,7 +23,9 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.widget.ImageButton;
@@ -47,6 +49,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
+import java.util.Map;
 
 import de.freehamburger.util.CoordinatorLayoutHolder;
 import de.freehamburger.util.Log;
@@ -133,6 +136,42 @@ public abstract class HamburgerActivity extends StyledActivity implements Coordi
     }
 
     /**
+     * Checks whether the given domains have been associated with the given App:<br>
+     * DOMAIN_STATE_SELECTED means the user has associated the host with the App.<br>
+     * DOMAIN_STATE_NONE mans the user has not.
+     * @param ctx Context representing an App
+     * @param domains domains/hosts to check
+     * @return int array with {@link DomainVerificationUserState state flags} for every domain/host, or {@code null}
+     * @throws PackageManager.NameNotFoundException if the OS does
+     */
+    @Nullable
+    private static int[] checkDomainAssociation(Context ctx, final String... domains) throws PackageManager.NameNotFoundException {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || ctx == null || domains == null) return null;
+        if (domains.length == 0) return new int[0];
+        android.content.pm.verify.domain.DomainVerificationManager manager = ctx.getSystemService(android.content.pm.verify.domain.DomainVerificationManager.class);
+        DomainVerificationUserState userState = manager.getDomainVerificationUserState(ctx.getPackageName());
+        if (userState == null) return null;
+
+        final int[] result = new int[domains.length];
+        final Map<String, Integer> hostToStateMap = userState.getHostToStateMap();
+        for (String host : hostToStateMap.keySet()) {
+            int index = -1;
+            for (int i = 0; i < domains.length; i++) {
+                if (host.equals(domains[i])) {index = i; break;}
+            }
+            if (index == -1) continue;
+            Integer stateValue = hostToStateMap.get(host);
+            /*
+            android.content.pm.verify.domain.DomainVerificationUserState.DOMAIN_STATE_VERIFIED  Domain has passed Android App Links verification.
+            android.content.pm.verify.domain.DomainVerificationUserState.DOMAIN_STATE_SELECTED  Domain hasn't passed Android App Links verification, but the user has associated it with an app.
+             */
+            if (stateValue == null) continue;
+            result[index] = stateValue;
+         }
+        return result;
+    }
+
+    /**
      * Overrides the default tooltip text for the ← button in the top-left corner.
      * @param toolbar Toolbar
      * @param ttip tooltip text to set
@@ -145,6 +184,27 @@ public abstract class HamburgerActivity extends StyledActivity implements Coordi
             if (!(child instanceof ImageButton)) continue;
             child.setTooltipText(ttip);
             break;
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    static void setToolbarTitleMarquee(@Nullable final Toolbar toolbar) {
+        if (toolbar == null) return;
+        for (int i = 0; i < toolbar.getChildCount(); i++) {
+            View child = toolbar.getChildAt(i);
+            if (child instanceof TextView) {
+                ((TextView)child).setEllipsize(TextUtils.TruncateAt.MARQUEE);
+                child.setSelected(true);
+                // feisty freak fingers fone -> fly fresh flag
+                child.setOnTouchListener((v, event) -> {
+                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        v.setSelected(false);
+                        v.setSelected(true);
+                    }
+                    return false;
+                });
+                break;
+            }
         }
     }
 
@@ -167,7 +227,7 @@ public abstract class HamburgerActivity extends StyledActivity implements Coordi
         final String host2 = getString(R.string.viewable_host_2);
         boolean askUser = false;
         try {
-            int[] domainAssociations = Util.checkDomainAssociation(this, host1, host2);
+            int[] domainAssociations = checkDomainAssociation(this, host1, host2);
             if (domainAssociations == null) return null;
             for (int da : domainAssociations) {
                 if (da == DomainVerificationUserState.DOMAIN_STATE_NONE) {askUser = true; break;}
@@ -253,7 +313,9 @@ public abstract class HamburgerActivity extends StyledActivity implements Coordi
         this.background = applyTheme(this, prefs, false);
         setContentView(getMainLayout());
         Toolbar toolbar = findViewById(R.id.toolbar);
-        if (toolbar != null) setSupportActionBar(toolbar);
+        if (toolbar != null) {
+            setSupportActionBar(toolbar);
+        }
         this.coordinatorLayout = findViewById(R.id.coordinator_layout);
         applyOrientation(this, prefs);
     }

@@ -32,4 +32,12 @@
         android:title="@string/action_archive_put"
         app:showAsAction="never"
         />
+
+    <item
+        android:id="@+id/action_recommendations"
+        android:icon="@drawable/ic_baseline_recommend_onprimary_24"
+        android:orderInCategory="50"
+        android:title="@string/action_recommendations"
+        app:showAsAction="ifRoom"
+        />
 </menu>

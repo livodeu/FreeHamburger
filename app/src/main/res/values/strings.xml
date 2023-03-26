@@ -14,6 +14,7 @@
     <string name="action_archive_import_ext">Import archive</string>
     <string name="action_background_disable">Disable</string>
     <string name="action_clear_cache">Clear cache</string>
+    <string name="action_close">Close</string>
     <string name="action_delete_log" translatable="false">Delete log</string>
     <string name="action_filter">Filter</string>
     <string name="action_filters_disabled">Inactive</string>
@@ -30,6 +31,7 @@
     <string name="action_print_pic">Print picture</string>
     <string name="action_read">Read</string>
     <string name="action_read_stop">Stop reading</string>
+    <string name="action_recommendations">Recommendations</string>
     <string name="action_scroll_to_top">Scroll to top</string>
     <string name="action_search">Search</string>
     <string name="action_section_ausland">World</string>
@@ -124,6 +126,7 @@
     <string name="error_poll_maximum_interval">The maximum interval is %1$d minutes.</string>
     <string name="error_poll_minimum_interval">The minimum interval is %1$d minutes.</string>
     <string name="error_proxy_connection_failed">The host %1$s that is set as proxy does not accept connections at port %2$s!</string>
+    <string name="error_recommendations_none">No recommendations have been found.</string>
     <string name="error_shortcut_fail">Could not create shortcut!</string>
     <string name="error_timeout">A timeout has occurred.</string>
     <string name="error_tts_fail">Speaking failed!</string>
@@ -423,6 +426,7 @@
     <string name="pref_title_quotationmarks_fix">Wrong quotation marks</string>
     <string name="pref_title_quotationmarks_fix_on">will be fixed („”)</string>
     <string name="pref_title_quotationmarks_fix_off">will be left as they are (\" \")</string>
+    <string name="pref_title_recommendations">Offer recommendations</string>
     <string name="pref_title_request_ignore_batt_optimizations">Ignore battery optimizations</string>
     <string name="pref_title_show_share_target">Show share target</string>
     <string name="pref_title_time_mode">Time mode</string>

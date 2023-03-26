@@ -38,6 +38,15 @@
         />
 
     <SwitchPreferenceCompat
+        app:defaultValue="@bool/pref_recommendations_enabled_default"
+        app:key="pref_recommendations_enabled"
+        android:icon="@drawable/ic_baseline_recommend_content_24"
+        app:singleLineTitle="false"
+        app:summaryOff="@string/label_no"
+        app:summaryOn="@string/label_yes"
+        app:title="@string/pref_title_recommendations" />
+
+    <SwitchPreferenceCompat
         android:defaultValue="@bool/pref_warn_mute_default"
         android:key="pref_warn_mute"
         android:icon="@drawable/ic_hearing_content_24dp"

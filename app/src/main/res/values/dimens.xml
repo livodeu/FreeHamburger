@@ -50,4 +50,8 @@
     <dimen name="widget_max_textsize">18sp</dimen>
     <dimen name="widget_min_textsize">10sp</dimen>
 
+    <dimen name="recommendation_padding">8dp</dimen>
+    <dimen name="recommendation_icon_width">48dp</dimen>
+    <dimen name="recommendation_icon_padding">8dp</dimen>
+
 </resources>

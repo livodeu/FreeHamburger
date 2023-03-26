@@ -12,6 +12,7 @@
     <bool name="pref_poll_breaking_only_default">true</bool>
     <bool name="pref_poll_default">false</bool>
     <bool name="pref_poll_over_mobile_default">false</bool>
+    <bool name="pref_recommendations_enabled_default">false</bool>
     <bool name="pref_show_share_target_default">false</bool>
     <bool name="pref_show_topvideo_default">true</bool>
     <bool name="pref_topline_marquee_default">false</bool>

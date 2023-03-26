@@ -197,6 +197,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_PROXY_SERVER = "pref_proxy_server";
     /** String: DIRECT, HTTP or SOCKS */
     public static final String PREF_PROXY_TYPE = "pref_proxy_type";
+    /** boolean */
+    public static final String PREF_RECOMMENDATIONS_ENABLED = "pref_recommendations_enabled";
+    public static final boolean PREF_RECOMMENDATIONS_ENABLED_DEFAULT = false;
     public static final String PREF_REGIONS = "pref_regions";
     /** boolean: show a link for htmlEmbed content */
     public static final String PREF_SHOW_EMBEDDED_HTML_LINKS = "pref_show_enbedded_html_links";
@@ -803,7 +806,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         new Thread() {
             @Override
             public void run() {
-                PERMITTED_HOSTS.addAll(ResourceUtil.loadResourceTextFile(App.this, R.raw.permitted_hosts, 38, true));
+                PERMITTED_HOSTS.addAll(ResourceUtil.loadResourceTextFile(App.this, R.raw.permitted_hosts, 39, true));
                 BLOCKED_SUBDOMAINS.addAll(ResourceUtil.loadResourceTextFile(App.this, R.raw.blocked_subdomains, 1, true));
                 PERMITTED_HOSTS_NO_SCRIPT.addAll(ResourceUtil.loadResourceTextFile(App.this, R.raw.permitted_hosts_no_js, 2, true));
             }

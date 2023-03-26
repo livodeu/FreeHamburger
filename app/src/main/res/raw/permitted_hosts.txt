@@ -36,3 +36,4 @@ wdrhf.akamaized.net
 akamaihd.net
 ardaudiothek.de
 ardmediathek.de
+storage.googleapis.com

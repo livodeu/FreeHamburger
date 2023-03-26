@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -90,6 +91,7 @@ public final class News implements Comparable<News>, Serializable {
     String ressort;
     @Nullable String shareUrl;
     String shorttext;
+    String sophoraId;
     /** the 2nd level title used only in the {@link Source#HOME HOME} category */
     String title;
     TeaserImage teaserImage;
@@ -102,6 +104,8 @@ public final class News implements Comparable<News>, Serializable {
     transient String titleL;
     /** the contents of {@link #firstSentence} in lower case */
     transient String firstSentenceL;
+    /** recommended News - not ordinarilly filled */
+    @Nullable private List<News> recommendations;
 
     /**
      * Constructor.
@@ -232,6 +236,8 @@ public final class News implements Comparable<News>, Serializable {
                 news.shareUrl = reader.nextString();
             } else if ("shorttext".equals(name)) {
                 news.shorttext = fixHtml(reader.nextString());
+            } else if ("sophoraId".equals(name)) {
+                news.sophoraId = reader.nextString();
             } else if ("externalId".equals(name)) {
                 news.externalId = reader.nextString();
             } else if ("content".equals(name)) {
@@ -468,6 +474,15 @@ public final class News implements Comparable<News>, Serializable {
         return this.id;
     }
 
+    /**
+     * Returns a list of recommended News.
+     * @return List of News objects or null
+     */
+    @Nullable
+    public List<News> getRecommendations() {
+        return this.recommendations;
+    }
+
     @NonNull
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     public Set<Region> getRegions() {
@@ -487,6 +502,11 @@ public final class News implements Comparable<News>, Serializable {
     @Nullable
     public String getShorttext() {
         return this.shorttext;
+    }
+
+    @Nullable
+    public String getSophoraId() {
+        return this.sophoraId;
     }
 
     @NonNull
@@ -634,6 +654,14 @@ public final class News implements Comparable<News>, Serializable {
      */
     public boolean isRegional() {
         return this.regional;
+    }
+
+    /**
+     * Sets a list of recommended News.
+     * @param recommendations List of News objects
+     */
+    public void setRecommendations(@Nullable List<News> recommendations) {
+        this.recommendations = recommendations;
     }
 
     /** {@inheritDoc} */
