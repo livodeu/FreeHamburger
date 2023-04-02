@@ -1585,10 +1585,14 @@ public class Util {
     public static CharSequence replaceHtmlTable(@NonNull CharSequence in) {
         final SpannableStringBuilder sb = replaceAll(in, new String[] {
             "<table>", "<tbody>",
+                "<caption>", "</caption>",
+                "<th>", "</th>",
                 "<tr>", "<td>", "</td>", "</tr>",
                 "</tbody>", "</table>"
         }, new CharSequence[] {
             "", "",
+                "<i>", "</i><br>",
+                "&nbsp;", "",
                 "<br>" + PositionedSpan.TAG_TABLE_OPENING, "&nbsp;", "", PositionedSpan.TAG_TABLE_CLOSING,
                 "", ""
         });
