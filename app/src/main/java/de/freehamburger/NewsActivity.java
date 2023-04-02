@@ -181,7 +181,9 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
         @Override
         public void onPlayerStateOrOnPlayWhenReadyChanged() {
-            NewsActivity.this.buttonAudio.setImageResource(isAudioPlaying() ? R.drawable.ic_pause_black_24dp : R.drawable.ic_play_arrow_black_24dp);
+            boolean playing = isAudioPlaying();
+            NewsActivity.this.buttonAudio.setImageResource(playing ? R.drawable.ic_pause_black_24dp : R.drawable.ic_play_arrow_black_24dp);
+            getWindow().getDecorView().setKeepScreenOn(playing);
         }
     };
     private ImageButton buttonAudio;
