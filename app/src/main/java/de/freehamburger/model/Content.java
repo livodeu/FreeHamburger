@@ -12,6 +12,7 @@ import android.util.MalformedJsonException;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.Size;
 import androidx.annotation.StringDef;
 import androidx.annotation.VisibleForTesting;
 
@@ -37,6 +38,20 @@ public class Content implements Serializable {
     public static final String FONT_FACE_IMAGE_TITLE = "sans-serif-condensed";
     /** marker for superfluous new lines to be removed (this String can be anything that is very unlikely to occur in the text naturally) */
     public static final String REMOVE_NEW_LINE = "#####";
+    @Size(5) private static final CharSequence[] TEXT_REPLACEMENTS_FROM = new CharSequence[] {
+            "<br />",
+            "\t",
+            "\r\n\r\n",
+            "&nbsp;",
+            String.valueOf((char)0xa0)
+    };
+    @Size(5) private static final CharSequence[] TEXT_REPLACEMENTS_TO = new CharSequence[] {
+            "<br>",
+            " ",
+            "\n",
+            " ",
+            " "
+    };
     /** the 🔗 symbol (unicode 0x1f517) */
     static final String MARK_LINK = "\uD83D\uDD17";
     /**
@@ -151,7 +166,7 @@ public class Content implements Serializable {
                 String value = ce.getValue();
                 if (value != null) {
                     // the value has to be pre-processed because Html.fromHtml() which is used in NewsActivity.applyNews() is not perfect…
-                    CharSequence cs = Util.replaceAll(value, new CharSequence[]{"<br />", "\t", "\r\n\r\n", "&nbsp;"}, new CharSequence[]{"\n", " ", "\n", " "});
+                    CharSequence cs = Util.replaceAll(value, TEXT_REPLACEMENTS_FROM, TEXT_REPLACEMENTS_TO);
                     StringBuilder sb = Util.removeHtmlLists(cs);
                     // create html text
                     htmlTextBuilder.append(sb).append("<br><br>");
