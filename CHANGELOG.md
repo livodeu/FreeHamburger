@@ -80,3 +80,21 @@ _2023-01_
   * appcompat 1.4.1 → 1.6.0 [release](https://developer.android.com/jetpack/androidx/releases/appcompat?hl=en#1.6.0)
   * exoplayer 2.17.1 → 2.18.2 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)
   * material 1.6.1 → 1.7.0 [comparison](https://github.com/material-components/material-components-android/compare/1.6.1...1.7.0)
+
+## 1.5
+
+_2023-04_
+
+* Fixed: Adapted to modified API
+* Fixed: Import of zip file into empty archive
+* Fixed: Performance improved for some slower devices
+* Fixed: Sorting of articles
+* Fixed: Text would sometimes be displayed incorrectly
+* New: Different background colors are available
+* New: NFC tags may be used as bookmarks
+* New: Recommendations can be requested
+* Upgrade: Several libraries have been updated:
+  * appcompat 1.6.0 → 1.6.1 [release](https://developer.android.com/jetpack/androidx/releases/appcompat?hl=en#1.6.1)
+  * exoplayer 2.18.2 → 2.18.6 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)
+  * material 1.7.0 → 1.8.0 [comparison](https://github.com/material-components/material-components-android/compare/1.7.0...1.8.0)
+  * recyclerview 1.2.1 → 1.3.0 [release](https://developer.android.com/jetpack/androidx/releases/recyclerview?hl=en#recyclerview-1.3.0)
