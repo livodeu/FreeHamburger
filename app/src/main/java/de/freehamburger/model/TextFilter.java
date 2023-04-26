@@ -80,7 +80,7 @@ public class TextFilter implements Filter {
     @NonNull
     public static List<Filter> createTextFiltersFromPreferences(@NonNull Context ctx) {
         Set<String> preferredFilters = PreferenceManager.getDefaultSharedPreferences(ctx).getStringSet(App.PREF_FILTERS, new HashSet<>());
-        @SuppressWarnings("ConstantConditions") final List<Filter> filters = new ArrayList<>(preferredFilters.size());
+        final List<Filter> filters = new ArrayList<>(preferredFilters.size());
         for (String pf : preferredFilters) {
             pf = pf.trim();
             if (pf.length() == 0) continue;
@@ -279,18 +279,28 @@ public class TextFilter implements Filter {
                 if (endsWith(tag.toLowerCase(), phrase)) return false;
             }
         } else {
-            if (news.getFirstSentenceLowerCase() != null && news.getFirstSentenceLowerCase().contains(phrase)) return false;
-            if (news.getToplineLowerCase() != null && news.getToplineLowerCase().contains(phrase)) return false;
-            if (news.getTitleLowerCase() != null && news.getTitleLowerCase().contains(phrase)) return false;
-            if (news.getContent() != null && news.getContent().getPlainText().toLowerCase(Locale.GERMAN).contains(phrase)) return false;
+            if (contains(news.getFirstSentenceLowerCase(), phrase)) return false;
+            if (contains(news.getToplineLowerCase(), phrase)) return false;
+            if (contains(news.getTitleLowerCase(), phrase)) return false;
+            if (news.getContent() != null && contains(news.getContent().getPlainText().toLowerCase(Locale.GERMAN), phrase)) return false;
             for (String tag : news.getTags()) {
-                if (tag.toLowerCase(Locale.GERMAN).contains(phrase)) return false;
+                if (contains(tag.toLowerCase(Locale.GERMAN), phrase)) return false;
             }
             for (String tag : news.getGeotags()) {
-                if (tag.toLowerCase().contains(phrase)) return false;
+                if (contains(tag.toLowerCase(), phrase)) return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Returns true if a given haystack contains a given needle.
+     * @param haystack haystack to search
+     * @param needle needle to find
+     * @return true / false
+     */
+    private static boolean contains(@Nullable String haystack, @NonNull CharSequence needle) {
+        return haystack != null && haystack.contains(needle);
     }
 
     public boolean isAtEnd() {
