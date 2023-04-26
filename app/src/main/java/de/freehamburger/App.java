@@ -230,7 +230,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public static final String PREF_WARN_MUTE = "pref_warn_mute";
     public static final boolean PREF_WARN_MUTE_DEFAULT = true;
     public static final TimeZone TIMEZONE = TimeZone.getTimeZone("Europe/Berlin");
-    public static final String URL_PREFIX = "https://www.tagesschau.de/api2/";
+    public static final String URL_PREFIX = "https://www.tagesschau.de/api2u/";
     /** the user agent to be used in the http requests */
     public static final String USER_AGENT;
     /** default proxy port (if not set by user) */
@@ -270,12 +270,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     /*
      * For older apps, possible app versions and os versions are merged into the user agent.
-     * For version 3.0.1, the user-agent is "okhttp/4.5.0", for version 3.2.0 and 3.2.3, the user-agent is "okhttp/4.7.2", for 3.3.6 it's "okhttp/4.9.3"
+     * For version 3.0.1, the user-agent is "okhttp/4.5.0", for version 3.2.0 and 3.2.3, the user-agent is "okhttp/4.7.2", for 3.3.6 it's "okhttp/4.9.3".
+     * For version 3.4.0, it's "4.10.0".
      */
     static {
         boolean beV3 = Math.random() < 0.75;
         if (beV3) {
-            String[] OKHTTP_VERSIONS = new String[] {"4.5.0", "4.7.2", "4.9.3"};
+            String[] OKHTTP_VERSIONS = new String[] {"4.5.0", "4.7.2", "4.9.3", "4.10.0"};
             USER_AGENT = "okhttp/" + OKHTTP_VERSIONS[(int) (Math.random() * OKHTTP_VERSIONS.length)];
         } else {
             //                                                                            2.5.0         2.5.1           2.5.2       2.5.3

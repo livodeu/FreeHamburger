@@ -268,6 +268,9 @@ public final class News implements Comparable<News>, Serializable {
                 news.ressort = reader.nextString();
             } else if ("breakingNews".equals(name)) {
                 news.breakingNews = reader.nextBoolean();
+            } else if ("regionId".equals(name)) {
+                // regionId is new with change to "2u" API
+                news.regions.add(Region.getById(reader.nextInt()));
             } else if ("regionIds".equals(name)) {
                 reader.beginArray();
                 while (reader.hasNext()) {

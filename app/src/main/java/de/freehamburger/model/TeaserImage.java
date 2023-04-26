@@ -1,6 +1,5 @@
 package de.freehamburger.model;
 
-import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.JsonToken;
 
@@ -68,62 +67,58 @@ public class TeaserImage implements Serializable {
                 teaserImage.setAlttext(reader.nextString());
             } else if ("copyright".equals(name)) {
                 teaserImage.setCopyright(reader.nextString());
-            } else if ("videowebs".equals(name)) {              // 256 x 144
-                reader.beginObject();
-                reader.nextName();
-                teaserImage.addImage(Quality.S, reader.nextString());
-                reader.endObject();
-            } else if ("videowebm".equals(name)) {              // 512 x 288
-                reader.beginObject();
-                reader.nextName();
-                teaserImage.addImage(Quality.M, reader.nextString());
-                reader.endObject();
-            } else if ("videowebl".equals(name)) {              // 960 x 540
-                reader.beginObject();
-                reader.nextName();
-                teaserImage.addImage(Quality.L, reader.nextString());
-                reader.endObject();
-                videoweblFound = true;
-            } else if ("portraetgrossplus8x9".equals(name)) {   // 512 x 576
-                reader.beginObject();
-                reader.nextName();
-                teaserImage.addImage(Quality.P2, reader.nextString());
-                reader.endObject();
-            } else if ("portraetgross8x9".equals(name)) {       // 256 x 288
-                reader.beginObject();
-                reader.nextName();
-                teaserImage.addImage(Quality.P1, reader.nextString());
-                reader.endObject();
-            } else if ("videoweb1x1l".equals(name)) {           // 559 x 559
-                reader.beginObject();
-                reader.nextName();
-                teaserImage.addImage(Quality.LQ, reader.nextString());
-                reader.endObject();
-            } else if ("mittelgross1x1".equals(name)) {         // 420 x 420
-                reader.beginObject();
-                reader.nextName();
-                teaserImage.addImage(Quality.MQ, reader.nextString());
-                reader.endObject();
-            } else if ("klein1x1".equals(name)) {               // 140 x 140
-                reader.beginObject();
-                reader.nextName();
-                teaserImage.addImage(Quality.MQ, reader.nextString());
-                reader.endObject();
-            } else if ("original16x9".equals(name)) {
-                reader.beginObject();
-                reader.nextName();
-                original16x9 = reader.nextString();
-                reader.endObject();
+            } else if ("imageVariants".equals(name)) {
+                parseImageVariants(teaserImage, reader);
             } else {
                 reader.skipValue();
             }
         }
         reader.endObject();
-        // "original16x9" seems to point to the same image url as "videowebl", so if "videowebl" wasn't here, use "original16x9" instead
-        if (!TextUtils.isEmpty(original16x9) && !videoweblFound) {
-            teaserImage.addImage(Quality.L, original16x9);
-        }
         return teaserImage;
+    }
+
+    /**
+     * Parses the "imageVariants" block.<br>
+     * Consists of a list of urls with its keys having the format "&lt;imageformat&gt;-&lt;width&gt;".
+     * @param teaserImage TeaserImage object to add to.
+     * @param reader JsonReader to read from.
+     * @throws IOException if they messed up the data
+     */
+    private static void parseImageVariants(@NonNull final TeaserImage teaserImage, @NonNull final JsonReader reader) throws IOException {
+        reader.beginObject();
+        for (; reader.hasNext(); ) {
+            final String name = reader.nextName();
+            JsonToken next = reader.peek();
+            if (next == JsonToken.NAME) {
+                continue;
+            }
+            if (next == JsonToken.NULL) {
+                reader.skipValue();
+                continue;
+            }
+            if ("16x9-256".equals(name)) {                      // 256 x 144
+                teaserImage.addImage(Quality.S, reader.nextString());
+            } else if ("16x9-512".equals(name)) {               // 512 x 288
+                teaserImage.addImage(Quality.M, reader.nextString());
+            } else if ("16x9-960".equals(name)) {               // 960 x 540
+                teaserImage.addImage(Quality.L, reader.nextString());
+            } else if ("portraetgrossplus8x9".equals(name)) {   // 512 x 576
+                // this does not appear to exist any more since the "2u" API
+                teaserImage.addImage(Quality.P2, reader.nextString());
+            } else if ("portraetgross8x9".equals(name)) {       // 256 x 288
+                // this does not appear to exist any more since the "2u" API
+                teaserImage.addImage(Quality.P1, reader.nextString());
+            } else if ("1x1-640".equals(name)) {                // 640 x 640
+                teaserImage.addImage(Quality.LQ, reader.nextString());
+            } else if ("1x1-432".equals(name)) {                // 432 x 432
+                teaserImage.addImage(Quality.MQ, reader.nextString());
+            } else if ("1x1-144".equals(name)) {                // 144 x 144
+                teaserImage.addImage(Quality.SQ, reader.nextString());
+            } else {
+                reader.skipValue();
+            }
+        }
+        reader.endObject();
     }
 
     private void addImage(@NonNull Quality quality, @Nullable String url) {
@@ -148,15 +143,6 @@ public class TeaserImage implements Serializable {
         return null;
     }
 
-    @Nullable
-    public String getSmallestImage() {
-        for (Quality q : WORST_QUALITY) {
-            String url = this.images.get(q);
-            if (url != null) return url;
-        }
-        return null;
-    }
-
     /**
      * Returns the image variant whose width is greater than the given width.
      * @param width  width in px
@@ -172,8 +158,7 @@ public class TeaserImage implements Serializable {
                 available = Quality.valuesForLandscape();
                 break;
             case FORMAT_PORTRAIT:
-                available = Quality.valuesForPortrait();
-                break;
+                // as of api "2u", there aren't any portrait formats any more!
             case FORMAT_SQUARE:
             default:
                 available = Quality.valuesForSquare();
@@ -191,6 +176,10 @@ public class TeaserImage implements Serializable {
         return new MeasuredImage(this.images.get(q), q.width, q.height);
     }
 
+    private int getCount() {
+        return this.images.size();
+    }
+
     /**
      * Returns a MeasuredImage of the given width and height, or null.
      * @param width requested width
@@ -202,6 +191,15 @@ public class TeaserImage implements Serializable {
         final Set<Quality> qualities = this.images.keySet();
         for (Quality q : qualities) {
             if (q.width == width && q.height == height) return new MeasuredImage(this.images.get(q), width, height);
+        }
+        return null;
+    }
+
+    @Nullable
+    public String getSmallestImage() {
+        for (Quality q : WORST_QUALITY) {
+            String url = this.images.get(q);
+            if (url != null) return url;
         }
         return null;
     }
@@ -228,16 +226,17 @@ public class TeaserImage implements Serializable {
     }
 
     /**
-     * They are ordered from smallest width to biggest width, but, if same width, from biggest height to smallest height
+     * They are ordered from smallest width to biggest width, but, if same width, from biggest height to smallest height<br>
+     * Btw.: "L" stands for "large", not for "low"…
      */
     public enum Quality {
-        /** 140x140 */ SQ(140, 140),
+        /** 144x144 */ SQ(144, 144),
         /** 256x288 */ P1(256, 288),
         /** 256x144 */ S(256, 144),
-        /** 420x420 */ MQ(420, 420),
+        /** 432x432 */ MQ(432, 432),
         /** 512x576 */ P2(512, 576),
         /** 512x288 */ M(512, 288),
-        /** 559x559 */ LQ(559, 559),
+        /** 640x640 */ LQ(640, 640),
         /** 960x540 */ L(960, 540);
 
         private static final Quality[] FOR_LANDSCAPE = new Quality[]{S, M, L};
@@ -266,7 +265,9 @@ public class TeaserImage implements Serializable {
 
         /**
          * @return Quality array ordered to prefer portrait images over landscape images
+         * @deprecated since the "2u" API, there aren't any portrait images any more!
          */
+        @Deprecated
         static Quality[] valuesForPortrait() {
             return FOR_PORTRAIT;
         }

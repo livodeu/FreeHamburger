@@ -38,7 +38,7 @@ public enum Source {
     REGIONAL(R.string.action_section_regional, App.URL_PREFIX + "news/?regions=", R.drawable.ic_place_black_24dp, R.drawable.ic_place_search_24dp,true, "action_section_regional"),
     WISSEN(R.string.action_section_wissen, App.URL_PREFIX + "news/?ressort=wissen", R.drawable.ic_baseline_lightbulb_black_24, R.drawable.ic_baseline_lightbulb_search_24, false, "action_section_wissen"),
     IV(R.string.action_section_iv, App.URL_PREFIX + "news/?ressort=investigativ", R.drawable.ic_search_black_24dp, R.drawable.ic_search_search_24dp, false, "action_section_iv"),
-    WEATHER(R.string.action_section_weather, App.URL_PREFIX + "weather/index.json", R.drawable.ic_outline_cloud_24, R.drawable.ic_outline_cloud_search_24, false, "action_section_weather"),
+    WEATHER(R.string.action_section_weather, App.URL_PREFIX + "/news/?ressort=wetter", R.drawable.ic_outline_cloud_24, R.drawable.ic_outline_cloud_search_24, false, "action_section_weather"),
     VIDEO(R.string.action_section_video, App.URL_PREFIX + "news/?ressort=video", R.drawable.ic_videocam_black_24dp, false, "action_section_video"),
     CHANNELS(R.string.action_section_channels, App.URL_PREFIX + "channels/", R.drawable.ic_tv_black_24dp, false, "action_section_sendungen")
     ;
