@@ -72,6 +72,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.text.DateFormat;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -310,7 +311,10 @@ public class AppTest {
                 R.bool.pref_show_share_target_default,
                 R.bool.pref_time_mode_default,
                 R.bool.pref_warn_mute_default,
-                R.bool.pref_nfc_use_default
+                R.bool.pref_nfc_use_default,
+                R.bool.pref_topline_marquee_default,
+                R.bool.pref_show_topvideo_default,
+                R.bool.pref_recommendations_enabled_default
         };
         final boolean[] appBoolValues = new boolean[] {
                 App.PREF_ASK_BEFORE_FINISH_DEFAULT,
@@ -328,7 +332,10 @@ public class AppTest {
                 App.PREF_SHOW_LATEST_SHARE_TARGET_DEFAULT,
                 App.PREF_TIME_MODE_RELATIVE_DEFAULT,
                 App.PREF_WARN_MUTE_DEFAULT,
-                App.PREF_NFC_USE_DEFAULT
+                App.PREF_NFC_USE_DEFAULT,
+                App.PREF_TOPLINE_MARQUEE_DEFAULT,
+                App.PREF_SHOW_TOP_VIDEO_DEFAULT,
+                App.PREF_RECOMMENDATIONS_ENABLED_DEFAULT
         };
         final int[] resIntValues = new int[] {
                 R.integer.pref_font_zoom_default,
@@ -340,6 +347,25 @@ public class AppTest {
                 (int)App.DEFAULT_CACHE_MAX_SIZE_MB,
                 App.PREF_POLL_INTERVAL_DEFAULT
         };
+
+        // make sure that all R.bool.pref_* constants are being tested here (there are others in R.bool that we skip)
+        final Set<Field> missing = new HashSet<>();
+        Field[] bools = R.bool.class.getDeclaredFields();
+        for (Field b : bools) {
+            if (!b.getName().startsWith("pref_")) continue;
+            try {
+                int resid = b.getInt(R.bool.class);
+                boolean found = false;
+                for (int resBoolValue : resBoolValues) {
+                    if (resid == resBoolValue) {found = true; break;}
+                }
+                if (!found) missing.add(b);
+            } catch (Exception e) {
+                fail(e.toString());
+            }
+        }
+        assertTrue("Untested preference defaults: " + missing, missing.isEmpty());
+
         final Resources res = ctx.getResources();
         final int nBools = resBoolValues.length;
         assertEquals(nBools, appBoolValues.length);
@@ -754,7 +780,7 @@ public class AppTest {
     public void testUncaughtEx() {
         Thread.UncaughtExceptionHandler ue = Thread.getDefaultUncaughtExceptionHandler();
         assertNotNull("UncaughtExceptionHandler not set", ue);
-        assertTrue(ue.getClass().getName().startsWith("de.freehamburger."));
+        assertTrue("Unexpected UncaughtExceptionHandler: " + ue.getClass().getName(), ue.getClass().getName().startsWith("de.freehamburger."));
     }
 
     /**
@@ -854,9 +880,11 @@ public class AppTest {
         File[] files = ctx.getFilesDir().listFiles();
         assertNotNull(files);
         for (File file : files) {
+            if (!file.isFile()) continue;
             long fs = file.length();
             long os = Util.getOccupiedSpace(file);
-            assertTrue(os >= fs);
+            long blksize = -1;
+            assertTrue("For \""  + file + "\", the calculated 'occupied space' of " + os + " is not >= the file length of " + fs,os >= fs);
         }
         //
         File fontFile = new File(ctx.getFilesDir(), App.FONT_FILE);
@@ -871,6 +899,12 @@ public class AppTest {
         assertNotNull(nonHtmlList);
         assertTrue(nonHtmlList.indexOf("<br>") >= 0);
         assertTrue(nonHtmlList.indexOf("•") >= 0);
+        //
+        String htmlTable = "<div class=\\\"table\\\"><table><caption>Restprogramm Titelkampf</caption><tr><th>Spieltag</th><th>Bayern gegen</th><th>Dortmund gegen</th></tr><tbody><tr><td>27</td><td>Freiburg (A)</td><td>Union (H)</td></tr><tr><td>28</td><td>Hoffenheim (H)</td><td>Stuttgart (A)</td></tr><tr><td>29</td><td>Mainz (A)</td><td>Frankfurt (H)</td></tr><tr><td>30</td><td>Hertha (H)</td><td>Bochum (A)</td></tr><tr><td>31</td><td>Bremen (A)</td><td>Wolfsburg (H)</td></tr><tr><td>32</td><td>Schalke (H)</td><td>Gladbach (H)</td></tr><tr><td>33</td><td>Leipzig (H)</td><td>Augsburg (A)</td></tr><tr><td>34</td><td>Köln (A)</td><td>Mainz (H)</td></tr></tbody></table></div>";
+        CharSequence htmlNoTable = Util.replaceHtmlTable(htmlTable);
+        assertNotNull(htmlNoTable);
+        htmlNoTable = htmlNoTable.toString();
+        assertFalse(((String)htmlNoTable).contains("<td>"));
         //
         StringBuilder linked = new StringBuilder("Click here: <a href=\"https://www.example.com\">Example</a>!");
         StringBuilder unlinked = Util.removeLinks(linked);

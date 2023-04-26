@@ -18,6 +18,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.graphics.Color;
 import android.hardware.display.DisplayManager;
 import android.net.Uri;
 import android.os.Build;
@@ -35,6 +37,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.Size;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.GravityCompat;
 import androidx.lifecycle.Lifecycle;
@@ -45,6 +48,7 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.MediumTest;
+import androidx.test.filters.SmallTest;
 
 import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -55,6 +59,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -64,6 +69,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import de.freehamburger.adapters.NewsRecyclerAdapter;
@@ -73,8 +79,10 @@ import de.freehamburger.model.BlobParser;
 import de.freehamburger.model.News;
 import de.freehamburger.model.Region;
 import de.freehamburger.model.Source;
+import de.freehamburger.model.StreamQuality;
 import de.freehamburger.model.TextFilter;
 import de.freehamburger.supp.SearchHelper;
+import de.freehamburger.util.ResourceUtil;
 import de.freehamburger.util.Util;
 import de.freehamburger.views.NewsView2;
 import de.freehamburger.views.NewsViewNoContentNoTitle2;
@@ -134,6 +142,17 @@ public class DataAndGuiTest {
         downloadId = dm.enqueue(r);
     }
 
+    @NonNull
+    @RequiresApi(Build.VERSION_CODES.R)
+    static Context getVisualContext(@NonNull Context ctx) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return ctx;
+        DisplayManager dm = (DisplayManager) ctx.getSystemService(Context.DISPLAY_SERVICE);
+        Display primaryDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
+        Context dctx = ctx.createDisplayContext(primaryDisplay);
+        //noinspection deprecation
+        return dctx.createWindowContext(WindowManager.LayoutParams.TYPE_TOAST, null);
+    }
+
     @BeforeClass
     public static void init() {
         ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext();
@@ -151,6 +170,108 @@ public class DataAndGuiTest {
         dm = (DownloadManager)ctx.getSystemService(Context.DOWNLOAD_SERVICE);
         assertNotNull(dm);
         downloadHomepage();
+    }
+
+    /**
+     * Tests relative formatting of timestamps.
+     */
+    @Test
+    public void testRelativeTime() {
+        Locale locale = Locale.getDefault();
+        Assume.assumeTrue("This test must be run with Locale de_DE instead of " + locale, "de_DE".equals(locale.toString()));
+
+        final long now = System.currentTimeMillis();
+
+        String rt;
+
+        long ago30min = now - 30 * 60000L;
+        rt = Util.getRelativeTime(ctx, ago30min, null);
+        assertTrue("Does not contain 'Minuten': " + rt, rt.contains("Minuten"));
+
+        long ago90min = now - 90 * 60000L;
+        rt = Util.getRelativeTime(ctx, ago90min, null);
+        assertTrue("Does not contain 'Stunden': " + rt, rt.contains("Stunden"));
+
+        long ago1day = now - 24 * 60 * 60000L;
+        rt = Util.getRelativeTime(ctx, ago1day, null);
+        assertTrue("Does not contain 'Tag' or does contain 'Tagen': " + rt, rt.contains("Tag") && !rt.contains("Tagen"));
+
+        long ago3days = now - 3 * 24 * 60 * 60000L;
+        rt = Util.getRelativeTime(ctx, ago3days, null);
+        assertTrue("Does not contain 'Tagen': " + rt, rt.contains("Tagen"));
+
+        long ago1week = now - 7 * 24 * 60 * 60000L;
+        rt = Util.getRelativeTime(ctx, ago1week, null);
+        assertTrue("Does not contain 'Woche' or does contain 'Wochen': " + rt, rt.contains("Woche") && !rt.contains("Wochen"));
+
+        long ago2weeks = now - 14 * 24 * 60 * 60000L;
+        rt = Util.getRelativeTime(ctx, ago2weeks, null);
+        assertTrue("Does not contain 'Wochen': " + rt, rt.contains("Wochen"));
+
+        long ago5weeks = now - 35 * 24 * 60 * 60000L;
+        rt = Util.getRelativeTime(ctx, ago5weeks, null);
+        assertTrue("Does not contain 'Monat': " + rt, rt.contains("Monat"));
+    }
+
+    @Test
+    @SmallTest
+    @FlakyTest(detail = "Inspects color labels")
+    public void testBackgroundAlternatives() {
+        final int numVariants = 5;
+        try {
+            // make sure that arrays exist and are not empty
+            final String[] bgVariantLabels = ctx.getResources().getStringArray(R.array.entries_background_variant);
+            assertEquals(numVariants, bgVariantLabels.length);
+
+            // values and labels must have the same count
+            final int[] buttonIndicatorColors = ctx.getResources().getIntArray(R.array.colors_list_background_variant);
+            assertEquals(bgVariantLabels.length, buttonIndicatorColors.length);
+            //
+            String exMsg = "Suspicious label at index ";
+            for (int i = 0; i < bgVariantLabels.length; i++) {
+                String label = bgVariantLabels[i].toLowerCase(Locale.getDefault());
+                if ("normal".equals(label)) assertEquals(exMsg + i + ": " + bgVariantLabels[i], StyledActivity.BACKGROUND_VARIANT_NORMAL, i);
+                else if (label.contains("viol")) assertEquals(exMsg + i + ": " + bgVariantLabels[i], StyledActivity.BACKGROUND_VARIANT_VIOLA, i);
+                else if (label.contains("türk") || label.contains("turq")) assertEquals(exMsg + i + ": " + bgVariantLabels[i], StyledActivity.BACKGROUND_VARIANT_TURQUOISE, i);
+            }
+            // test that there are exactly numVariants annotated indices declared in App
+            final Field[] fs = StyledActivity.class.getDeclaredFields();
+            int found = 0;
+            for (Field f : fs) {
+                Annotation a = f.getDeclaredAnnotation(StyledActivity.BackgroundVariant.class);
+                if (a == null) continue;
+                Integer index = (Integer)f.get(StyledActivity.class);
+                assertNotNull(index);
+                assertTrue("Index must be >= 0",index >= 0);
+                found++;
+            }
+            assertEquals(numVariants, found);
+            //
+            @Size(numVariants)
+            final int[] colors = new int[] {
+                    ResourceUtil.getColor(ctx, R.color.colorWindowBackground),
+                    ResourceUtil.getColor(ctx, R.color.colorBgNewsBlackWhite),
+                    ResourceUtil.getColor(ctx, R.color.colorBgNewsViola),
+                    ResourceUtil.getColor(ctx, R.color.colorBgNewsTurquoise),
+                    ResourceUtil.getColor(ctx, R.color.colorBgNewsBlueWhite)
+            };
+            final boolean night = Util.isNightMode(ctx);
+            for (int color : colors) {
+                int red = Color.red(color);
+                int grn = Color.green(color);
+                int blu = Color.blue(color);
+                final int max = Math.max(red, Math.max(grn, blu));
+                final int min = Math.min(red, Math.min(grn, blu));
+                float lightness = (max + min) / 2f;
+                if (night) {
+                    assertTrue("Color $" + Integer.toHexString(color) + " is too bright",lightness < 100f);
+                } else {
+                    assertTrue("Color $" + Integer.toHexString(color) + " is too dark", lightness >= 230f);
+                }
+            }
+        } catch (Exception e) {
+            fail(e.toString());
+        }
     }
 
     /**
@@ -195,60 +316,16 @@ public class DataAndGuiTest {
             if (PREFERRED_REGION.toString().equals(news.getTopline())) {
                 assertTrue("News with top line '" + PREFERRED_REGION + "' is not regional", news.isRegional());
             }
-        }
-    }
-
-    /**
-     * Tests that a list of News objects is sorted correctly.
-     */
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Test
-    @MediumTest
-    @FlakyTest(detail = "Depends on randomly generated data")
-    public void testSortNews() {
-        final DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
-        final int n = 100;
-        final List<News> unsortedlist = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            unsortedlist.add(News.getRandomNews(false));
-        }
-        final ArrayList<News> list = new ArrayList<>(unsortedlist);
-        Collections.sort(list);
-        News before = null;
-        final List<String> successes = new ArrayList<>(n);
-        final List<String> failures = new ArrayList<>(0);
-        for (News news : list) {
-            if (before != null) {
-                if (News.WEATHER_AT_BOTTOM && news.getType() != null && before.getType() == null) {
-                    failures.add("F: News with no type should appear after news with type!");
-                } else if (News.WEATHER_AT_BOTTOM && news.getType() == null && before.getType() != null) {
-                    successes.add("S: News with no type appears after news with type.");
-                } else if (news.getDate() != null) {
-                    if (before.getDate() != null) {
-                        boolean ok = news.getDate().before(before.getDate());
-                        if (ok) successes.add("S: News with date " + df.format(news.getDate()) + " and type '" + news.getType() + "' chronologically before (and thus listed behind): " + df.format(before.getDate()) + " with type '" + before.getType() + "'");
-                        else    failures.add("F: News with date " + df.format(news.getDate()) + " and type '" + news.getType() + "' not chronologically before (but listed behind): " + df.format(before.getDate()) + " with type '" + before.getType() + "'");
-                    } else if (News.LIVESTREAM_AT_TOP) {
-                        successes.add("S: News without date appears before News with a date (" + df.format(news.getDate()) + ")");
-                    } else {
-                        // in this case, the date is not a sort criterium: LIVESTREAM_AT_TOP is false and before.date is null
-                    }
-                } else if (News.LIVESTREAM_AT_TOP) {
-                    if (before.getDate() != null) failures.add("F: News without a date should not appear after News with a date (" + df.format(before.getDate()) + ")");
-                }
+            Map<StreamQuality, String> streams = news.getStreams();
+            if (streams.size() > 0) {
+                String video = StreamQuality.getStreamsUrl(ctx, streams);
+                assertNotNull(video);
+                assertTrue(video.startsWith("https://") || video.startsWith("http://"));
+                Uri videoUri = Uri.parse(video);
+                assertNotNull(videoUri.getHost());
             }
-            before = news;
         }
-
-        final boolean noFails = failures.isEmpty();
-        final StringBuilder msg = new StringBuilder().append(successes.size()).append(" successes, ").append(failures.size()).append(" failures:\n");
-        for (String f : failures) msg.append(f).append("\n");
-        if (!noFails) {
-            for (String success : successes) System.out.println(success);
-        }
-        assertTrue(msg.toString(), noFails);
     }
-
 
     @Test
     public void testDrawer() {
@@ -275,6 +352,36 @@ public class DataAndGuiTest {
                 //
                 activity.finish();
             });
+        }
+    }
+
+    @Test
+    public void testSanitizeNews() {
+        final String[] orig = new String[] {
+                "Die Bundesregierung hat",
+                "Die Bundesregierung hat",
+                "Die\tBundesregierung hat",
+                "Die\t\tBundesregierung hat",
+                "Die\rBundesregierung hat",
+                "Die\r\nBundesregierung hat",
+        };
+        final String[] corr = new String[] {
+                "Die Bundesregierung hat",
+                "Die Bundesregierung hat",
+                "Die Bundesregierung hat",
+                "Die Bundesregierung hat",
+                "Die\rBundesregierung hat",
+                "Die\r\nBundesregierung hat"
+        };
+        final boolean[] wasEqual = new boolean[] {
+                false, true, false, false, true, true
+        };
+        assertEquals(corr.length, orig.length);
+        assertEquals(wasEqual.length, orig.length);
+        for (int i = 0; i < orig.length; i++) {
+            assertEquals(wasEqual[i], orig[i].equals(corr[i]));
+            String c = News.eliminateOddWhitespace(orig[i]);
+            assertEquals("Expected \"" + corr[i] + "\" but was \"" + c + "\"", corr[i], c);
         }
     }
 
@@ -518,7 +625,7 @@ public class DataAndGuiTest {
     /**
      * Tests that News without text content but with a valid {@link News#getDetailsWeb() detailsWeb} field
      * get opened in WebViewActivity.<br>
-     * {@link App#PREF_OPEN_LINKS_INTERNALLY} must be set to true for this test to work
+     * {@link Prefs#PREF_OPEN_LINKS_INTERNALLY} must be set to true for this test to work
      */
     @Test
     public void testNewsActivityWithNoContent() {
@@ -542,17 +649,6 @@ public class DataAndGuiTest {
         } catch (InterruptedException e) {
             fail(e.toString());
         }
-    }
-
-    @NonNull
-    @RequiresApi(Build.VERSION_CODES.R)
-    static Context getVisualContext(@NonNull Context ctx) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return ctx;
-        DisplayManager dm = (DisplayManager) ctx.getSystemService(Context.DISPLAY_SERVICE);
-        Display primaryDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
-        Context dctx = ctx.createDisplayContext(primaryDisplay);
-        //noinspection deprecation
-        return dctx.createWindowContext(WindowManager.LayoutParams.TYPE_TOAST, null);
     }
 
     /**
@@ -624,23 +720,24 @@ public class DataAndGuiTest {
             //
             if (hasTopline) {
                 // news topline text should have gone into textViewTopline
-                assertTrue(TextUtils.equals(nv.textViewTopline.getText(), news.getTopline()));
+                assertTrue("textViewTopline contains \"" + nv.textViewTopline.getText() + "\" but should contain \"" + news.getTopline() + "\"",
+                        TextUtils.equals(nv.textViewTopline.getText().toString().trim(), news.getTopline().trim()));
             } else if (hasTitle) {
                 // news title text should have gone into textViewTopline
-                assertTrue(TextUtils.equals(nv.textViewTopline.getText(), news.getTitle()));
+                assertTrue(TextUtils.equals(nv.textViewTopline.getText().toString().trim(), news.getTitle().trim()));
             }
-            if (prefs.getBoolean(App.PREF_TOPLINE_MARQUEE, false)) {
+            if (prefs.getBoolean(App.PREF_TOPLINE_MARQUEE, App.PREF_TOPLINE_MARQUEE_DEFAULT)) {
                 assertTrue(nv.textViewTopline.isSelected());
                 assertSame(TextUtils.TruncateAt.MARQUEE, nv.textViewTopline.getEllipsize());
             } else {
                 assertNotSame(TextUtils.TruncateAt.MARQUEE, nv.textViewTopline.getEllipsize());
             }
             if (news.isBreakingNews()) {
-                assertEquals(nv.textViewTopline.getCurrentTextColor(), Util.getColor(ctx, R.color.colorBreakingNews));
+                assertEquals(nv.textViewTopline.getCurrentTextColor(), ResourceUtil.getColor(ctx, R.color.colorBreakingNews));
             } else if (REGION_LABELS.contains(nv.textViewTopline.getText().toString())) {
-                assertEquals(nv.textViewTopline.getCurrentTextColor(), Util.getColor(ctx, R.color.colorRegionalNews));
+                assertEquals(nv.textViewTopline.getCurrentTextColor(), ResourceUtil.getColor(ctx, R.color.colorRegionalNews));
             } else {
-                assertEquals(nv.textViewTopline.getCurrentTextColor(), Util.getColor(ctx, R.color.colorContent));
+                assertEquals(nv.textViewTopline.getCurrentTextColor(), ResourceUtil.getColor(ctx, R.color.colorContent));
             }
             // date
             if (news.getDate() != null) {
@@ -732,6 +829,76 @@ public class DataAndGuiTest {
             }
         } catch (InterruptedException e) {
             fail(e.toString());
+        }
+    }
+
+    /**
+     * Tests that a list of News objects is sorted correctly.
+     */
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Test
+    @MediumTest
+    @FlakyTest(detail = "Depends on randomly generated data")
+    public void testSortNews() {
+        final DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+        final int n = 100;
+        final List<News> unsortedlist = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            unsortedlist.add(News.getRandomNews(false));
+        }
+        final ArrayList<News> list = new ArrayList<>(unsortedlist);
+        Collections.sort(list);
+        News before = null;
+        final List<String> successes = new ArrayList<>(n);
+        final List<String> failures = new ArrayList<>(0);
+        for (News news : list) {
+            if (before != null) {
+                if (News.WEATHER_AT_BOTTOM && news.getType() != null && before.getType() == null) {
+                    failures.add("F: News with no type should appear after news with type!");
+                } else if (News.WEATHER_AT_BOTTOM && news.getType() == null && before.getType() != null) {
+                    successes.add("S: News with no type appears after news with type.");
+                } else if (news.getDate() != null) {
+                    if (before.getDate() != null) {
+                        boolean ok = news.getDate().before(before.getDate());
+                        if (ok) successes.add("S: News with date " + df.format(news.getDate()) + " and type '" + news.getType() + "' chronologically before (and thus listed behind): " + df.format(before.getDate()) + " with type '" + before.getType() + "'");
+                        else    failures.add("F: News with date " + df.format(news.getDate()) + " and type '" + news.getType() + "' not chronologically before (but listed behind): " + df.format(before.getDate()) + " with type '" + before.getType() + "'");
+                    } else if (News.LIVESTREAM_AT_TOP) {
+                        successes.add("S: News without date appears before News with a date (" + df.format(news.getDate()) + ")");
+                    } else {
+                        // in this case, the date is not a sort criterium: LIVESTREAM_AT_TOP is false and before.date is null
+                    }
+                } else if (News.LIVESTREAM_AT_TOP) {
+                    if (before.getDate() != null) failures.add("F: News without a date should not appear after News with a date (" + df.format(before.getDate()) + ")");
+                }
+            }
+            before = news;
+        }
+
+        final boolean noFails = failures.isEmpty();
+        final StringBuilder msg = new StringBuilder().append(successes.size()).append(" successes, ").append(failures.size()).append(" failures:\n");
+        for (String f : failures) msg.append(f).append("\n");
+        if (!noFails) {
+            for (String success : successes) System.out.println(success);
+        }
+        assertTrue(msg.toString(), noFails);
+    }
+
+    /**
+     * Basic test of {@link StreamQuality}.
+     */
+    @Test
+    @SmallTest
+    public void testStreamQualities() {
+        final StreamQuality[] values = StreamQuality.values();
+        for (StreamQuality value : values) {
+            assertTrue("Invalid resource label for " + value,value.getLabel() != 0);
+            assertTrue("Invalid width value for " + value,value.getWidth() == -1 || value.getWidth() > 0);
+            try {
+                String label = ctx.getString(value.getLabel());
+                assertTrue("Empty label for " + value,label.trim().length() > 0);
+            } catch (Resources.NotFoundException e) {
+                fail("No label for " + value + ": " +  e);
+            }
         }
     }
 }

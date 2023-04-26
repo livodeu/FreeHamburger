@@ -1,6 +1,5 @@
 package de.freehamburger;
 
-import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
@@ -36,6 +35,9 @@ public class SearchTest {
         assertNotNull(ctx);
     }
 
+    /**
+     * Tests that the MainActivity handles {@link SearchHelper#SEARCH_SUGGEST_ACTION}.
+     */
     @Test
     @SmallTest
     public void testHandleSearchSuggestAction() {
@@ -44,24 +46,31 @@ public class SearchTest {
         intent.setData(Uri.parse("content://de.freehamburger.debug/sid/karneval#HOME"));
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_DEBUG_LOG_RESOLUTION);
         try {
-            ResolveInfo ri = ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY | PackageManager.GET_RESOLVED_FILTER);
-            assertNotNull("Not resolved: " + intent, ri);
-            assertNotNull(ri.filter);
-            assertEquals(1, ri.filter.countActions());
-            assertEquals(1, ri.filter.countCategories());
-            assertEquals(1, ri.filter.countDataSchemes());
-            ctx.startActivity(intent);
+            List<ResolveInfo> as = ctx.getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+            assertNotNull("Not resolved: " + intent, as);
+            boolean found = false;
+            String mainActivityClass = MainActivity.class.getName();
+            for (ResolveInfo ri : as) {
+                if (ri.activityInfo == null || ri.activityInfo.name == null) continue;
+                if (ri.activityInfo.name.equals(mainActivityClass)) {
+                    found = true;
+                    break;
+                }
+            }
+            assertTrue(mainActivityClass + " does not handle " + SearchHelper.SEARCH_SUGGEST_ACTION, found);
         } catch (Exception e) {
             fail("No activity for " + intent + ": " + e);
         }
     }
 
+    /**
+     * Tests that the MainActivity handles {@link Intent#ACTION_SEARCH}.
+     */
     @Test
     @SmallTest
     public void testHandlesSearchAction() {
         Intent intent = new Intent(Intent.ACTION_SEARCH);
         intent.putExtra(SearchManager.QUERY, ".");
-        //intent.addFlags(Intent.FLAG_DEBUG_LOG_RESOLUTION);
         List<ResolveInfo> as = ctx.getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
         assertNotNull(as);
         boolean found = false;

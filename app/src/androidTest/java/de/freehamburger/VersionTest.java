@@ -9,7 +9,6 @@ import static org.junit.Assert.fail;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Parcelable;
@@ -23,6 +22,7 @@ import org.junit.Test;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 
 import de.freehamburger.util.Util;
@@ -115,8 +115,10 @@ public class VersionTest {
     public void testParseGithub() {
         InputStream inputStream = null;
         try {
-            inputStream = ctx.getResources().openRawResource(R.raw.github);
-        } catch (Resources.NotFoundException e) {
+            Field fgithub = R.raw.class.getDeclaredField("github");
+            int rawresid = (int)fgithub.get(R.raw.class);
+            inputStream = ctx.getResources().openRawResource(rawresid);
+        } catch (Exception e) {
         }
         Assume.assumeNotNull("R.raw.github (see ReleaseChecker.URL_GITHUB_API) not found - expected in debug res", inputStream);
         try {
