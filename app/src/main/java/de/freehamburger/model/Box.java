@@ -1,9 +1,11 @@
 package de.freehamburger.model;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.JsonToken;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -13,17 +15,21 @@ import java.util.regex.Pattern;
 /**
  * <pre>
  * "box" : {
- * "title" : "Rätsel um verschwundene Ente",
- * "subtitle" : "Auf Grönland-Reise",
- * "images" : {
- *  "title" : "Präsidente",
- *  "copyright" : "AAP",
- *  "alttext" : "El Präsidente Al Dente",
- *  "preferredVariants" : "6x9",
- *  "type" : "image",
- *  "videowebl" : {
- *      "imageurl" : "https://www.lordinateur.de/ausland/jomei.jpg"
- *  }
+ *  "image" : {
+ *   "title" : "",
+ *   "copyright" : "BUBU",
+ *   "alttext" : "Ein Flugzeug.",
+ *   "imageVariants" : {
+ *           "1x1-144" : "https://images.tagesschau.de/image/…/1x1-144.jpg",
+ *           …
+ *           "16x9-1920" : "https://images.tagesschau.de/image/…/16x9-1920.jpg"
+ *   },
+ *   "type" : "image"
+ *  },
+ * "link" : "<a href=\"https://www.tagesschau.de/api2u/wirtschaft/flugzeug-101.json\" type=\"intern\">mehr",
+ * "subtitle" : "Wirtschaftsförderung",
+ * "text" : "Die Maßnahmen werden von Airlines gelobt, stoßen aber auf Widerstand bei Umweltschützern.",
+ * "title" : "Flughafen will Flugzeuge"
  * </pre>
  */
 public class Box implements Serializable {
@@ -86,7 +92,7 @@ public class Box implements Serializable {
                 }
             } else if ("link".equals(name)) {
                 box.link = reader.nextString();
-            } else if ("images".equals(name)) {
+            } else if ("image".equals(name)) {
                 box.image = Image.parse(reader);
             } else {
                 reader.skipValue();
@@ -159,15 +165,8 @@ public class Box implements Serializable {
                     image.alttext = reader.nextString();
                 } else if ("copyright".equals(name)) {
                     image.copyright = reader.nextString();
-                } else if ("videowebl".equals(name)) {
-                    reader.beginObject();
-                    String imageurl = reader.nextName();
-                    if ("imageurl".equals(imageurl)) {
-                        image.url = reader.nextString();
-                    } else {
-                        reader.skipValue();
-                    }
-                    reader.endObject();
+                } else if ("imageVariants".equals(name)) {
+                    parseImageVariants(image, reader);
                 } else {
                     reader.skipValue();
                 }
@@ -175,6 +174,40 @@ public class Box implements Serializable {
 
             reader.endObject();
             return image;
+        }
+
+        /**
+         * Parses the "imageVariants" block.<br>
+         * Consists of a list of urls with its keys having the format "&lt;imageformat&gt;-&lt;width&gt;".
+         * @param image Image object to set the image url in.
+         * @param reader JsonReader to read from.
+         * @throws IOException if they messed up the data
+         */
+        private static void parseImageVariants(@NonNull final Image image, @NonNull final JsonReader reader) throws IOException {
+            reader.beginObject();
+            for (; reader.hasNext(); ) {
+                final String name = reader.nextName();
+                JsonToken next = reader.peek();
+                if (next == JsonToken.NAME) {
+                    continue;
+                }
+                if (next == JsonToken.NULL) {
+                    reader.skipValue();
+                    continue;
+                }
+                if ("16x9-256".equals(name)) {                      // 256 x 144
+                    if (TextUtils.isEmpty(image.url)) image.url = reader.nextString(); else reader.skipValue();
+                } else if ("16x9-512".equals(name)) {               // 512 x 288
+                    if (TextUtils.isEmpty(image.url)) image.url = reader.nextString(); else reader.skipValue();
+                } else if ("16x9-960".equals(name)) {               // 960 x 540
+                    image.url = reader.nextString();
+                } else if ("1x1-640".equals(name)) {                // 640 x 640
+                    if (TextUtils.isEmpty(image.url)) image.url = reader.nextString(); else reader.skipValue();
+                } else {
+                    reader.skipValue();
+                }
+            }
+            reader.endObject();
         }
 
         @Nullable
