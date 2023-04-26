@@ -821,6 +821,7 @@ public class SettingsActivity extends StyledActivity implements ServiceConnectio
                         }
                         return true;
                     });
+                    prefRequestIgnoreBattOptimizations.setEnabled(true);
                     prefRequestIgnoreBattOptimizations.setVisible(true);
                 }
             } else {
@@ -1037,8 +1038,6 @@ public class SettingsActivity extends StyledActivity implements ServiceConnectio
                     return true;
                 });
             }
-
-            configurePrefRequestIgnoreBattOptimizations(activity);
 
             long statStart = prefs.getLong(UpdateJobService.PREF_STAT_START, 0L);
             int jobsSoFar = prefs.getInt(UpdateJobService.PREF_STAT_COUNT, 0);
