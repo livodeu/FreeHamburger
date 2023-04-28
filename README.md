@@ -3,6 +3,10 @@ Hamburger is a news app for Android phones - it displays the news issued by the 
 
 In contrast to the app provided by the broadcaster itself, Hamburger does **not** track the user in any way.
 
+For information about the hidden activities of the broadcaster app, see [kuketz-blog.de](https://www.kuketz-blog.de/ard-zdf-apps-unter-der-lupe-tracking-und-verstoesse-gegen-das-ttdsg/)
+and [mobilsicher.de](https://appcheck.mobilsicher.de/appchecks/tagesschau-aktuelle-nachrichten) (both in German).
+
+
 ## Get it
 
 Either 

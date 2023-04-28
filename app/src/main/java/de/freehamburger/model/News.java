@@ -55,9 +55,10 @@ public final class News implements Comparable<News>, Serializable {
     public static final int FLAG_INCLUDE_HTMLEMBED = 1;
     /** News with <em>no</em> {@link #ts timestamp} respectively <em>no</em> {@link #date date} should be listed at the top */
     @VisibleForTesting public static final boolean LIVESTREAM_AT_TOP = true;
-    public static final String NEWS_TYPE_STORY = "story";
-    public static final String NEWS_TYPE_VIDEO = "video";
-    public static final String NEWS_TYPE_WEBVIEW = "webview";
+    @NewsType public static final String NEWS_TYPE_AUDIO = "audio";
+    @NewsType public static final String NEWS_TYPE_STORY = "story";
+    @NewsType public static final String NEWS_TYPE_VIDEO = "video";
+    @NewsType public static final String NEWS_TYPE_WEBVIEW = "webview";
     /** News with <em>no</em> {@link #type} should be listed at the bottom */
     @VisibleForTesting public static final boolean WEATHER_AT_BOTTOM = true;
     /** geotags values to skip */
@@ -92,6 +93,7 @@ public final class News implements Comparable<News>, Serializable {
     @Nullable String shareUrl;
     String shorttext;
     String sophoraId;
+    @Nullable String stream;
     /** the 2nd level title used only in the {@link Source#HOME HOME} category */
     String title;
     TeaserImage teaserImage;
@@ -238,6 +240,8 @@ public final class News implements Comparable<News>, Serializable {
                 news.shorttext = fixHtml(reader.nextString());
             } else if ("sophoraId".equals(name)) {
                 news.sophoraId = reader.nextString();
+            } else if ("stream".equals(name)) {
+                news.stream = reader.nextString();
             } else if ("externalId".equals(name)) {
                 news.externalId = reader.nextString();
             } else if ("content".equals(name)) {
@@ -512,6 +516,14 @@ public final class News implements Comparable<News>, Serializable {
         return this.sophoraId;
     }
 
+    /**
+     * Returns a stream url.
+     * @return url or null
+     */
+    @Nullable public String getStream() {
+        return this.stream;
+    }
+
     @NonNull
     public Map<StreamQuality, String> getStreams() {
         return this.streams;
@@ -685,7 +697,7 @@ public final class News implements Comparable<News>, Serializable {
     }
 
     @Retention(RetentionPolicy.SOURCE)
-    @StringDef({NEWS_TYPE_STORY, NEWS_TYPE_WEBVIEW, NEWS_TYPE_VIDEO})
+    @StringDef({NEWS_TYPE_AUDIO, NEWS_TYPE_STORY, NEWS_TYPE_WEBVIEW, NEWS_TYPE_VIDEO})
     public @interface NewsType {}
 
 

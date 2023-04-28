@@ -1467,6 +1467,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         @News.NewsType String type = news.getType();
         String urlToDetailsJson = news.getDetails();
         Content content = news.getContent();
+        boolean isAudio = News.NEWS_TYPE_AUDIO.equals(type);
         boolean isStory = News.NEWS_TYPE_STORY.equals(type);
         boolean isWebVw = News.NEWS_TYPE_WEBVIEW.equals(type);
         boolean isVideo = News.NEWS_TYPE_VIDEO.equals(type);
@@ -1486,13 +1487,13 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
                 intent = new Intent(this, WebViewActivity.class);
                 intent.putExtra(WebViewActivity.EXTRA_NEWS, news);
             }
-        } else if (isVideo) {
+        } else if (isVideo || isAudio) {
             if (!Util.isNetworkAvailable(this)) {
                 showNoNetworkSnackbar();
                 intent = null;
             } else {
                 if (Util.isNetworkMobile(this)) {
-                    boolean loadVideos = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_LOAD_VIDEOS_OVER_MOBILE, App.DEFAULT_LOAD_VIDEOS_OVER_MOBILE);
+                    boolean loadVideos = !isVideo || PreferenceManager.getDefaultSharedPreferences(this).getBoolean(App.PREF_LOAD_VIDEOS_OVER_MOBILE, App.DEFAULT_LOAD_VIDEOS_OVER_MOBILE);
                     if (!loadVideos) {
                         intent = null;
                         Snackbar.make(this.coordinatorLayout, R.string.pref_title_pref_load_videos_over_mobile_off, Snackbar.LENGTH_SHORT).show();

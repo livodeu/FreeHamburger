@@ -468,6 +468,7 @@ public class Content implements Serializable {
         @Nullable private Lyst list;
         @Nullable private Related[] related;
         @Nullable private HtmlEmbed htmlEmbed;
+        @Nullable private TeaserImage teaserImage;
 
         /**
          * @param reader JsonReader
@@ -514,6 +515,9 @@ public class Content implements Serializable {
                         reader.endObject();
                     } else if ("related".equals(name)) {
                         ce.related = Related.parse(reader);
+                    } else if ("teaserImage".equals(name)) {
+                        ce.teaserImage = TeaserImage.parse(reader);
+                        if (BuildConfig.DEBUG) android.util.Log.w(Content.class.getSimpleName(), "Parsed ContentElement " + name + " although it is not used: " + ce.teaserImage);
                     } else if ("title".equals(name)) {
                         ce.title = reader.nextString();
                     } else if ("webview".equals(name)) {

@@ -12,6 +12,8 @@ import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.freehamburger.BuildConfig;
+
 /**
  * <pre>
  * "box" : {
@@ -50,9 +52,10 @@ public class Box implements Serializable {
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if {@code reader} is {@code null}
      */
-    @NonNull
+    @Nullable
     static Box parse(@NonNull final JsonReader reader) throws IOException {
         final Box box = new Box();
+        boolean returnNull = false;
         reader.beginObject();
         for (; reader.hasNext(); ) {
             String name = reader.nextName();
@@ -79,6 +82,19 @@ public class Box implements Serializable {
                     int textLinkEnd = box.text.indexOf("</a>", textLinkStart + 2);
                     if (textLinkEnd > textLinkStart) {
                         String link = box.text.substring(textLinkStart, textLinkEnd);
+                        int hrefStart = link.indexOf("href=\"");
+                        int hrefEnd = hrefStart > -1 ? link.indexOf("\"", hrefStart + 6) : -1;
+                        String href = hrefStart > -1 && hrefEnd > hrefStart ? link.substring(hrefStart + 6, hrefEnd) : null;
+                        if (TextUtils.isEmpty(href)) {
+                            /*
+                             This would be link like this:
+                             <a href="" externalId="tagesschau_fm-link-generated-href-hash-97617a9dc2732ed9f55507f84c4287af">mehr</a>
+                             <a href="" externalId="tagesschau_fm-link-generated-href-hash-987654321abcdef1234567890abcdef0">mehr</a>
+                             In the end, the user would see a non-working link with some blah-blah teaser text around it
+                             so it seems better so skip this element altogether
+                             */
+                            returnNull = true;
+                        }
                         if (link.contains("type=\"intern\"")) {
                             // remove internal links
                             box.text = box.text.substring(0, textLinkStart) + box.text.substring(textLinkEnd + 4);
@@ -100,7 +116,10 @@ public class Box implements Serializable {
         }
 
         reader.endObject();
-        return box;
+        if (BuildConfig.DEBUG && returnNull) {
+            android.util.Log.w(Box.class.getSimpleName(), "Skipping " + box);
+        }
+        return returnNull ? null : box;
     }
 
     @Nullable
@@ -132,7 +151,7 @@ public class Box implements Serializable {
     @Override
     @NonNull
     public String toString() {
-        return "Box \"" + title + "\" \"" + text + "\"";
+        return "Box \"" + title + "\"" + (text != null ? " \"" + text + "\"" : " with no text") + (image != null ? ", image \"" + image + "\"" : ", with no image");
     }
 
     /**

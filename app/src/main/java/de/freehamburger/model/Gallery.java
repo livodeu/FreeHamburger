@@ -18,18 +18,7 @@ import java.util.Map;
 /**
  * A sequence of pictures.<br>
  * Each picture is represented by an instance of {@link Item}.<br>
- * Each Item is usually available in different sizes:
- * <ul>
- * <li>klein1x1                140x140</li>
- * <li>videowebs               256x144</li>
- * <li>portraetgross8x9        256x288</li>
- * <li>mittelgross1x1          420x420</li>
- * <li>videowebm               512x288</li>
- * <li>portraetgrossplus8x9    512x576</li>
- * <li>videoweb1x1l            559x559</li>
- * <li>videowebl               960x540</li>
- * </ul>
- * Not all of these will be considered - see {@link Quality}
+ * Each Item is usually available in different image variants.
  */
 public class Gallery implements Serializable {
 
@@ -102,27 +91,46 @@ public class Gallery implements Serializable {
                     if (TextUtils.isEmpty(item.title)) item.title = alttext;
                 } else if ("copyright".equals(name)) {
                     item.copyright = reader.nextString();
-                } else if ("videowebs".equals(name)) {
-                    reader.beginObject();
-                    reader.nextName();
-                    item.addImage(Quality.S, reader.nextString());
-                    reader.endObject();
-                } else if ("videowebm".equals(name)) {
-                    reader.beginObject();
-                    reader.nextName();
-                    item.addImage(Quality.M, reader.nextString());
-                    reader.endObject();
-                } else if ("videowebl".equals(name)) {
-                    reader.beginObject();
-                    reader.nextName();
-                    item.addImage(Quality.L, reader.nextString());
-                    reader.endObject();
+                } else if ("imageVariants".equals(name)) {
+                    parseImageVariants(item, reader);
                 } else {
                     reader.skipValue();
                 }
             }
             reader.endObject();
             return item;
+        }
+
+        /**
+         * Parses the "imageVariants" block.<br>
+         * Consists of a list of urls with its keys having the format "&lt;imageformat&gt;-&lt;width&gt;".
+         * @param item Item object to set the image url in.
+         * @param reader JsonReader to read from.
+         * @throws IOException if they messed up the data
+         */
+        private static void parseImageVariants(@NonNull final Gallery.Item item, @NonNull final JsonReader reader) throws IOException {
+            reader.beginObject();
+            for (; reader.hasNext(); ) {
+                final String name = reader.nextName();
+                JsonToken next = reader.peek();
+                if (next == JsonToken.NAME) {
+                    continue;
+                }
+                if (next == JsonToken.NULL) {
+                    reader.skipValue();
+                    continue;
+                }
+                if ("16x9-256".equals(name)) {                      // 256 x 144
+                    item.addImage(Quality.S, reader.nextString());
+                } else if ("16x9-512".equals(name)) {               // 512 x 288
+                    item.addImage(Quality.M, reader.nextString());
+                } else if ("16x9-960".equals(name)) {               // 960 x 540
+                    item.addImage(Quality.L, reader.nextString());
+                } else {
+                    reader.skipValue();
+                }
+            }
+            reader.endObject();
         }
 
         private void addImage(Quality quality, String url) {

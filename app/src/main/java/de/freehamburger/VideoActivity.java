@@ -327,12 +327,21 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
         if (newsVideo != null) {
             if (this.exoPlayerVideo != null) {
                 newsVideo = Util.makeHttps(newsVideo);
-                MediaSource ms = this.mediaSourceHelper.buildMediaSource((Call.Factory)((App)getApplicationContext()).getOkHttpClient(), Uri.parse(newsVideo));
+                MediaSource ms = this.mediaSourceHelper.buildMediaSource((Call.Factory) ((App) getApplicationContext()).getOkHttpClient(), Uri.parse(newsVideo));
                 requestAudioFocus();
                 this.exoPlayerVideo.setMediaSource(ms, true);
                 this.exoPlayerVideo.prepare();
                 this.exoPlayerVideo.setPlayWhenReady(true);
+                this.playerView.setUseArtwork(false);
             }
+        } else if (this.news.getStream() != null) {
+            MediaSource ms = this.mediaSourceHelper.buildMediaSource((Call.Factory) ((App) getApplicationContext()).getOkHttpClient(), Uri.parse(this.news.getStream()));
+            requestAudioFocus();
+            this.exoPlayerVideo.setMediaSource(ms, true);
+            this.exoPlayerVideo.prepare();
+            this.exoPlayerVideo.setPlayWhenReady(true);
+            this.playerView.setUseArtwork(true);
+            this.playerView.setDefaultArtwork(getResources().getDrawable(R.drawable.ic_baseline_audiotrack_semitrans_24));
         } else {
             this.playerView.setVisibility(View.GONE);
         }

@@ -98,3 +98,9 @@ _2023-04_
   * exoplayer 2.18.2 → 2.18.6 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)
   * material 1.7.0 → 1.8.0 [comparison](https://github.com/material-components/material-components-android/compare/1.7.0...1.8.0)
   * recyclerview 1.2.1 → 1.3.0 [release](https://developer.android.com/jetpack/androidx/releases/recyclerview?hl=en#recyclerview-1.3.0)
+
+## 1.5.1
+
+_2023-0x_
+
+* Fixed: Additional adaptions to modified API, including handling of audio-only news

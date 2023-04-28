@@ -13,6 +13,7 @@ import android.content.pm.Signature;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Parcelable;
+import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.JsonToken;
 
@@ -327,20 +328,43 @@ public final class ReleaseChecker {
     }
 
     public static boolean isNewerReleaseAvailable(@Nullable Release latestRelease) {
-        String thisVersion;
-        int dot;
-        if (latestRelease == null || !latestRelease.isValid() || (dot = (thisVersion = Util.trimNumber(BuildConfig.VERSION_NAME)).indexOf('.')) < 0) {
+        if (latestRelease == null || !latestRelease.isValid()) {
             return false;
         }
-        int thisMajor = Integer.parseInt(thisVersion.substring(0, dot));
-        int thisMinor = Integer.parseInt(thisVersion.substring(dot + 1));
-        String latestReleaseVersion = latestRelease.getPrettyTagName();
-        if (latestReleaseVersion == null) return false;
-        dot = latestReleaseVersion.indexOf('.');
-        if (dot < 0) return false;
-        int latestReleaseMajor = Integer.parseInt(latestReleaseVersion.substring(0, dot));
-        int latestReleaseMinor = Integer.parseInt(latestReleaseVersion.substring(dot + 1));
-        return latestReleaseMajor > thisMajor || (latestReleaseMajor == thisMajor && latestReleaseMinor > thisMinor);
+        int firstDot, lastDot;
+
+        final String thisVersion = Util.trimNumber(BuildConfig.VERSION_NAME);
+        firstDot = thisVersion.indexOf('.');
+        if (firstDot < 0) return false;
+        lastDot = thisVersion.lastIndexOf('.');
+        final int thisMajor, thisMinor, thisPatch;
+        thisMajor = Integer.parseInt(thisVersion.substring(0, firstDot));
+        if (firstDot == lastDot) {
+            thisMinor = Integer.parseInt(thisVersion.substring(firstDot + 1));
+            thisPatch = 0;
+        } else {
+            thisMinor = Integer.parseInt(thisVersion.substring(firstDot + 1, lastDot));
+            thisPatch = Integer.parseInt(thisVersion.substring(lastDot + 1));
+        }
+
+        final String latestReleaseVersion = latestRelease.getPrettyTagName();
+        if (TextUtils.isEmpty(latestReleaseVersion)) return false;
+        firstDot = latestReleaseVersion.indexOf('.');
+        if (firstDot < 0) return false;
+        lastDot = latestReleaseVersion.lastIndexOf('.');
+        final int latestReleaseMajor = Integer.parseInt(latestReleaseVersion.substring(0, firstDot));
+        final int latestReleaseMinor, latestReleasePatch;
+        if (firstDot == lastDot) {
+            latestReleaseMinor = Integer.parseInt(latestReleaseVersion.substring(firstDot + 1));
+            latestReleasePatch = 0;
+        } else {
+            latestReleaseMinor = Integer.parseInt(latestReleaseVersion.substring(firstDot + 1, lastDot));
+            latestReleasePatch = Integer.parseInt(latestReleaseVersion.substring(lastDot + 1));
+        }
+
+        return latestReleaseMajor > thisMajor
+                || (latestReleaseMajor == thisMajor && latestReleaseMinor > thisMinor)
+                || (latestReleaseMajor == thisMajor && latestReleaseMinor == thisMinor && latestReleasePatch > thisPatch);
     }
 
     /**

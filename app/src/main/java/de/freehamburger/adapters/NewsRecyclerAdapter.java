@@ -102,7 +102,8 @@ public class NewsRecyclerAdapter extends StyledActivity.StyledAdapter<NewsRecycl
     @LayoutRes
     public static int getViewType(@Nullable final News news) {
         if (news == null) return R.layout.news_view2;
-        if (News.NEWS_TYPE_VIDEO.equals(news.getType())) {
+        String newsType = news.getType();
+        if (News.NEWS_TYPE_VIDEO.equals(newsType) || News.NEWS_TYPE_AUDIO.equals(newsType)) {
             return R.layout.news_view_nocontent_notitle2;
         }
         return R.layout.news_view2;
