@@ -908,7 +908,7 @@ public class Util {
      * @param basedOn Date (set to {@code null} to compare time to current time)
      * @param skirt {@code true} to return a short variant
      * @return relative time
-     * @throws NullPointerException if {@code ctx} is {@code null} and {@code time} is not {@code null}
+     * @throws NullPointerException if {@code ctx} is {@code null}
      */
     @NonNull
     public static String getRelativeTime(@NonNull Context ctx, long timestamp, @Nullable Date basedOn, final boolean skirt) {
@@ -1381,13 +1381,17 @@ public class Util {
 
     /**
      * Makes sure that the given url uses https and not http.
+     * Also prepends https before urls without a protocol.
      * @param url http(s) url
      * @return https url
      * @throws NullPointerException if {@code url} is {@code null}
      */
     @NonNull
     public static String makeHttps(@NonNull final String url) {
-        return url.toLowerCase(Locale.US).startsWith("http:") ? "https:" + url.substring(5) : url;
+        return url.toLowerCase(Locale.US).startsWith("http:") ? "https:" + url.substring(5)
+                : url.startsWith("//") ? "https:" + url
+                : url.startsWith("/") ? "https:/" + url
+                : url;
     }
 
     @NonNull
