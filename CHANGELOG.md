@@ -101,6 +101,7 @@ _2023-04_
 
 ## 1.5.1
 
-_2023-0x_
+_2023-05_
 
 * Fixed: Additional adaptions to modified API, including handling of audio-only news
+* Fixed: Fix some badly formatted links
