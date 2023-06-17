@@ -23,6 +23,7 @@
 
     <color name="colorBox">#7ED2FC</color>
     <color name="colorBoxBackground">#111288cc</color>
+    <color name="colorHtmlEmbed">#555555</color>
     <color name="colorQuotation">#7ED2FC</color>
 
     <color name="colorWindowBackground">#1a75aa</color>

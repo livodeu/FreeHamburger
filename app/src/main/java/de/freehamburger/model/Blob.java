@@ -72,9 +72,11 @@ public class Blob {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Resources.Theme t = ctx.getTheme();
             Content.setColorBox("#" + Integer.toHexString(r.getColor(R.color.colorBox, t) & ~0xff000000));
+            Content.setColorHtmlEmbed("#" + Integer.toHexString(r.getColor(R.color.colorHtmlEmbed, t) & ~0xff000000));
             Content.setColorQuotation("#" + Integer.toHexString(r.getColor(R.color.colorQuotation, t) & ~0xff000000));
         } else {
             Content.setColorBox("#" + Integer.toHexString(r.getColor(R.color.colorBox) & ~0xff000000));
+            Content.setColorHtmlEmbed("#" + Integer.toHexString(r.getColor(R.color.colorHtmlEmbed) & ~0xff000000));
             Content.setColorQuotation("#" + Integer.toHexString(r.getColor(R.color.colorQuotation) & ~0xff000000));
         }
         //

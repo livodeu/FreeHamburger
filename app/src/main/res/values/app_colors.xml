@@ -23,6 +23,7 @@
 
     <color name="colorBox">#064a91</color>
     <color name="colorBoxBackground">#111288cc</color>
+    <color name="colorHtmlEmbed">#cccccc</color>
     <color name="colorQuotation">#064a91</color>
     <!-- Do NOT overwrite colorSearchIcon in the night colors! The search icons will not be updated when there is a uiMode change! -->
     <color name="colorSearchIcon">#ff1288cc</color>

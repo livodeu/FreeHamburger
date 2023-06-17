@@ -100,6 +100,8 @@ public class Content implements Serializable {
     private static String colorQuotation = "#064a91";
     /** The color that a box element will be rendered in */
     private static String colorBox = "#064a91";
+    /** The background color of a link to an external resource given as 'htmlEmbed' content element */
+    private static String colorHtmlEmbed = "#cccccc";
     @NonNull private final List<ContentElement> elementList = new ArrayList<>(16);
     @NonNull private final List<Video> videoList = new ArrayList<>();
     @NonNull private final List<Audio> audioList = new ArrayList<>();
@@ -231,12 +233,12 @@ public class Content implements Serializable {
                     if (!TextUtils.isEmpty(label)) {
                         // the 🔗 symbol will be replaced later in Blob.parseApi()
                         // the <xsm></xsm> tag will be resolved in Util.fromHtml()
-                        htmlTextBuilder.append("<p style=\"background-color:lightgray\">")
+                        htmlTextBuilder.append("<p style=\"background-color:").append(colorHtmlEmbed).append("\">")
                                 .append("<a href=\"")
                                 .append(htmlEmbed.getUrl())
                                 .append("\">↗&nbsp;")
                                 .append(label)
-                                .append("</a><br>")
+                                .append("</a>&nbsp;")
                                 .append(PositionedSpan.TAG_XSMALL_OPENING)
                                 .append(MARK_LINK)
                                 .append(PositionedSpan.TAG_XSMALL_CLOSING)
@@ -347,6 +349,10 @@ public class Content implements Serializable {
 
     static void setColorBox(@NonNull String color) {
         colorBox = color;
+    }
+
+    static void setColorHtmlEmbed(@NonNull String color) {
+        colorHtmlEmbed = color;
     }
 
     static void setColorQuotation(@NonNull String color) {
