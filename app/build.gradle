@@ -5,7 +5,7 @@ def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
 
     splits {
         // https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/dsl/Splits
@@ -22,9 +22,9 @@ android {
         // https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/dsl/DefaultConfig
         applicationId "de.freehamburger"
         minSdkVersion 21
-        targetSdkVersion 33
-        versionCode 8
-        versionName "1.5.1"
+        targetSdkVersion 34
+        versionCode 9
+        versionName "1.6"
         resConfigs 'en', 'de'
         buildConfigField("long", "BUILD_TIME", String.valueOf(System.currentTimeMillis()) + "L")
         testApplicationId applicationId + ".test"
@@ -94,7 +94,7 @@ dependencies {
     implementation 'androidx.preference:preference:1.2.0'
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     // https://github.com/material-components/material-components-android
-    implementation 'com.google.android.material:material:1.8.0'
+    implementation 'com.google.android.material:material:1.9.0'
     // https://github.com/square/okhttp
     //noinspection GradleDependency
     implementation 'com.squareup.okhttp3:okhttp:4.10.0'
@@ -103,10 +103,10 @@ dependencies {
     //noinspection GradleDependency
     implementation 'com.squareup.picasso:picasso:2.8'
     // https://github.com/google/ExoPlayer
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.18.6'
-    implementation 'com.google.android.exoplayer:exoplayer-ui:2.18.6'
-    implementation 'com.google.android.exoplayer:exoplayer-hls:2.18.6'
-    implementation 'com.google.android.exoplayer:extension-okhttp:2.18.6'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.18.7'
+    implementation 'com.google.android.exoplayer:exoplayer-hls:2.18.7'
+    implementation 'com.google.android.exoplayer:extension-okhttp:2.18.7'
 
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
 
