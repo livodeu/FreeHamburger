@@ -2,10 +2,7 @@ package de.freehamburger.model;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.JsonReader;
-import android.util.JsonToken;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Date;
@@ -17,46 +14,22 @@ import de.freehamburger.BuildConfig;
  */
 public class Audio implements Serializable {
 
-    private String title;
-    private String dateString;
+    private final String title;
+    private final String dateString;
+    @NonNull private final String stream;
     private Date date;
-    private String stream;
 
     /**
-     * Parses the given JsonReader to retrieve an Audio element.
-     * @param reader JsonReader
-     * @return Audio
-     * @throws IOException if an I/O error occurs
-     * @throws NullPointerException if {@code reader} is {@code null}
+     * Constructor.
+     * @param title  title
+     * @param stream audio stream url
+     * @param date   date, formatted as "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
      */
-    @NonNull
-    static Audio parseAudio(@NonNull final JsonReader reader) throws IOException {
-        final Audio audio = new Audio();
-        String name = null;
-        reader.beginObject();
-        for (; reader.hasNext(); ) {
-            JsonToken token = reader.peek();
-            if (token == JsonToken.END_DOCUMENT) break;
-            if (token == JsonToken.NAME) {
-                name = reader.nextName();
-                continue;
-            }
-            if (token == JsonToken.NULL) {
-                reader.skipValue();
-                continue;
-            }
-            if ("title".equals(name)) {
-                audio.title = reader.nextString();
-            } else if ("stream".equals(name)) {
-                audio.stream = reader.nextString();
-            } else if ("date".equals(name)) {
-                audio.dateString = reader.nextString();
-            } else {
-                reader.skipValue();
-            }
-        }
-        reader.endObject();
-        return audio;
+    Audio(String title, @NonNull String stream, String date) {
+        super();
+        this.title = title;
+        this.stream = stream;
+        this.dateString = date;
     }
 
     @Nullable
@@ -73,13 +46,18 @@ public class Audio implements Serializable {
         return null;
     }
 
-    @Nullable
+    @NonNull
     public String getStream() {
-        return stream;
+        return this.stream;
     }
 
-    @Nullable
+    @NonNull
     public String getTitle() {
-        return title;
+        return this.title != null && this.title.length() > 0 ? this.title : this.stream;
+    }
+
+    /** {@inheritDoc} */
+    @NonNull @Override public String toString() {
+        return getTitle();
     }
 }

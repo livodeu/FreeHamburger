@@ -321,8 +321,8 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
         // audio from the news.content part
         Audio audio = content != null && content.hasAudio() ? content.getAudioList().get(0) : null;
         if (audio != null) {
-            String audioUrl = audio.getStream();
-            Uri audioUri = audioUrl != null ? Uri.parse(Util.makeHttps(audioUrl)) : null;
+            @NonNull String audioUrl = audio.getStream();
+            Uri audioUri = Uri.parse(Util.makeHttps(audioUrl));
             if (audioUri != null && App.isHostAllowed(audioUri.getHost())) {
                 validAudio = true;
                 this.buttonAudio.setTag(audio.getStream());

@@ -331,8 +331,8 @@ public class Content implements Serializable {
                 Video video = ce.getVideo();
                 if (video != null) content.videoList.add(video);
             } else if (ContentElement.TYPE_AUDIO.equals(type)) {
-                Audio audio = ce.getAudio();
-                if (audio != null) content.audioList.add(audio);
+                String stream = ce.getStream();
+                if (!TextUtils.isEmpty(stream)) content.audioList.add(new Audio(ce.getTitle(), stream, ce.getDateString()));
             }
         }
         content.text = htmlTextBuilder.toString();
@@ -468,13 +468,14 @@ public class Content implements Serializable {
         private String type;
         @Nullable private String value;
         @Nullable private Video video;
-        @Nullable private Audio audio;
         @Nullable private Gallery gallery;
         @Nullable private Box box;
         @Nullable private Lyst list;
         @Nullable private Related[] related;
         @Nullable private HtmlEmbed htmlEmbed;
         @Nullable private TeaserImage teaserImage;
+        @Nullable private String dateString;
+        @Nullable private String stream;
 
         /**
          * @param reader JsonReader
@@ -506,10 +507,10 @@ public class Content implements Serializable {
                         ce.gallery = Gallery.parse(reader);
                     } else if ("video".equals(name)) {
                         ce.video = Video.parseVideo(reader);
-                    } else if ("audio".equals(name)) {
-                        ce.audio = Audio.parseAudio(reader);
                     } else if ("box".equals(name)) {
                         ce.box = Box.parse(reader);
+                    } else if ("date".equals(name)) {
+                        ce.dateString = reader.nextString();
                     } else if ("list".equals(name)) {
                         ce.list = Lyst.parse(reader);
                     } else if ("htmlEmbed".equals(name)) {
@@ -521,6 +522,8 @@ public class Content implements Serializable {
                         reader.endObject();
                     } else if ("related".equals(name)) {
                         ce.related = Related.parse(reader);
+                    } else if ("stream".equals(name)) {
+                        ce.stream = reader.nextString();
                     } else if ("teaserImage".equals(name)) {
                         ce.teaserImage = TeaserImage.parse(reader);
                         if (BuildConfig.DEBUG) android.util.Log.w(Content.class.getSimpleName(), "Parsed ContentElement " + name + " although it is not used: " + ce.teaserImage);
@@ -532,10 +535,17 @@ public class Content implements Serializable {
                         ce.value = reader.nextString();
                         reader.endObject();
                     } else {
+                        JsonToken nextOne = reader.peek();
+                        Object nextValue;
+                        if (JsonToken.STRING.equals(nextOne)) {
+                            nextValue = reader.nextString();
+                        } else {
+                            reader.skipValue();
+                            nextValue = null;
+                        }
                         // known elements that wil be ignored: "tracking", "social"
                         if (BuildConfig.DEBUG && !"tracking".equals(name) && !"social".equals(name))
-                            de.freehamburger.util.Log.w(Content.class.getSimpleName(), "Skipping content element '" + name + "'");
-                        reader.skipValue();
+                            de.freehamburger.util.Log.w(Content.class.getSimpleName(), "Skipping content element '" + name + "': \"" + nextValue + "\"");
                     }
                 }
                 reader.endObject();
@@ -553,23 +563,14 @@ public class Content implements Serializable {
         }
 
         @Nullable
-        Audio getAudio() {
-            return audio;
-        }
-
-        @Nullable
         @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
         public Box getBox() {
             return box;
         }
 
-        /*
-         * @return the order by which the ContentElement originally appeared in the parent Content element
-         *
-        @IntRange(from = MIN_ORDER)
-        public int getOrder() {
-            return order;
-        }*/
+        @Nullable public String getDateString() {
+            return dateString;
+        }
 
         @Nullable
         @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
@@ -591,6 +592,11 @@ public class Content implements Serializable {
         @Nullable
         Related[] getRelated() {
             return related;
+        }
+
+        @Nullable
+        public String getStream() {
+            return stream;
         }
 
         @Nullable
