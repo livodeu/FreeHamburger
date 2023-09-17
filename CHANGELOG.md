@@ -116,6 +116,7 @@ _2023-0x_
 * Upgrade: Several libraries have been updated:
   * exoplayer 2.18.6 → 2.19.1 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)
   * material 1.8.0 → 1.9.0 [comparison](https://github.com/material-components/material-components-android/compare/1.8.0...1.9.0)
+  * okhttp 4.10.0 → 4.11.0 [change log](https://github.com/square/okhttp/blob/master/docs/changelogs/changelog_4x.md#version-4110)
   * preference 1.2.0 → 1.2.1 [change log](https://developer.android.com/jetpack/androidx/releases/preference?hl=en#1.2.1)
   * recyclerview 1.3.0 → 1.3.1 [release](https://developer.android.com/jetpack/androidx/releases/recyclerview?hl=en#recyclerview-1.3.1)
 
