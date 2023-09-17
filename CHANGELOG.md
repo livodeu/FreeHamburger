@@ -105,3 +105,17 @@ _2023-05_
 
 * Fixed: Additional adaptions to modified API, including handling of audio-only news
 * Fixed: Fix some badly formatted links
+
+## 1.6.0
+
+_2023-0x_
+
+* Changed: The app targets API level 34 now.
+* Changed: The host "br.de" cannot use JavaScript anymore because it chose to present errors instead of content
+* Fixed: Audio elements are included again
+* Upgrade: Several libraries have been updated:
+  * exoplayer 2.18.6 → 2.19.1 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)
+  * material 1.8.0 → 1.9.0 [comparison](https://github.com/material-components/material-components-android/compare/1.8.0...1.9.0)
+  * preference 1.2.0 → 1.2.1 [change log](https://developer.android.com/jetpack/androidx/releases/preference?hl=en#1.2.1)
+  * recyclerview 1.3.0 → 1.3.1 [release](https://developer.android.com/jetpack/androidx/releases/recyclerview?hl=en#recyclerview-1.3.1)
+
