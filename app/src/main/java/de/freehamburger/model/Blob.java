@@ -23,9 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 import de.freehamburger.App;
-import de.freehamburger.BuildConfig;
 import de.freehamburger.R;
-import de.freehamburger.util.Log;
 
 /**
  * The main data object which contains lists of national and regional {@link News news}.
@@ -96,32 +94,30 @@ public class Blob {
                 continue;
             }
             if ("regional".equals(name)) {
-                blob.regionalNewsList.addAll(parseNewsList(reader, true, flags));
-                // remove news from those regions that the user is not interested in
-                final Set<String> regionIdsToInclude = prefs.getStringSet(App.PREF_REGIONS, new HashSet<>(0));
-                final Set<News> toRemove = new HashSet<>();
-                for (News regionalNews : blob.regionalNewsList) {
-                    Set<Region> newsRegions = regionalNews.getRegions();
-                    // decision: keep regional news if it has got no region attached to it
-                    if (newsRegions.isEmpty()) {
-                        if (BuildConfig.DEBUG) Log.w(Blob.class.getSimpleName(), "Regional news without region: \"" + regionalNews.getTitle() + "\"!");
-                        continue;
-                    }
-                    //
-                    boolean keep = false;
-                    for (Region newsRegion : newsRegions) {
-                        String newsRegionId = String.valueOf(newsRegion.getId());
-                        //noinspection ConstantConditions
-                        if (regionIdsToInclude.contains(newsRegionId)) {
-                            keep = true;
-                            break;
+                @Nullable final Set<String> regionIdsToInclude = prefs.getStringSet(App.PREF_REGIONS, null);
+                if (regionIdsToInclude == null || regionIdsToInclude.isEmpty()) {
+                    reader.skipValue();
+                } else {
+                    blob.regionalNewsList.addAll(parseNewsList(reader, true, flags));
+                    // remove news from those regions that the user is not interested in
+                    final Set<News> toRemove = new HashSet<>();
+                    for (News regionalNews : blob.regionalNewsList) {
+                        Set<Region> newsRegions = regionalNews.getRegions();
+                        // decision: keep regional news if it has got no region attached to it
+                        if (newsRegions.isEmpty()) continue;
+                        //
+                        boolean keep = false;
+                        for (Region newsRegion : newsRegions) {
+                            String newsRegionId = String.valueOf(newsRegion.getId());
+                            if (regionIdsToInclude.contains(newsRegionId)) {
+                                keep = true;
+                                break;
+                            }
                         }
+                        if (!keep) toRemove.add(regionalNews);
                     }
-                    if (!keep) {
-                        toRemove.add(regionalNews);
-                    }
+                    blob.regionalNewsList.removeAll(toRemove);
                 }
-                blob.regionalNewsList.removeAll(toRemove);
                 continue;
             }
             if ("newStoriesCountLink".equals(name))  {
