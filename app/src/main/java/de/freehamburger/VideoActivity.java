@@ -217,7 +217,11 @@ public class VideoActivity extends AppCompatActivity implements AudioManager.OnA
         // pause video before finishing the activity to make sure there is no audio when the activity has been finished
         long delay = pauseVideo(true);
         if (delay > 0L) {
-            this.handler.postDelayed(VideoActivity.super::onBackPressed, delay);
+            try {
+                this.handler.postDelayed(VideoActivity.super::onBackPressed, delay);
+            } catch (Throwable t) {
+                if (BuildConfig.DEBUG) Log.e(TAG, t.toString(), t);
+            }
             return;
         }
         super.onBackPressed();
