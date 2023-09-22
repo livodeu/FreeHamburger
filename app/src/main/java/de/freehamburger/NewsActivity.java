@@ -536,12 +536,11 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             // Note: there won't be any BackgroundColorSpans in API < 24 because Html.fromHtml() does not generate them
             BackgroundColorSpan[] bs = spannable.getSpans(0, spannable.length(), BackgroundColorSpan.class);
             if (bs != null) {
-                final int backgroundColor = getResources().getColor(R.color.colorBoxBackground);
                 for (BackgroundColorSpan b : bs) {
                     int start = spannable.getSpanStart(b);
                     int end = spannable.getSpanEnd(b);
                     spannable.removeSpan(b);
-                    spannable.setSpan(new BackgroundSpan(backgroundColor), start, end, Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+                    spannable.setSpan(new BackgroundSpan(b.getBackgroundColor(), Paint.Style.FILL), start, end, Spanned.SPAN_INCLUSIVE_INCLUSIVE);
                 }
             }
 
@@ -1808,22 +1807,26 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
 
         @ColorInt private final int color;
         private final Rect r = new Rect();
+        private final Paint.Style style;
         private int recentLine = Integer.MIN_VALUE;
 
         /**
          * Constructor.
          * @param color background color
          */
-        private BackgroundSpan(@ColorInt int color) {
+        private BackgroundSpan(@ColorInt int color, @NonNull Paint.Style style) {
             super();
             this.color = color;
+            this.style = style;
         }
 
         /** {@inheritDoc} */
         @Override
         public void drawBackground(@NonNull Canvas canvas, @NonNull Paint paint, int left, int right, int top, int baseline, int bottom, @NonNull CharSequence text, int start, int end, int lineNumber) {
             final int originalColor = paint.getColor();
+            Paint.Style originalStyle = paint.getStyle();
             paint.setColor(this.color);
+            paint.setStyle(this.style);
             // apparently it is not possible to extend the background to the left or right because the canvas is clipped
             if (Math.abs(lineNumber - this.recentLine) > 1) {
                 // for the 1st line, extend the background slightly to the top
@@ -1832,6 +1835,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
             } else {
                 canvas.drawRect(left, top, right, bottom, paint);
             }
+            paint.setStyle(originalStyle);
             paint.setColor(originalColor);
             this.recentLine = lineNumber;
         }

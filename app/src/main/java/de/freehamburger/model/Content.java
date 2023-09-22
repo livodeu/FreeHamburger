@@ -38,20 +38,6 @@ public class Content implements Serializable {
     public static final String FONT_FACE_IMAGE_TITLE = "sans-serif-condensed";
     /** marker for superfluous new lines to be removed (this String can be anything that is very unlikely to occur in the text naturally) */
     public static final String REMOVE_NEW_LINE = "#####";
-    @Size(5) private static final CharSequence[] TEXT_REPLACEMENTS_FROM = new CharSequence[] {
-            "<br />",
-            "\t",
-            "\r\n\r\n",
-            "&nbsp;",
-            String.valueOf((char)0xa0)
-    };
-    @Size(5) private static final CharSequence[] TEXT_REPLACEMENTS_TO = new CharSequence[] {
-            "<br>",
-            " ",
-            "\n",
-            " ",
-            " "
-    };
     /** the 🔗 symbol (unicode 0x1f517) */
     static final String MARK_LINK = "\uD83D\uDD17";
     /**
@@ -69,9 +55,11 @@ public class Content implements Serializable {
      */
     private static final String TAG_BOX = "p";
     /**
-     * The html tag that a gallery title will be wrapped into.
+     * The html tag that a box element link will be wrapped into ({@link #colorBox} will be applied, too)<br>
+     * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()} <br>
+     * &lt;small&gt; will be rendered with a text size of 80% (see Html.HtmlToSpannedConverter.handleEndTag())
      */
-    private static final String TAG_GALLERY_TITLE = "b";
+    private static final String TAG_BOX_LINK = "small";
     /**
      * The html tag that a box element title will be wrapped into ({@link #colorBox} will be applied, too)<br>
      * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()}<br>
@@ -80,26 +68,40 @@ public class Content implements Serializable {
     @Deprecated
     private static final String TAG_BOX_TITLE = "h6";
     /**
-     * The html tag that a box element link will be wrapped into ({@link #colorBox} will be applied, too)<br>
-     * For usable tags see {@link Html Html.HtmlToSpannedConverter.handleStartTag()} <br>
-     * &lt;small&gt; will be rendered with a text size of 80% (see Html.HtmlToSpannedConverter.handleEndTag())
+     * The html tag that a gallery title will be wrapped into.
      */
-    private static final String TAG_BOX_LINK = "small";
+    private static final String TAG_GALLERY_TITLE = "b";
     /**
-     * The html tag that a list title will be wrapped into.
+     * The html tag that a list item will end with.
      */
-    private static final String TAG_LIST_TITLE = "b";
+    private static final String TAG_LISTITEM_END = "font";
     /**
      * The html tag that a list item will start with.
      */
     private static final String TAG_LISTITEM_START = "font face=\"sans-serif-condensed\"";
     /**
-     * The html tag that a list item will end with.
+     * The html tag that a list title will be wrapped into.
      */
-    private static final String TAG_LISTITEM_END = "font";
+    private static final String TAG_LIST_TITLE = "b";
+    @Size(5) private static final CharSequence[] TEXT_REPLACEMENTS_FROM = new CharSequence[] {
+            "<br />",
+            "\t",
+            "\r\n\r\n",
+            "&nbsp;",
+            String.valueOf((char)0xa0)
+    };
+    @Size(5) private static final CharSequence[] TEXT_REPLACEMENTS_TO = new CharSequence[] {
+            "<br>",
+            " ",
+            "\n",
+            " ",
+            " "
+    };
     private static String colorQuotation = "#064a91";
     /** The color that a box element will be rendered in */
     private static String colorBox = "#064a91";
+    /** The background color of a box element */
+    private static String colorBoxBackground = "#777777";
     /** The background color of a link to an external resource given as 'htmlEmbed' content element */
     private static String colorHtmlEmbed = "#cccccc";
     @NonNull private final List<ContentElement> elementList = new ArrayList<>(16);
@@ -249,41 +251,45 @@ public class Content implements Serializable {
                 Box box = ce.getBox();
                 if (box != null) {
                     // add the box, followed by a <br>
-                    htmlTextBuilder.append("<").append(TAG_BOX).append('>');
                     final String boxTitle = box.getTitle();
                     final Box.Image boxImage = box.getImage();
                     final String boxText = box.getText();
                     final String boxLink = box.getLink();
                     boolean brAppended = false;
+                    /*
+                    from Html.handleStartTag(String tag, Attributes attributes):
+                    horizontal text alignment is applied only to: <p> and <div>
+                    colors are applied only to: <p> and <span>
+                     */
                     if (!TextUtils.isEmpty(boxTitle)) {
-                        // add the box title
-                        // apparently, a <h6> causes the background color not being applied because in Html.setSpanFromMark() 'where' equals 'len'…
-                        htmlTextBuilder.append("<font color=\"").append(colorBox).append("\">").append(boxTitle).append("</font><br>");
+                        htmlTextBuilder.append("<").append(TAG_BOX).append(">");
+                        // box title (apparently, a <h6> causes the background color to not being applied because in Html.setSpanFromMark() 'where' equals 'len'…)
+                        htmlTextBuilder.append("<br><font color=\"").append(colorBox).append("\">").append(boxTitle).append("</font>");
+                        htmlTextBuilder.append("</").append(TAG_BOX).append("><br>");
                         brAppended = true;
                     }
                     if (boxImage != null && !TextUtils.isEmpty(boxImage.getUrl())) {
                         // in case we didn't append a <br> after the title, append one now
                         if (!brAppended) htmlTextBuilder.append("<br>");
-                        // add the box image, followed by a <br>
-                        htmlTextBuilder.append("<img src=\"").append(boxImage.getUrl()).append("\"/><br>");
-                    }
-                    if (!TextUtils.isEmpty(boxText)) {
-                        htmlTextBuilder
-                                .append("<font color=\"").append(colorBox).append("\"><").append(TAG_BOX_TEXT).append('>')
-                                .append(boxText);
-                        String imageCopyright = boxImage != null ? boxImage.getCopyright() : null;
-                        if (!TextUtils.isEmpty(imageCopyright)) {
-                            htmlTextBuilder.append(" (&copy; ").append(imageCopyright).append(")");
+                        // box image, followed by a <br>
+                        htmlTextBuilder.append("<p style=\"text-align:center\"><img src=\"").append(boxImage.getUrl()).append("\"/></p><br>");
+                        // box text (display only if there is an image because the box text usually serves as kind of image content description)
+                        if (!TextUtils.isEmpty(boxText)) {
+                            htmlTextBuilder.append("<").append(TAG_BOX).append(">");
+                            htmlTextBuilder.append("<font color=\"").append(colorBox).append("\"><").append(TAG_BOX_TEXT).append('>').append(boxText);
+                            String imageCopyright = boxImage.getCopyright();
+                            if (!TextUtils.isEmpty(imageCopyright)) htmlTextBuilder.append(" (&copy; ").append(imageCopyright).append(")");
+                            // appending a <br> directly after boxText and before TAG_BOX_TEXT avoids a strange vertical gap before the last line
+                            htmlTextBuilder.append("<br></font></").append(TAG_BOX_TEXT).append(">");
                         }
-                        // appending a <br> directly after boxText and before TAG_BOX_TEXT avoids a strange vertical gap before the last line
-                        htmlTextBuilder.append("<br></").append(TAG_BOX_TEXT).append("></font>");
                     }
                     if (!TextUtils.isEmpty(boxLink)) {
+                        htmlTextBuilder.append("<").append(TAG_BOX).append(">");
                         htmlTextBuilder.append("<font color=\"").append(colorBox).append("\"><").append(TAG_BOX_LINK).append('>')
                         // e.g.: "link": "<a href=\"https://www.server.nl/api7/buitenland/guldenvlies.json\" type=\"intern\">meer</a>",
-                        .append(boxLink).append("</").append(TAG_BOX_LINK).append("></font>");
+                        .append(boxLink).append("</").append(TAG_BOX_LINK).append("></font><br>");
+                        htmlTextBuilder.append("</").append(TAG_BOX).append(">");
                     }
-                    htmlTextBuilder.append("</").append(TAG_BOX).append(">");
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) htmlTextBuilder.append("<br>");
                 }
             } else if (ContentElement.TYPE_IMAGE_GALLERY.equals(type)) {
@@ -304,7 +310,9 @@ public class Content implements Serializable {
                             url = null;
                         }
                         if (url != null) {
+                            htmlTextBuilder.append("<p style=\"text-align:center\">");
                             htmlTextBuilder.append("<img src=\"").append(url).append("\"/>");
+                            htmlTextBuilder.append("</p><br>");
                             if (!TextUtils.isEmpty(item.getTitle())) {
                                 htmlTextBuilder.append("<p>");
                                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) htmlTextBuilder.append(REMOVE_NEW_LINE);
@@ -350,6 +358,8 @@ public class Content implements Serializable {
     static void setColorBox(@NonNull String color) {
         colorBox = color;
     }
+
+    static void setColorBoxBackground(@NonNull String color) { colorBoxBackground = color; }
 
     static void setColorHtmlEmbed(@NonNull String color) {
         colorHtmlEmbed = color;
@@ -448,17 +458,17 @@ public class Content implements Serializable {
     public static class ContentElement implements Comparable<ContentElement>, Serializable {
 
         static final int MIN_ORDER = 1;
-        static final String TYPE_TEXT = "text";
-        static final String TYPE_HEADLINE = "headline";
-        static final String TYPE_IMAGE_GALLERY = "image_gallery";
         static final String TYPE_AUDIO = "audio";
-        static final String TYPE_VIDEO = "video";
-        static final String TYPE_RELATED = "related";
         static final String TYPE_BOX = "box";
+        static final String TYPE_HEADLINE = "headline";
         static final String TYPE_HTMLEMBED = "htmlEmbed";
+        static final String TYPE_IMAGE_GALLERY = "image_gallery";
         static final String TYPE_LIST = "list";
         static final String TYPE_QUOTATION = "quotation";
+        static final String TYPE_RELATED = "related";
         static final String TYPE_SOCIALMEDIA = "socialmedia";
+        static final String TYPE_TEXT = "text";
+        static final String TYPE_VIDEO = "video";
         static final String TYPE_WEBVIEW = "webview";
 
         /** the order by which the ContentElements originally appeared in the Content element */
@@ -473,7 +483,6 @@ public class Content implements Serializable {
         @Nullable private Lyst list;
         @Nullable private Related[] related;
         @Nullable private HtmlEmbed htmlEmbed;
-        @Nullable private TeaserImage teaserImage;
         @Nullable private String dateString;
         @Nullable private String stream;
 
@@ -524,9 +533,6 @@ public class Content implements Serializable {
                         ce.related = Related.parse(reader);
                     } else if ("stream".equals(name)) {
                         ce.stream = reader.nextString();
-                    } else if ("teaserImage".equals(name)) {
-                        ce.teaserImage = TeaserImage.parse(reader);
-                        if (BuildConfig.DEBUG) android.util.Log.w(Content.class.getSimpleName(), "Parsed ContentElement " + name + " although it is not used: " + ce.teaserImage);
                     } else if ("title".equals(name)) {
                         ce.title = reader.nextString();
                     } else if ("webview".equals(name)) {
@@ -543,9 +549,9 @@ public class Content implements Serializable {
                             reader.skipValue();
                             nextValue = null;
                         }
-                        // known elements that wil be ignored: "tracking", "social"
-                        if (BuildConfig.DEBUG && !"tracking".equals(name) && !"social".equals(name))
-                            de.freehamburger.util.Log.w(Content.class.getSimpleName(), "Skipping content element '" + name + "': \"" + nextValue + "\"");
+                        // known elements that wil be ignored: "tracking", "social", "teaserImage"
+                        if (BuildConfig.DEBUG && !"tracking".equals(name) && !"social".equals(name) && !"teaserImage".equals(name))
+                            de.freehamburger.util.Log.i(Content.class.getSimpleName(), "Skipping content element '" + name + (nextValue != null ? "': \"" + nextValue + "\"" : "'"));
                     }
                 }
                 reader.endObject();
