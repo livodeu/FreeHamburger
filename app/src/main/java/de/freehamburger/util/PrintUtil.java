@@ -7,7 +7,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintJob;

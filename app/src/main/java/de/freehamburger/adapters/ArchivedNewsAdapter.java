@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Typeface;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;

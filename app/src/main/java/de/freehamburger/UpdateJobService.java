@@ -25,7 +25,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PersistableBundle;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
 import android.util.SparseArray;

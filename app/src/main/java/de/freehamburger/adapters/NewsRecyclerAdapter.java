@@ -7,7 +7,7 @@ import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Handler;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Size;
 import android.util.SparseArray;

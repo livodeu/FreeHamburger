@@ -12,7 +12,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Icon;
 import android.os.Build;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 
 import androidx.annotation.NonNull;
 

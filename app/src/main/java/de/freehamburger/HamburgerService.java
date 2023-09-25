@@ -12,7 +12,7 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.text.Html;
 import android.util.TypedValue;
 import android.widget.ImageView;

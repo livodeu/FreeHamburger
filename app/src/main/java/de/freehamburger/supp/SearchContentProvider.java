@@ -17,7 +17,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 import android.os.Build;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 

@@ -7,7 +7,7 @@ import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
