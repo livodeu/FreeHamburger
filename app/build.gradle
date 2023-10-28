@@ -95,7 +95,7 @@ dependencies {
     implementation 'androidx.preference:preference:1.2.1'
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     // https://github.com/material-components/material-components-android
-    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'com.google.android.material:material:1.10.0'
     // https://github.com/square/okhttp
     //noinspection GradleDependency
     implementation 'com.squareup.okhttp3:okhttp:4.11.0'
