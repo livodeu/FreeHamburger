@@ -26,6 +26,7 @@ import android.webkit.CookieManager;
 import android.webkit.RenderProcessGoneDetail;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -85,6 +86,7 @@ public class WebViewActivity extends AppCompatActivity {
     private boolean loading;
     /** set to {@code true} when the device's configuration has changed*/
     private boolean configurationJustChanged;
+    protected int errorCode = 0;
 
     /**
      * Initiates a download via the system's {@link DownloadManager}.
@@ -459,6 +461,31 @@ public class WebViewActivity extends AppCompatActivity {
         @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
             this.activity.loading = true;
             super.onPageStarted(view, url, favicon);
+        }
+
+        /** {@inheritDoc} */
+        @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+            super.onReceivedError(view, request, error);
+            if (!request.isForMainFrame()) return;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
+            this.activity.errorCode = error.getErrorCode();
+            String msg;
+            switch (this.activity.errorCode) {
+                case WebViewClient.ERROR_CONNECT:
+                case WebViewClient.ERROR_HOST_LOOKUP:
+                    msg = view.getContext().getString(R.string.error_connection_failed, request.getUrl().getHost()); break;
+                default:
+                    msg = error.getDescription().toString();
+                    if (msg.startsWith("net::")) msg = msg.substring(5);
+            }
+            view.loadDataWithBaseURL(null, "<!DOCTYPE html><html><head><title>Error</title></head><body>"
+                    + "<h3>"
+                    + msg
+                    + "</h3>"
+                    +"</body></html>", "text/html", "UTF-8", null);
+            this.activity.invalidateOptionsMenu();
+            this.activity.setResult(RESULT_CANCELED);
+            this.handler.postDelayed(() -> {if (!activity.isFinishing()) activity.finish();}, 5_000L);
         }
 
         /** {@inheritDoc} */

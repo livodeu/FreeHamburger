@@ -164,7 +164,7 @@ public class TeletextActivity extends WebViewActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem itemShortcut = menu.findItem(R.id.action_shortcut_create);
         if (itemShortcut != null) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || this.errorCode != 0) {
                 itemShortcut.setVisible(false);
             } else {
                 ShortcutManager sm = (ShortcutManager) getSystemService(SHORTCUT_SERVICE);
