@@ -60,7 +60,7 @@ import de.freehamburger.model.News;
 import de.freehamburger.util.Log;
 import de.freehamburger.util.Util;
 
-public class WebViewActivity extends AppCompatActivity {
+public class WebViewActivity extends BackhandActivity {
 
     /** boolean; if true, the ActionBar will not show the home arrow which would lead to MainActivity */
     public static final String EXTRA_NO_HOME_AS_UP = "extra_no_home_as_up";

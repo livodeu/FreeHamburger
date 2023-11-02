@@ -10,7 +10,6 @@ import androidx.annotation.ColorRes;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
@@ -20,7 +19,7 @@ import java.lang.annotation.RetentionPolicy;
 
 import de.freehamburger.util.ResourceUtil;
 
-public abstract class StyledActivity extends AppCompatActivity {
+public abstract class StyledActivity extends BackhandActivity {
 
     /** white during daytime, black at night */
     @BackgroundVariant static final int BACKGROUND_VARIANT_BLACKWHITE = 1;

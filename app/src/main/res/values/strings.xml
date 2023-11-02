@@ -86,6 +86,7 @@
     <string name="hint_widget_source">Widget source: %1$s</string>
 
     <string name="intro_1">Select a category in the right-hand drawer.</string>
+    <string name="intro_1b">Select a category in the right-hand drawer.\n(Press a little longer near the right edge.)</string>
     <string name="intro_2">Search, apply filters and change other settings here.</string>
     <string name="intro_3">Scroll through the list to see the articles.</string>
     <string name="intro_4">Tap an article to see details.</string>

@@ -337,6 +337,7 @@
     <string name="error_tts_fail_synthesis">Sprachausgabe fehlgeschlagen: Der Text konnte nicht in Sprache umgesetzt werden.</string>
 
     <string name="intro_1">Wählen Sie eine Kategorie in der rechten „Schublade”.</string>
+    <string name="intro_1b">Wählen Sie eine Kategorie in der rechten „Schublade”.\n(Am rechten Rand etwas länger drücken.)</string>
     <string name="intro_2">Suchen Sie und ändern Sie Einstellungen wie bevorzugte Regionen oder Filter durch Antippen der Uhr.</string>
     <string name="intro_3">Bewegen Sie die Liste, um die Artikel zu sehen.</string>
     <string name="intro_4">Tippen Sie einen Artikel an, um Details zu sehen.</string>

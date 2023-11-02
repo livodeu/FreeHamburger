@@ -60,6 +60,7 @@ import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
+import androidx.annotation.Size;
 import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AlertDialog;
@@ -68,6 +69,7 @@ import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.app.TaskStackBuilder;
 import androidx.core.content.FileProvider;
 import androidx.core.view.GravityCompat;
+import androidx.customview.widget.ViewDragHelper;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -134,9 +136,11 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
 
     public static final String ACTION_SHOW_NEWS = BuildConfig.APPLICATION_ID + ".action.show_news";
     public static final String EXTRA_NEWS = BuildConfig.APPLICATION_ID + ".extra.news";
+    private static final int INTRO_STEPS_COUNT = 13;
+    @VisibleForTesting @Size(INTRO_STEPS_COUNT)
+    static final long[] INTRO_DELAYS = new long[] {500L, 1000L, 1000L, 1000L, 2500L, 1000L, 4500L, 1000L, 1000L, 1000L, 1000L, 2000L, 1000L};
     /** ConnectException andSocketTimeoutException messages.toLowerCase() usually start with this (the first one with "Failed", the latter one with "failed") */
     private static final String ERROR_CONNECTION_FAILED_MSG_PREFIX = "failed to connect to ";
-    @VisibleForTesting static final long[] INTRO_DELAYS = new long[] {500L, 1000L, 1000L, 2500L, 1000L, 4500L, 1000L, 1000L, 1000L, 1000L, 2000L, 1000L};
     /** maximum number of recent sources/categories to keep */
     private static final int MAX_RECENT_SOURCES = 10;
     private static final BitmapFactory.Options OPTS_FOR_QUICKVIEW = new BitmapFactory.Options();
@@ -197,14 +201,18 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     private long lastTimeRefreshFailedDueToNoNetwork = 0L;
     private PopupManager popupManager;
     /** Runnables to perform to display an introduction to the app - played sequentially with delays given in {@link #INTRO_DELAYS}. */
-    @VisibleForTesting final Runnable[] introSteps = new Runnable[] {
+    @VisibleForTesting @Size(INTRO_STEPS_COUNT) final Runnable[] introSteps = new Runnable[] {
             // show plane and open drawer, then display "Select a category in the right-hand drawer."
             () -> {
                 if (this.isFinishing()) return;
                 this.recyclerView.scrollToPosition(0);
                 findViewById(R.id.plane).setVisibility(View.VISIBLE);
+                Util.peekRightDrawer(drawerLayout, handler);
+                boolean gestureMode = Util.usesGestureNavigation(MainActivity.this);
+                this.popupManager.showPopup(this.drawerLayout, getString(gestureMode ? R.string.intro_1b : R.string.intro_1), 4_500L, false);
+            },
+            () -> {
                 this.drawerLayout.openDrawer(GravityCompat.END);
-                this.popupManager.showPopup(this.drawerLayout, getString(R.string.intro_1), 4_500L, false);
             },
             // apply a reddish hue to the drawer
             () -> findViewById(R.id.navigationView).setBackgroundTintList(ColorStateList.valueOf(ResourceUtil.getColor(this, R.color.colorIntro))),
@@ -265,6 +273,25 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     /** used to remember the font before SettingsActivity is invoked (separate from recentPreferences because, {@link SharedPreferences#getAll() according to docs}, they must not be modified) */
     private long recentFontTimestamp = 0L;
     private News newsToLoadWhenServiceConnected = null;
+    private boolean searchDialogVisible = false;
+
+    @IntRange(from = 0)
+    private int getDrawerRightEdge() {
+        try {
+            java.lang.reflect.Field fieldRightDragger = this.drawerLayout.getClass().getDeclaredField("mRightDragger");
+            fieldRightDragger.setAccessible(true);
+            Object rightDragger = fieldRightDragger.get(this.drawerLayout);
+            if (rightDragger instanceof ViewDragHelper) {
+                ViewDragHelper vdh = (ViewDragHelper) rightDragger;
+                int edgeSize = vdh.getEdgeSize();
+                if (BuildConfig.DEBUG) Log.i(TAG, "Edge size: " + edgeSize);
+                return edgeSize;
+            }
+        } catch (Throwable e) {
+            if (BuildConfig.DEBUG) Log.e(TAG, "While getting edge size: " + e);
+        }
+        return 0;
+    }
 
     /**
      * Switches to another {@link Source}.<br>
@@ -546,6 +573,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return;
         }
         if (Intent.ACTION_SEARCH.equals(action) || SearchHelper.SEARCH_SUGGEST_ACTION.equals(action)) {
+            this.searchDialogVisible = false;
             // R.string.action_search_suggest_intent is set in searchable.xml
             /*
             if the user has picked a suggestion, intent.getData().getLastPathSegment() will contain "suggestion#source" (something like "a61#NEWS",
@@ -839,6 +867,17 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
             return;
         }
         super.onActivityResult(requestCode, resultCode, intent);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void onAttachedToWindow() {
+        View.OnLayoutChangeListener ll = new View.OnLayoutChangeListener() {
+            @Override public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                MainActivity.this.newsAdapter.setRightEdgeSize(getDrawerRightEdge());
+                v.removeOnLayoutChangeListener(this);
+            }
+        };
+        this.drawerLayout.addOnLayoutChangeListener(ll);
     }
 
     /**
@@ -1269,6 +1308,7 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
     }
 
     /** {@inheritDoc} */
+    @SuppressLint("GestureBackNavigation")
     @Override
     public boolean onKeyLongPress(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -1819,6 +1859,18 @@ public class MainActivity extends NewsAdapterActivity implements SwipeRefreshLay
         outState.putInt(STATE_LIST_POS, top);
         //
         super.onSaveInstanceState(outState);
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean onSearchRequested() {
+        boolean searching = super.onSearchRequested();
+        this.searchDialogVisible = searching;
+        SearchManager sm = (SearchManager)getSystemService(SEARCH_SERVICE);
+        if (sm != null) {
+            sm.setOnCancelListener(() -> this.searchDialogVisible = false);
+            sm.setOnDismissListener(() -> this.searchDialogVisible = false);
+        }
+        return searching;
     }
 
     /** {@inheritDoc} */

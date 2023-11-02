@@ -35,7 +35,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Parcelable;
-import androidx.preference.PreferenceManager;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.system.ErrnoException;
 import android.system.Os;
@@ -52,6 +52,7 @@ import android.text.style.ClickableSpan;
 import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -80,6 +81,8 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.exoplayer2.PlaybackException;
@@ -1408,6 +1411,28 @@ public class Util {
     }
 
     /**
+     * Simulates up-down taps near the right edge of the given DrawerLayout.
+     * @param drawerLayout DrawerLayout
+     * @param handler Handler
+     * @throws NullPointerException if {@code drawerLayout} is {@code null}
+     */
+    public static void peekRightDrawer(@NonNull final DrawerLayout drawerLayout, @Nullable Handler handler) {
+        if (handler == null) handler = new Handler(Looper.getMainLooper());
+        final int x = drawerLayout.getWidth() - 50;
+        final int y = 50;
+        final long now = SystemClock.uptimeMillis();
+        final long upDelay = 500L;
+        MotionEvent motionEventDown = MotionEvent.obtain(now, now + 50L, MotionEvent.ACTION_DOWN, x, y, 0);
+        MotionEvent motionEventUp = MotionEvent.obtain(now, now + 50L + upDelay, MotionEvent.ACTION_UP, x, y, 0);
+        drawerLayout.dispatchTouchEvent(motionEventDown);
+        handler.postDelayed(() -> {
+            drawerLayout.dispatchTouchEvent(motionEventUp);
+            motionEventUp.recycle();
+            }, upDelay);
+        motionEventDown.recycle();
+    }
+
+    /**
      * Returns an error message for the given PlaybackException.
      * @param ctx Context
      * @param error PlaybackException
@@ -1984,6 +2009,17 @@ public class Util {
             length--;
         }
         return (start > 0 || length < s.length()) ? s.substring(start, length) : s;
+    }
+
+    /**
+     * Determines whether the device is configured to use gesture navigation.
+     * @param ctx Context
+     * @return true / false
+     * @throws NullPointerException if {@code ctx} is {@code null}
+     */
+    public static boolean usesGestureNavigation(@NonNull Context ctx) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false;
+        return Settings.Secure.getInt(ctx.getContentResolver(), "navigation_mode", -1) == 2;
     }
 
 }

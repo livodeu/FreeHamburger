@@ -17,7 +17,6 @@ import android.widget.Toast;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -32,7 +31,7 @@ import de.freehamburger.widget.WidgetProvider;
 /**
  * Configures app widgets.
  */
-public class WidgetActivity extends AppCompatActivity {
+public class WidgetActivity extends BackhandActivity {
 
     /** the {@link Source sources} that a user may not select as widget sources */
     private static final List<Source> FORBIDDEN = Arrays.asList(Source.WEATHER, Source.VIDEO, Source.CHANNELS);

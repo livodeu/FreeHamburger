@@ -48,6 +48,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.StyleRes;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
@@ -169,6 +170,35 @@ public class AppTest {
             fail(e.toString());
         }
         return null;
+    }
+
+    /**
+     * Tests that all Activities that are based on {@link AppCompatActivity}
+     * actually descend from {@link BackhandActivity}.
+     */
+    @Test
+    @SmallTest
+    public void testActivityAncestry() {
+        final Class<? extends AppCompatActivity> mandatoryParent = BackhandActivity.class;
+        try {
+            PackageInfo info = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), PackageManager.GET_ACTIVITIES | PackageManager.MATCH_ALL);
+            assertNotNull(info);
+            ActivityInfo[] activityInfos = info.activities;
+            assertNotNull(activityInfos);
+            assertTrue(activityInfos.length > 0);
+            for (ActivityInfo ai : activityInfos) {
+                // skip aliases
+                if (!TextUtils.isEmpty(ai.targetActivity)) continue;
+                //
+                Class<?> clazz = Class.forName(ai.name);
+                // skip non-AppCompatActivities
+                if (!AppCompatActivity.class.isAssignableFrom(clazz)) continue;
+                //
+                assertTrue("Activity \"" + ai.name + "\" is not a " + mandatoryParent.getSimpleName(), mandatoryParent.isAssignableFrom(clazz));
+            }
+        } catch (Exception e) {
+            fail(e.toString());
+        }
     }
 
     /**

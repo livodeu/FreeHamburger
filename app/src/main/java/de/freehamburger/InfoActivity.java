@@ -1,6 +1,7 @@
 package de.freehamburger;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.text.Spannable;
@@ -12,7 +13,6 @@ import android.text.style.StyleSpan;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -23,7 +23,7 @@ import de.freehamburger.util.Util;
 import de.freehamburger.version.Release;
 import de.freehamburger.version.ReleaseChecker;
 
-public class InfoActivity extends AppCompatActivity {
+public class InfoActivity extends BackhandActivity {
 
     private AlertDialog infoDialog;
 
@@ -73,12 +73,13 @@ public class InfoActivity extends AppCompatActivity {
     /** {@inheritDoc} */
     @Override protected void onResume() {
         super.onResume();
+        final Intent intentLaunchMain = new Intent(this, MainActivity.class);
         this.infoDialog = new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.app_name)
                 .setIcon(R.mipmap.ic_launcher)
                 .setMessage(makeInfo(this))
                 .setOnCancelListener((dialog) -> finish())
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> {dialog.dismiss(); finish();})
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {dialog.dismiss(); finish(); startActivity(intentLaunchMain);})
                 .show();
     }
 }

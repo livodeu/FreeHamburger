@@ -24,7 +24,6 @@ import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NavUtils;
 import androidx.preference.PreferenceManager;
 
@@ -48,7 +47,7 @@ import okhttp3.Call;
 /**
  * Plays a video.
  */
-public class VideoActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener {
+public class VideoActivity extends BackhandActivity implements AudioManager.OnAudioFocusChangeListener {
     /** boolean: enable picture-in-picture playback */
     public static final String PREF_PIP_ENABLED = "pref_pip_enabled";
     public static final boolean PREF_PIP_ENABLED_DEFAULT = true;

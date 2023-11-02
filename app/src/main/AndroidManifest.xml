@@ -37,6 +37,7 @@
         android:allowBackup="false"
         android:appCategory="news"
         android:dataExtractionRules="@xml/fyg"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="false"
         android:hardwareAccelerated="true"
         android:icon="${icon}"

@@ -65,7 +65,7 @@ public class HamburgerService extends Service implements Html.ImageGetter, Picas
     private final Set<String> cacheables = new HashSet<>();
     /** loads pictures/images into the memory cache - delegates to Picasso */
     private final CacheFiller cacheFiller = new CacheFiller();
-    /** see <a href="https://developer.android.com/training/articles/perf-tips.html#PackageInner">https://developer.android.com/training/articles/perf-tips.html#PackageInner</a> */
+    /** see <a href="https://web.archive.org/web/20220120071931/https://developer.android.com/training/articles/perf-tips#PackageInner">https://developer.android.com/training/articles/perf-tips.html#PackageInner</a> */
     private Picasso picasso;
     private ExecutorService loaderExecutor;
     private com.squareup.picasso.LruCache memoryCache;

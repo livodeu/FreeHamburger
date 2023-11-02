@@ -48,6 +48,7 @@ import de.freehamburger.model.News;
 import de.freehamburger.model.Source;
 import de.freehamburger.model.TeaserImage;
 import de.freehamburger.util.Log;
+import de.freehamburger.util.Util;
 import de.freehamburger.views.NewsView2;
 
 /**
@@ -76,6 +77,7 @@ public class NewsRecyclerAdapter extends StyledActivity.StyledAdapter<NewsRecycl
     @Nullable private Typeface typeface;
     private long updated = 0L;
     private Source source;
+    @IntRange(from = 0) private int rightEdgeSize;
 
     /**
      * Constructor.
@@ -280,6 +282,8 @@ public class NewsRecyclerAdapter extends StyledActivity.StyledAdapter<NewsRecycl
 
         super.onBindViewHolder(holder, position);
 
+        holder.setRightDeadSpace(this.rightEdgeSize);
+
         TextView tvtl = newsView2.getTextViewTopline();
         TextView tvda = newsView2.getTextViewDate();
         TextView tvti = newsView2.getTextViewTitle();
@@ -335,7 +339,7 @@ public class NewsRecyclerAdapter extends StyledActivity.StyledAdapter<NewsRecycl
             vh = this.viewholderCache.get(viewType);
         }
         if (vh == null) {
-            vh = new ViewHolder(instantiateView(this.activity, parent, viewType));
+            vh = new ViewHolder(instantiateView(this.activity, parent, viewType), this.rightEdgeSize);
         } else {
             // remove the ViewHolder from the viewholderCache that we are about to return
             synchronized (this.viewholderCache) {
@@ -347,7 +351,7 @@ public class NewsRecyclerAdapter extends StyledActivity.StyledAdapter<NewsRecycl
             this.viewholderCreator = new Thread() {
                 @Override
                 public void run() {
-                    ViewHolder newOne = new ViewHolder(instantiateView(NewsRecyclerAdapter.this.activity, parent, viewType));
+                    ViewHolder newOne = new ViewHolder(instantiateView(NewsRecyclerAdapter.this.activity, parent, viewType), NewsRecyclerAdapter.this.rightEdgeSize);
                     synchronized (NewsRecyclerAdapter.this.viewholderCache) {
                         NewsRecyclerAdapter.this.viewholderCache.put(viewType, newOne);
                     }
@@ -374,9 +378,7 @@ public class NewsRecyclerAdapter extends StyledActivity.StyledAdapter<NewsRecycl
             this.filtersEnabled = prefs.getBoolean(key, App.PREF_FILTERS_APPLY_DEFAULT);
         } else if (App.PREF_BACKGROUND.equals(key) || App.PREF_BACKGROUND_VARIANT_INDEX.equals(key)) {
             // The activity receives the same info (HamburgerActivity.onSharedPreferenceChanged()) and sets its background accordingly; give it a moment to do so
-            this.handler.postDelayed(() -> {
-                notifyDataSetChanged();
-            }, 500L);
+            this.handler.postDelayed(this::notifyDataSetChanged, 500L);
         } else if (App.PREF_FONT_ZOOM.equals(key)) {
             this.zoom = prefs.getInt(App.PREF_FONT_ZOOM, App.PREF_FONT_ZOOM_DEFAULT) / 100f;
             this.zoomModified = true;
@@ -424,6 +426,14 @@ public class NewsRecyclerAdapter extends StyledActivity.StyledAdapter<NewsRecycl
             this.newsList.addAll(newsList);
         }
         updateFilter();
+    }
+
+    /**
+     * Sets the number of pixels at the right edge where MotionEvents should be ignored/suppressed.
+     * @param rightEdgeSize pixel count
+     */
+    public void setRightEdgeSize(@IntRange(from = 0) int rightEdgeSize) {
+        this.rightEdgeSize = rightEdgeSize;
     }
 
     /**
@@ -503,19 +513,30 @@ public class NewsRecyclerAdapter extends StyledActivity.StyledAdapter<NewsRecycl
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnCreateContextMenuListener {
 
+        private final boolean usesGestureNavigation;
         private float xPosOfEventActionUp, yPosOfEventActionUp;
+        /** number of pixels at the right edge where MotionEvents should be ignored because they'd have no effect */
+        @IntRange(from = 0) private int rightDeadSpace;
 
         /**
          * Constructor.
          * @param v View
+         * @param rightDeadSpace number of pixels at the right edge where MotionEvents should be ignored
+         * @throws IllegalArgumentException if {@code v} is {@code null}
          */
         @SuppressLint("ClickableViewAccessibility")
-        private ViewHolder(@NonNull View v) {
+        private ViewHolder(@NonNull View v, @IntRange(from = 0) int rightDeadSpace) {
             super(v);
+            this.rightDeadSpace = rightDeadSpace;
+            this.usesGestureNavigation = Util.usesGestureNavigation(v.getContext());
             this.itemView.setOnClickListener(this);
             this.itemView.setOnCreateContextMenuListener(this);
             // record x and y coordinates
             this.itemView.setOnTouchListener((v1, event) -> {
+                if (this.usesGestureNavigation && event.getX() >= v1.getWidth() - this.rightDeadSpace) {
+                    // by ignoring the event we avoid visual changes that might confuse the user (the View apparently reacts to the touch but ultimately doesn't do anything)
+                    return true;
+                }
                 if (event.getAction() != MotionEvent.ACTION_UP) return false;
                 ViewHolder.this.xPosOfEventActionUp = event.getX();
                 ViewHolder.this.yPosOfEventActionUp = event.getY();
@@ -581,6 +602,14 @@ public class NewsRecyclerAdapter extends StyledActivity.StyledAdapter<NewsRecycl
             menuItemViewImage.setEnabled(hasImage);
             MenuItem menuItemPrintImage = menu.findItem(R.id.action_print_picture);
             menuItemPrintImage.setEnabled(hasImage);
+        }
+
+        /**
+         * Sets the number of pixels at the right edge where MotionEvents should be ignored because they'd have no effect.
+         * @param rightDeadSpace pixel count at the right edge
+         */
+        public void setRightDeadSpace(int rightDeadSpace) {
+            this.rightDeadSpace = Math.max(0, rightDeadSpace);
         }
     }
 }
