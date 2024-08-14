@@ -161,6 +161,9 @@
     <string name="label_service_frequentupdates">This is the service for Hamburger that is required to refresh data frequently</string>
     <string name="label_streamquality_adaptive">Adaptive Streaming</string>
     <string name="label_streamquality_adaptive_small">Adaptive Streaming (small)</string>
+    <string name="label_streamquality_avc270">Small (%1$d px wide)</string>
+    <string name="label_streamquality_avc360">Medium (%1$d px wide)</string>
+    <string name="label_streamquality_avc720">XLarge (%1$d px wide)</string>
     <string name="label_streamquality_s">Small (%1$d px wide)</string>
     <string name="label_streamquality_m">Medium (%1$d px wide)</string>
     <string name="label_streamquality_l">Large (%1$d px wide)</string>

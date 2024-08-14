@@ -149,6 +149,9 @@
     <string name="action_close">Schließen</string>
     <string name="label_streamquality_adaptive">„Adaptive Streaming”</string>
     <string name="label_streamquality_adaptive_small">„Adaptive Streaming” (klein)</string>
+    <string name="label_streamquality_avc270">Klein (Breite %1$d Pixel)</string>
+    <string name="label_streamquality_avc360">Mittel (Breite %1$d Pixel)</string>
+    <string name="label_streamquality_avc720">Extragroß (Breite %1$d Pixel)</string>
     <string name="label_streamquality_s">Klein (Breite %1$d Pixel)</string>
     <string name="label_streamquality_m">Mittel (Breite %1$d Pixel)</string>
     <string name="label_streamquality_l">Groß (Breite %1$d Pixel)</string>

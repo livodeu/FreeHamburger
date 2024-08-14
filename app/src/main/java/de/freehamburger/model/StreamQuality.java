@@ -18,29 +18,32 @@ public enum StreamQuality {
     H264S(R.string.label_streamquality_s, 320),
     /** 480 x 270 = 129600 */
     PODCASTVIDEOM(R.string.label_streamquality_m, 480),
+    AVC270(R.string.label_streamquality_avc270, 480),
     /** 512 x 288 = 147456 */
     H264M(R.string.label_streamquality_m, 512),
+    AVC360(R.string.label_streamquality_avc360, 640),
     /** 960 x 540 = 518400 */
     H264L(R.string.label_streamquality_l, 960),
     /** 1280 x 720 = 921600 */
     H264XL(R.string.label_streamquality_xl, 1280),
+    AVC720(R.string.label_streamquality_avc720, 1280),
     /** adaptive streaming with dimensions from 256x144 to 960x540 */
     PODCASTVIDEOM_IAS(R.string.label_streamquality_adaptive_small, -1),
     /** adaptive streaming with dimensions from 480x270 to 1920x1080 */
     ADAPTIVESTREAMING(R.string.label_streamquality_adaptive, -1);
 
     /** StreamQuality array where XL is preferred; after that ordered by descending quality */
-    private static final StreamQuality[] PREF_XL = new StreamQuality[] {StreamQuality.H264XL, StreamQuality.H264L, StreamQuality.H264M, StreamQuality.H264S};
+    private static final StreamQuality[] PREF_XL = new StreamQuality[] {StreamQuality.H264XL, StreamQuality.AVC720, StreamQuality.H264L, StreamQuality.AVC360, StreamQuality.H264M, StreamQuality.AVC270, StreamQuality.H264S};
     /** StreamQuality array where L is preferred */
-    private static final StreamQuality[] PREF_L = new StreamQuality[] {StreamQuality.H264L, StreamQuality.H264XL, StreamQuality.H264M, StreamQuality.H264S};
+    private static final StreamQuality[] PREF_L = new StreamQuality[] {StreamQuality.H264L, StreamQuality.H264XL, StreamQuality.AVC720, StreamQuality.AVC360, StreamQuality.H264M, StreamQuality.AVC270, StreamQuality.H264S};
     /** StreamQuality array where L is preferred - after that smaller ones are preferred over larger ones*/
-    private static final StreamQuality[] PREF_L_MOBILE = new StreamQuality[] {StreamQuality.H264L, StreamQuality.H264M, StreamQuality.H264S, StreamQuality.H264XL};
+    private static final StreamQuality[] PREF_L_MOBILE = new StreamQuality[] {StreamQuality.H264L, StreamQuality.H264M, StreamQuality.AVC360, StreamQuality.H264S, StreamQuality.AVC270, StreamQuality.H264XL, StreamQuality.AVC720};
     /** StreamQuality array where M is preferred */
-    private static final StreamQuality[] PREF_M = new StreamQuality[] {StreamQuality.H264M, StreamQuality.H264L, StreamQuality.H264XL, StreamQuality.H264S};
+    private static final StreamQuality[] PREF_M = new StreamQuality[] {StreamQuality.H264M, StreamQuality.AVC270, StreamQuality.AVC360, StreamQuality.H264L, StreamQuality.H264XL, StreamQuality.AVC720, StreamQuality.H264S};
     /** StreamQuality array where M is preferred - after that smaller ones are preferred over larger ones */
-    private static final StreamQuality[] PREF_M_MOBILE = new StreamQuality[] {StreamQuality.H264M, StreamQuality.H264S, StreamQuality.H264L, StreamQuality.H264XL};
+    private static final StreamQuality[] PREF_M_MOBILE = new StreamQuality[] {StreamQuality.H264M, StreamQuality.H264S, StreamQuality.AVC270, StreamQuality.AVC360, StreamQuality.H264L, StreamQuality.H264XL, StreamQuality.AVC720};
     /** StreamQuality array where S is preferred; after that ordered by ascending quality */
-    private static final StreamQuality[] PREF_S = new StreamQuality[] {StreamQuality.H264S, StreamQuality.H264M, StreamQuality.H264L, StreamQuality.H264XL};
+    private static final StreamQuality[] PREF_S = new StreamQuality[] {StreamQuality.H264S, StreamQuality.AVC270, StreamQuality.H264M, StreamQuality.AVC360, StreamQuality.H264L, StreamQuality.H264XL, StreamQuality.AVC720};
     /** video width */
     private final int width;
     @StringRes private final int label;
