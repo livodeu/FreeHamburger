@@ -23,9 +23,9 @@ import androidx.lifecycle.Lifecycle;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -97,7 +97,7 @@ public class ArchiveTest {
     }
 
     @Test
-    @RequiresApi(24)
+    @SdkSuppress(minSdkVersion = 24)
     @FlakyTest(detail = "Depends on working Android DownloadManager")
     public void testArchival() {
         assumeTrue("This test needs API 24 (N)", Build.VERSION.SDK_INT >= Build.VERSION_CODES.N);
@@ -139,14 +139,23 @@ public class ArchiveTest {
 
     @Test
     public void testInvocation() {
-        ActivityScenario<Archive> asn = ActivityScenario.launch(Archive.class);
-        asn.moveToState(Lifecycle.State.RESUMED);
-        asn.onActivity(activity -> {
-            assertNotNull(activity);
-            assertEquals(R.layout.activity_archive, activity.getMainLayout());
-            assertTrue(activity.hasMenuOverflowButton());
-            activity.finish();
-        });
+        // check for archived articles - if there aren't any the Archive activity will finish within onResume()
+        File folder = new File(ctx.getFilesDir(), Archive.DIR);
+        assertTrue(folder.isDirectory());
+        File[] existing = folder.listFiles();
+        assumeTrue("No archived data.", existing != null && existing.length > 0);
+        //
+        try (ActivityScenario<Archive> asn = ActivityScenario.launch(Archive.class)) {
+            asn.moveToState(Lifecycle.State.RESUMED);
+            asn.onActivity(activity -> {
+                assertNotNull(activity);
+                assertEquals(R.layout.activity_archive, activity.getMainLayout());
+                assertTrue(activity.hasMenuOverflowButton());
+                activity.finish();
+            });
+        } catch (Throwable t) {
+            fail(t.toString());
+        }
     }
 
     @Test
