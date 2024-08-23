@@ -108,11 +108,12 @@ _2023-05_
 
 ## 1.6.0
 
-_2023-0x_
+_2024-08_
 
 * Changed: The app targets API level 34 now.
 * Changed: The host "br.de" cannot use JavaScript anymore because it chose to present errors instead of content
 * Fixed: Audio elements are included again
+* Fixed: Exception while accessing 'Home'
 * Upgrade: Several libraries have been updated:
   * exoplayer 2.18.6 → 2.19.1 [release notes](https://github.com/google/ExoPlayer/blob/release-v2/RELEASENOTES.md)
   * material 1.8.0 → 1.9.0 [comparison](https://github.com/material-components/material-components-android/compare/1.8.0...1.9.0)
