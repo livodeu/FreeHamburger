@@ -146,6 +146,15 @@ public final class News implements Comparable<News>, Serializable {
     }
 
     /**
+     * ++ Removes leading and trailing pluses. ++
+     * @param news News
+     * @throws NullPointerException if {@code news} is {@code null}
+     */
+    public static void removeStupidPluses(@NonNull final News news) {
+        if (news.title != null) news.title = Util.fixPlus(news.title);
+    }
+
+    /**
      * Replaces horizontal white space chars ({@link #PATTERN_WHITE_SPACE "\\h+"}) with an ordinary space (0x20).<br>
      * A {@code null} input will result in {@code null}.<br>
      * See also {@link #eliminateOddWhitespaceNonNull(CharSequence)}

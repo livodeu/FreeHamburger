@@ -136,6 +136,11 @@ public class Blob {
             News.correct(blob.newsList);
             News.correct(blob.regionalNewsList);
         }
+        if (prefs.getBoolean(App.PREF_PLUS_IS_NEGATIVE, App.PREF_PLUS_IS_NEGATIVE_DEFAULT)) {
+            for (News news : blob.newsList) News.removeStupidPluses(news);
+            for (News news : blob.regionalNewsList) News.removeStupidPluses(news);
+        }
+
         // replace some text within the News instances because the Context that we have here has not been passed down
         final String[] toReplace = new String[] {Content.MARK_LINK};
         final String[] replaceWith = new String[] {ctx.getString(R.string.label_link)};

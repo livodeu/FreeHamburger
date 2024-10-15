@@ -9,6 +9,7 @@
     <bool name="pref_open_links_internally_default">true</bool>
     <bool name="pref_pip_enabled_default">true</bool>
     <bool name="pref_play_intro_default">true</bool>
+    <bool name="pref_plus_is_negative_default">false</bool>
     <bool name="pref_poll_breaking_only_default">true</bool>
     <bool name="pref_poll_default">false</bool>
     <bool name="pref_poll_over_mobile_default">false</bool>

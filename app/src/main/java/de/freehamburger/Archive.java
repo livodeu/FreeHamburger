@@ -543,6 +543,9 @@ public class Archive extends HamburgerActivity implements ActivityResultCallback
             if (prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
                 News.correct(parsed);
             }
+            if (prefs.getBoolean(App.PREF_PLUS_IS_NEGATIVE, App.PREF_PLUS_IS_NEGATIVE_DEFAULT)) {
+                News.removeStupidPluses(parsed);
+            }
             Intent intent = new Intent(this, NewsActivity.class);
             intent.putExtra(NewsActivity.EXTRA_NEWS, parsed);
             intent.putExtra(NewsActivity.EXTRA_JSON, archivedNews.getFile().getAbsolutePath());

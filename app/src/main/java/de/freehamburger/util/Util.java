@@ -596,6 +596,25 @@ public class Util {
     }
 
     /**
+     * Removes leading and trailing '+' from a given String.
+     * @param value String to work on
+     * @return String without leading or trailing pluses
+     */
+    @NonNull
+    public static String fixPlus(@Nullable final String value) {
+        if (value == null) return "";
+        final int l = value.length();
+        if (l == 0) return "";
+        int start = 0, end = l - 1;
+        while (start < l && value.charAt(start) == '+') start++;
+        if (start == l) return "";
+        while (end >= 0 && value.charAt(end) == '+') end--;
+        if (end == 0) return "";
+        if (start == 0 && end == l - 1) return value;
+        return value.substring(start, end + 1).trim();
+    }
+
+    /**
      * Replaces "Text." with „Text.“<br>
      * Lower/first is „ (0x201e), upper/last is “ (0x201c).<br>
      * See <a href="https://en.wikipedia.org/wiki/Quotation_mark#German">here</a> &amp; <a href="https://de.wikipedia.org/wiki/Anf%C3%BChrungszeichen#Anf%C3%BChrungszeichen_im_Deutschen">hier</a>.<br>

@@ -344,7 +344,8 @@ public class AppTest {
                 R.bool.pref_nfc_use_default,
                 R.bool.pref_topline_marquee_default,
                 R.bool.pref_show_topvideo_default,
-                R.bool.pref_recommendations_enabled_default
+                R.bool.pref_recommendations_enabled_default,
+                R.bool.pref_plus_is_negative_default
         };
         final boolean[] appBoolValues = new boolean[] {
                 App.PREF_ASK_BEFORE_FINISH_DEFAULT,
@@ -365,7 +366,8 @@ public class AppTest {
                 App.PREF_NFC_USE_DEFAULT,
                 App.PREF_TOPLINE_MARQUEE_DEFAULT,
                 App.PREF_SHOW_TOP_VIDEO_DEFAULT,
-                App.PREF_RECOMMENDATIONS_ENABLED_DEFAULT
+                App.PREF_RECOMMENDATIONS_ENABLED_DEFAULT,
+                App.PREF_PLUS_IS_NEGATIVE_DEFAULT
         };
         final int[] resIntValues = new int[] {
                 R.integer.pref_font_zoom_default,
@@ -421,6 +423,37 @@ public class AppTest {
             assertFalse(tmp1.isFile());
         } catch (Exception e) {
             fail(e.toString());
+        }
+    }
+
+    @Test
+    @SmallTest
+    public void testFixPluses() {
+        final String[] wrongs = new String[] {
+                "++ 1 mentally challenged IMM journo fired! ++",
+                "++ 2 mentally challenged IMM journos fired!",
+                "3 mentally challenged IMM journos fired! ++",
+                "++ ",
+                "++",
+                "+",
+                "",
+                null
+        };
+        final String[] rights = new String[] {
+                "1 mentally challenged IMM journo fired!",
+                "2 mentally challenged IMM journos fired!",
+                "3 mentally challenged IMM journos fired!",
+                "",
+                "",
+                "",
+                "",
+                ""
+        };
+        assertEquals(rights.length, wrongs.length);
+        final int n = wrongs.length;
+        for (int i = 0; i < n; i++) {
+            String corrected = Util.fixPlus(wrongs[i]);
+            assertEquals("Corrected String was not \"" + rights[i] + "\" but \"" + corrected + "\"", rights[i], corrected);
         }
     }
 

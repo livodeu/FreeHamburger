@@ -126,5 +126,14 @@
             android:summaryOn="@string/pref_title_quotationmarks_fix_on"
             android:title="@string/pref_title_quotationmarks_fix"
             />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="@bool/pref_plus_is_negative_default"
+            android:icon="@drawable/ic_baseline_add_content_24"
+            android:key="pref_plus_is_negative"
+            android:summaryOff="@string/pref_title_plus_is_negative_off"
+            android:summaryOn="@string/pref_title_plus_is_negative_on"
+            android:title="@string/pref_title_plus_is_negative"
+            />
     </PreferenceCategory>
 </PreferenceScreen>

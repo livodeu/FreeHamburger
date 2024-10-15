@@ -877,6 +877,9 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     if (prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
                         News.correct(news);
                     }
+                    if (prefs.getBoolean(App.PREF_PLUS_IS_NEGATIVE, App.PREF_PLUS_IS_NEGATIVE_DEFAULT)) {
+                        News.removeStupidPluses(news);
+                    }
                     Intent intent = new Intent(this, NewsActivity.class);
                     intent.putExtra(NewsActivity.EXTRA_NEWS, news);
                     intent.putExtra(NewsActivity.EXTRA_JSON, result.file.getAbsolutePath());
@@ -919,9 +922,14 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
                     if (getCoordinatorLayout() != null) Snackbar.make(getCoordinatorLayout(), R.string.error_recommendations_none, Snackbar.LENGTH_SHORT).show();
                     return;
                 }
-                if (PreferenceManager.getDefaultSharedPreferences(NewsActivity.this).getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(NewsActivity.this);
+                if (prefs.getBoolean(App.PREF_CORRECT_WRONG_QUOTATION_MARKS, App.PREF_CORRECT_WRONG_QUOTATION_MARKS_DEFAULT)) {
                     for (News news : usable) News.correct(news);
                 }
+                if (prefs.getBoolean(App.PREF_PLUS_IS_NEGATIVE, App.PREF_PLUS_IS_NEGATIVE_DEFAULT)) {
+                    for (News news : usable) News.removeStupidPluses(news);
+                }
+
                 NewsActivity.this.handler.post(() -> {
                     RecommendationsAdapter adapter = new RecommendationsAdapter(usable, NewsActivity.super.service);
                     AlertDialog.Builder builder = new MaterialAlertDialogBuilder(NewsActivity.this)

@@ -398,6 +398,9 @@
     <string name="pref_title_filters_apply_cats">Apply to categories</string>
     <string name="pref_title_font_zoom">Text magnification</string>
     <string name="pref_title_nfc_use">Use NFC</string>
+    <string name="pref_title_plus_is_negative">Leading and trailing pluses</string>
+    <string name="pref_title_plus_is_negative_off">will be shown</string>
+    <string name="pref_title_plus_is_negative_on">will be removed</string>
     <string name="pref_title_poll_interval">Interval</string>
     <string name="pref_title_poll_interval_night">Interval during nighttime</string>
     <string name="pref_title_show_top_video">Illustrative videos</string>

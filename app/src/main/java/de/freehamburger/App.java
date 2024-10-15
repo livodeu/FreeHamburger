@@ -168,6 +168,9 @@ public class App extends Application implements Application.ActivityLifecycleCal
     /** boolean */
     public static final String PREF_PLAY_INTRO = "pref_play_intro";
     public static final boolean PREF_PLAY_INTRO_DEFAULT = true;
+    /** boolean: remove stupid leading and trailing "++" */
+    public static final String PREF_PLUS_IS_NEGATIVE = "pref_plus_is_negative";
+    public static final boolean PREF_PLUS_IS_NEGATIVE_DEFAULT = false;
     /** boolean */
     public static final String PREF_POLL = "pref_poll";
     /** boolean */

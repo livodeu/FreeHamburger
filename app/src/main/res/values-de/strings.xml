@@ -274,6 +274,9 @@
     <string name="pref_header_data">Daten</string>
     <string name="pref_header_other">Anderes</string>
     <string name="pref_header_general">Allgemein</string>
+    <string name="pref_title_plus_is_negative">++ Plus-Zeichen ++</string>
+    <string name="pref_title_plus_is_negative_off">werden ggf. angezeigt</string>
+    <string name="pref_title_plus_is_negative_on">werden entfernt</string>
     <string name="msg_volume_mute">Audio ist stummgeschaltet.</string>
     <string name="error_unknown_host">wurde nicht gefunden</string>
     <string name="pref_hint_proxy_server">Server:Port</string>
