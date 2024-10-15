@@ -2,10 +2,10 @@ package de.freehamburger.exo;
 
 import androidx.annotation.NonNull;
 
-import com.google.android.exoplayer2.extractor.Extractor;
-import com.google.android.exoplayer2.extractor.ExtractorsFactory;
-import com.google.android.exoplayer2.extractor.mp3.Mp3Extractor;
-import com.google.android.exoplayer2.extractor.mp4.Mp4Extractor;
+import androidx.media3.extractor.Extractor;
+import androidx.media3.extractor.ExtractorsFactory;
+import androidx.media3.extractor.mp3.Mp3Extractor;
+import androidx.media3.extractor.mp4.Mp4Extractor;
 
 /**
  * See <a href="https://google.github.io/ExoPlayer/shrinking.html">here</a>.

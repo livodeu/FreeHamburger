@@ -85,8 +85,8 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.upstream.HttpDataSource;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.datasource.HttpDataSource;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 

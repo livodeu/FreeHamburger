@@ -2,14 +2,14 @@ package de.freehamburger.exo;
 
 import androidx.annotation.NonNull;
 
-import com.google.android.exoplayer2.LoadControl;
-import com.google.android.exoplayer2.RenderersFactory;
-import com.google.android.exoplayer2.extractor.ExtractorsFactory;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.trackselection.TrackSelector;
+import androidx.media3.exoplayer.LoadControl;
+import androidx.media3.exoplayer.RenderersFactory;
+import androidx.media3.extractor.ExtractorsFactory;
+import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.exoplayer.trackselection.TrackSelector;
 
 /**
- * Supplies {@link com.google.android.exoplayer2.ExoPlayer.Builder ExoPlayer.Builders} with some stuff
+ * Supplies {@link androidx.media3.exoplayer.ExoPlayer.Builder ExoPlayer.Builders} with some stuff
  * that they all need.
  */
 public interface ExoSupply {

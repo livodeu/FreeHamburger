@@ -4,14 +4,14 @@ import android.net.Uri;
 
 import androidx.annotation.NonNull;
 
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource;
-import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.source.hls.HlsMediaSource;
-import com.google.android.exoplayer2.upstream.DataSource;
+import androidx.media3.common.C;
+import androidx.media3.common.MediaItem;
+import androidx.media3.datasource.okhttp.OkHttpDataSource;
+import androidx.media3.exoplayer.source.ConcatenatingMediaSource;
+import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+import androidx.media3.exoplayer.hls.HlsMediaSource;
+import androidx.media3.datasource.DataSource;
 
 import java.util.List;
 
@@ -59,7 +59,7 @@ public class MediaSourceHelper {
      */
     @NonNull
     public MediaSource buildMediaSource(@NonNull Call.Factory cf, @NonNull Uri uri) {
-        int contentType = com.google.android.exoplayer2.util.Util.inferContentType(uri);
+        int contentType = androidx.media3.common.util.Util.inferContentType(uri);
         if (contentType == C.CONTENT_TYPE_HLS) return buildHlsMediaSource(cf, uri);
         if (this.pms == null) {
             // call of OkHttpDataSourceFactory constructor could be replaced by "new DefaultHttpDataSourceFactory(USER_AGENT);" if extension-okhttp were not used

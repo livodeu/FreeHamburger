@@ -6,8 +6,8 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.Player;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.lang.ref.Reference;
@@ -57,7 +57,7 @@ public class PlayerListener implements Player.Listener {
     /**
      * Returns a String representation of a Player's change of playWhenReady reason.
      * For debug only.
-     * @param reason com.google.android.exoplayer2.Player.PlayWhenReadyChangeReason
+     * @param reason androidx.media3.common.Player.PlayWhenReadyChangeReason
      * @return String representation
      */
     @NonNull
@@ -75,7 +75,7 @@ public class PlayerListener implements Player.Listener {
     /**
      * Returns a String representation of a Player's playback state.
      * For debug only.
-     * @param playbackState com.google.android.exoplayer2.Player.State
+     * @param playbackState androidx.media3.common.Player.State
      * @return String representation
      */
     @NonNull

@@ -27,11 +27,11 @@ import androidx.appcompat.app.ActionBar;
 import androidx.core.app.NavUtils;
 import androidx.preference.PreferenceManager;
 
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.ui.StyledPlayerView;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.ui.PlayerView;
 
 import java.lang.ref.WeakReference;
 
@@ -79,7 +79,7 @@ public class VideoActivity extends BackhandActivity implements AudioManager.OnAu
     private boolean hasAudioFocus;
     private AudioFocusRequest afr;
     private int audioVolumeBeforeDucking;
-    private StyledPlayerView playerView;
+    private PlayerView playerView;
     private ProgressBar progressBar;
     private News news;
     @Nullable

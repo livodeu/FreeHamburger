@@ -50,7 +50,7 @@ import androidx.test.filters.LargeTest;
 import androidx.test.filters.MediumTest;
 import androidx.test.filters.SmallTest;
 
-import com.google.android.exoplayer2.ui.StyledPlayerView;
+import androidx.media3.ui.PlayerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.junit.AfterClass;
@@ -552,7 +552,7 @@ public class DataAndGuiTest {
                 // ensure that required Views are present
                 View fab = activity.findViewById(R.id.fab);
                 assertNotNull(fab);
-                StyledPlayerView topVideoView = activity.findViewById(R.id.topVideoView);
+                PlayerView topVideoView = activity.findViewById(R.id.topVideoView);
                 assertNotNull(topVideoView);
                 View textViewTitle = activity.findViewById(R.id.textViewTitle);
                 assertNotNull(textViewTitle);
@@ -572,7 +572,7 @@ public class DataAndGuiTest {
                 assertNotNull(bottomVideoBlock);
                 View textViewBottomVideoPeek = activity.findViewById(R.id.textViewBottomVideoPeek);
                 assertNotNull(textViewBottomVideoPeek);
-                StyledPlayerView bottomVideoView = activity.findViewById(R.id.bottomVideoView);
+                PlayerView bottomVideoView = activity.findViewById(R.id.bottomVideoView);
                 assertNotNull(bottomVideoView);
                 View textViewBottomVideoViewOverlay = activity.findViewById(R.id.textViewBottomVideoViewOverlay);
                 assertNotNull(textViewBottomVideoViewOverlay);

@@ -71,12 +71,12 @@ import androidx.core.app.ActivityOptionsCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.ui.StyledPlayerView;
+import androidx.media3.common.C;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.ui.PlayerView;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -158,8 +158,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     private News news;
     private String json;
     private Recommendations recommendations;
-    /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
-    private StyledPlayerView topVideoView;    /** Listener for the audio */
+    private PlayerView topVideoView;    /** Listener for the audio */
     private AlertDialog dialogRecommendations;
     private TextView textViewTitle;
     private ViewGroup /*RelativeLayout*/ audioBlock;
@@ -204,8 +203,7 @@ public class NewsActivity extends HamburgerActivity implements AudioManager.OnAu
     };
     // located at the bottom edge, contains the video title
     private TextView textViewBottomVideoPeek;
-    /** <a href="https://google.github.io/ExoPlayer/doc/reference/com/google/android/exoplayer2/ui/StyledPlayerView.html">JavaDoc</a> */
-    private StyledPlayerView bottomVideoView;
+    private PlayerView bottomVideoView;
     /** Listener for the bottom video */
     private final PlayerListener listenerBottom = new PlayerListener(this,true) {
 
