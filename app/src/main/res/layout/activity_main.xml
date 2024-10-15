@@ -94,6 +94,7 @@
         android:paddingTop="@dimen/menu_padding_top"
         app:headerLayout="@layout/nav_header"
         app:itemBackground="@drawable/bg_menuitem"
+        app:itemHorizontalPadding="@dimen/menu_item_padding_horizontal"
         app:itemTextAppearance="@style/TextAppearance.Navigation"
         app:itemTextColor="@color/textcolor_nav_item"
         app:menu="@menu/drawer_menu" />
