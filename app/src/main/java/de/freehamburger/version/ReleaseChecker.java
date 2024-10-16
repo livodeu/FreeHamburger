@@ -53,8 +53,8 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 public final class ReleaseChecker {
-    /** SHA-256 hash of debug certificate - apparently new in spring of 2024 */
-    @VisibleForTesting public static final String DIGEST_SHA256_ANDROID_DEBUG = "bec008cf55d312a7b9623d127ad2ffecb21004893295e45b4a59f90a16a2a956";
+    /** SHA-256 hash of debug certificate - valid from 2024-06-06 */
+    @VisibleForTesting public static final String DIGEST_SHA256_ANDROID_DEBUG = "da2ef40fbc85ed653dd0b881b4537f65b4e92a2a5542af9f4808daab2771297c";
     @VisibleForTesting public static final String DIGEST_SHA256_FDROID_RELEASE = "b753becb180b904f4c111ada662d98017f3c5c6bc0d8aed4ad3e9396e2eb012f";
     @VisibleForTesting public static final String DIGEST_SHA256_GITHUB_RELEASE = "08f0b35bc523a3d06984bdb582aebb53e40236a90c33ee611c9d44f53f1970f9";
     private static final String BROWSER_URL_FDROID = "https://f-droid.org/en/packages/de.freehamburger/";
