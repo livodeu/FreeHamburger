@@ -5,7 +5,7 @@ def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
-    compileSdkVersion 34
+    compileSdk 34
 
     splits {
         // https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/dsl/Splits
@@ -76,9 +76,9 @@ android {
     }
 
     lint {
-        // https://developer.android.com/reference/tools/gradle-api/7.4/com/android/build/api/dsl/Lint
+        // https://developer.android.com/reference/tools/gradle-api/8.6/com/android/build/api/dsl/Lint
         // UseCompatLoadingForDrawables is misleading for minSdkVersion >= 21
-        ignore 'UseCompatLoadingForDrawables','AppLinkUrlError','VectorPath','ObsoleteSdkInt'
+        disable 'UseCompatLoadingForDrawables','AppLinkUrlError','VectorPath','ObsoleteSdkInt'
         abortOnError = false
         checkReleaseBuilds = false
     }
