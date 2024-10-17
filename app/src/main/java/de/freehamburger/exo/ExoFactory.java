@@ -14,6 +14,7 @@ import androidx.media3.exoplayer.analytics.AnalyticsCollector;
 import androidx.media3.exoplayer.analytics.AnalyticsListener;
 import androidx.media3.exoplayer.DecoderCounters;
 import androidx.media3.exoplayer.DecoderReuseEvaluation;
+import androidx.media3.exoplayer.audio.AudioSink;
 import androidx.media3.exoplayer.source.MediaSource;
 
 import org.jetbrains.annotations.TestOnly;
@@ -105,6 +106,14 @@ public final class ExoFactory {
 
         @Override public void onAudioSinkError(@NonNull Exception audioSinkError) {
             if (BuildConfig.DEBUG) Log.w(TAG, "onAudioSinkError(" + audioSinkError + ")");
+        }
+
+        @Override
+        public void onAudioTrackInitialized(@NonNull AudioSink.AudioTrackConfig audioTrackConfig) {
+        }
+
+        @Override
+        public void onAudioTrackReleased(@NonNull AudioSink.AudioTrackConfig audioTrackConfig) {
         }
 
         @Override
